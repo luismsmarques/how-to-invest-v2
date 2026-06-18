@@ -12,6 +12,7 @@ hti-engine/
 ├── includes/
 │   ├── class-cpt.php        # ✅ CPTs: glossary + news (públicos) · htinvest_profile (Fase 2)
 │   ├── class-seo.php        # ✅ JSON-LD: DefinedTerm (glossary) + Article/NewsArticle (fallback)
+│   ├── class-redirects.php  # ✅ 301s dos URLs antigos do Base44 (mapa filtrável)
 │   ├── class-rest.php       # ⬜ endpoints /recommend, /claim-profile, /my-profiles, /account, /export
 │   ├── class-engine.php     # ⬜ regras determinísticas (pontuação→arquétipo→alocação)
 │   ├── class-gemini.php     # ⬜ chamada server-side ao Gemini + validação schema
@@ -43,7 +44,23 @@ hti-engine/
 3. **Titles & Meta → Post Types** → schema default: `news` = *NewsArticle*, `glossary` = *Article* (o `DefinedTerm` é adicionado pelo plugin).
 4. Mais tarde (Fase 2): **noindex** em questionário/resultado + staging (invariante).
 
+**Migração SEO — 301s (feito — `class-redirects.php`):**
+
+| Antigo (Base44) | Novo | Nota |
+|---|---|---|
+| `/About` | `/about/` | página |
+| `/Contact` | `/contact/` | página |
+| `/FinancialNews` | `/news/` | arquivo CPT `news` |
+| `/FinancialNewsArticle` | `/news/` | sem id → arquivo |
+| `/HowToStart` | `/how-to-start/` | página/guia |
+| `/PrivacyPolicy` | `/privacy-policy/` | página legal |
+| `/Questionnaire` | `/questionnaire/` | Fase 2 |
+| `/TermsAndConditions` | `/terms-and-conditions/` | página legal |
+
+- Redirect 301 via `template_redirect`, case-insensitive, ignora query string.
+- Mapa editável sem deploy via filtro **`hti_legacy_redirects`** — ajusta os slugs para baterem com as páginas que criares (1.5).
+
 ## Notas
 
 - Text domain: `hti-engine`. Toda a string voltada ao utilizador em EN (default) + PT (`languages/`).
-- A seguir na Fase 1: 301s do Base44 (1.4) e conteúdo seed (1.5).
+- A seguir na Fase 1: conteúdo seed (1.5) — criar as páginas-alvo (`/about/`, `/how-to-start/`, legais) e os artigos/termos.
