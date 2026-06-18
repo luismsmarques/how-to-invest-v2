@@ -32,6 +32,7 @@ define( 'HTI_ENGINE_URL', plugin_dir_url( __FILE__ ) );
 require_once HTI_ENGINE_PATH . 'includes/class-cpt.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seo.php';
 require_once HTI_ENGINE_PATH . 'includes/class-redirects.php';
+require_once HTI_ENGINE_PATH . 'includes/class-seeder.php';
 
 /**
  * Load the plugin text domain (EN default + PT translations in languages/).
@@ -55,6 +56,28 @@ SEO::init();
  * 301 redirects from the legacy Base44 URLs.
  */
 Redirects::init();
+
+/**
+ * Content seeder (Tools → Seed content, and the `wp hti seed` WP-CLI command).
+ */
+Seeder::register();
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	\WP_CLI::add_command(
+		'hti seed',
+		function () {
+			$report = Seeder::seed();
+			\WP_CLI::success(
+				sprintf(
+					'%d glossary terms and %d pages created, %d skipped.',
+					$report['glossary_created'],
+					$report['pages_created'],
+					$report['skipped']
+				)
+			);
+		}
+	);
+}
 
 /**
  * Activation: register CPTs once, then flush rewrite rules so their

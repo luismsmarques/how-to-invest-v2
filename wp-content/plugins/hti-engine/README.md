@@ -13,6 +13,7 @@ hti-engine/
 │   ├── class-cpt.php        # ✅ CPTs: glossary + news (públicos) · htinvest_profile (Fase 2)
 │   ├── class-seo.php        # ✅ JSON-LD: DefinedTerm (glossary) + Article/NewsArticle (fallback)
 │   ├── class-redirects.php  # ✅ 301s dos URLs antigos do Base44 (mapa filtrável)
+│   ├── class-seeder.php     # ✅ conteúdo seed: termos de glossário + páginas (1.5)
 │   ├── class-rest.php       # ⬜ endpoints /recommend, /claim-profile, /my-profiles, /account, /export
 │   ├── class-engine.php     # ⬜ regras determinísticas (pontuação→arquétipo→alocação)
 │   ├── class-gemini.php     # ⬜ chamada server-side ao Gemini + validação schema
@@ -59,6 +60,14 @@ hti-engine/
 
 - Redirect 301 via `template_redirect`, case-insensitive, ignora query string.
 - Mapa editável sem deploy via filtro **`hti_legacy_redirects`** — ajusta os slugs para baterem com as páginas que criares (1.5).
+
+**Conteúdo seed (feito — `class-seeder.php`, tarefa 1.5):**
+- **5 termos de glossário** (as notas curadas por classe de ativo, Textos §2): `global-equities`, `bonds`, `cash`, `reits-and-alternatives`, `crypto`.
+- **5 páginas** alvo dos 301s: `about`, `contact`, `how-to-start-investing` (guia real + CTA), `privacy-policy` e `terms-and-conditions` (placeholders com aviso, **carecem de revisão jurídica**).
+- **Bilingue:** EN no post; PT em meta (`hti_title_pt`, `hti_content_pt`, `hti_excerpt_pt`) — *language-aware* até a abordagem multilíngue ser fechada.
+- **Idempotente:** salta entradas já existentes (por slug); nunca sobrescreve edições.
+- Define `wp_page_for_privacy_policy` (alinhamento RGPD).
+- **Executar:** `wp hti seed` (WP-CLI) **ou** wp-admin → **Ferramentas → Semear conteúdo** (botão, nonce + `manage_options`).
 
 ## Notas
 

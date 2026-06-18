@@ -150,3 +150,28 @@ msgstr ""
 #: includes/class-cpt.php
 msgid "Educational news and updates."
 msgstr ""
+
+#: includes/class-seeder.php
+msgid "HowToInvest — Seed content"
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "Seed content"
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "Create the starter glossary terms and institutional pages. Existing entries (matched by slug) are skipped, so your edits are safe."
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "Run seeder"
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "You do not have permission to do this."
+msgstr ""
+
+#: includes/class-seeder.php
+#. translators: 1: glossary terms created, 2: pages created, 3: entries skipped.
+msgid "Seeding complete: %1$d glossary terms and %2$d pages created, %3$d skipped (already existed)."
+msgstr ""

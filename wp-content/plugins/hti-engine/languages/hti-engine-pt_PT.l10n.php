@@ -53,5 +53,12 @@ return array(
 		'Article published.'                        => 'Artigo publicado.',
 		'Article updated.'                          => 'Artigo atualizado.',
 		'Educational news and updates.'             => 'Notícias e atualizações educativas.',
+		// Seeder (Tools → Seed content).
+		'HowToInvest — Seed content'                => 'HowToInvest — Semear conteúdo',
+		'Seed content'                              => 'Semear conteúdo',
+		'Create the starter glossary terms and institutional pages. Existing entries (matched by slug) are skipped, so your edits are safe.' => 'Cria os termos iniciais do glossário e as páginas institucionais. Entradas existentes (por slug) são ignoradas, por isso as tuas edições ficam seguras.',
+		'Run seeder'                                => 'Executar seeder',
+		'You do not have permission to do this.'    => 'Não tens permissão para fazer isto.',
+		'Seeding complete: %1$d glossary terms and %2$d pages created, %3$d skipped (already existed).' => 'Seeding concluído: %1$d termos de glossário e %2$d páginas criados, %3$d ignorados (já existiam).',
 	),
 );
