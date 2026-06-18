@@ -5,7 +5,7 @@
 		"appearanceTools": true,
 		"useRootPaddingAwareAlignments": true,
 		"layout": {
-			"contentSize": "660px",
+			"contentSize": "680px",
 			"wideSize": "1100px"
 		},
 		"color": {
@@ -13,67 +13,119 @@
 			"defaultGradients": false,
 			"defaultDuotone": false,
 			"custom": true,
-			"customGradient": false,
+			"customGradient": true,
 			"palette": [
 				{
-					"slug": "base",
-					"color": "#ffffff",
-					"name": "Base"
+					"slug": "background",
+					"color": "#FFF6F1",
+					"name": "Background (cream)"
 				},
 				{
-					"slug": "surface",
-					"color": "#f6f8f7",
-					"name": "Surface"
+					"slug": "white",
+					"color": "#ffffff",
+					"name": "White"
 				},
 				{
 					"slug": "contrast",
-					"color": "#14241d",
+					"color": "#2A2438",
 					"name": "Text"
 				},
 				{
+					"slug": "body-alt",
+					"color": "#3A3450",
+					"name": "Body alt"
+				},
+				{
 					"slug": "muted",
-					"color": "#5b6b64",
+					"color": "#6E6680",
 					"name": "Muted text"
 				},
 				{
+					"slug": "muted-light",
+					"color": "#A89FB5",
+					"name": "Muted light"
+				},
+				{
 					"slug": "border",
-					"color": "#dde5e1",
+					"color": "#F2E4DD",
 					"name": "Border"
 				},
 				{
 					"slug": "primary",
-					"color": "#1b7a5a",
-					"name": "Primary green"
+					"color": "#FF6B5E",
+					"name": "Coral"
 				},
 				{
 					"slug": "primary-hover",
-					"color": "#145c44",
-					"name": "Primary green (hover)"
+					"color": "#FF5544",
+					"name": "Coral (hover)"
 				},
 				{
-					"slug": "secondary",
-					"color": "#e7f2ed",
-					"name": "Soft green"
+					"slug": "primary-soft",
+					"color": "#FFEDE9",
+					"name": "Coral soft"
 				},
 				{
-					"slug": "info",
-					"color": "#2a6f97",
-					"name": "Info"
+					"slug": "accent",
+					"color": "#7C5CFC",
+					"name": "Purple"
 				},
 				{
-					"slug": "info-surface",
-					"color": "#eaf2f7",
-					"name": "Info surface"
+					"slug": "accent-soft",
+					"color": "#EFE9FE",
+					"name": "Purple soft"
+				},
+				{
+					"slug": "accent-border",
+					"color": "#E7DCFB",
+					"name": "Purple border"
 				},
 				{
 					"slug": "caution",
-					"color": "#8a5a00",
+					"color": "#D69A1E",
 					"name": "Caution"
 				},
 				{
 					"slug": "caution-surface",
-					"color": "#fbf3e2",
+					"color": "#FFF3D6",
 					"name": "Caution surface"
+				},
+				{
+					"slug": "success",
+					"color": "#22C3A6",
+					"name": "Green"
+				},
+				{
+					"slug": "success-surface",
+					"color": "#E6F7EF",
+					"name": "Green surface"
+				},
+				{
+					"slug": "dark",
+					"color": "#2A2438",
+					"name": "Dark"
+				},
+				{
+					"slug": "navy",
+					"color": "#1E2147",
+					"name": "Navy"
+				}
+			],
+			"gradients": [
+				{
+					"slug": "coral-soft",
+					"name": "Coral soft",
+					"gradient": "linear-gradient(135deg, #FFEDE9, #FFD9D2)"
+				},
+				{
+					"slug": "green-soft",
+					"name": "Green soft",
+					"gradient": "linear-gradient(135deg, #E6F7EF, #D2E8DC)"
+				},
+				{
+					"slug": "gold-soft",
+					"name": "Gold soft",
+					"gradient": "linear-gradient(135deg, #F6EEDD, #EFE2C5)"
 				}
 			]
 		},
@@ -86,14 +138,81 @@
 			"dropCap": false,
 			"fontFamilies": [
 				{
-					"slug": "sans",
-					"name": "Sans (system)",
-					"fontFamily": "system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji'"
+					"slug": "body",
+					"name": "Plus Jakarta Sans",
+					"fontFamily": "'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+					"fontFace": [
+						{
+							"fontFamily": "Plus Jakarta Sans",
+							"fontWeight": "400",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/plus-jakarta-sans-400.woff2" ]
+						},
+						{
+							"fontFamily": "Plus Jakarta Sans",
+							"fontWeight": "500",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/plus-jakarta-sans-500.woff2" ]
+						},
+						{
+							"fontFamily": "Plus Jakarta Sans",
+							"fontWeight": "600",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/plus-jakarta-sans-600.woff2" ]
+						},
+						{
+							"fontFamily": "Plus Jakarta Sans",
+							"fontWeight": "700",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/plus-jakarta-sans-700.woff2" ]
+						}
+					]
 				},
 				{
-					"slug": "serif",
-					"name": "Serif (system)",
-					"fontFamily": "Iowan Old Style, 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif"
+					"slug": "heading",
+					"name": "Poppins",
+					"fontFamily": "'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+					"fontFace": [
+						{
+							"fontFamily": "Poppins",
+							"fontWeight": "400",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/poppins-400.woff2" ]
+						},
+						{
+							"fontFamily": "Poppins",
+							"fontWeight": "500",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/poppins-500.woff2" ]
+						},
+						{
+							"fontFamily": "Poppins",
+							"fontWeight": "600",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/poppins-600.woff2" ]
+						},
+						{
+							"fontFamily": "Poppins",
+							"fontWeight": "700",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/poppins-700.woff2" ]
+						},
+						{
+							"fontFamily": "Poppins",
+							"fontWeight": "800",
+							"fontStyle": "normal",
+							"fontDisplay": "swap",
+							"src": [ "file:./assets/fonts/poppins-800.woff2" ]
+						}
+					]
 				}
 			],
 			"fontSizes": [
@@ -106,10 +225,10 @@
 				{
 					"slug": "medium",
 					"name": "Medium",
-					"size": "1.125rem",
+					"size": "1.0625rem",
 					"fluid": {
-						"min": "1.0625rem",
-						"max": "1.1875rem"
+						"min": "1rem",
+						"max": "1.125rem"
 					}
 				},
 				{
@@ -124,19 +243,28 @@
 				{
 					"slug": "x-large",
 					"name": "Extra large",
-					"size": "1.875rem",
+					"size": "2rem",
 					"fluid": {
 						"min": "1.625rem",
-						"max": "2.125rem"
+						"max": "2.25rem"
 					}
 				},
 				{
 					"slug": "xx-large",
 					"name": "Extra extra large",
-					"size": "2.625rem",
+					"size": "2.75rem",
 					"fluid": {
 						"min": "2.125rem",
-						"max": "3rem"
+						"max": "3.25rem"
+					}
+				},
+				{
+					"slug": "huge",
+					"name": "Huge (hero)",
+					"size": "4rem",
+					"fluid": {
+						"min": "2.375rem",
+						"max": "4.25rem"
 					}
 				}
 			]
@@ -190,13 +318,13 @@
 	},
 	"styles": {
 		"color": {
-			"background": "var(--wp--preset--color--base)",
+			"background": "var(--wp--preset--color--background)",
 			"text": "var(--wp--preset--color--contrast)"
 		},
 		"typography": {
-			"fontFamily": "var(--wp--preset--font-family--sans)",
+			"fontFamily": "var(--wp--preset--font-family--body)",
 			"fontSize": "var(--wp--preset--font-size--medium)",
-			"lineHeight": "1.7"
+			"lineHeight": "1.55"
 		},
 		"spacing": {
 			"blockGap": "var(--wp--preset--spacing--30)",
@@ -221,15 +349,16 @@
 					"outline": {
 						"color": "var(--wp--preset--color--primary)",
 						"style": "solid",
-						"width": "2px"
+						"width": "2.5px"
 					}
 				}
 			},
 			"heading": {
 				"typography": {
-					"fontFamily": "var(--wp--preset--font-family--sans)",
+					"fontFamily": "var(--wp--preset--font-family--heading)",
 					"fontWeight": "700",
-					"lineHeight": "1.25"
+					"lineHeight": "1.12",
+					"letterSpacing": "-0.02em"
 				}
 			},
 			"h1": {
@@ -244,23 +373,24 @@
 			},
 			"h3": {
 				"typography": {
-					"fontSize": "var(--wp--preset--font-size--large)"
+					"fontSize": "var(--wp--preset--font-size--large)",
+					"letterSpacing": "-0.01em"
 				}
 			},
 			"button": {
 				"color": {
 					"background": "var(--wp--preset--color--primary)",
-					"text": "var(--wp--preset--color--base)"
+					"text": "var(--wp--preset--color--white)"
 				},
 				"border": {
-					"radius": "8px"
+					"radius": "12px"
 				},
 				"spacing": {
 					"padding": {
-						"top": "0.75rem",
-						"right": "1.5rem",
-						"bottom": "0.75rem",
-						"left": "1.5rem"
+						"top": "0.9rem",
+						"right": "1.75rem",
+						"bottom": "0.9rem",
+						"left": "1.75rem"
 					}
 				},
 				"typography": {
@@ -269,14 +399,14 @@
 				":hover": {
 					"color": {
 						"background": "var(--wp--preset--color--primary-hover)",
-						"text": "var(--wp--preset--color--base)"
+						"text": "var(--wp--preset--color--white)"
 					}
 				},
 				":focus": {
 					"outline": {
-						"color": "var(--wp--preset--color--primary-hover)",
+						"color": "var(--wp--preset--color--primary)",
 						"style": "solid",
-						"width": "2px"
+						"width": "2.5px"
 					}
 				}
 			}
@@ -284,13 +414,15 @@
 		"blocks": {
 			"core/site-title": {
 				"typography": {
-					"fontSize": "var(--wp--preset--font-size--large)",
-					"fontWeight": "700"
+					"fontFamily": "var(--wp--preset--font-family--body)",
+					"fontSize": "1.125rem",
+					"fontWeight": "600",
+					"letterSpacing": "-0.02em"
 				}
 			},
 			"core/post-title": {
 				"typography": {
-					"lineHeight": "1.2"
+					"lineHeight": "1.1"
 				}
 			},
 			"core/separator": {

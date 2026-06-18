@@ -11,16 +11,14 @@
 ( function () {
 	'use strict';
 
-	// Calm, distinct, accessible colours per asset class.
+	// Asset-class colours from the HowToInvest design system.
 	var COLORS = {
-		global_equity: '#1b7a5a',
-		bonds: '#2a6f97',
-		reits_alt: '#b07d2b',
-		cash: '#5b6b64',
-		crypto: '#6d4aff'
+		global_equity: '#FF6B5E',
+		bonds: '#7C5CFC',
+		reits_alt: '#D69A1E',
+		crypto: '#22C3A6',
+		cash: '#B7AEC4'
 	};
-
-	var SVGNS = 'http://www.w3.org/2000/svg';
 
 	function el( tag, attrs, text ) {
 		var node = document.createElement( tag );
@@ -35,53 +33,33 @@
 		return node;
 	}
 
-	function svgEl( tag, attrs ) {
-		var node = document.createElementNS( SVGNS, tag );
-		Object.keys( attrs ).forEach( function ( k ) {
-			node.setAttribute( k, attrs[ k ] );
-		} );
-		return node;
-	}
-
 	/**
-	 * Build the donut SVG. Decorative (aria-hidden) — the list is the a11y view.
+	 * Build the donut as a conic-gradient ring with a hollow centre label.
+	 * Decorative (aria-hidden) — the text list below is the accessible view.
+	 *
+	 * @param {Array}  allocation Server allocation slices.
+	 * @param {Object} ui         UI strings (for the centre label).
 	 */
-	function donut( allocation ) {
-		var size = 200,
-			r = 80,
-			cx = 100,
-			cy = 100,
-			c = 2 * Math.PI * r,
+	function donut( allocation, ui ) {
+		var stops = [],
 			cumulative = 0;
+		allocation.forEach( function ( slice ) {
+			var color = COLORS[ slice.class ] || '#B7AEC4';
+			var end = cumulative + slice.pct;
+			stops.push( color + ' ' + cumulative + '% ' + end + '%' );
+			cumulative = end;
+		} );
 
-		var svg = svgEl( 'svg', {
-			viewBox: '0 0 ' + size + ' ' + size,
+		var wrap = el( 'div', {
 			class: 'hti-donut',
 			'aria-hidden': 'true',
-			focusable: 'false'
+			style: 'background:conic-gradient(' + stops.join( ',' ) + ');'
 		} );
-
-		// Track ring.
-		svg.appendChild( svgEl( 'circle', {
-			cx: cx, cy: cy, r: r, fill: 'none',
-			stroke: '#e7ecea', 'stroke-width': 34
-		} ) );
-
-		allocation.forEach( function ( slice ) {
-			var len = ( slice.pct / 100 ) * c;
-			var seg = svgEl( 'circle', {
-				cx: cx, cy: cy, r: r, fill: 'none',
-				stroke: COLORS[ slice.class ] || '#999',
-				'stroke-width': 34,
-				'stroke-dasharray': len + ' ' + ( c - len ),
-				'stroke-dashoffset': String( -cumulative ),
-				transform: 'rotate(-90 ' + cx + ' ' + cy + ')'
-			} );
-			svg.appendChild( seg );
-			cumulative += len;
-		} );
-
-		return svg;
+		var hole = el( 'div', { class: 'hti-donut__hole' } );
+		hole.appendChild( el( 'span', { class: 'hti-donut__cap' }, ui.example_label || 'Exemplo' ) );
+		hole.appendChild( el( 'span', { class: 'hti-donut__sub' }, ui.by_classes || 'por classes' ) );
+		wrap.appendChild( hole );
+		return wrap;
 	}
 
 	/**
@@ -137,7 +115,7 @@
 		var allocSection = el( 'section', { class: 'hti-alloc', 'aria-label': ui.chart_label } );
 		allocSection.appendChild( el( 'h3', null, ui.example_structure ) );
 		var grid = el( 'div', { class: 'hti-alloc-grid' } );
-		grid.appendChild( donut( res.allocation ) );
+		grid.appendChild( donut( res.allocation, ui ) );
 		grid.appendChild( allocationList( res.allocation, classes ) );
 		allocSection.appendChild( grid );
 		root.appendChild( allocSection );
