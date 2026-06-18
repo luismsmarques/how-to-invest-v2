@@ -64,9 +64,24 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
 }
 .hti-nav-wrap { gap: 8px; }
 
+/* Classic nav menu (howtoinvest/menu block) — shared list reset. */
+.hti-menu-nav { display: flex; }
+.hti-menu {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.hti-menu li { margin: 0; }
+
 /* Header navigation as muted pills (override the global coral link color). */
-.hti-nav .wp-block-navigation-item__content,
-.hti-nav a.wp-block-navigation-item__content {
+.hti-nav .hti-menu {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+}
+.hti-nav .hti-menu a {
+	display: block;
 	font-family: var( --wp--preset--font-family--body );
 	font-weight: 500;
 	font-size: 15px;
@@ -75,11 +90,12 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
 	border-radius: 8px;
 	text-decoration: none;
 }
-.hti-nav .wp-block-navigation-item__content:hover {
+.hti-nav .hti-menu a:hover {
 	background: var( --wp--preset--color--accent-soft );
 	color: var( --wp--preset--color--contrast );
 }
-.hti-nav .wp-block-navigation-item.current-menu-item .wp-block-navigation-item__content {
+.hti-nav .hti-menu .current-menu-item > a,
+.hti-nav .hti-menu .current_page_item > a {
 	color: var( --wp--preset--color--contrast );
 }
 
@@ -278,15 +294,18 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
 	color: var( --wp--preset--color--primary );
 	background: var( --wp--preset--color--primary-soft );
 }
-.hti-footer__links { gap: 10px; }
-.hti-footer__link { margin: 0; }
-.hti-footer__link a {
+.hti-footer__links .hti-menu {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.hti-footer__links .hti-menu a {
 	color: #5A5270;
 	font-weight: 500;
 	font-size: 14px;
 	text-decoration: none;
 }
-.hti-footer__link a:hover { color: var( --wp--preset--color--primary ); }
+.hti-footer__links .hti-menu a:hover { color: var( --wp--preset--color--primary ); }
 .hti-footer__bar { border-top: 1px solid #F4E9E3; }
 .hti-footer__copy {
 	margin: 0;
