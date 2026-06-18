@@ -49,8 +49,31 @@
 
 	/* ---------- shared auth form ---------- */
 
+	function googleButton( extraRegister ) {
+		if ( ! ctx.google || ! ctx.google.enabled ) {
+			return null;
+		}
+		var wrap = el( 'div', { class: 'hti-google-wrap' } );
+		var btn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost hti-google-btn' }, s.google );
+		btn.addEventListener( 'click', function () {
+			var token = ( extraRegister && extraRegister.session_token ) || '';
+			window.location.href = ctx.google.start
+				+ '&token=' + encodeURIComponent( token )
+				+ '&locale=' + encodeURIComponent( ctx.locale || 'en' );
+		} );
+		wrap.appendChild( btn );
+		wrap.appendChild( el( 'p', { class: 'hti-auth-or' }, s.or ) );
+		return wrap;
+	}
+
 	// callbacks: { onLogin, onPending }. extraRegister is merged into /register.
 	function authForm( callbacks, extraRegister ) {
+		var container = el( 'div', { class: 'hti-auth-wrap' } );
+		var google = googleButton( extraRegister );
+		if ( google ) {
+			container.appendChild( google );
+		}
+
 		var form = el( 'form', { class: 'hti-auth' } );
 
 		var emailId = 'hti-email-' + Math.random().toString( 36 ).slice( 2 );
@@ -122,7 +145,8 @@
 			} );
 		} );
 
-		return form;
+		container.appendChild( form );
+		return container;
 	}
 
 	/* ---------- save flow (on the result) ---------- */

@@ -135,6 +135,10 @@ class Frontend {
 			'locale'     => $locale,
 			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
 			'homeUrl'    => esc_url( home_url( '/' ) ),
+			'google'     => array(
+				'enabled' => Google::is_configured(),
+				'start'   => esc_url_raw( Google::start_url() ),
+			),
 			'strings'    => self::account_strings( 'pt' === $locale ),
 		);
 	}
@@ -169,6 +173,8 @@ class Frontend {
 				'check_email'    => 'Quase lá — confirma o teu email para guardar o perfil.',
 				'verified'       => 'Email confirmado — o teu perfil foi guardado.',
 				'verify_error'   => 'Esse link de confirmação é inválido ou expirou.',
+				'google'         => 'Continuar com o Google',
+				'or'             => 'ou',
 			);
 		}
 		return array(
@@ -193,6 +199,8 @@ class Frontend {
 			'check_email'    => 'Almost there — check your email to confirm and save your profile.',
 			'verified'       => 'Email confirmed — your profile is saved.',
 			'verify_error'   => 'That confirmation link is invalid or has expired.',
+			'google'         => 'Continue with Google',
+			'or'             => 'or',
 		);
 	}
 

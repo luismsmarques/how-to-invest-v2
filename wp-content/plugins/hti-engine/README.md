@@ -32,6 +32,7 @@ hti-engine/
 │   ├── class-rate-limit.php # ✅ throttle por-IP nos endpoints públicos (M1)
 │   ├── class-mailer.php     # ✅ email transacional via Brevo (fallback wp_mail)
 │   ├── class-verification.php # ✅ double opt-in (verificação por email) (M2)
+│   ├── class-google.php     # ✅ login com Google (OAuth 2.0)
 │   ├── class-cron.php       # ✅ limpeza diária: perfis anónimos + contas não-verificadas (L1)
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
@@ -109,6 +110,9 @@ A decisão numérica **nunca** depende do LLM: erros do Gemini caem em fallback 
 - **`DELETE /account`** — **(RGPD, P0)** exige `confirm: true`; apaga **em cascata** todos os perfis (e meta) e depois a conta (`wp_delete_user`). Irreversível.
 
 Minimização: perfis anónimos não têm identidade (`user_id` nulo); logs sem PII; contas nativas (`wp_users`).
+
+### Login com Google (OAuth — `class-google.php`)
+Botão **"Continuar com o Google"** no formulário de conta (só aparece se configurado). Fluxo Authorization Code **server-side**: `state` em transient (CSRF) que carrega o `session_token` a fazer claim; troca do código → `id_token` (vindo do Google por TLS, claims fiáveis) → encontra/cria `wp_user` pelo email **verificado** → autentica → claim. Client ID/secret via `HTI_GOOGLE_CLIENT_ID`/`HTI_GOOGLE_CLIENT_SECRET` (wp-config/env) ou Settings (secret nunca ecoado). O **Redirect URI** a registar no Google Console aparece nas Settings.
 
 ### Conta — registo/login + UI
 - **`POST /register`** — cria conta nativa (subscriber) e autentica; devolve **novo nonce**. 422 (email/pw inválidos), 409 (já existe).

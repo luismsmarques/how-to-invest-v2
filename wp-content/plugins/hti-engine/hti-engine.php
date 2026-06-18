@@ -50,6 +50,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-disclaimer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-rate-limit.php';
 require_once HTI_ENGINE_PATH . 'includes/class-mailer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-verification.php';
+require_once HTI_ENGINE_PATH . 'includes/class-google.php';
 require_once HTI_ENGINE_PATH . 'includes/class-rest.php';
 require_once HTI_ENGINE_PATH . 'includes/class-questions.php';
 require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
@@ -91,6 +92,11 @@ REST::init();
  * Email verification (double opt-in): verify link + unverified-login gate.
  */
 Verification::init();
+
+/**
+ * "Sign in with Google" OAuth flow.
+ */
+Google::init();
 
 /**
  * Front-end app: the [hti_questionnaire] shortcode (questionnaire + result).
