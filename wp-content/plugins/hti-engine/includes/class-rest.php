@@ -278,8 +278,11 @@ class REST {
 		if ( strlen( $password ) < 8 ) {
 			return new WP_Error( 'hti_weak_password', __( 'Password must be at least 8 characters.', 'hti-engine' ), array( 'status' => 422 ) );
 		}
+		// Neutral message to avoid confirming which emails are registered
+		// (email enumeration). Combined with the per-IP rate limit above, this
+		// blunts probing. Full prevention needs double opt-in email verification.
 		if ( email_exists( $email ) || username_exists( $email ) ) {
-			return new WP_Error( 'hti_exists', __( 'An account with that email already exists.', 'hti-engine' ), array( 'status' => 409 ) );
+			return new WP_Error( 'hti_register_failed', __( "We couldn't create that account. If you already have one, please sign in instead.", 'hti-engine' ), array( 'status' => 409 ) );
 		}
 
 		$user_id = wp_insert_user(
