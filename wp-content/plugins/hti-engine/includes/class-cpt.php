@@ -69,7 +69,7 @@ class CPT {
 				'menu_icon'          => 'dashicons-book-alt',
 				'supports'           => array( 'title', 'editor', 'excerpt', 'thumbnail', 'revisions', 'custom-fields' ),
 				'rewrite'            => array(
-					'slug'       => 'glossary',
+					'slug'       => 'investing-glossary',
 					'with_front' => false,
 				),
 			)
@@ -118,7 +118,7 @@ class CPT {
 				'menu_icon'          => 'dashicons-megaphone',
 				'supports'           => array( 'title', 'editor', 'excerpt', 'thumbnail', 'author', 'revisions', 'custom-fields' ),
 				'rewrite'            => array(
-					'slug'       => 'news',
+					'slug'       => 'financial-news',
 					'with_front' => false,
 				),
 			)

@@ -58,7 +58,7 @@ Redirects::init();
 
 /**
  * Activation: register CPTs once, then flush rewrite rules so their
- * archive/single permalinks (/glossary/, /news/) resolve immediately.
+ * archive/single permalinks (/investing-glossary/, /financial-news/) resolve immediately.
  */
 function activate(): void {
 	CPT::register();

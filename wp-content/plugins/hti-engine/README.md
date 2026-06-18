@@ -26,15 +26,15 @@ hti-engine/
 ## Estado atual (Fase 1 — Fundação SEO)
 
 **Tarefa 1.3 — CPTs de conteúdo (feito):**
-- `glossary` — público, indexável, com arquivo em `/glossary/`. Sementes de SEO/glossário (notas por classe de ativo → "O que é uma obrigação?").
-- `news` — público, indexável, com arquivo em `/news/`. Conteúdo editorial.
+- `glossary` — público, indexável, com arquivo em `/investing-glossary/`. Sementes de SEO/glossário (notas por classe de ativo → "O que é uma obrigação?").
+- `news` — público, indexável, com arquivo em `/financial-news/`. Conteúdo editorial.
 - Ambos `show_in_rest` (editor de blocos), labels **EN+PT**, e os slugs batem com os templates do tema (`single-glossary`, `archive-news`, etc.).
 - Ativação faz `flush_rewrite_rules` para os permalinks resolverem de imediato.
 
 > Os CPTs vivem no **plugin** (não no tema) para sobreviverem a trocas de tema. O CPT **privado** `htinvest_profile` (motor) entra na mesma `class-cpt` na Fase 2.
 
 **Schema / sitemap (feito — `class-seo.php`):**
-- Glossário emite sempre **`DefinedTerm`** (JSON-LD), ligado ao `DefinedTermSet` do arquivo `/glossary/`.
+- Glossário emite sempre **`DefinedTerm`** (JSON-LD), ligado ao `DefinedTermSet` do arquivo `/investing-glossary/`.
 - `Article` / `NewsArticle` saem como **fallback** apenas quando **não** há plugin SEO ativo (deteta RankMath/Yoast), para não duplicar com o RankMath.
 - Sitemaps/metas são do **RankMath**; os CPTs são `public`/`has_archive`, logo entram automaticamente.
 
@@ -50,11 +50,11 @@ hti-engine/
 |---|---|---|
 | `/About` | `/about/` | página |
 | `/Contact` | `/contact/` | página |
-| `/FinancialNews` | `/news/` | arquivo CPT `news` |
-| `/FinancialNewsArticle` | `/news/` | sem id → arquivo |
-| `/HowToStart` | `/how-to-start/` | página/guia |
+| `/FinancialNews` | `/financial-news/` | arquivo CPT `news` (slug SEO) |
+| `/FinancialNewsArticle` | `/financial-news/` | sem id → arquivo |
+| `/HowToStart` | `/how-to-start-investing/` | keyword SEO |
 | `/PrivacyPolicy` | `/privacy-policy/` | página legal |
-| `/Questionnaire` | `/questionnaire/` | Fase 2 |
+| `/Questionnaire` | `/investor-profile-quiz/` | Fase 2 (slug SEO) |
 | `/TermsAndConditions` | `/terms-and-conditions/` | página legal |
 
 - Redirect 301 via `template_redirect`, case-insensitive, ignora query string.
@@ -63,4 +63,5 @@ hti-engine/
 ## Notas
 
 - Text domain: `hti-engine`. Toda a string voltada ao utilizador em EN (default) + PT (`languages/`).
-- A seguir na Fase 1: conteúdo seed (1.5) — criar as páginas-alvo (`/about/`, `/how-to-start/`, legais) e os artigos/termos.
+- Slugs canónicos otimizados para SEO (keyword-rich): `/investing-glossary/`, `/financial-news/`, `/how-to-start-investing/`, `/investor-profile-quiz/`. Utilitárias/legais ficam limpas.
+- A seguir na Fase 1: conteúdo seed (1.5) — criar as páginas-alvo (`/about/`, `/how-to-start-investing/`, legais) e os artigos/termos.

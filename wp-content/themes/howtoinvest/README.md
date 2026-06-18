@@ -26,7 +26,7 @@ howtoinvest/
 ├── patterns/
 │   ├── footer-disclaimer.php # full disclaimer (Textos §1.3), EN+PT
 │   ├── disclaimer-short.php  # one-line disclaimer (Textos §1.2)
-│   ├── cta-questionnaire.php # insertable CTA → /questionnaire/ (never brokerage)
+│   ├── cta-questionnaire.php # insertable CTA → /investor-profile-quiz/ (never brokerage)
 │   ├── glossary-term.php     # glossary term layout
 │   └── news-card.php         # news card for query loops
 └── languages/
@@ -41,4 +41,4 @@ howtoinvest/
 - **404 / search** intentionally inherit the parent theme (already translatable and well-designed).
 - **Fonts** use a system stack (no external requests — privacy + performance). Self-host a brand font later if desired (register in `theme.json` → `settings.typography.fontFamilies` with a local `src`).
 - The **glossary / news templates** are ready but only take effect once the `glossary` and `news` CPTs are registered (Phase 1, task 1.3, in the `hti-engine` plugin).
-- The interactive **questionnaire / result** are NOT in the theme — they come from the `hti-engine` plugin via shortcode/block. The CTA links to `/questionnaire/`.
+- The interactive **questionnaire / result** are NOT in the theme — they come from the `hti-engine` plugin via shortcode/block. The CTA links to `/investor-profile-quiz/`.

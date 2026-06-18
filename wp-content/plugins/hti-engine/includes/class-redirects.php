@@ -36,11 +36,11 @@ class Redirects {
 		$map = array(
 			'about'                => '/about/',
 			'contact'              => '/contact/',
-			'financialnews'        => '/news/',
-			'financialnewsarticle' => '/news/',
-			'howtostart'           => '/how-to-start/',
+			'financialnews'        => '/financial-news/',
+			'financialnewsarticle' => '/financial-news/',
+			'howtostart'           => '/how-to-start-investing/',
 			'privacypolicy'        => '/privacy-policy/',
-			'questionnaire'        => '/questionnaire/',
+			'questionnaire'        => '/investor-profile-quiz/',
 			'termsandconditions'   => '/terms-and-conditions/',
 		);
 
