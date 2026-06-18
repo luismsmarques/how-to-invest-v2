@@ -49,7 +49,8 @@
 
 	/* ---------- shared auth form ---------- */
 
-	function authForm( onAuthed, onError ) {
+	// callbacks: { onLogin, onPending }. extraRegister is merged into /register.
+	function authForm( callbacks, extraRegister ) {
 		var form = el( 'form', { class: 'hti-auth' } );
 
 		var emailId = 'hti-email-' + Math.random().toString( 36 ).slice( 2 );
@@ -67,8 +68,8 @@
 		form.appendChild( err );
 
 		var actions = el( 'div', { class: 'hti-auth-actions' } );
-		var create = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-primary', 'data-mode': 'register' }, s.create_account );
-		var signin = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-ghost', 'data-mode': 'login' }, s.sign_in );
+		var create = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-primary' }, s.create_account );
+		var signin = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-ghost' }, s.sign_in );
 		actions.appendChild( create );
 		actions.appendChild( signin );
 		form.appendChild( actions );
@@ -85,22 +86,35 @@
 				err.hidden = false;
 				return;
 			}
-			var path = mode === 'register' ? '/register' : '/login';
-			var body = mode === 'register'
-				? { email: email.value, password: pass.value }
-				: { login: email.value, password: pass.value };
 
-			request( path, 'POST', body ).then( function ( res ) {
+			if ( mode === 'register' ) {
+				var body = { email: email.value, password: pass.value };
+				if ( extraRegister ) {
+					Object.keys( extraRegister ).forEach( function ( k ) { body[ k ] = extraRegister[ k ]; } );
+				}
+				request( '/register', 'POST', body ).then( function ( res ) {
+					if ( res.ok ) {
+						// Double opt-in: no sign-in yet — the user confirms by email.
+						callbacks.onPending( ( res.data && res.data.message ) || s.check_email );
+					} else {
+						err.textContent = ( res.data && res.data.message ) || s.error;
+						err.hidden = false;
+					}
+				} ).catch( function () {
+					err.textContent = s.error;
+					err.hidden = false;
+				} );
+				return;
+			}
+
+			request( '/login', 'POST', { login: email.value, password: pass.value } ).then( function ( res ) {
 				if ( res.ok && res.data && res.data.nonce ) {
 					nonce = res.data.nonce;
 					loggedIn = true;
-					onAuthed();
+					callbacks.onLogin();
 				} else {
 					err.textContent = ( res.data && res.data.message ) || s.error;
 					err.hidden = false;
-					if ( onError ) {
-						onError( res );
-					}
 				}
 			} ).catch( function () {
 				err.textContent = s.error;
@@ -134,6 +148,12 @@
 			} );
 		}
 
+		function showPending( msg ) {
+			box.innerHTML = '';
+			box.appendChild( el( 'h3', null, s.save_profile ) );
+			box.appendChild( el( 'p', { class: 'hti-save-done', role: 'status' }, msg || s.check_email ) );
+		}
+
 		if ( loggedIn ) {
 			var btn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-primary' }, s.save_profile );
 			btn.addEventListener( 'click', function () {
@@ -143,7 +163,10 @@
 			box.appendChild( btn );
 		} else {
 			box.appendChild( el( 'p', { class: 'hti-save-intro' }, s.save_intro ) );
-			box.appendChild( authForm( claim ) );
+			box.appendChild( authForm(
+				{ onLogin: claim, onPending: showPending },
+				{ session_token: sessionToken, locale: ctx.locale }
+			) );
 		}
 
 		container.appendChild( box );
@@ -151,14 +174,39 @@
 
 	/* ---------- dashboard ([hti_account]) ---------- */
 
+	function verifyBanner() {
+		var params = new URLSearchParams( window.location.search );
+		if ( params.get( 'verified' ) === '1' ) {
+			return el( 'div', { class: 'hti-save-done', role: 'status' }, s.verified );
+		}
+		if ( params.get( 'verify_error' ) === '1' ) {
+			return el( 'div', { class: 'hti-error', role: 'alert' }, s.verify_error );
+		}
+		return null;
+	}
+
 	function renderDashboard( mount ) {
 		mount.innerHTML = '';
 		var root = el( 'div', { class: 'hti-account' } );
+
+		var banner = verifyBanner();
+		if ( banner ) {
+			root.appendChild( banner );
+		}
+
 		root.appendChild( el( 'h2', null, s.my_profiles ) );
 
 		if ( ! loggedIn ) {
 			root.appendChild( el( 'p', null, s.signin_to_view ) );
-			root.appendChild( authForm( function () { renderDashboard( mount ); } ) );
+			root.appendChild( authForm(
+				{
+					onLogin: function () { renderDashboard( mount ); },
+					onPending: function ( msg ) {
+						root.appendChild( el( 'p', { class: 'hti-save-done', role: 'status' }, msg || s.check_email ) );
+					}
+				},
+				{ locale: ctx.locale }
+			) );
 			mount.appendChild( root );
 			return;
 		}

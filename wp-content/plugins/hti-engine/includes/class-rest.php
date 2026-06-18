@@ -72,13 +72,21 @@ class REST {
 				'callback'            => array( __CLASS__, 'register_user' ),
 				'permission_callback' => array( __CLASS__, 'check_nonce' ),
 				'args'                => array(
-					'email'    => array(
+					'email'         => array(
 						'type'     => 'string',
 						'required' => true,
 					),
-					'password' => array(
+					'password'      => array(
 						'type'     => 'string',
 						'required' => true,
+					),
+					'session_token' => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+					'locale'        => array(
+						'type'     => 'string',
+						'required' => false,
 					),
 				),
 			)
@@ -177,6 +185,15 @@ class REST {
 	}
 
 	/**
+	 * Standard 429 response when a per-IP limit is hit.
+	 *
+	 * @return WP_Error
+	 */
+	private static function too_many(): WP_Error {
+		return new WP_Error( 'hti_rate_limited', __( 'Too many requests. Please wait a moment and try again.', 'hti-engine' ), array( 'status' => 429 ) );
+	}
+
+	/**
 	 * Require an authenticated user with a valid nonce (account/RGPD routes).
 	 *
 	 * @param WP_REST_Request $request Request.
@@ -196,6 +213,10 @@ class REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function recommend( WP_REST_Request $request ) {
+		if ( RateLimit::exceeded( 'recommend' ) ) {
+			return self::too_many();
+		}
+
 		$locale  = self::locale( (string) $request->get_param( 'locale' ) );
 		$answers = self::sanitize_answers( (array) $request->get_param( 'answers' ) );
 
@@ -252,6 +273,10 @@ class REST {
 			return new WP_REST_Response( array( 'user_id' => get_current_user_id(), 'nonce' => wp_create_nonce( 'wp_rest' ) ), 200 );
 		}
 
+		if ( RateLimit::exceeded( 'register' ) ) {
+			return self::too_many();
+		}
+
 		$email    = sanitize_email( (string) $request->get_param( 'email' ) );
 		$password = (string) $request->get_param( 'password' );
 
@@ -261,29 +286,18 @@ class REST {
 		if ( strlen( $password ) < 8 ) {
 			return new WP_Error( 'hti_weak_password', __( 'Password must be at least 8 characters.', 'hti-engine' ), array( 'status' => 422 ) );
 		}
-		if ( email_exists( $email ) || username_exists( $email ) ) {
-			return new WP_Error( 'hti_exists', __( 'An account with that email already exists.', 'hti-engine' ), array( 'status' => 409 ) );
-		}
 
-		$user_id = wp_insert_user(
-			array(
-				'user_login' => $email,
-				'user_email' => $email,
-				'user_pass'  => $password,
-				'role'       => 'subscriber',
-			)
-		);
-		if ( is_wp_error( $user_id ) ) {
-			return new WP_Error( 'hti_register_failed', __( 'Could not create the account.', 'hti-engine' ), array( 'status' => 500 ) );
-		}
-
-		wp_set_current_user( $user_id );
-		wp_set_auth_cookie( $user_id, true );
+		// Double opt-in: start (or resend) verification and ALWAYS return the
+		// same neutral response — no account-enumeration oracle. The user only
+		// learns the outcome via their inbox; sign-in waits for verification.
+		$locale = self::locale( (string) $request->get_param( 'locale' ) );
+		$token  = sanitize_text_field( (string) $request->get_param( 'session_token' ) );
+		Verification::start( $email, $password, $token, $locale );
 
 		return new WP_REST_Response(
 			array(
-				'user_id' => (int) $user_id,
-				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'pending' => true,
+				'message' => __( 'Almost there — check your email to confirm and save your profile.', 'hti-engine' ),
 			),
 			200
 		);
@@ -296,6 +310,10 @@ class REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function login_user( WP_REST_Request $request ) {
+		if ( RateLimit::exceeded( 'login' ) ) {
+			return self::too_many();
+		}
+
 		$user = wp_signon(
 			array(
 				'user_login'    => sanitize_text_field( (string) $request->get_param( 'login' ) ),
@@ -306,6 +324,11 @@ class REST {
 		);
 
 		if ( is_wp_error( $user ) ) {
+			// Surface the "verify your email" case so the user knows to check
+			// their inbox; everything else stays a generic 401.
+			if ( 'hti_unverified' === $user->get_error_code() ) {
+				return new WP_Error( 'hti_unverified', $user->get_error_message(), array( 'status' => 403 ) );
+			}
 			return new WP_Error( 'hti_bad_credentials', __( 'Incorrect email or password.', 'hti-engine' ), array( 'status' => 401 ) );
 		}
 
@@ -332,8 +355,57 @@ class REST {
 			return new WP_Error( 'hti_invalid', __( 'Missing session token.', 'hti-engine' ), array( 'status' => 422 ) );
 		}
 
-		$user_id = get_current_user_id();
+		$user_id    = get_current_user_id();
+		$profile_id = self::find_profile_by_token( $token );
 
+		if ( ! $profile_id ) {
+			return new WP_Error( 'hti_not_found', __( 'No matching profile to claim.', 'hti-engine' ), array( 'status' => 404 ) );
+		}
+
+		$owner = (int) get_post_meta( $profile_id, 'hti_user_id', true );
+		if ( $owner && $owner !== $user_id ) {
+			return new WP_Error( 'hti_conflict', __( 'This profile is already linked to another account.', 'hti-engine' ), array( 'status' => 409 ) );
+		}
+
+		self::assign_profile( $profile_id, $user_id );
+
+		return new WP_REST_Response(
+			array(
+				'profile_id' => $profile_id,
+				'claimed'    => true,
+			),
+			200
+		);
+	}
+
+	/**
+	 * Claim a profile for a user during email verification (no HTTP context).
+	 *
+	 * @param int    $user_id User id.
+	 * @param string $token   Session token of the anonymous profile.
+	 */
+	public static function claim_for_user( int $user_id, string $token ): void {
+		$profile_id = self::find_profile_by_token( $token );
+		if ( ! $profile_id ) {
+			return;
+		}
+		$owner = (int) get_post_meta( $profile_id, 'hti_user_id', true );
+		if ( $owner && $owner !== $user_id ) {
+			return;
+		}
+		self::assign_profile( $profile_id, $user_id );
+	}
+
+	/**
+	 * Find an anonymous profile post id by its session token.
+	 *
+	 * @param string $token Session token.
+	 * @return int Profile id, or 0 if none.
+	 */
+	private static function find_profile_by_token( string $token ): int {
+		if ( '' === $token ) {
+			return 0;
+		}
 		$found = get_posts(
 			array(
 				'post_type'   => 'htinvest_profile',
@@ -344,17 +416,16 @@ class REST {
 				'meta_value'  => $token, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 			)
 		);
-		if ( empty( $found ) ) {
-			return new WP_Error( 'hti_not_found', __( 'No matching profile to claim.', 'hti-engine' ), array( 'status' => 404 ) );
-		}
+		return empty( $found ) ? 0 : (int) $found[0];
+	}
 
-		$profile_id = (int) $found[0];
-		$owner      = (int) get_post_meta( $profile_id, 'hti_user_id', true );
-		if ( $owner && $owner !== $user_id ) {
-			return new WP_Error( 'hti_conflict', __( 'This profile is already linked to another account.', 'hti-engine' ), array( 'status' => 409 ) );
-		}
-
-		// Identity is set only by this conscious action (data minimization).
+	/**
+	 * Attach a profile to a user (identity set only by a conscious action).
+	 *
+	 * @param int $profile_id Profile id.
+	 * @param int $user_id    User id.
+	 */
+	private static function assign_profile( int $profile_id, int $user_id ): void {
 		wp_update_post(
 			array(
 				'ID'          => $profile_id,
@@ -363,14 +434,6 @@ class REST {
 		);
 		update_post_meta( $profile_id, 'hti_user_id', $user_id );
 		delete_post_meta( $profile_id, 'hti_session_token' );
-
-		return new WP_REST_Response(
-			array(
-				'profile_id' => $profile_id,
-				'claimed'    => true,
-			),
-			200
-		);
 	}
 
 	/**

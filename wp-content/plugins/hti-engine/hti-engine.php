@@ -47,12 +47,16 @@ require_once HTI_ENGINE_PATH . 'includes/class-prompt.php';
 require_once HTI_ENGINE_PATH . 'includes/class-gemini.php';
 require_once HTI_ENGINE_PATH . 'includes/class-explainer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-disclaimer.php';
+require_once HTI_ENGINE_PATH . 'includes/class-rate-limit.php';
+require_once HTI_ENGINE_PATH . 'includes/class-mailer.php';
+require_once HTI_ENGINE_PATH . 'includes/class-verification.php';
 require_once HTI_ENGINE_PATH . 'includes/class-rest.php';
 require_once HTI_ENGINE_PATH . 'includes/class-questions.php';
 require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
 require_once HTI_ENGINE_PATH . 'includes/class-pdf.php';
+require_once HTI_ENGINE_PATH . 'includes/class-cron.php';
 
 /**
  * Load the plugin text domain (EN default + PT translations in languages/).
@@ -79,9 +83,14 @@ SEO::init();
 Redirects::init();
 
 /**
- * REST API (htinvest/v1): /recommend and, later, the account/RGPD routes.
+ * REST API (htinvest/v1): /recommend and the account/RGPD routes.
  */
 REST::init();
+
+/**
+ * Email verification (double opt-in): verify link + unverified-login gate.
+ */
+Verification::init();
 
 /**
  * Front-end app: the [hti_questionnaire] shortcode (questionnaire + result).
@@ -102,6 +111,11 @@ Consent::init();
  * PDF export of a saved result (admin-post handler).
  */
 PdfExport::init();
+
+/**
+ * Daily pruning of stale anonymous profiles (RGPD minimization).
+ */
+Cron::init();
 
 /**
  * Content seeder (Tools → Seed content, and the `wp hti seed` WP-CLI command).
@@ -132,6 +146,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 function activate(): void {
 	Taxonomy::register();
 	CPT::register();
+	Cron::schedule();
 	flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, __NAMESPACE__ . '\\activate' );
@@ -140,6 +155,7 @@ register_activation_hook( __FILE__, __NAMESPACE__ . '\\activate' );
  * Deactivation: drop the CPT rewrite rules we added.
  */
 function deactivate(): void {
+	Cron::unschedule();
 	flush_rewrite_rules();
 }
 register_deactivation_hook( __FILE__, __NAMESPACE__ . '\\deactivate' );
