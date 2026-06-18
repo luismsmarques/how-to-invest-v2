@@ -63,6 +63,27 @@ class REST {
 			)
 		);
 
+		// Fetch a saved result (reload / share). Authorized by owner or token.
+		register_rest_route(
+			self::NAMESPACE,
+			'/result',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'get_result' ),
+				'permission_callback' => array( __CLASS__, 'check_nonce' ),
+				'args'                => array(
+					'profile_id'    => array(
+						'type'     => 'integer',
+						'required' => true,
+					),
+					'session_token' => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+				),
+			)
+		);
+
 		// Create a native account and sign in (returns a fresh nonce).
 		register_rest_route(
 			self::NAMESPACE,
@@ -260,6 +281,60 @@ class REST {
 			),
 			200
 		);
+	}
+
+	/**
+	 * GET /result — return a saved result so it can be reloaded or shared.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_result( WP_REST_Request $request ) {
+		$profile_id = absint( $request->get_param( 'profile_id' ) );
+		$token      = sanitize_text_field( (string) $request->get_param( 'session_token' ) );
+
+		$post = $profile_id ? get_post( $profile_id ) : null;
+		if ( ! $post || 'htinvest_profile' !== $post->post_type ) {
+			return new WP_Error( 'hti_not_found', __( 'Result not found.', 'hti-engine' ), array( 'status' => 404 ) );
+		}
+		if ( ! self::can_read_profile( $profile_id, $token ) ) {
+			return new WP_Error( 'hti_forbidden', __( 'You are not allowed to view this result.', 'hti-engine' ), array( 'status' => 403 ) );
+		}
+
+		$locale = (string) get_post_meta( $profile_id, 'hti_locale', true );
+		$locale = str_starts_with( strtolower( $locale ), 'pt' ) ? 'pt' : 'en';
+
+		return new WP_REST_Response(
+			array(
+				'profile_id'    => $profile_id,
+				'session_token' => (string) get_post_meta( $profile_id, 'hti_session_token', true ),
+				'archetype'     => array(
+					'id'    => (int) get_post_meta( $profile_id, 'hti_archetype_id', true ),
+					'label' => (string) get_post_meta( $profile_id, 'hti_archetype_label', true ),
+				),
+				'allocation'    => get_post_meta( $profile_id, 'hti_allocation', true ),
+				'explanation'   => get_post_meta( $profile_id, 'hti_explanation', true ),
+				'safety_flags'  => get_post_meta( $profile_id, 'hti_safety_flags', true ),
+				'disclaimer'    => Disclaimer::contextual( $locale ),
+			),
+			200
+		);
+	}
+
+	/**
+	 * Whether the current request may read a profile: its owner (account) or the
+	 * holder of its anonymous session token.
+	 *
+	 * @param int    $profile_id Profile id.
+	 * @param string $token      Provided session token.
+	 */
+	private static function can_read_profile( int $profile_id, string $token ): bool {
+		$owner = (int) get_post_meta( $profile_id, 'hti_user_id', true );
+		if ( $owner && is_user_logged_in() && get_current_user_id() === $owner ) {
+			return true;
+		}
+		$stored = (string) get_post_meta( $profile_id, 'hti_session_token', true );
+		return '' !== $stored && '' !== $token && hash_equals( $stored, $token );
 	}
 
 	/**
