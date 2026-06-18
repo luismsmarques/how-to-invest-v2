@@ -64,7 +64,8 @@ php wp-content/plugins/hti-engine/tests/test-engine.php
 **Regra de ouro:** o LLM nunca decide. Recebe a decisão como facto e produz só texto; se falhar ou a validação rejeitar, entra o fallback curado. A alocação numérica sai sempre.
 
 - **`class-prompt.php`** — system prompt (regras absolutas) + user prompt com a alocação fixa, arquétipo, travas, respostas e notas curadas.
-- **`class-gemini.php`** — `generateContent` (JSON mode, temperatura 0.3, timeout 8s, 1 retry). Chave via `HTI_GEMINI_API_KEY` (wp-config) / env `GEMINI_API_KEY` / option, enviada em **header** `x-goog-api-key` — **nunca** no cliente nem nos logs.
+- **`class-llm.php`** — **transporte provider-agnostic**: prefere o **WP AI Client (WordPress 7.0 — Connectors API, `wp_ai_client_prompt`)** quando disponível (provider/modelo — Gemini/Claude/OpenAI — definidos em *Settings → Connectors*), e cai no `class-gemini.php` se não estiver configurado. É **só** transporte; o `Prompt`, `Validator` e `Fallback` não mudam. Desativável pelo filtro `hti_use_wp_ai_client`.
+- **`class-gemini.php`** — fallback de transporte: `generateContent` (JSON mode, temperatura 0.3, timeout 8s, 1 retry). Chave via `HTI_GEMINI_API_KEY` (wp-config) / env `GEMINI_API_KEY` / option, enviada em **header** `x-goog-api-key` — **nunca** no cliente nem nos logs.
 - **`class-validator.php`** — schema (campos/limites) + semântica: sem instrumentos nomeados (blocklist + regex de tickers), sem percentagens fora da alocação, `class_notes` == classes da alocação, idioma correto, `safety_message` presente se trava disparou.
 - **`class-fallback.php`** — textos pré-escritos EN+PT (Textos §2–§4), validados.
 - **`class-explainer.php`** — orquestra: Gemini → validação → senão fallback; devolve `source` (`llm`/`fallback`).

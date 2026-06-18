@@ -29,18 +29,18 @@ class Explainer {
 	 * @return array{explanation:array{why_archetype:string,class_notes:array<string,string>,safety_message:?string},source:string}
 	 */
 	public static function explain( array $result, array $answers, string $locale, string $archetype_label ): array {
-		if ( Gemini::is_configured() ) {
-			$data = Gemini::generate(
-				Prompt::SYSTEM,
-				Prompt::build_user( $result, $answers, $locale, $archetype_label )
-			);
+		// Transport is provider-agnostic (WP AI Client → Gemini fallback); the
+		// validation + curated fallback below are unchanged regardless.
+		$data = LLM::generate(
+			Prompt::SYSTEM,
+			Prompt::build_user( $result, $answers, $locale, $archetype_label )
+		);
 
-			if ( is_array( $data ) && Validator::is_valid( $data, $result, $locale ) ) {
-				return array(
-					'explanation' => self::normalize( $data ),
-					'source'      => 'llm',
-				);
-			}
+		if ( is_array( $data ) && Validator::is_valid( $data, $result, $locale ) ) {
+			return array(
+				'explanation' => self::normalize( $data ),
+				'source'      => 'llm',
+			);
 		}
 
 		return array(
