@@ -1,0 +1,34 @@
+# WordPress core — não versionar
+/wp-admin/
+/wp-includes/
+/wp-*.php
+/index.php
+/xmlrpc.php
+/license.txt
+/readme.html
+
+# Conteúdo que não é nosso
+/wp-content/uploads/
+/wp-content/upgrade/
+/wp-content/cache/
+/wp-content/plugins/*
+/wp-content/themes/*
+
+# Exceções: o NOSSO código versiona-se
+!/wp-content/plugins/hti-engine/
+!/wp-content/themes/howtoinvest/
+
+# Segredos — NUNCA versionar
+wp-config.php
+.env
+*.key
+*credentials*
+
+# Dependências e build
+node_modules/
+vendor/
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
