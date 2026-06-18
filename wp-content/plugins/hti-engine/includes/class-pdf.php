@@ -26,11 +26,11 @@ class PdfExport {
 	private const ACTION = 'hti_pdf';
 
 	private const COLORS = array(
-		'global_equity' => '#1b7a5a',
-		'bonds'         => '#2a6f97',
-		'reits_alt'     => '#b07d2b',
-		'cash'          => '#5b6b64',
-		'crypto'        => '#6d4aff',
+		'global_equity' => '#FF6B5E',
+		'bonds'         => '#7C5CFC',
+		'reits_alt'     => '#D69A1E',
+		'crypto'        => '#22C3A6',
+		'cash'          => '#B7AEC4',
 	);
 
 	/**
@@ -132,21 +132,21 @@ class PdfExport {
 		$date       = $generated ? esc_html( substr( $generated, 0, 10 ) ) : '';
 
 		$css = '
-			body{font-family:DejaVu Sans, sans-serif;color:#14241d;font-size:12px;line-height:1.5;}
+			body{font-family:DejaVu Sans, sans-serif;color:#2A2438;font-size:12px;line-height:1.5;}
 			h1{font-size:20px;margin:0 0 4px;}
 			h2{font-size:15px;margin:18px 0 6px;}
-			.disclaimer{background:#eaf2f7;border-radius:6px;padding:10px 12px;margin:10px 0;font-size:11px;}
-			.safety{background:#fbf3e2;border-left:4px solid #8a5a00;padding:10px 12px;margin:10px 0;}
+			.disclaimer{background:#2A2438;color:#C9D6E3;border-radius:6px;padding:10px 12px;margin:10px 0;font-size:11px;}
+			.safety{background:#FFF3D6;border-left:4px solid #D69A1E;padding:10px 12px;margin:10px 0;}
 			table.alloc{width:100%;border-collapse:collapse;margin:6px 0;}
-			table.alloc td{padding:4px 0;border-bottom:1px solid #dde5e1;}
+			table.alloc td{padding:4px 0;border-bottom:1px solid #F2E4DD;}
 			table.alloc td.bar{width:60%;}
 			table.alloc td.pct{text-align:right;font-weight:bold;width:48px;}
-			.foot{margin-top:24px;color:#5b6b64;font-size:10px;border-top:1px solid #dde5e1;padding-top:8px;}
+			.foot{margin-top:24px;color:#6E6680;font-size:10px;border-top:1px solid #F2E4DD;padding-top:8px;}
 		';
 
 		return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' . $css . '</style></head><body>'
 			. '<h1>' . esc_html( $ui['result_heading'] . ': ' . $label ) . '</h1>'
-			. ( $date ? '<p style="color:#5b6b64;margin:0 0 8px;">' . $date . '</p>' : '' )
+			. ( $date ? '<p style="color:#6E6680;margin:0 0 8px;">' . $date . '</p>' : '' )
 			. $safety
 			. '<div class="disclaimer">' . esc_html( $disclaimer ) . '</div>'
 			. '<h2>' . esc_html( $ui['example_structure'] ) . '</h2>'
