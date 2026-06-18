@@ -23,10 +23,12 @@ hti-engine/
 │   ├── class-gemini.php     # ✅ chamada server-side ao Gemini (chave em header, retry→fallback)
 │   ├── class-explainer.php  # ✅ orquestra Gemini→validação→fallback
 │   ├── class-disclaimer.php # ✅ disclaimer contextual versionado (Textos §1.1)
+│   ├── class-questions.php  # ✅ definição do questionário (EN+PT) p/ o frontend
+│   ├── class-frontend.php   # ✅ shortcode [hti_questionnaire] + enqueue + noindex
 │   ├── class-rest.php       # ◑ /recommend ✅ · claim-profile/my-profiles/account/export ⬜
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
-├── assets/                  # ⬜ js/questionnaire.js, js/result.js, css/
+├── assets/                  # ✅ js/questionnaire.js, js/result.js, css/app.css
 ├── tests/                   # ✅ matriz do motor (bootstrap.php + test-engine.php)
 └── languages/               # ✅ hti-engine.pot + hti-engine-pt_PT.l10n.php
 ```
@@ -75,7 +77,18 @@ Liga o motor ao mundo. Protegido por **nonce** (`X-WP-Nonce`, válido também pa
 
 A decisão numérica **nunca** depende do LLM: erros do Gemini caem em fallback e devolvem 200. Chave do Gemini nunca no cliente. CPT `htinvest_profile` é privado, não indexável, fora do REST default.
 
-> A seguir: questionário multi-step + resultado (JS ligeiro) e as rotas de conta/RGPD (claim-profile, my-profiles, export, account).
+## Frontend (E5–E7 — `class-frontend.php` + `assets/`)
+
+Shortcode **`[hti_questionnaire]`** (a página `investor-profile-quiz` é criada pelo seeder). JS vanilla, sem build, carregado **só** nessa página; a página fica **noindex**.
+
+- **`questionnaire.js`** — multi-step (1 pergunta/passo), barra de progresso, **estado parcial em `sessionStorage`**, acessível (fieldset/legend, foco gerido, teclado, `aria-live`/`role=alert`), mini-explicadores de ESG/crypto no "não sei". Valida no cliente só para deixar avançar; **scoring é sempre server-side**.
+- **`result.js`** — render só a partir da resposta do servidor (nunca recalcula): arquétipo, disclaimer não-dispensável, **donut SVG próprio (sem libs)** + **lista de texto equivalente** (acessibilidade), "porquê", notas por classe, ações educativas (Aprender mais / Refazer). Travas educam primeiro (E7b).
+- **`app.css`** — herda os tokens do `theme.json` (CSS vars) com fallback; mobile-first, foco visível, respeita `prefers-reduced-motion`.
+- i18n: todas as strings vêm do servidor (`Questions::payload`), EN+PT.
+
+Submissão: `fetch` POST a `/recommend` com nonce → processing → resultado; 422/500/erro de rede → estado de erro com "tentar novamente". Chave Gemini nunca no cliente.
+
+> A seguir: rotas de conta/RGPD (claim-profile, my-profiles, export, account), login Google e PDF.
 
 ## Estado atual (Fase 1 — Fundação SEO)
 
@@ -123,7 +136,7 @@ A decisão numérica **nunca** depende do LLM: erros do Gemini caem em fallback 
 
 **Conteúdo seed (feito — `class-seeder.php`, tarefa 1.5):**
 - **5 termos de glossário** (as notas curadas por classe de ativo, Textos §2): `global-equities`, `bonds`, `cash`, `reits-and-alternatives`, `crypto`.
-- **5 páginas** alvo dos 301s: `about`, `contact`, `how-to-start-investing` (guia real + CTA), `privacy-policy` e `terms-and-conditions` (placeholders com aviso, **carecem de revisão jurídica**).
+- **6 páginas**: `investor-profile-quiz` (com o shortcode `[hti_questionnaire]`), `about`, `contact`, `how-to-start-investing` (guia real + CTA), `privacy-policy` e `terms-and-conditions` (placeholders com aviso, **carecem de revisão jurídica**).
 - **Bilingue:** EN no post; PT em meta (`hti_title_pt`, `hti_content_pt`, `hti_excerpt_pt`) — *language-aware* até a abordagem multilíngue ser fechada.
 - **Idempotente:** salta entradas já existentes (por slug); nunca sobrescreve edições.
 - Define `wp_page_for_privacy_policy` (alinhamento RGPD).
