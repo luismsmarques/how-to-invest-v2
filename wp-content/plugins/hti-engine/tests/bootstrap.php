@@ -127,3 +127,4 @@ require_once __DIR__ . '/../includes/class-rate-limit.php';
 require_once __DIR__ . '/../includes/class-cron.php';
 require_once __DIR__ . '/../includes/class-mailer.php';
 require_once __DIR__ . '/../includes/class-google.php';
+require_once __DIR__ . '/../includes/class-llm.php';
