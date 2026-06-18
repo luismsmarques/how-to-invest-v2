@@ -1,41 +1,51 @@
 /**
- * Questionnaire + result styles. Inherits the theme's design tokens (theme.json
- * CSS custom properties) with safe fallbacks so the app also looks right under
- * any theme. Calm, accessible, mobile-first; visible focus throughout.
+ * Questionnaire + result styles — HowToInvest design system (coral/cream).
+ * Inherits the theme's theme.json tokens with safe fallbacks so the app also
+ * looks right under any theme. Calm, accessible, mobile-first; visible focus.
+ * Class names are kept stable for questionnaire.js / result.js / account.js.
  */
 
 .hti-app {
-	--hti-primary: var( --wp--preset--color--primary, #1b7a5a );
-	--hti-primary-hover: var( --wp--preset--color--primary-hover, #145c44 );
-	--hti-text: var( --wp--preset--color--contrast, #14241d );
-	--hti-muted: var( --wp--preset--color--muted, #5b6b64 );
-	--hti-border: var( --wp--preset--color--border, #dde5e1 );
-	--hti-surface: var( --wp--preset--color--surface, #f6f8f7 );
-	--hti-soft: var( --wp--preset--color--secondary, #e7f2ed );
-	--hti-info-surface: var( --wp--preset--color--info-surface, #eaf2f7 );
-	--hti-info: var( --wp--preset--color--info, #2a6f97 );
-	--hti-caution: var( --wp--preset--color--caution, #8a5a00 );
-	--hti-caution-surface: var( --wp--preset--color--caution-surface, #fbf3e2 );
+	--hti-primary: var( --wp--preset--color--primary, #FF6B5E );
+	--hti-primary-hover: var( --wp--preset--color--primary-hover, #FF5544 );
+	--hti-primary-soft: var( --wp--preset--color--primary-soft, #FFEDE9 );
+	--hti-text: var( --wp--preset--color--contrast, #2A2438 );
+	--hti-body: var( --wp--preset--color--body-alt, #3A3450 );
+	--hti-muted: var( --wp--preset--color--muted, #6E6680 );
+	--hti-muted-light: var( --wp--preset--color--muted-light, #A89FB5 );
+	--hti-border: var( --wp--preset--color--border, #F2E4DD );
+	--hti-white: var( --wp--preset--color--white, #ffffff );
+	--hti-cream: var( --wp--preset--color--background, #FFF6F1 );
+	--hti-accent: var( --wp--preset--color--accent, #7C5CFC );
+	--hti-accent-soft: var( --wp--preset--color--accent-soft, #EFE9FE );
+	--hti-accent-border: var( --wp--preset--color--accent-border, #E7DCFB );
+	--hti-caution: var( --wp--preset--color--caution, #D69A1E );
+	--hti-caution-surface: var( --wp--preset--color--caution-surface, #FFF3D6 );
+	--hti-caution-border: #F4DFA4;
+	--hti-dark: var( --wp--preset--color--dark, #2A2438 );
+	--hti-font-head: var( --wp--preset--font-family--heading, 'Poppins', sans-serif );
+	--hti-font-body: var( --wp--preset--font-family--body, 'Plus Jakarta Sans', sans-serif );
 
-	max-width: 680px;
+	max-width: 780px;
 	margin: 0 auto;
 	color: var( --hti-text );
-	line-height: 1.6;
+	font-family: var( --hti-font-body );
+	line-height: 1.55;
 }
 
 .hti-app *:focus-visible {
-	outline: 2px solid var( --hti-primary );
+	outline: 2.5px solid var( --hti-primary );
 	outline-offset: 2px;
-	border-radius: 4px;
+	border-radius: 6px;
 }
 
 /* --- Progress --- */
 .hti-progress {
-	margin-bottom: 1.5rem;
+	margin-bottom: 1.75rem;
 }
 .hti-progress-bar {
-	height: 8px;
-	background: var( --hti-border );
+	height: 6px;
+	background: #F4E6E0;
 	border-radius: 999px;
 	overflow: hidden;
 }
@@ -44,12 +54,13 @@
 	height: 100%;
 	background: var( --hti-primary );
 	border-radius: 999px;
-	transition: width 0.3s ease;
+	transition: width 0.4s cubic-bezier( 0.4, 0, 0.2, 1 );
 }
 .hti-step-count {
 	margin: 0.5rem 0 0;
-	font-size: 0.875rem;
-	color: var( --hti-muted );
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var( --hti-primary );
 }
 
 /* --- Question --- */
@@ -59,45 +70,52 @@
 	margin: 0;
 }
 .hti-question {
-	font-size: 1.5rem;
+	font-family: var( --hti-font-head );
+	font-size: clamp( 1.625rem, 4vw, 2.375rem );
 	font-weight: 700;
-	line-height: 1.3;
+	line-height: 1.15;
+	letter-spacing: -0.01em;
 	padding: 0;
-	margin: 0 0 1rem;
+	margin: 0 0 1.25rem;
+	text-wrap: balance;
 }
 .hti-info {
-	background: var( --hti-info-surface );
-	border-radius: 10px;
-	padding: 0.75rem 1rem;
-	margin-bottom: 1.5rem;
+	display: flex;
+	gap: 0.7rem;
+	background: var( --hti-accent-soft );
+	border-radius: 12px;
+	padding: 0.95rem 1.15rem;
+	margin-bottom: 1.75rem;
 }
 .hti-info-label {
 	display: block;
-	font-size: 0.8125rem;
 	font-weight: 600;
-	color: var( --hti-info );
+	color: var( --hti-primary );
 	margin-bottom: 0.25rem;
 }
 .hti-info p {
 	margin: 0;
 	font-size: 0.9375rem;
+	line-height: 1.5;
+	color: #54497A;
 }
 
 /* --- Options --- */
 .hti-option {
 	display: flex;
 	align-items: center;
-	gap: 0.75rem;
-	padding: 1rem;
+	gap: 0.9rem;
+	padding: 1.05rem 1.25rem;
 	margin-bottom: 0.75rem;
-	border: 1.5px solid var( --hti-border );
-	border-radius: 10px;
+	background: var( --hti-white );
+	border: 1.5px solid #F0E2DC;
+	border-radius: 14px;
 	cursor: pointer;
-	transition: border-color 0.15s ease, background 0.15s ease;
+	transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 .hti-option:hover {
-	border-color: var( --hti-primary );
-	background: var( --hti-surface );
+	border-color: #FFB3AA;
+	background: #FFF8F3;
 }
 .hti-option input {
 	width: 1.25rem;
@@ -106,31 +124,38 @@
 	flex: 0 0 auto;
 }
 .hti-option:has( input:checked ) {
-	border-color: var( --hti-primary );
-	background: var( --hti-soft );
+	border: 2px solid var( --hti-primary );
+	background: var( --hti-primary-soft );
+	box-shadow: 0 2px 10px rgba( 28, 76, 124, 0.12 );
 }
 .hti-option-label {
 	font-size: 1.0625rem;
+	font-weight: 500;
+	color: var( --hti-body );
+}
+.hti-option:has( input:checked ) .hti-option-label {
+	color: var( --hti-text );
 }
 .hti-unknown-note {
 	margin: 0.25rem 0 0;
-	padding: 0.75rem 1rem;
-	background: var( --hti-info-surface );
-	border-radius: 10px;
+	padding: 0.85rem 1.1rem;
+	background: var( --hti-accent-soft );
+	border-radius: 12px;
 	font-size: 0.9375rem;
+	color: #54497A;
 }
 
 /* --- Errors / nav --- */
 .hti-error {
 	color: #b3261e;
 	font-weight: 600;
-	margin: 0.5rem 0 0;
+	margin: 0.75rem 0 0;
 }
 .hti-nav {
 	display: flex;
 	justify-content: space-between;
 	gap: 1rem;
-	margin-top: 1.5rem;
+	margin-top: 1.75rem;
 }
 .hti-nav .hti-btn-primary {
 	margin-left: auto;
@@ -138,8 +163,8 @@
 .hti-microcopy {
 	text-align: center;
 	font-size: 0.8125rem;
-	color: var( --hti-muted );
-	margin-top: 1.25rem;
+	color: var( --hti-muted-light );
+	margin-top: 1.5rem;
 }
 
 /* --- Buttons --- */
@@ -147,56 +172,68 @@
 	display: inline-block;
 	font: inherit;
 	font-weight: 600;
-	padding: 0.75rem 1.5rem;
-	border-radius: 8px;
+	padding: 0.85rem 1.6rem;
+	border-radius: 12px;
 	border: 1.5px solid transparent;
 	cursor: pointer;
 	text-decoration: none;
-	transition: background 0.15s ease, border-color 0.15s ease;
+	transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 .hti-btn-primary {
 	background: var( --hti-primary );
 	color: #fff;
+	box-shadow: 0 2px 8px rgba( 28, 76, 124, 0.22 );
 }
 .hti-btn-primary:hover {
 	background: var( --hti-primary-hover );
 	color: #fff;
 }
 .hti-btn-secondary {
-	background: var( --hti-soft );
-	color: var( --hti-text );
-	border-color: var( --hti-primary );
+	background: var( --hti-white );
+	color: var( --hti-primary );
+	border-color: var( --hti-accent-border );
+}
+.hti-btn-secondary:hover {
+	background: #FFF1ED;
+	color: var( --hti-primary );
 }
 .hti-btn-ghost {
 	background: transparent;
-	color: var( --hti-text );
-	border-color: var( --hti-border );
+	color: var( --hti-muted-light );
+	border-color: #F0E2DC;
 }
 .hti-btn-ghost:hover {
-	border-color: var( --hti-primary );
+	background: var( --hti-white );
+	color: var( --hti-primary );
 }
 
 /* --- Processing --- */
 .hti-processing {
 	text-align: center;
-	padding: 3rem 1rem;
+	padding: clamp( 2.5rem, 8vw, 5rem ) 1rem;
 }
 .hti-spinner {
-	width: 44px;
-	height: 44px;
-	margin: 0 auto 1.25rem;
-	border: 4px solid var( --hti-border );
+	width: 56px;
+	height: 56px;
+	margin: 0 auto 1.75rem;
+	border: 4px solid #F4E6E0;
 	border-top-color: var( --hti-primary );
 	border-radius: 50%;
 	animation: hti-spin 0.9s linear infinite;
 }
 .hti-processing-main {
-	font-weight: 600;
-	margin: 0 0 0.25rem;
+	font-family: var( --hti-font-head );
+	font-weight: 700;
+	font-size: clamp( 1.5rem, 4vw, 2rem );
+	color: var( --hti-text );
+	margin: 0 0 0.5rem;
 }
 .hti-processing-sub {
 	color: var( --hti-muted );
+	font-size: 1.125rem;
 	margin: 0;
+	min-height: 1.4em;
+	transition: opacity 0.3s ease;
 }
 @keyframes hti-spin {
 	to { transform: rotate( 360deg ); }
@@ -210,7 +247,8 @@
 	text-align: center;
 	padding: 2rem 1rem;
 	background: var( --hti-caution-surface );
-	border-radius: 12px;
+	border: 1px solid var( --hti-caution-border );
+	border-radius: 16px;
 }
 .hti-error-box p {
 	margin: 0 0 1rem;
@@ -221,113 +259,197 @@
 	outline: none;
 }
 .hti-result-pretitle {
-	font-size: 1.25rem;
-	color: var( --hti-muted );
-	margin: 0 0 0.75rem;
+	font-weight: 600;
+	font-size: 0.875rem;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var( --hti-caution );
+	margin: 0 0 0.4rem;
 }
 .hti-archetype {
-	font-size: 1.75rem;
+	font-family: var( --hti-font-head );
+	font-size: clamp( 1.875rem, 5vw, 2.75rem );
 	font-weight: 700;
-	margin: 0 0 1rem;
+	line-height: 1.06;
+	letter-spacing: -0.02em;
+	margin: 0 0 1.5rem;
 }
 .hti-safety {
 	background: var( --hti-caution-surface );
-	border-left: 4px solid var( --hti-caution );
-	border-radius: 8px;
-	padding: 1rem 1.25rem;
-	margin-bottom: 1.25rem;
+	border: 1px solid var( --hti-caution-border );
+	border-radius: 16px;
+	padding: 1.4rem 1.6rem;
+	margin-bottom: 1.75rem;
 }
-.hti-safety p { margin: 0; }
+.hti-safety p { margin: 0; color: #7C5E22; line-height: 1.55; }
+
+/* Dark, non-dismissible disclaimer banner. */
 .hti-disclaimer {
-	background: var( --hti-info-surface );
-	border-radius: 10px;
+	background: var( --hti-dark );
+	color: #C9D6E3;
+	border-radius: 12px;
 	padding: 1rem 1.25rem;
-	margin-bottom: 1.5rem;
-	font-size: 0.9375rem;
+	margin-bottom: 1.75rem;
+	font-size: 0.875rem;
+	line-height: 1.55;
 }
 .hti-disclaimer p { margin: 0; }
+.hti-disclaimer strong { color: #fff; }
 
-.hti-alloc { margin-bottom: 1.75rem; }
-.hti-alloc h3 { margin: 0 0 1rem; }
+/* Allocation card */
+.hti-alloc {
+	background: var( --hti-white );
+	border: 1px solid var( --hti-border );
+	border-radius: 24px;
+	padding: clamp( 1.5rem, 4vw, 2.125rem );
+	margin-bottom: 1.5rem;
+}
+.hti-alloc h3 {
+	margin: 0 0 1.25rem;
+	font-family: var( --hti-font-body );
+	font-weight: 600;
+	font-size: 1.0625rem;
+	letter-spacing: 0;
+}
 .hti-alloc-grid {
-	display: grid;
-	gap: 1.5rem;
+	display: flex;
+	flex-wrap: wrap;
+	gap: clamp( 1.25rem, 4vw, 2.5rem );
 	align-items: center;
 }
 .hti-donut {
-	width: 180px;
-	height: 180px;
-	margin: 0 auto;
-	display: block;
+	position: relative;
+	width: 168px;
+	height: 168px;
+	flex: none;
+	border-radius: 50%;
+}
+.hti-donut__hole {
+	position: absolute;
+	inset: 30px;
+	background: var( --hti-white );
+	border-radius: 50%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+.hti-donut__cap {
+	font-weight: 600;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var( --hti-muted-light );
+}
+.hti-donut__sub {
+	font-family: var( --hti-font-head );
+	font-size: 15px;
+	color: var( --hti-text );
+	line-height: 1.1;
+	margin-top: 2px;
 }
 .hti-alloc-list {
 	list-style: none;
 	margin: 0;
 	padding: 0;
+	flex: 1 1 220px;
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
 }
 .hti-alloc-item {
 	display: flex;
 	align-items: center;
 	gap: 0.75rem;
-	padding: 0.5rem 0;
-	border-bottom: 1px solid var( --hti-border );
 }
-.hti-alloc-item:last-child { border-bottom: 0; }
 .hti-swatch {
-	width: 14px;
-	height: 14px;
-	border-radius: 3px;
+	width: 13px;
+	height: 13px;
+	border-radius: 4px;
 	flex: 0 0 auto;
 }
-.hti-alloc-name { flex: 1 1 auto; }
-.hti-alloc-pct { font-weight: 700; font-variant-numeric: tabular-nums; }
+.hti-alloc-name { flex: 1 1 auto; font-weight: 500; }
+.hti-alloc-pct { font-weight: 600; color: var( --hti-text ); font-variant-numeric: tabular-nums; }
 
-@media ( min-width: 560px ) {
-	.hti-alloc-grid {
-		grid-template-columns: 180px 1fr;
-	}
+/* Why this archetype */
+.hti-why {
+	background: #FFF8F3;
+	border: 1px solid var( --hti-accent-border );
+	border-radius: 16px;
+	padding: 1.5rem 1.65rem;
+	margin-bottom: 1.5rem;
+}
+.hti-why h3 {
+	margin: 0 0 0.5rem;
+	font-family: var( --hti-font-body );
+	font-weight: 600;
+	font-size: 0.9375rem;
+	color: var( --hti-primary );
+	letter-spacing: 0;
+}
+.hti-why p {
+	margin: 0;
+	font-family: var( --hti-font-head );
+	font-size: 1.0625rem;
+	line-height: 1.6;
+	color: var( --hti-body );
 }
 
-.hti-why, .hti-notes { margin-bottom: 1.75rem; }
-.hti-why h3, .hti-notes h3 { margin: 0 0 0.5rem; }
+/* Per-class notes */
+.hti-notes { margin-bottom: 1.5rem; }
+.hti-notes h3 {
+	margin: 0 0 0.75rem;
+	font-family: var( --hti-font-body );
+	font-weight: 600;
+	font-size: 0.8125rem;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var( --hti-muted-light );
+}
 .hti-note {
 	border: 1px solid var( --hti-border );
-	border-radius: 8px;
-	padding: 0.5rem 1rem;
-	margin-bottom: 0.5rem;
+	border-radius: 14px;
+	background: var( --hti-white );
+	padding: 0.85rem 1.25rem;
+	margin-bottom: 0.6rem;
 }
 .hti-note summary {
 	cursor: pointer;
 	font-weight: 600;
+	color: var( --hti-text );
 }
-.hti-note p { margin: 0.5rem 0 0; }
+.hti-note p { margin: 0.6rem 0 0; color: var( --hti-muted ); font-size: 0.9375rem; line-height: 1.55; }
 
 .hti-actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.75rem;
-	margin-top: 1.5rem;
+	margin-top: 2.25rem;
+	padding-top: 1.75rem;
+	border-top: 1px solid var( --hti-border );
 }
 .hti-fineprint {
 	font-size: 0.8125rem;
-	color: var( --hti-muted );
+	color: var( --hti-muted-light );
 	margin-top: 0.75rem;
 }
 .hti-noscript {
 	padding: 1rem;
 	background: var( --hti-caution-surface );
-	border-radius: 8px;
+	border: 1px solid var( --hti-caution-border );
+	border-radius: 12px;
 }
 
 /* --- Account: save flow + dashboard --- */
 .hti-save {
 	margin-top: 1.5rem;
-	padding: 1.25rem;
-	border: 1px solid var( --hti-border );
-	border-radius: 12px;
-	background: var( --hti-surface );
+	padding: 1.5rem;
+	border: 1px solid var( --hti-accent-border );
+	border-radius: 16px;
+	background: #FFF8F3;
 }
-.hti-save h3 { margin: 0 0 0.5rem; }
+.hti-save h3 { margin: 0 0 0.5rem; font-family: var( --hti-font-body ); font-weight: 600; }
 .hti-save-intro { margin: 0 0 1rem; color: var( --hti-muted ); }
 .hti-save-done { font-weight: 700; color: var( --hti-primary ); margin: 0 0 0.75rem; }
 
@@ -339,10 +461,11 @@
 }
 .hti-auth label { font-weight: 600; font-size: 0.9375rem; }
 .hti-auth input {
-	padding: 0.6rem 0.75rem;
+	padding: 0.7rem 0.85rem;
 	border: 1.5px solid var( --hti-border );
-	border-radius: 8px;
+	border-radius: 12px;
 	font: inherit;
+	background: var( --hti-white );
 }
 .hti-auth-actions {
 	display: flex;
@@ -383,10 +506,11 @@
 	padding: 0;
 }
 .hti-profile-item {
-	padding: 0.75rem 1rem;
+	padding: 0.9rem 1.1rem;
 	border: 1px solid var( --hti-border );
-	border-radius: 8px;
+	border-radius: 12px;
 	margin-bottom: 0.5rem;
+	background: var( --hti-white );
 }
 .hti-profile-date { color: var( --hti-muted ); }
 .hti-account-actions {

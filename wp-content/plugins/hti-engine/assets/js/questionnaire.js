@@ -23,6 +23,7 @@
 
 	var answers = load( 'hti_answers', {} );
 	var step = parseInt( load( 'hti_step', 0 ), 10 ) || 0;
+	var processingTimer = null;
 	if ( step > total - 1 ) {
 		step = total - 1;
 	}
@@ -60,6 +61,7 @@
 	}
 
 	function renderStep() {
+		stopProcessing();
 		var q = questions[ step ];
 		mount.innerHTML = '';
 
@@ -214,12 +216,23 @@
 		var rotating = el( 'p', { class: 'hti-processing-sub' }, ui.processing_1 );
 		box.appendChild( rotating );
 		mount.appendChild( box );
-		setTimeout( function () {
-			rotating.textContent = ui.processing_2;
-		}, 1500 );
+		var lines = [ ui.processing_1, ui.processing_2, ui.processing_3 ].filter( Boolean );
+		var i = 0;
+		processingTimer = window.setInterval( function () {
+			i = ( i + 1 ) % lines.length;
+			rotating.textContent = lines[ i ];
+		}, 1600 );
+	}
+
+	function stopProcessing() {
+		if ( processingTimer ) {
+			window.clearInterval( processingTimer );
+			processingTimer = null;
+		}
 	}
 
 	function renderError() {
+		stopProcessing();
 		mount.innerHTML = '';
 		var box = el( 'div', { class: 'hti-error-box', role: 'alert' } );
 		box.appendChild( el( 'p', null, ui.error ) );
@@ -289,6 +302,7 @@
 				return r.json();
 			} )
 			.then( function ( res ) {
+				stopProcessing();
 				window.HTIResult.render( mount, res, cfg.data );
 			} )
 			.catch( function () {
