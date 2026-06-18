@@ -203,7 +203,26 @@ class Settings {
 			}
 		}
 
+		// Brevo (transactional email).
+		$out['brevo_sender_email'] = isset( $input['brevo_sender_email'] ) ? sanitize_email( $input['brevo_sender_email'] ) : ( $out['brevo_sender_email'] ?? '' );
+		$out['brevo_sender_name']  = isset( $input['brevo_sender_name'] ) ? sanitize_text_field( $input['brevo_sender_name'] ) : ( $out['brevo_sender_name'] ?? '' );
+
+		if ( ! self::brevo_key_managed() ) {
+			$brevo = isset( $input['brevo_api_key'] ) ? trim( (string) $input['brevo_api_key'] ) : '';
+			if ( '' !== $brevo ) {
+				$out['brevo_api_key'] = $brevo;
+			}
+		}
+
 		return $out;
+	}
+
+	/**
+	 * Whether the Brevo key is provided by wp-config constant or env var.
+	 */
+	private static function brevo_key_managed(): bool {
+		return ( defined( 'HTI_BREVO_API_KEY' ) && '' !== (string) HTI_BREVO_API_KEY )
+			|| ( is_string( getenv( 'BREVO_API_KEY' ) ) && '' !== trim( (string) getenv( 'BREVO_API_KEY' ) ) );
 	}
 
 	/**
@@ -282,6 +301,36 @@ class Settings {
 							<p class="description"><?php echo esc_html__( 'Stored server-side, never sent to the browser. Prefer defining HTI_GEMINI_API_KEY in wp-config.php.', 'hti-engine' ); ?></p>
 						<?php endif; ?>
 						</td>
+					</tr>
+				</table>
+
+				<h2><?php echo esc_html__( 'Email (Brevo)', 'hti-engine' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="hti-brevo-key"><?php echo esc_html__( 'Brevo API key', 'hti-engine' ); ?></label></th>
+						<td>
+						<?php if ( self::brevo_key_managed() ) : ?>
+							<input id="hti-brevo-key" type="text" class="regular-text" value="" disabled
+								placeholder="<?php echo esc_attr__( 'Defined in wp-config.php / environment', 'hti-engine' ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Provided via wp-config.php or an environment variable (recommended).', 'hti-engine' ); ?></p>
+						<?php else : ?>
+							<input name="htinvest_settings[brevo_api_key]" id="hti-brevo-key" type="password" class="regular-text" autocomplete="off"
+								placeholder="<?php echo esc_attr( ! empty( $settings['brevo_api_key'] ) ? esc_attr__( '•••••• (leave blank to keep)', 'hti-engine' ) : '' ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Used for verification emails. Stored server-side, never sent to the browser. If empty, the site falls back to wp_mail().', 'hti-engine' ); ?></p>
+						<?php endif; ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-brevo-from"><?php echo esc_html__( 'Sender email', 'hti-engine' ); ?></label></th>
+						<td><input name="htinvest_settings[brevo_sender_email]" id="hti-brevo-from" type="email" class="regular-text"
+							value="<?php echo esc_attr( $settings['brevo_sender_email'] ?? '' ); ?>"
+							placeholder="<?php echo esc_attr( (string) get_option( 'admin_email' ) ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-brevo-name"><?php echo esc_html__( 'Sender name', 'hti-engine' ); ?></label></th>
+						<td><input name="htinvest_settings[brevo_sender_name]" id="hti-brevo-name" type="text" class="regular-text"
+							value="<?php echo esc_attr( $settings['brevo_sender_name'] ?? '' ); ?>"
+							placeholder="<?php echo esc_attr( (string) get_option( 'blogname' ) ); ?>" /></td>
 					</tr>
 				</table>
 

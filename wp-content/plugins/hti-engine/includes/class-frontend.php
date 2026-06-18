@@ -132,6 +132,7 @@ class Frontend {
 			'restBase'   => esc_url_raw( rest_url( 'htinvest/v1' ) ),
 			'nonce'      => wp_create_nonce( 'wp_rest' ),
 			'isLoggedIn' => is_user_logged_in(),
+			'locale'     => $locale,
 			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
 			'homeUrl'    => esc_url( home_url( '/' ) ),
 			'strings'    => self::account_strings( 'pt' === $locale ),
@@ -165,6 +166,9 @@ class Frontend {
 				'archetype'      => 'Arquétipo',
 				'error'          => 'Algo correu mal. Tenta novamente.',
 				'working'        => 'A processar…',
+				'check_email'    => 'Quase lá — confirma o teu email para guardar o perfil.',
+				'verified'       => 'Email confirmado — o teu perfil foi guardado.',
+				'verify_error'   => 'Esse link de confirmação é inválido ou expirou.',
 			);
 		}
 		return array(
@@ -186,6 +190,9 @@ class Frontend {
 			'archetype'      => 'Archetype',
 			'error'          => 'Something went wrong. Please try again.',
 			'working'        => 'Working…',
+			'check_email'    => 'Almost there — check your email to confirm and save your profile.',
+			'verified'       => 'Email confirmed — your profile is saved.',
+			'verify_error'   => 'That confirmation link is invalid or has expired.',
 		);
 	}
 

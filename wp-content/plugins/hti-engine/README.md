@@ -30,7 +30,9 @@ hti-engine/
 │   ├── class-pdf.php        # ✅ export PDF do resultado (Dompdf, fallback HTML)
 │   ├── class-rest.php       # ✅ /recommend · register · login · claim-profile · my-profiles · export · account
 │   ├── class-rate-limit.php # ✅ throttle por-IP nos endpoints públicos (M1)
-│   ├── class-cron.php       # ✅ limpeza diária de perfis anónimos antigos (L1)
+│   ├── class-mailer.php     # ✅ email transacional via Brevo (fallback wp_mail)
+│   ├── class-verification.php # ✅ double opt-in (verificação por email) (M2)
+│   ├── class-cron.php       # ✅ limpeza diária: perfis anónimos + contas não-verificadas (L1)
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
 ├── assets/                  # ✅ js/{questionnaire,result,account,consent}.js, css/{app,consent}.css
@@ -72,11 +74,12 @@ php wp-content/plugins/hti-engine/tests/test-prompt.php       # 11/11 ✓ (promp
 php wp-content/plugins/hti-engine/tests/test-settings.php     # 16/16 ✓ (normalização rejeita config inválida)
 php wp-content/plugins/hti-engine/tests/test-ratelimit.php    # 7/7  ✓ (throttle por-IP por ação)
 php wp-content/plugins/hti-engine/tests/test-cron.php         # 3/3  ✓ (cutoff de retenção)
+php wp-content/plugins/hti-engine/tests/test-mailer.php       # 6/6  ✓ (payload Brevo)
 ```
 
 ## Hardening de segurança
 - **Rate limiting (M1)** — `class-rate-limit.php`: throttle por-IP via transients no `/recommend` (15/10min), `/register` (5/h) e `/login` (10/15min) → **429** ao exceder. Filtros `hti_rate_limits` / `hti_client_ip` (ex.: Cloudflare).
-- **Anti-enumeração (M2)** — `/register` devolve mensagem neutra quando o email já existe (não confirma existência). *Eliminação total requer verificação por email — P1.*
+- **Anti-enumeração (M2) — double opt-in** — `/register` cria sempre uma conta **não-verificada** (ou reenvia) e responde **sempre o mesmo** ("verifica o teu email"), eliminando o oráculo de enumeração. O link emailado ativa a conta, autentica e faz **claim** do perfil pendente. Login bloqueado até verificar. Email via **Brevo** (`class-mailer.php`; chave `HTI_BREVO_API_KEY`/env/settings, em header, nunca ecoada) com **fallback `wp_mail`**.
 - **Limpeza RGPD (L1)** — `class-cron.php`: cron diário poda perfis **anónimos não-reclamados** com >90 dias (filtro `hti_profile_retention_days`); contas/claimed nunca tocados.
 
 ## Settings admin (req. 6.7 — `class-settings.php`)

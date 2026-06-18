@@ -103,5 +103,8 @@ class Cron {
 		foreach ( $ids as $id ) {
 			wp_delete_post( (int) $id, true );
 		}
+
+		// Also remove unverified accounts that were never confirmed.
+		Verification::prune_unverified();
 	}
 }
