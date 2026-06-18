@@ -177,6 +177,15 @@ class REST {
 	}
 
 	/**
+	 * Standard 429 response when a per-IP limit is hit.
+	 *
+	 * @return WP_Error
+	 */
+	private static function too_many(): WP_Error {
+		return new WP_Error( 'hti_rate_limited', __( 'Too many requests. Please wait a moment and try again.', 'hti-engine' ), array( 'status' => 429 ) );
+	}
+
+	/**
 	 * Require an authenticated user with a valid nonce (account/RGPD routes).
 	 *
 	 * @param WP_REST_Request $request Request.
@@ -196,6 +205,10 @@ class REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function recommend( WP_REST_Request $request ) {
+		if ( RateLimit::exceeded( 'recommend' ) ) {
+			return self::too_many();
+		}
+
 		$locale  = self::locale( (string) $request->get_param( 'locale' ) );
 		$answers = self::sanitize_answers( (array) $request->get_param( 'answers' ) );
 
@@ -252,6 +265,10 @@ class REST {
 			return new WP_REST_Response( array( 'user_id' => get_current_user_id(), 'nonce' => wp_create_nonce( 'wp_rest' ) ), 200 );
 		}
 
+		if ( RateLimit::exceeded( 'register' ) ) {
+			return self::too_many();
+		}
+
 		$email    = sanitize_email( (string) $request->get_param( 'email' ) );
 		$password = (string) $request->get_param( 'password' );
 
@@ -296,6 +313,10 @@ class REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function login_user( WP_REST_Request $request ) {
+		if ( RateLimit::exceeded( 'login' ) ) {
+			return self::too_many();
+		}
+
 		$user = wp_signon(
 			array(
 				'user_login'    => sanitize_text_field( (string) $request->get_param( 'login' ) ),

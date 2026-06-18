@@ -47,6 +47,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-prompt.php';
 require_once HTI_ENGINE_PATH . 'includes/class-gemini.php';
 require_once HTI_ENGINE_PATH . 'includes/class-explainer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-disclaimer.php';
+require_once HTI_ENGINE_PATH . 'includes/class-rate-limit.php';
 require_once HTI_ENGINE_PATH . 'includes/class-rest.php';
 require_once HTI_ENGINE_PATH . 'includes/class-questions.php';
 require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
