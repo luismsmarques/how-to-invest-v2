@@ -52,7 +52,7 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
 	position: sticky;
 	top: 0;
 	z-index: 40;
-	background: rgba( 255, 246, 241, 0.86 );
+	background: rgba( 244, 246, 249, 0.86 );
 	-webkit-backdrop-filter: blur( 12px );
 	backdrop-filter: blur( 12px );
 	border-bottom: 1px solid var( --wp--preset--color--border );
