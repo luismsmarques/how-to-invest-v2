@@ -217,11 +217,15 @@ class Seeder {
 	 * @return int New PT post id, or 0 on failure.
 	 */
 	private static function insert_translation( string $type, array $entry, array $pt_data, int $en_id, string $en, string $pt ): int {
+		// Re-point internal glossary links to the Portuguese translations'
+		// permalinks (the PT glossary posts are seeded before the articles).
+		$content = self::localize_links( (string) ( $pt_data['content'] ?? '' ), $pt );
+
 		$postarr = array(
 			'post_type'    => $type,
 			'post_status'  => 'publish',
 			'post_title'   => $pt_data['title'],
-			'post_content' => $pt_data['content'] ?? '',
+			'post_content' => $content,
 			'post_excerpt' => $pt_data['excerpt'] ?? '',
 		);
 
@@ -253,6 +257,42 @@ class Seeder {
 		}
 
 		return $pt_id;
+	}
+
+	/**
+	 * Rewrite internal glossary links in a body of content to point at the
+	 * Portuguese translations' permalinks. Matches any
+	 * `…/investing-glossary/<slug>/` URL and swaps it for the PT post's
+	 * permalink (resolved through Polylang). Slugs with no PT translation are
+	 * left untouched.
+	 *
+	 * @param string $content Block/HTML content.
+	 * @param string $pt      Portuguese language slug.
+	 */
+	private static function localize_links( string $content, string $pt ): string {
+		if ( '' === $content || ! function_exists( 'pll_get_post' ) ) {
+			return $content;
+		}
+
+		return (string) preg_replace_callback(
+			'#https?://[^"\'\s]*?/investing-glossary/([a-z0-9-]+)/#i',
+			static function ( array $m ) use ( $pt ): string {
+				$glossary = get_page_by_path( $m[1], OBJECT, 'glossary' );
+				if ( ! $glossary instanceof \WP_Post ) {
+					return $m[0];
+				}
+				// pll_get_post returns the PT post for an EN id, or the same id
+				// when the matched post is already the PT one — either way the
+				// permalink we want is the Portuguese one.
+				$pt_id = pll_get_post( (int) $glossary->ID, $pt );
+				if ( ! $pt_id ) {
+					return $m[0];
+				}
+				$url = get_permalink( (int) $pt_id );
+				return $url ? $url : $m[0];
+			},
+			$content
+		);
 	}
 
 	/**
