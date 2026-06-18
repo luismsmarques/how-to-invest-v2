@@ -30,6 +30,7 @@ define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'HTI_ENGINE_URL', plugin_dir_url( __FILE__ ) );
 
 require_once HTI_ENGINE_PATH . 'includes/class-cpt.php';
+require_once HTI_ENGINE_PATH . 'includes/class-taxonomy.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seo.php';
 require_once HTI_ENGINE_PATH . 'includes/class-redirects.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seeder.php';
@@ -43,8 +44,9 @@ function load_textdomain(): void {
 add_action( 'init', __NAMESPACE__ . '\\load_textdomain', 0 );
 
 /**
- * Register custom post types on every request.
+ * Register custom taxonomies (before the CPTs) and post types on every request.
  */
+add_action( 'init', array( Taxonomy::class, 'register' ), 9 );
 add_action( 'init', array( CPT::class, 'register' ) );
 
 /**
@@ -84,6 +86,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
  * archive/single permalinks (/investing-glossary/, /financial-news/) resolve immediately.
  */
 function activate(): void {
+	Taxonomy::register();
 	CPT::register();
 	flush_rewrite_rules();
 }
