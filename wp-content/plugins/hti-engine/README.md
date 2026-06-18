@@ -17,9 +17,12 @@ hti-engine/
 │   ├── class-seeder.php     # ✅ conteúdo seed: termos de glossário + páginas (1.5)
 │   ├── class-config.php     # ✅ scoring + arquétipos curados (editáveis via options)
 │   ├── class-engine.php     # ✅ regras determinísticas (pontuação→arquétipo→alocação→travas)
+│   ├── class-fallback.php   # ✅ textos curados/fallback por arquétipo/classe/trava (EN+PT)
+│   ├── class-validator.php  # ✅ schema + validações semânticas (rejeita → fallback)
+│   ├── class-prompt.php     # ✅ system + user prompt (Prompt §2–3)
+│   ├── class-gemini.php     # ✅ chamada server-side ao Gemini (chave em header, retry→fallback)
+│   ├── class-explainer.php  # ✅ orquestra Gemini→validação→fallback
 │   ├── class-rest.php       # ⬜ endpoints /recommend, /claim-profile, /my-profiles, /account, /export
-│   ├── class-gemini.php     # ⬜ chamada server-side ao Gemini + validação schema
-│   ├── class-fallback.php   # ⬜ textos pré-escritos por arquétipo/idioma
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
 ├── assets/                  # ⬜ js/questionnaire.js, js/result.js, css/
@@ -43,6 +46,22 @@ hti-engine/
 php wp-content/plugins/hti-engine/tests/test-engine.php
 ```
 13 cenários (1 por arquétipo, 1 por trava, crypto concedida/bloqueada, ESG-é-lente) + fronteiras dos thresholds + determinismo + input inválido. Corre sem WordPress/PHPUnit; sai com código ≠ 0 em falha. **Estado: 85/85 ✓.**
+
+## Camada de explicação (LLM só explica)
+
+**Regra de ouro:** o LLM nunca decide. Recebe a decisão como facto e produz só texto; se falhar ou a validação rejeitar, entra o fallback curado. A alocação numérica sai sempre.
+
+- **`class-prompt.php`** — system prompt (regras absolutas) + user prompt com a alocação fixa, arquétipo, travas, respostas e notas curadas.
+- **`class-gemini.php`** — `generateContent` (JSON mode, temperatura 0.3, timeout 8s, 1 retry). Chave via `HTI_GEMINI_API_KEY` (wp-config) / env `GEMINI_API_KEY` / option, enviada em **header** `x-goog-api-key` — **nunca** no cliente nem nos logs.
+- **`class-validator.php`** — schema (campos/limites) + semântica: sem instrumentos nomeados (blocklist + regex de tickers), sem percentagens fora da alocação, `class_notes` == classes da alocação, idioma correto, `safety_message` presente se trava disparou.
+- **`class-fallback.php`** — textos pré-escritos EN+PT (Textos §2–§4), validados.
+- **`class-explainer.php`** — orquestra: Gemini → validação → senão fallback; devolve `source` (`llm`/`fallback`).
+
+### Testes
+```
+php wp-content/plugins/hti-engine/tests/test-explainer.php   # 17/17 ✓ (fallback válido + validador rejeita)
+php wp-content/plugins/hti-engine/tests/test-prompt.php       # 11/11 ✓ (prompt carrega a decisão fixa)
+```
 
 ## Estado atual (Fase 1 — Fundação SEO)
 

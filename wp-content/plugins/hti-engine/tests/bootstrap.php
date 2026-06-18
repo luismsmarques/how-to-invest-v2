@@ -26,3 +26,6 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 
 require_once __DIR__ . '/../includes/class-config.php';
 require_once __DIR__ . '/../includes/class-engine.php';
+require_once __DIR__ . '/../includes/class-fallback.php';
+require_once __DIR__ . '/../includes/class-validator.php';
+require_once __DIR__ . '/../includes/class-prompt.php';
