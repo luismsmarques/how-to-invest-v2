@@ -25,7 +25,7 @@ hti-engine/
 │   ├── class-disclaimer.php # ✅ disclaimer contextual versionado (Textos §1.1)
 │   ├── class-questions.php  # ✅ definição do questionário (EN+PT) p/ o frontend
 │   ├── class-frontend.php   # ✅ shortcode [hti_questionnaire] + enqueue + noindex
-│   ├── class-rest.php       # ◑ /recommend ✅ · claim-profile/my-profiles/account/export ⬜
+│   ├── class-rest.php       # ✅ /recommend · claim-profile · my-profiles · export · account (RGPD)
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
 ├── assets/                  # ✅ js/questionnaire.js, js/result.js, css/app.css
@@ -76,6 +76,14 @@ Liga o motor ao mundo. Protegido por **nonce** (`X-WP-Nonce`, válido também pa
 4. Devolve o contrato (Modelo §5): `profile_id`, `session_token`, `archetype`, `allocation`, `explanation`, `safety_flags`, `disclaimer` contextual.
 
 A decisão numérica **nunca** depende do LLM: erros do Gemini caem em fallback e devolvem 200. Chave do Gemini nunca no cliente. CPT `htinvest_profile` é privado, não indexável, fora do REST default.
+
+### Conta + RGPD (Fase 3) — todas autenticadas (login + nonce)
+- **`POST /claim-profile`** — liga um perfil anónimo (por `session_token`) à conta atual: define `user_id`/autor e **limpa o `session_token`**. Identidade só por esta ação consciente (minimização). 404 se não existir, 409 se já for de outra conta.
+- **`GET /my-profiles`** — resumos dos perfis do utilizador (arquétipo, alocação, travas, data).
+- **`GET /export`** — **(RGPD, P0)** devolve **todos** os dados do utilizador (conta + perfis completos), com `Content-Disposition` para download.
+- **`DELETE /account`** — **(RGPD, P0)** exige `confirm: true`; apaga **em cascata** todos os perfis (e meta) e depois a conta (`wp_delete_user`). Irreversível.
+
+Minimização: perfis anónimos não têm identidade (`user_id` nulo); logs sem PII; contas nativas (`wp_users`).
 
 ## Frontend (E5–E7 — `class-frontend.php` + `assets/`)
 

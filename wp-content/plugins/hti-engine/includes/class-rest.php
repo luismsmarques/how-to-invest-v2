@@ -62,6 +62,62 @@ class REST {
 				),
 			)
 		);
+
+		// Link an anonymous profile (by session token) to the logged-in account.
+		register_rest_route(
+			self::NAMESPACE,
+			'/claim-profile',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'claim_profile' ),
+				'permission_callback' => array( __CLASS__, 'check_auth' ),
+				'args'                => array(
+					'session_token' => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+				),
+			)
+		);
+
+		// List the authenticated user's saved profiles (dashboard).
+		register_rest_route(
+			self::NAMESPACE,
+			'/my-profiles',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'my_profiles' ),
+				'permission_callback' => array( __CLASS__, 'check_auth' ),
+			)
+		);
+
+		// RGPD: export all of the user's data (access/portability).
+		register_rest_route(
+			self::NAMESPACE,
+			'/export',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'export' ),
+				'permission_callback' => array( __CLASS__, 'check_auth' ),
+			)
+		);
+
+		// RGPD: delete account + all profiles/results in cascade (erasure).
+		register_rest_route(
+			self::NAMESPACE,
+			'/account',
+			array(
+				'methods'             => 'DELETE',
+				'callback'            => array( __CLASS__, 'delete_account' ),
+				'permission_callback' => array( __CLASS__, 'check_auth' ),
+				'args'                => array(
+					'confirm' => array(
+						'type'     => 'boolean',
+						'required' => true,
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -76,6 +132,19 @@ class REST {
 			return new WP_Error( 'hti_forbidden', __( 'Invalid or missing nonce.', 'hti-engine' ), array( 'status' => 403 ) );
 		}
 		return true;
+	}
+
+	/**
+	 * Require an authenticated user with a valid nonce (account/RGPD routes).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return true|WP_Error
+	 */
+	public static function check_auth( WP_REST_Request $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'hti_unauthorized', __( 'You must be signed in.', 'hti-engine' ), array( 'status' => 401 ) );
+		}
+		return self::check_nonce( $request );
 	}
 
 	/**
@@ -127,6 +196,184 @@ class REST {
 				'disclaimer'    => Disclaimer::contextual( $locale ),
 			),
 			200
+		);
+	}
+
+	/**
+	 * POST /claim-profile — attach an anonymous profile to the current user.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function claim_profile( WP_REST_Request $request ) {
+		$token = sanitize_text_field( (string) $request->get_param( 'session_token' ) );
+		if ( '' === $token ) {
+			return new WP_Error( 'hti_invalid', __( 'Missing session token.', 'hti-engine' ), array( 'status' => 422 ) );
+		}
+
+		$user_id = get_current_user_id();
+
+		$found = get_posts(
+			array(
+				'post_type'   => 'htinvest_profile',
+				'post_status' => 'any',
+				'numberposts' => 1,
+				'fields'      => 'ids',
+				'meta_key'    => 'hti_session_token', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'meta_value'  => $token, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			)
+		);
+		if ( empty( $found ) ) {
+			return new WP_Error( 'hti_not_found', __( 'No matching profile to claim.', 'hti-engine' ), array( 'status' => 404 ) );
+		}
+
+		$profile_id = (int) $found[0];
+		$owner      = (int) get_post_meta( $profile_id, 'hti_user_id', true );
+		if ( $owner && $owner !== $user_id ) {
+			return new WP_Error( 'hti_conflict', __( 'This profile is already linked to another account.', 'hti-engine' ), array( 'status' => 409 ) );
+		}
+
+		// Identity is set only by this conscious action (data minimization).
+		wp_update_post(
+			array(
+				'ID'          => $profile_id,
+				'post_author' => $user_id,
+			)
+		);
+		update_post_meta( $profile_id, 'hti_user_id', $user_id );
+		delete_post_meta( $profile_id, 'hti_session_token' );
+
+		return new WP_REST_Response(
+			array(
+				'profile_id' => $profile_id,
+				'claimed'    => true,
+			),
+			200
+		);
+	}
+
+	/**
+	 * GET /my-profiles — summaries of the user's saved profiles.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function my_profiles( WP_REST_Request $request ) {
+		$profiles = array();
+		foreach ( self::user_profile_ids( get_current_user_id() ) as $id ) {
+			$profiles[] = array(
+				'profile_id'   => $id,
+				'archetype'    => array(
+					'id'    => (int) get_post_meta( $id, 'hti_archetype_id', true ),
+					'label' => (string) get_post_meta( $id, 'hti_archetype_label', true ),
+				),
+				'allocation'   => get_post_meta( $id, 'hti_allocation', true ),
+				'safety_flags' => get_post_meta( $id, 'hti_safety_flags', true ),
+				'locale'       => (string) get_post_meta( $id, 'hti_locale', true ),
+				'generated_at' => (string) get_post_meta( $id, 'hti_generated_at', true ),
+			);
+		}
+
+		return new WP_REST_Response( array( 'profiles' => $profiles ), 200 );
+	}
+
+	/**
+	 * GET /export — all of the user's data (RGPD access/portability).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function export( WP_REST_Request $request ) {
+		$user = wp_get_current_user();
+
+		$profiles = array();
+		foreach ( self::user_profile_ids( $user->ID ) as $id ) {
+			$profiles[] = array(
+				'profile_id'         => $id,
+				'created_at'         => get_post_field( 'post_date_gmt', $id ),
+				'locale'             => get_post_meta( $id, 'hti_locale', true ),
+				'answers'            => get_post_meta( $id, 'hti_answers', true ),
+				'score'              => get_post_meta( $id, 'hti_score', true ),
+				'archetype_id'       => get_post_meta( $id, 'hti_archetype_id', true ),
+				'archetype_label'    => get_post_meta( $id, 'hti_archetype_label', true ),
+				'allocation'         => get_post_meta( $id, 'hti_allocation', true ),
+				'safety_flags'       => get_post_meta( $id, 'hti_safety_flags', true ),
+				'explanation'        => get_post_meta( $id, 'hti_explanation', true ),
+				'explanation_source' => get_post_meta( $id, 'hti_explanation_source', true ),
+				'consent'            => get_post_meta( $id, 'hti_consent', true ),
+				'engine_version'     => get_post_meta( $id, 'hti_engine_version', true ),
+				'disclaimer_version' => get_post_meta( $id, 'hti_disclaimer_version', true ),
+				'generated_at'       => get_post_meta( $id, 'hti_generated_at', true ),
+			);
+		}
+
+		$data = array(
+			'exported_at' => gmdate( 'c' ),
+			'account'     => array(
+				'id'           => $user->ID,
+				'email'        => $user->user_email,
+				'display_name' => $user->display_name,
+				'registered'   => $user->user_registered,
+			),
+			'profiles'    => $profiles,
+		);
+
+		$response = new WP_REST_Response( $data, 200 );
+		$response->header( 'Content-Disposition', 'attachment; filename="howtoinvest-data-export.json"' );
+		return $response;
+	}
+
+	/**
+	 * DELETE /account — erase account + profiles + results (RGPD, irreversible).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function delete_account( WP_REST_Request $request ) {
+		if ( true !== rest_sanitize_boolean( $request->get_param( 'confirm' ) ) ) {
+			return new WP_Error( 'hti_unconfirmed', __( 'Deletion must be explicitly confirmed.', 'hti-engine' ), array( 'status' => 400 ) );
+		}
+
+		$user_id = get_current_user_id();
+
+		// Cascade: remove every profile (and its meta) first.
+		foreach ( self::user_profile_ids( $user_id ) as $id ) {
+			wp_delete_post( $id, true );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/user.php';
+		$deleted = wp_delete_user( $user_id );
+
+		if ( ! $deleted ) {
+			return new WP_Error( 'hti_delete_failed', __( 'Could not delete the account.', 'hti-engine' ), array( 'status' => 500 ) );
+		}
+
+		return new WP_REST_Response( array( 'deleted' => true ), 200 );
+	}
+
+	/**
+	 * IDs of all profiles owned by a user.
+	 *
+	 * @param int $user_id User id.
+	 * @return list<int>
+	 */
+	private static function user_profile_ids( int $user_id ): array {
+		if ( ! $user_id ) {
+			return array();
+		}
+		return array_map(
+			'intval',
+			get_posts(
+				array(
+					'post_type'   => 'htinvest_profile',
+					'post_status' => 'any',
+					'author'      => $user_id,
+					'numberposts' => -1,
+					'fields'      => 'ids',
+					'orderby'     => 'date',
+					'order'       => 'DESC',
+				)
+			)
 		);
 	}
 
