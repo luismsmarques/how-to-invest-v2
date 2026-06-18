@@ -27,6 +27,7 @@ hti-engine/
 │   ├── class-frontend.php   # ✅ shortcode [hti_questionnaire] + enqueue + noindex
 │   ├── class-settings.php   # ✅ admin: chave Gemini + scoring/arquétipos (req. 6.7)
 │   ├── class-consent.php    # ✅ banner de consentimento (E8, RGPD) + gate analytics
+│   ├── class-analytics.php  # ✅ Google Analytics (GA4) carregado só após consentimento
 │   ├── class-pdf.php        # ✅ export PDF do resultado (Dompdf, fallback HTML)
 │   ├── class-rest.php       # ✅ /recommend · register · login · claim-profile · my-profiles · export · account
 │   ├── class-rate-limit.php # ✅ throttle por-IP nos endpoints públicos (M1)
@@ -127,6 +128,9 @@ Banner próprio, sem dependências, **privacy-first**:
 - Botões: **Aceitar** · **Recusar não-essenciais** · **Personalizar** (toggle de analítica) + link à política de privacidade. EN+PT, acessível.
 - Gate **server-side**: `Consent::analytics_allowed()` (lê o cookie) + filtro `hti_analytics_allowed` — usa-o para condicionar qualquer script de analítica.
 - Gate **client-side**: `window.HTIConsent.get()/open()` + evento `hti-consent-changed`. O questionário já envia o `consent.analytics` real (do cookie) ao `/recommend`.
+
+### Google Analytics (GA4 — `class-analytics.php` + `analytics.js`)
+O `gtag.js` **não** carrega até o utilizador aceitar a analítica no banner (invariante RGPD: nada de trackers antes do consentimento). O `analytics.js` injeta o GA só quando o consentimento é dado e reage ao evento `hti-consent-changed` (carrega de imediato ao aceitar, sem reload). ID configurável em **Settings → Analytics** ou pelo filtro `hti_ga_id` (default `G-QWST7PZNBT`); vazio desativa. `anonymize_ip` ativo.
 
 ## Export PDF (`class-pdf.php`)
 

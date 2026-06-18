@@ -214,6 +214,9 @@ class Settings {
 			}
 		}
 
+		// Analytics.
+		$out['ga_id'] = isset( $input['ga_id'] ) ? sanitize_text_field( $input['ga_id'] ) : ( $out['ga_id'] ?? '' );
+
 		// Google OAuth.
 		$out['google_client_id'] = isset( $input['google_client_id'] ) ? sanitize_text_field( $input['google_client_id'] ) : ( $out['google_client_id'] ?? '' );
 		if ( ! self::google_secret_managed() ) {
@@ -348,6 +351,17 @@ class Settings {
 						<td><input name="htinvest_settings[brevo_sender_name]" id="hti-brevo-name" type="text" class="regular-text"
 							value="<?php echo esc_attr( $settings['brevo_sender_name'] ?? '' ); ?>"
 							placeholder="<?php echo esc_attr( (string) get_option( 'blogname' ) ); ?>" /></td>
+					</tr>
+				</table>
+
+				<h2><?php echo esc_html__( 'Analytics (Google Analytics)', 'hti-engine' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="hti-ga"><?php echo esc_html__( 'GA4 Measurement ID', 'hti-engine' ); ?></label></th>
+						<td><input name="htinvest_settings[ga_id]" id="hti-ga" type="text" class="regular-text"
+							value="<?php echo esc_attr( $settings['ga_id'] ?? '' ); ?>"
+							placeholder="<?php echo esc_attr( Analytics::measurement_id() ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Loaded only after the visitor accepts analytics in the consent banner. Leave blank to disable.', 'hti-engine' ); ?></p></td>
 					</tr>
 				</table>
 

@@ -56,6 +56,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-questions.php';
 require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
+require_once HTI_ENGINE_PATH . 'includes/class-analytics.php';
 require_once HTI_ENGINE_PATH . 'includes/class-pdf.php';
 require_once HTI_ENGINE_PATH . 'includes/class-cron.php';
 
@@ -112,6 +113,11 @@ Settings::init();
  * Cookie consent banner (E8, RGPD): privacy-first, analytics opt-in.
  */
 Consent::init();
+
+/**
+ * Google Analytics — loaded only after analytics consent is granted.
+ */
+Analytics::init();
 
 /**
  * PDF export of a saved result (admin-post handler).
