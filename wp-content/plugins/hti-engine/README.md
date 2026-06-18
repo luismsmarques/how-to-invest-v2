@@ -10,20 +10,72 @@ O produto interativo do HowToInvest. Ver `docs/Stack_Concreta §4` para a estrut
 hti-engine/
 ├── hti-engine.php          # bootstrap, hooks, ativação (flush rewrite)
 ├── includes/
-│   ├── class-cpt.php        # ✅ CPTs: glossary + news (públicos) · htinvest_profile (Fase 2)
+│   ├── class-cpt.php        # ✅ CPTs: glossary + news (públicos) · htinvest_profile (privado)
 │   ├── class-taxonomy.php   # ✅ taxonomias: glossary_topic + news_category (internal linking)
 │   ├── class-seo.php        # ✅ JSON-LD: DefinedTerm (glossary) + Article/NewsArticle (fallback)
 │   ├── class-redirects.php  # ✅ 301s dos URLs antigos do Base44 (mapa filtrável)
 │   ├── class-seeder.php     # ✅ conteúdo seed: termos de glossário + páginas (1.5)
-│   ├── class-rest.php       # ⬜ endpoints /recommend, /claim-profile, /my-profiles, /account, /export
-│   ├── class-engine.php     # ⬜ regras determinísticas (pontuação→arquétipo→alocação)
-│   ├── class-gemini.php     # ⬜ chamada server-side ao Gemini + validação schema
-│   ├── class-fallback.php   # ⬜ textos pré-escritos por arquétipo/idioma
+│   ├── class-config.php     # ✅ scoring + arquétipos curados (editáveis via options)
+│   ├── class-engine.php     # ✅ regras determinísticas (pontuação→arquétipo→alocação→travas)
+│   ├── class-fallback.php   # ✅ textos curados/fallback por arquétipo/classe/trava (EN+PT)
+│   ├── class-validator.php  # ✅ schema + validações semânticas (rejeita → fallback)
+│   ├── class-prompt.php     # ✅ system + user prompt (Prompt §2–3)
+│   ├── class-gemini.php     # ✅ chamada server-side ao Gemini (chave em header, retry→fallback)
+│   ├── class-explainer.php  # ✅ orquestra Gemini→validação→fallback
+│   ├── class-disclaimer.php # ✅ disclaimer contextual versionado (Textos §1.1)
+│   ├── class-rest.php       # ◑ /recommend ✅ · claim-profile/my-profiles/account/export ⬜
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
 ├── assets/                  # ⬜ js/questionnaire.js, js/result.js, css/
+├── tests/                   # ✅ matriz do motor (bootstrap.php + test-engine.php)
 └── languages/               # ✅ hti-engine.pot + hti-engine-pt_PT.l10n.php
 ```
+
+## Motor de recomendação (Fase 2 — `class-engine.php` + `class-config.php`)
+
+**Regra de ouro:** as regras decidem, o LLM só explica. O `Engine` é **PHP puro** (sem WordPress, sem LLM) → totalmente determinístico e testável.
+
+- **Scoring P1–P5** com pesos de `htinvest_scoring` (default em `Config`). Soma 0–27.
+- **Arquétipo (1–5)** por thresholds: `0–5→1, 6–11→2, 12–17→3, 18–23→4, 24–27→5`.
+- **Alocação** por classe (`global_equity, bonds, reits_alt, cash, crypto`), dentro dos intervalos curados de `htinvest_archetypes`, **soma sempre 100**.
+- **Travas:** `no_emergency_fund` (P6=não), `horizon_override` (P1=3y + score alto → limita a arquétipo 2), `crypto_blocked` (crypto pedida mas arquétipo <3 ou sem fundo de emergência).
+- **Crypto** só com P8=sim **e** arquétipo ≥3 **e** sem trava 1; fatia pequena fixa (2%) no extremo inferior.
+- `engine_version` gravado em cada resultado (auditoria).
+
+### Testes (matriz repetível — Criterios §1)
+```
+php wp-content/plugins/hti-engine/tests/test-engine.php
+```
+13 cenários (1 por arquétipo, 1 por trava, crypto concedida/bloqueada, ESG-é-lente) + fronteiras dos thresholds + determinismo + input inválido. Corre sem WordPress/PHPUnit; sai com código ≠ 0 em falha. **Estado: 85/85 ✓.**
+
+## Camada de explicação (LLM só explica)
+
+**Regra de ouro:** o LLM nunca decide. Recebe a decisão como facto e produz só texto; se falhar ou a validação rejeitar, entra o fallback curado. A alocação numérica sai sempre.
+
+- **`class-prompt.php`** — system prompt (regras absolutas) + user prompt com a alocação fixa, arquétipo, travas, respostas e notas curadas.
+- **`class-gemini.php`** — `generateContent` (JSON mode, temperatura 0.3, timeout 8s, 1 retry). Chave via `HTI_GEMINI_API_KEY` (wp-config) / env `GEMINI_API_KEY` / option, enviada em **header** `x-goog-api-key` — **nunca** no cliente nem nos logs.
+- **`class-validator.php`** — schema (campos/limites) + semântica: sem instrumentos nomeados (blocklist + regex de tickers), sem percentagens fora da alocação, `class_notes` == classes da alocação, idioma correto, `safety_message` presente se trava disparou.
+- **`class-fallback.php`** — textos pré-escritos EN+PT (Textos §2–§4), validados.
+- **`class-explainer.php`** — orquestra: Gemini → validação → senão fallback; devolve `source` (`llm`/`fallback`).
+
+### Testes
+```
+php wp-content/plugins/hti-engine/tests/test-explainer.php   # 17/17 ✓ (fallback válido + validador rejeita)
+php wp-content/plugins/hti-engine/tests/test-prompt.php       # 11/11 ✓ (prompt carrega a decisão fixa)
+```
+
+## REST — `POST /wp-json/htinvest/v1/recommend`
+
+Liga o motor ao mundo. Protegido por **nonce** (`X-WP-Nonce`, válido também para sessões anónimas).
+
+1. Sanitiza respostas → `Engine::recommend` (inválido → **422**).
+2. `Explainer::explain` (LLM→validação→fallback; nunca quebra).
+3. Persiste um **perfil anónimo** (`htinvest_profile`, privado) com respostas, score, arquétipo, alocação, explicação (+`source`), `safety_flags`, consent, `engine_version`, `disclaimer_version`, `generated_at`.
+4. Devolve o contrato (Modelo §5): `profile_id`, `session_token`, `archetype`, `allocation`, `explanation`, `safety_flags`, `disclaimer` contextual.
+
+A decisão numérica **nunca** depende do LLM: erros do Gemini caem em fallback e devolvem 200. Chave do Gemini nunca no cliente. CPT `htinvest_profile` é privado, não indexável, fora do REST default.
+
+> A seguir: questionário multi-step + resultado (JS ligeiro) e as rotas de conta/RGPD (claim-profile, my-profiles, export, account).
 
 ## Estado atual (Fase 1 — Fundação SEO)
 

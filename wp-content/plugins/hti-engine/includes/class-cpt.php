@@ -24,6 +24,37 @@ class CPT {
 	public static function register(): void {
 		self::register_glossary();
 		self::register_news();
+		self::register_profile();
+	}
+
+	/**
+	 * Investor profile — PRIVATE. Stores anonymous/account questionnaire
+	 * submissions and their saved result. Never public, never indexable, never
+	 * exposed via the default REST API (we use our own controlled endpoints).
+	 * See docs/Modelo_Dados §2.
+	 */
+	private static function register_profile(): void {
+		register_post_type(
+			'htinvest_profile',
+			array(
+				'label'               => __( 'Investor profiles', 'hti-engine' ),
+				'public'              => false,
+				'publicly_queryable'  => false,
+				'exclude_from_search' => true,
+				'show_ui'             => false,
+				'show_in_menu'        => false,
+				'show_in_nav_menus'   => false,
+				'show_in_rest'        => false,
+				'has_archive'         => false,
+				'hierarchical'        => false,
+				'rewrite'             => false,
+				'query_var'           => false,
+				'can_export'          => true,
+				'supports'            => array( 'title', 'custom-fields' ),
+				'capability_type'     => 'post',
+				'map_meta_cap'        => true,
+			)
+		);
 	}
 
 	/**
