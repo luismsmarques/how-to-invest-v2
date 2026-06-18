@@ -1,0 +1,177 @@
+# Translation template for the HTI Engine plugin.
+# Copyright (C) 2026 HowToInvest
+# This file is distributed under the same license as the HTI Engine plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: HTI Engine 0.1.0\n"
+"Report-Msgid-Bugs-To: https://howtoinvest.pro/\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language-Team: HowToInvest <lm@atlasinvencivel.pt>\n"
+"X-Domain: hti-engine\n"
+
+#: includes/class-cpt.php
+msgctxt "post type general name"
+msgid "Glossary"
+msgstr ""
+
+#: includes/class-cpt.php
+msgctxt "post type singular name"
+msgid "Glossary term"
+msgstr ""
+
+#: includes/class-cpt.php
+msgctxt "admin menu"
+msgid "Glossary"
+msgstr ""
+
+#: includes/class-cpt.php
+msgctxt "add new on admin bar"
+msgid "Glossary term"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Add new"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Add new term"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "New term"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Edit term"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "View term"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "View glossary"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "All terms"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Search glossary"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "No terms found."
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "No terms found in Trash."
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Term published."
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Term updated."
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Educational glossary of investing terms."
+msgstr ""
+
+#: includes/class-cpt.php
+msgctxt "post type general name"
+msgid "News"
+msgstr ""
+
+#: includes/class-cpt.php
+msgctxt "post type singular name"
+msgid "News article"
+msgstr ""
+
+#: includes/class-cpt.php
+msgctxt "admin menu"
+msgid "News"
+msgstr ""
+
+#: includes/class-cpt.php
+msgctxt "add new on admin bar"
+msgid "News article"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Add new article"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "New article"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Edit article"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "View article"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "View news"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "All articles"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Search news"
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "No articles found."
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "No articles found in Trash."
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Article published."
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Article updated."
+msgstr ""
+
+#: includes/class-cpt.php
+msgid "Educational news and updates."
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "HowToInvest — Seed content"
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "Seed content"
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "Create the starter glossary terms and institutional pages. Existing entries (matched by slug) are skipped, so your edits are safe."
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "Run seeder"
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "You do not have permission to do this."
+msgstr ""
+
+#: includes/class-seeder.php
+#. translators: 1: glossary terms created, 2: pages created, 3: entries skipped.
+msgid "Seeding complete: %1$d glossary terms and %2$d pages created, %3$d skipped (already existed)."
+msgstr ""
