@@ -12,12 +12,12 @@
  */
 
 ?>
-<!-- wp:group {"layout":{"type":"constrained"}} -->
-<div class="wp-block-group"><!-- wp:paragraph {"fontSize":"small","textColor":"primary","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.08em"}}} -->
-<p class="has-primary-color has-text-color has-small-font-size" style="letter-spacing:0.08em;text-transform:uppercase"><?php echo esc_html__( 'Glossary', 'howtoinvest' ); ?></p>
+<!-- wp:group {"className":"hti-term","layout":{"type":"constrained"}} -->
+<div class="wp-block-group hti-term"><!-- wp:paragraph {"className":"hti-eyebrow"} -->
+<p class="hti-eyebrow"><a href="<?php echo esc_url( get_post_type_archive_link( 'glossary' ) ); ?>"><?php echo esc_html__( '← Glossary', 'howtoinvest' ); ?></a></p>
 <!-- /wp:paragraph -->
 
 <!-- wp:post-title {"level":1} /-->
 
-<!-- wp:post-content {"layout":{"type":"constrained"}} /--></div>
+<!-- wp:post-content {"className":"hti-prose","layout":{"type":"constrained"}} /--></div>
 <!-- /wp:group -->

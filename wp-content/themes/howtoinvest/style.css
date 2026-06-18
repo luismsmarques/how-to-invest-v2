@@ -296,6 +296,150 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
 	font-size: 13px;
 }
 
+/* ---------- Content chrome (articles, news, glossary, pages) ---------- */
+.hti-back {
+	display: inline-block;
+	background: none;
+	border: none;
+	padding: 0;
+	margin-bottom: 20px;
+	color: var( --wp--preset--color--muted-light );
+	font-weight: 500;
+	font-size: 14px;
+	text-decoration: none;
+}
+.hti-back:hover { color: var( --wp--preset--color--primary ); }
+
+.hti-eyebrow,
+.hti-eyebrow a {
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 13px;
+	color: var( --wp--preset--color--accent );
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	text-decoration: none;
+	margin: 0;
+}
+
+.hti-lead {
+	font-family: var( --wp--preset--font-family--heading );
+	font-size: clamp( 1.125rem, 2.2vw, 1.3rem );
+	line-height: 1.5;
+	color: var( --wp--preset--color--muted );
+	margin: 18px 0 32px;
+}
+
+/* Archive headers (Glossário / Notícias / blog) */
+.hti-archive-head { margin-bottom: 8px; }
+.hti-archive-head__sub {
+	color: var( --wp--preset--color--muted );
+	font-size: 18px;
+	margin: 8px 0 26px;
+}
+
+/* Long-form body copy */
+.hti-prose,
+.entry-content.hti-prose {
+	font-size: 18px;
+	line-height: 1.7;
+	color: var( --wp--preset--color--body-alt );
+}
+.hti-prose > h2 {
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 20px;
+	letter-spacing: 0;
+	margin: 28px 0 6px;
+}
+.hti-prose > h3 {
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 18px;
+	margin: 24px 0 6px;
+}
+
+/* ---------- Glossary list (card of rows) ---------- */
+.hti-term-list {
+	background: var( --wp--preset--color--white );
+	border: 1px solid var( --wp--preset--color--border );
+	border-radius: 16px;
+	overflow: hidden;
+}
+.hti-term-list .wp-block-post {
+	margin: 0;
+	border-bottom: 1px solid #F4E9E3;
+}
+.hti-term-list .wp-block-post:last-child { border-bottom: none; }
+.hti-term-list .wp-block-post-title {
+	margin: 0;
+	padding: 18px 22px 4px;
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 18px;
+	letter-spacing: 0;
+}
+.hti-term-list .wp-block-post-title a {
+	color: var( --wp--preset--color--contrast );
+	text-decoration: none;
+}
+.hti-term-list .wp-block-post-excerpt {
+	margin: 0;
+	padding: 0 22px 18px;
+}
+.hti-term-list .wp-block-post-excerpt__excerpt {
+	color: var( --wp--preset--color--muted-light );
+	font-size: 14px;
+}
+.hti-term-list .wp-block-post:hover { background: #FBF4F0; }
+
+/* ---------- Glossary term page ---------- */
+.hti-term .wp-block-post-title {
+	font-size: clamp( 2.125rem, 6vw, 3.25rem );
+	line-height: 1.05;
+	margin: 8px 0 0;
+}
+
+/* ---------- News cards grid ---------- */
+.hti-news-card {
+	background: var( --wp--preset--color--white );
+	border: 1px solid var( --wp--preset--color--border );
+	border-radius: 16px;
+	padding: 22px 24px !important;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.hti-news-card:hover {
+	border-color: var( --wp--preset--color--accent-border );
+	box-shadow: 0 4px 16px rgba( 22, 38, 58, 0.06 );
+}
+.hti-news-card .wp-block-post-title {
+	font-family: var( --wp--preset--font-family--heading );
+	font-weight: 700;
+	font-size: 23px;
+	line-height: 1.15;
+	margin: 6px 0;
+}
+.hti-news-card .wp-block-post-title a {
+	color: var( --wp--preset--color--contrast );
+	text-decoration: none;
+}
+.hti-news-card .wp-block-post-date,
+.hti-news-card .wp-block-post-terms { font-size: 13px; }
+.hti-news-card .wp-block-post-excerpt__excerpt {
+	color: var( --wp--preset--color--muted );
+	font-size: 16px;
+}
+
+/* ---------- Static pages (policies, about, contact) ---------- */
+.hti-page .wp-block-post-content h2 {
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 20px;
+	letter-spacing: 0;
+	margin: 28px 0 6px;
+}
+.hti-page .wp-block-post-content { color: var( --wp--preset--color--body-alt ); }
+
 /* ---------- Print ---------- */
 @media print {
 	.hti-noprint { display: none !important; }
