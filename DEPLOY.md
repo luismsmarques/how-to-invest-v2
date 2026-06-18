@@ -39,15 +39,13 @@ em releases deliberados, não a cada commit.
 
 ## 3. Definir o destino do deploy (por ambiente)
 
-Por omissão o `.cpanel.yml` instala em `~/public_html/wp-content`. Se o WordPress
-desse ambiente estiver noutro sítio (ex.: staging num subdomínio), cria **um
-ficheiro** com o caminho do `wp-content` desse ambiente:
+O destino está **dentro do `.cpanel.yml`**, na linha `export DEPLOYPATH=…`. Por
+omissão (produção) aponta para `/home/howtoinvest/howtoinvest.pro/wp-content`.
 
-```bash
-echo "$HOME/staging.howtoinvest.pro/wp-content" > $HOME/.hti-deploypath
-```
-
-(Na produção, se o WP está em `public_html`, não precisas de fazer nada.)
+Para um ambiente de **staging** (branch `develop`), edita essa **única linha** na
+`.cpanel.yml` da branch `develop` para o `wp-content` do subdomínio de staging.
+(Mantemos o ficheiro simples de propósito — o parser do cPanel é estrito e não
+gosta de shell complexo.)
 
 ## 4. Primeiro deploy
 
@@ -104,9 +102,9 @@ já limita o composer com `timeout` e `--no-interaction`, mas se ficares preso:
 ```bash
 cd ~/repositories/how-to-invest-v2 && git fetch origin && git reset --hard origin/main
 WPCONTENT="$HOME/howtoinvest.pro/wp-content"   # ajusta ao teu docroot
-mkdir -p "$WPCONTENT/plugins/hti-engine" "$WPCONTENT/themes/howtoinvest"
-rsync -a --delete --exclude 'vendor/' wp-content/plugins/hti-engine/ "$WPCONTENT/plugins/hti-engine/"
-rsync -a --delete                      wp-content/themes/howtoinvest/ "$WPCONTENT/themes/howtoinvest/"
+mkdir -p "$WPCONTENT/plugins" "$WPCONTENT/themes"
+rm -rf "$WPCONTENT/plugins/hti-engine"  && cp -a wp-content/plugins/hti-engine "$WPCONTENT/plugins/"
+rm -rf "$WPCONTENT/themes/howtoinvest"  && cp -a wp-content/themes/howtoinvest "$WPCONTENT/themes/"
 cd "$WPCONTENT/plugins/hti-engine" && composer install --no-dev --no-interaction --no-progress || true
 ```
 

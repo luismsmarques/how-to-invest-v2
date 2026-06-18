@@ -1,23 +1,19 @@
 ---
-# cPanel Git™ Version Control deployment.
+# cPanel Git™ Version Control deployment (production = main).
 #
-# Runs when cPanel deploys the checked-out branch (UI "Deploy HEAD Commit",
-# the UAPI VersionControlDeployment, or a cron — see DEPLOY.md). Only our theme
-# and plugin are synced; WordPress core, wp-config.php and uploads (none of
-# which are in the repo) are never touched.
+# Kept deliberately simple — cPanel's YAML/task parser is strict and dislikes
+# complex shell. Tasks run from the repository root; sources below are relative.
+# Only our theme + plugin are deployed; WordPress core, wp-config.php and uploads
+# are never touched.
 #
-# Target: $HOME/public_html/wp-content by default. For a staging subdomain (or
-# any non-standard docroot) create a one-line file at $HOME/.hti-deploypath
-# containing the wp-content path for that environment — no need to edit this file.
+# DEPLOYPATH is this site's wp-content. For a STAGING environment (develop
+# branch), change this one path to the staging docroot's wp-content.
 deployment:
   tasks:
-    # Tasks run from the repository root; sources below are relative to it.
-    - export WPCONTENT="$( [ -f "$HOME/.hti-deploypath" ] && cat "$HOME/.hti-deploypath" || echo "$HOME/public_html/wp-content" )"
-    - /bin/mkdir -p "$WPCONTENT/plugins/hti-engine" "$WPCONTENT/themes/howtoinvest"
-    # Sync the plugin, but preserve its composer-installed vendor/ across deploys.
-    - /usr/bin/rsync -a --delete --exclude 'vendor/' wp-content/plugins/hti-engine/ "$WPCONTENT/plugins/hti-engine/"
-    - /usr/bin/rsync -a --delete wp-content/themes/howtoinvest/ "$WPCONTENT/themes/howtoinvest/"
-    # Install PHP deps (Dompdf) for the plugin. Bounded by `timeout` and never
-    # fails/hangs the deploy: if composer is missing, offline or slow, the
-    # plugin still works (PDF falls back to printable HTML).
-    - cd "$WPCONTENT/plugins/hti-engine" && ( command -v composer >/dev/null 2>&1 && timeout 180 composer install --no-dev --no-interaction --no-progress --optimize-autoloader ) || true
+    - export DEPLOYPATH=/home/howtoinvest/howtoinvest.pro/wp-content
+    - /bin/mkdir -p $DEPLOYPATH/plugins $DEPLOYPATH/themes
+    - /bin/rm -rf $DEPLOYPATH/plugins/hti-engine
+    - /bin/cp -R wp-content/plugins/hti-engine $DEPLOYPATH/plugins/
+    - /bin/rm -rf $DEPLOYPATH/themes/howtoinvest
+    - /bin/cp -R wp-content/themes/howtoinvest $DEPLOYPATH/themes/
+    - cd $DEPLOYPATH/plugins/hti-engine && ( command -v composer >/dev/null 2>&1 && timeout 180 composer install --no-dev --no-interaction --no-progress --optimize-autoloader ) || true
