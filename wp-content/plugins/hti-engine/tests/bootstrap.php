@@ -24,8 +24,20 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 	}
 }
 
+// Settings::normalize_archetypes uses wp_strip_all_tags for labels.
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	/**
+	 * @param string $text Text.
+	 * @return string
+	 */
+	function wp_strip_all_tags( $text ) {
+		return trim( strip_tags( (string) $text ) );
+	}
+}
+
 require_once __DIR__ . '/../includes/class-config.php';
 require_once __DIR__ . '/../includes/class-engine.php';
 require_once __DIR__ . '/../includes/class-fallback.php';
 require_once __DIR__ . '/../includes/class-validator.php';
 require_once __DIR__ . '/../includes/class-prompt.php';
+require_once __DIR__ . '/../includes/class-settings.php';
