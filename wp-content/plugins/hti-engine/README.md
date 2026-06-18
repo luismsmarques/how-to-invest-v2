@@ -27,11 +27,13 @@ hti-engine/
 │   ├── class-frontend.php   # ✅ shortcode [hti_questionnaire] + enqueue + noindex
 │   ├── class-settings.php   # ✅ admin: chave Gemini + scoring/arquétipos (req. 6.7)
 │   ├── class-consent.php    # ✅ banner de consentimento (E8, RGPD) + gate analytics
+│   ├── class-analytics.php  # ✅ Google Analytics (GA4) carregado só após consentimento
 │   ├── class-pdf.php        # ✅ export PDF do resultado (Dompdf, fallback HTML)
 │   ├── class-rest.php       # ✅ /recommend · register · login · claim-profile · my-profiles · export · account
 │   ├── class-rate-limit.php # ✅ throttle por-IP nos endpoints públicos (M1)
 │   ├── class-mailer.php     # ✅ email transacional via Brevo (fallback wp_mail)
 │   ├── class-verification.php # ✅ double opt-in (verificação por email) (M2)
+│   ├── class-google.php     # ✅ login com Google (OAuth 2.0)
 │   ├── class-cron.php       # ✅ limpeza diária: perfis anónimos + contas não-verificadas (L1)
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
@@ -110,6 +112,9 @@ A decisão numérica **nunca** depende do LLM: erros do Gemini caem em fallback 
 
 Minimização: perfis anónimos não têm identidade (`user_id` nulo); logs sem PII; contas nativas (`wp_users`).
 
+### Login com Google (OAuth — `class-google.php`)
+Botão **"Continuar com o Google"** no formulário de conta (só aparece se configurado). Fluxo Authorization Code **server-side**: `state` em transient (CSRF) que carrega o `session_token` a fazer claim; troca do código → `id_token` (vindo do Google por TLS, claims fiáveis) → encontra/cria `wp_user` pelo email **verificado** → autentica → claim. Client ID/secret via `HTI_GOOGLE_CLIENT_ID`/`HTI_GOOGLE_CLIENT_SECRET` (wp-config/env) ou Settings (secret nunca ecoado). O **Redirect URI** a registar no Google Console aparece nas Settings.
+
 ### Conta — registo/login + UI
 - **`POST /register`** — cria conta nativa (subscriber) e autentica; devolve **novo nonce**. 422 (email/pw inválidos), 409 (já existe).
 - **`POST /login`** — `wp_signon`; devolve novo nonce; 401 em credenciais erradas.
@@ -123,6 +128,9 @@ Banner próprio, sem dependências, **privacy-first**:
 - Botões: **Aceitar** · **Recusar não-essenciais** · **Personalizar** (toggle de analítica) + link à política de privacidade. EN+PT, acessível.
 - Gate **server-side**: `Consent::analytics_allowed()` (lê o cookie) + filtro `hti_analytics_allowed` — usa-o para condicionar qualquer script de analítica.
 - Gate **client-side**: `window.HTIConsent.get()/open()` + evento `hti-consent-changed`. O questionário já envia o `consent.analytics` real (do cookie) ao `/recommend`.
+
+### Google Analytics (GA4 — `class-analytics.php` + `analytics.js`)
+O `gtag.js` **não** carrega até o utilizador aceitar a analítica no banner (invariante RGPD: nada de trackers antes do consentimento). O `analytics.js` injeta o GA só quando o consentimento é dado e reage ao evento `hti-consent-changed` (carrega de imediato ao aceitar, sem reload). ID configurável em **Settings → Analytics** ou pelo filtro `hti_ga_id` (default `G-QWST7PZNBT`); vazio desativa. `anonymize_ip` ativo.
 
 ## Export PDF (`class-pdf.php`)
 

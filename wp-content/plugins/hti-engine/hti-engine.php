@@ -50,11 +50,13 @@ require_once HTI_ENGINE_PATH . 'includes/class-disclaimer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-rate-limit.php';
 require_once HTI_ENGINE_PATH . 'includes/class-mailer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-verification.php';
+require_once HTI_ENGINE_PATH . 'includes/class-google.php';
 require_once HTI_ENGINE_PATH . 'includes/class-rest.php';
 require_once HTI_ENGINE_PATH . 'includes/class-questions.php';
 require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
+require_once HTI_ENGINE_PATH . 'includes/class-analytics.php';
 require_once HTI_ENGINE_PATH . 'includes/class-pdf.php';
 require_once HTI_ENGINE_PATH . 'includes/class-cron.php';
 
@@ -93,6 +95,11 @@ REST::init();
 Verification::init();
 
 /**
+ * "Sign in with Google" OAuth flow.
+ */
+Google::init();
+
+/**
  * Front-end app: the [hti_questionnaire] shortcode (questionnaire + result).
  */
 Frontend::init();
@@ -106,6 +113,11 @@ Settings::init();
  * Cookie consent banner (E8, RGPD): privacy-first, analytics opt-in.
  */
 Consent::init();
+
+/**
+ * Google Analytics — loaded only after analytics consent is granted.
+ */
+Analytics::init();
 
 /**
  * PDF export of a saved result (admin-post handler).

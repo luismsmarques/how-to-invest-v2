@@ -214,7 +214,27 @@ class Settings {
 			}
 		}
 
+		// Analytics.
+		$out['ga_id'] = isset( $input['ga_id'] ) ? sanitize_text_field( $input['ga_id'] ) : ( $out['ga_id'] ?? '' );
+
+		// Google OAuth.
+		$out['google_client_id'] = isset( $input['google_client_id'] ) ? sanitize_text_field( $input['google_client_id'] ) : ( $out['google_client_id'] ?? '' );
+		if ( ! self::google_secret_managed() ) {
+			$gsecret = isset( $input['google_client_secret'] ) ? trim( (string) $input['google_client_secret'] ) : '';
+			if ( '' !== $gsecret ) {
+				$out['google_client_secret'] = $gsecret;
+			}
+		}
+
 		return $out;
+	}
+
+	/**
+	 * Whether the Google secret is provided by wp-config constant or env var.
+	 */
+	private static function google_secret_managed(): bool {
+		return ( defined( 'HTI_GOOGLE_CLIENT_SECRET' ) && '' !== (string) HTI_GOOGLE_CLIENT_SECRET )
+			|| ( is_string( getenv( 'HTI_GOOGLE_CLIENT_SECRET' ) ) && '' !== trim( (string) getenv( 'HTI_GOOGLE_CLIENT_SECRET' ) ) );
 	}
 
 	/**
@@ -331,6 +351,44 @@ class Settings {
 						<td><input name="htinvest_settings[brevo_sender_name]" id="hti-brevo-name" type="text" class="regular-text"
 							value="<?php echo esc_attr( $settings['brevo_sender_name'] ?? '' ); ?>"
 							placeholder="<?php echo esc_attr( (string) get_option( 'blogname' ) ); ?>" /></td>
+					</tr>
+				</table>
+
+				<h2><?php echo esc_html__( 'Analytics (Google Analytics)', 'hti-engine' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="hti-ga"><?php echo esc_html__( 'GA4 Measurement ID', 'hti-engine' ); ?></label></th>
+						<td><input name="htinvest_settings[ga_id]" id="hti-ga" type="text" class="regular-text"
+							value="<?php echo esc_attr( $settings['ga_id'] ?? '' ); ?>"
+							placeholder="<?php echo esc_attr( Analytics::measurement_id() ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Loaded only after the visitor accepts analytics in the consent banner. Leave blank to disable.', 'hti-engine' ); ?></p></td>
+					</tr>
+				</table>
+
+				<h2><?php echo esc_html__( 'Sign in with Google (OAuth)', 'hti-engine' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Redirect URI', 'hti-engine' ); ?></th>
+						<td><code><?php echo esc_html( Google::redirect_uri() ); ?></code>
+							<p class="description"><?php echo esc_html__( 'Add this exact URI to your OAuth client in the Google Cloud console (Authorized redirect URIs).', 'hti-engine' ); ?></p></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-gcid"><?php echo esc_html__( 'Client ID', 'hti-engine' ); ?></label></th>
+						<td><input name="htinvest_settings[google_client_id]" id="hti-gcid" type="text" class="regular-text"
+							value="<?php echo esc_attr( $settings['google_client_id'] ?? '' ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-gcsecret"><?php echo esc_html__( 'Client secret', 'hti-engine' ); ?></label></th>
+						<td>
+						<?php if ( self::google_secret_managed() ) : ?>
+							<input id="hti-gcsecret" type="text" class="regular-text" value="" disabled
+								placeholder="<?php echo esc_attr__( 'Defined in wp-config.php / environment', 'hti-engine' ); ?>" />
+						<?php else : ?>
+							<input name="htinvest_settings[google_client_secret]" id="hti-gcsecret" type="password" class="regular-text" autocomplete="off"
+								placeholder="<?php echo esc_attr( ! empty( $settings['google_client_secret'] ) ? esc_attr__( '•••••• (leave blank to keep)', 'hti-engine' ) : '' ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Stored server-side, never sent to the browser. Prefer HTI_GOOGLE_CLIENT_SECRET in wp-config.php.', 'hti-engine' ); ?></p>
+						<?php endif; ?>
+						</td>
 					</tr>
 				</table>
 

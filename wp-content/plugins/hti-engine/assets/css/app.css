@@ -350,6 +350,19 @@
 	gap: 0.5rem;
 	margin-top: 0.5rem;
 }
+.hti-google-wrap {
+	max-width: 380px;
+}
+.hti-google-btn {
+	width: 100%;
+	justify-content: center;
+}
+.hti-auth-or {
+	text-align: center;
+	color: var( --hti-muted );
+	font-size: 0.875rem;
+	margin: 0.75rem 0;
+}
 
 .hti-account h2 { margin: 0 0 1rem; }
 .hti-profile-list {
