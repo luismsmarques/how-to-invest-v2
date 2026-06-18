@@ -8,9 +8,12 @@
  * already exist, so user edits are never overwritten.
  *
  * Bilingual: the English variant is the post title/content; the Portuguese
- * variant is stored in post meta (`hti_title_pt`, `hti_content_pt`,
- * `hti_excerpt_pt`) so the data stays language-aware regardless of which
- * multilingual approach (Polylang vs native) is finalised later.
+ * variant travels in the same entry (and is also stored in post meta —
+ * `hti_title_pt`, `hti_content_pt`, `hti_excerpt_pt`). When Polylang is
+ * active, the seeder additionally creates a real Portuguese post for each
+ * entry and links it to the English one as a translation (the EN/PT glossary
+ * topic terms are linked too). Without Polylang it degrades gracefully to the
+ * English posts plus the PT meta.
  *
  * Run it from WP-CLI (`wp hti seed`) or Tools → Seed content in wp-admin.
  *
@@ -43,14 +46,15 @@ class Seeder {
 	/**
 	 * Seed everything. Returns a report: created/skipped counts.
 	 *
-	 * @return array{glossary_created:int,pages_created:int,articles_created:int,skipped:int}
+	 * @return array{glossary_created:int,pages_created:int,articles_created:int,translations_created:int,skipped:int}
 	 */
 	public static function seed(): array {
 		$report = array(
-			'glossary_created' => 0,
-			'pages_created'    => 0,
-			'articles_created' => 0,
-			'skipped'          => 0,
+			'glossary_created'     => 0,
+			'pages_created'        => 0,
+			'articles_created'     => 0,
+			'translations_created' => 0,
+			'skipped'              => 0,
 		);
 
 		foreach ( self::glossary_terms() as $entry ) {
@@ -89,7 +93,208 @@ class Seeder {
 			}
 		}
 
+		// If Polylang is active, mirror every seeded entry into a linked
+		// Portuguese translation (built from the hti_*_pt variants).
+		$report['translations_created'] = self::seed_translations();
+
 		return $report;
+	}
+
+	/**
+	 * Create the Portuguese translations of the seeded content and link them
+	 * to their English counterparts in Polylang. No-op when Polylang is
+	 * inactive. Idempotent: an entry that already has a PT translation is
+	 * skipped, so re-running is safe.
+	 *
+	 * @return int Number of PT posts created.
+	 */
+	public static function seed_translations(): int {
+		if ( ! self::polylang_active() ) {
+			return 0;
+		}
+
+		$en = (string) pll_default_language( 'slug' );
+		if ( '' === $en ) {
+			$en = 'en';
+		}
+		$pt = self::portuguese_slug( $en );
+		if ( '' === $pt || $pt === $en ) {
+			return 0;
+		}
+
+		// Translate the "Asset classes" glossary topic first, so the PT
+		// glossary posts can be filed under its PT term.
+		self::translate_glossary_topic( $en, $pt );
+
+		$created = 0;
+		$groups  = array(
+			'glossary' => self::glossary_terms(),
+			'page'     => self::pages(),
+			'post'     => self::articles(),
+		);
+
+		foreach ( $groups as $type => $entries ) {
+			foreach ( $entries as $entry ) {
+				$en_post = get_page_by_path( $entry['slug'], OBJECT, $type );
+				if ( ! $en_post instanceof \WP_Post ) {
+					continue;
+				}
+				$en_id = (int) $en_post->ID;
+
+				// Every post must carry a language; assign the default if missing.
+				if ( ! pll_get_post_language( $en_id ) ) {
+					pll_set_post_language( $en_id, $en );
+				}
+
+				// Already translated → nothing to do.
+				if ( pll_get_post( $en_id, $pt ) ) {
+					continue;
+				}
+
+				$pt_data = $entry['pt'] ?? array();
+				if ( empty( $pt_data['title'] ) ) {
+					continue;
+				}
+
+				if ( self::insert_translation( $type, $entry, $pt_data, $en_id, $en, $pt ) > 0 ) {
+					++$created;
+				}
+			}
+		}
+
+		return $created;
+	}
+
+	/**
+	 * Whether Polylang's public API is available.
+	 */
+	private static function polylang_active(): bool {
+		return function_exists( 'pll_set_post_language' )
+			&& function_exists( 'pll_save_post_translations' )
+			&& function_exists( 'pll_default_language' )
+			&& function_exists( 'pll_get_post' );
+	}
+
+	/**
+	 * Resolve the Portuguese language slug configured in Polylang.
+	 *
+	 * @param string $default The default language slug (excluded).
+	 */
+	private static function portuguese_slug( string $default ): string {
+		if ( ! function_exists( 'pll_languages_list' ) ) {
+			return '';
+		}
+		$slugs   = (array) pll_languages_list( array( 'fields' => 'slug' ) );
+		$locales = (array) pll_languages_list( array( 'fields' => 'locale' ) );
+
+		// Prefer a language whose locale is Portuguese.
+		foreach ( $slugs as $i => $slug ) {
+			if ( $slug === $default ) {
+				continue;
+			}
+			if ( 0 === stripos( (string) ( $locales[ $i ] ?? '' ), 'pt' ) ) {
+				return (string) $slug;
+			}
+		}
+		// Otherwise, the first non-default language.
+		foreach ( $slugs as $slug ) {
+			if ( $slug !== $default ) {
+				return (string) $slug;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * Insert one PT post, set its language, share the EN slug and link the pair.
+	 *
+	 * @param string                $type    Post type.
+	 * @param array<string,mixed>   $entry   The full seed entry (for slug/terms).
+	 * @param array<string,string>  $pt_data PT title/content/excerpt.
+	 * @param int                   $en_id   English post id.
+	 * @param string                $en      English language slug.
+	 * @param string                $pt      Portuguese language slug.
+	 * @return int New PT post id, or 0 on failure.
+	 */
+	private static function insert_translation( string $type, array $entry, array $pt_data, int $en_id, string $en, string $pt ): int {
+		$postarr = array(
+			'post_type'    => $type,
+			'post_status'  => 'publish',
+			'post_title'   => $pt_data['title'],
+			'post_content' => $pt_data['content'] ?? '',
+			'post_excerpt' => $pt_data['excerpt'] ?? '',
+		);
+
+		$pt_id = wp_insert_post( wp_slash( $postarr ), true );
+		if ( is_wp_error( $pt_id ) || 0 === $pt_id ) {
+			return 0;
+		}
+		$pt_id = (int) $pt_id;
+
+		// Set the language first; Polylang then allows the PT post to reuse the
+		// EN slug (URLs are disambiguated by language).
+		pll_set_post_language( $pt_id, $pt );
+		wp_update_post( array( 'ID' => $pt_id, 'post_name' => $entry['slug'] ) );
+		pll_save_post_translations( array( $en => $en_id, $pt => $pt_id ) );
+
+		update_post_meta( $pt_id, self::SEED_FLAG, VERSION );
+
+		// Mirror the privacy-page option for the PT page (GDPR alignment).
+		if ( 'page' === $type && 'privacy-policy' === $entry['slug'] && function_exists( 'pll_set_post_language' ) ) {
+			update_option( 'wp_page_for_privacy_policy_' . $pt, $pt_id );
+		}
+
+		// File PT glossary posts under the PT "Asset classes" topic.
+		if ( 'glossary' === $type ) {
+			$pt_term = get_term_by( 'slug', 'asset-classes-' . $pt, 'glossary_topic' );
+			if ( $pt_term instanceof \WP_Term ) {
+				wp_set_object_terms( $pt_id, array( (int) $pt_term->term_id ), 'glossary_topic', true );
+			}
+		}
+
+		return $pt_id;
+	}
+
+	/**
+	 * Create (once) the PT translation of the "Asset classes" glossary topic
+	 * and link it to the EN term.
+	 *
+	 * @param string $en English language slug.
+	 * @param string $pt Portuguese language slug.
+	 */
+	private static function translate_glossary_topic( string $en, string $pt ): void {
+		if ( ! taxonomy_exists( 'glossary_topic' )
+			|| ! function_exists( 'pll_set_term_language' )
+			|| ! function_exists( 'pll_get_term' )
+			|| ! function_exists( 'pll_save_term_translations' ) ) {
+			return;
+		}
+
+		$en_term = get_term_by( 'slug', 'asset-classes', 'glossary_topic' );
+		if ( ! $en_term instanceof \WP_Term ) {
+			return;
+		}
+
+		if ( ! pll_get_term_language( $en_term->term_id ) ) {
+			pll_set_term_language( (int) $en_term->term_id, $en );
+		}
+
+		if ( pll_get_term( (int) $en_term->term_id, $pt ) ) {
+			return;
+		}
+
+		$res = wp_insert_term(
+			'Classes de ativos',
+			'glossary_topic',
+			array( 'slug' => 'asset-classes-' . $pt )
+		);
+		if ( is_wp_error( $res ) ) {
+			return;
+		}
+
+		$pt_term_id = (int) $res['term_id'];
+		pll_set_term_language( $pt_term_id, $pt );
+		pll_save_term_translations( array( $en => (int) $en_term->term_id, $pt => $pt_term_id ) );
 	}
 
 	/**
@@ -580,6 +785,7 @@ class Seeder {
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'HowToInvest — Seed content', 'hti-engine' ); ?></h1>
 			<p><?php echo esc_html__( 'Create the starter glossary terms and institutional pages. Existing entries (matched by slug) are skipped, so your edits are safe.', 'hti-engine' ); ?></p>
+			<p><?php echo esc_html__( 'If Polylang is active, the seeder also creates the Portuguese version of each entry and links it as a translation of the English one. Re-running only adds what is missing.', 'hti-engine' ); ?></p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="hti_run_seeder" />
 				<?php wp_nonce_field( 'hti_run_seeder' ); ?>
@@ -621,11 +827,12 @@ class Seeder {
 		delete_transient( 'hti_seed_report' );
 
 		$message = sprintf(
-			/* translators: 1: glossary terms, 2: pages, 3: articles, 4: entries skipped. */
-			__( 'Seeding complete: %1$d glossary terms, %2$d pages and %3$d articles created, %4$d skipped (already existed).', 'hti-engine' ),
+			/* translators: 1: glossary terms, 2: pages, 3: articles, 4: PT translations, 5: entries skipped. */
+			__( 'Seeding complete: %1$d glossary terms, %2$d pages and %3$d articles created, %4$d Portuguese translations linked, %5$d skipped (already existed).', 'hti-engine' ),
 			(int) $report['glossary_created'],
 			(int) $report['pages_created'],
 			(int) $report['articles_created'],
+			(int) $report['translations_created'],
 			(int) $report['skipped']
 		);
 
