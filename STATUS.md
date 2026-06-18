@@ -10,13 +10,23 @@ homepage com artigos; glossário; páginas. **167 testes** verdes.
 WordPress 7.0 instalado em `/home/howtoinvest/howtoinvest.pro/`. Tema **HowToInvest**
 e plugin **HTI Engine** ativos. Conteúdo criado pelo seeder (glossário + 7 páginas + 8 artigos).
 
+**Design:** redesign **coral/cream** aplicado em todo o lado (tema + app do plugin):
+tokens em `theme.json`, **fontes self-hosted** Poppins + Plus Jakarta Sans (em
+`themes/howtoinvest/assets/fonts/`, subset latino), header sticky com blur, **donut
+conic** no resultado, banner de disclaimer escuro, consentimento escuro.
+
+**Idioma:** **EN por default** (regra do projeto). Os templates de bloco do tema têm
+texto fixo em EN (o FSE não permite `__()` no HTML); os *patterns* usam `__()` (EN+PT)
+e o app do plugin é EN-default com PT via `ui()`. O **PT** é servido pelo **Polylang**
+(língua adicional `pt_PT_ao90`) — ver secção *Multilíngue* abaixo.
+
 ## Arquitetura (resumo)
-- **Tema** `wp-content/themes/howtoinvest` (FSE, tokens em `theme.json`, disclaimer no rodapé).
+- **Tema** `wp-content/themes/howtoinvest` (FSE, tokens em `theme.json`, design coral/cream, disclaimer no rodapé).
 - **Plugin** `wp-content/plugins/hti-engine` (o produto). Regra de ouro: **as regras decidem, o LLM só explica**.
   - Motor determinístico (`class-engine`) + config curada (`class-config`) → arquétipo + alocação por classe (soma 100), 3 travas.
   - LLM: `class-llm` (transporte: **WP 7.0 AI Client / Connectors** → fallback `class-gemini`) · `class-prompt` · `class-validator` · `class-fallback` · `class-explainer`.
   - REST `htinvest/v1`: recommend, result, register, login, claim-profile, my-profiles, export, account.
-  - Frontend (JS vanilla): `questionnaire.js`, `result.js` (donut SVG), `account.js`, `consent.js`, `analytics.js`.
+  - Frontend (JS vanilla): `questionnaire.js`, `result.js` (donut conic-gradient), `account.js`, `consent.js`, `analytics.js`.
   - Segurança/RGPD: rate limit (`class-rate-limit`), verificação email double opt-in via **Brevo** (`class-verification`+`class-mailer`), consentimento (`class-consent`), GA gated, cron de limpeza (`class-cron`), login Google (`class-google`).
   - Admin: `class-settings` (Definições → HowToInvest). PDF: `class-pdf` (Dompdf, fallback HTML).
 - Detalhe por ficheiro: `wp-content/plugins/hti-engine/README.md`.
@@ -32,6 +42,18 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - Sem Brevo → `wp_mail` (pode não entregar em shared hosting) → registo de contas não confirma.
 - Google: registar o **Redirect URI** (Definições → HowToInvest) no Google Cloud Console.
 - GA4 já ativo (`G-QWST7PZNBT`), só carrega após aceitar o banner de cookies.
+
+## Multilíngue (Polylang)
+- **EN = língua default**, **PT (`pt_PT_ao90`) = adicional**. Garantir que o conteúdo
+  EN existente tem idioma atribuído (*Languages → Settings → "Set the language for all content"*).
+- O **seeder cria o PT** de cada entrada (glossário/páginas/artigos) a partir das
+  variantes `hti_*_pt`, define o idioma, partilha o slug EN e **liga EN↔PT**
+  (`pll_save_post_translations`). Traduz/liga também o topic `glossary_topic`
+  (*Asset classes → Classes de ativos*). Idempotente; sem Polylang degrada para EN+meta.
+- Os **links internos** dos artigos PT são reescritos para o **permalink PT** do glossário
+  (via `pll_get_post`/`get_permalink`) — robusto mesmo que traduzas os slugs no futuro.
+- Correr depois de cada deploy que mude o seed: **Ferramentas → Semear conteúdo → Run seeder**
+  (ou `wp hti seed`). O aviso mostra quantas traduções PT foram ligadas.
 
 ## Deploy
 - Branches: **`main`** = produção · **`develop`** = staging/integração · feature → PR para `develop` → release `develop → main`. Ver `CONTRIBUTING.md`.
@@ -49,6 +71,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - [ ] Cache (LiteSpeed/WP) + CDN (Cloudflare) + Core Web Vitals
 - [ ] **RankMath**: instalar/ativar → sitemap inclui `glossary`/`news` → submeter ao Search Console
 - [ ] Configurar **Brevo** (senão o registo de contas não confirma)
+- [ ] **Polylang**: atribuir idioma a todo o conteúdo + correr o seeder → confirmar ligações EN↔PT (e `hreflang` no sitemap)
 - [ ] Acessibilidade: contraste AA + teste com leitor de ecrã
 
 **Legal (⚠️ bloqueador antes de divulgar):**
