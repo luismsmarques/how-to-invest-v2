@@ -77,7 +77,7 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 - [ ] 🔧 301s dos URLs Base44 respondem **301** — *verificar cada um* (8 URLs, `class-redirects`)
 - [x] ✅ Questionário/resultado/conta com `noindex` (`wp_robots`); staging com password+noindex 🔧
 - [x] ✅ CTA inline para o questionário inserível pelo editor (pattern `cta-questionnaire`)
-- [ ] ⬜ **5–10 artigos seed publicados** — *lacuna*: o seeder cria glossário (5) + páginas, mas **não artigos educativos**. → ver "Lacunas".
+- [x] ✅ **5–10 artigos seed publicados** — 8 artigos educativos (EN+PT) no seeder, com CTA e links ao glossário. *(L-B fechada)*
 - [x] ✅ Glossário com termos-semente (5 notas por classe) — seeder
 
 ## 7. Acessibilidade (WCAG 2.1 AA)
@@ -121,11 +121,11 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 | # | Lacuna | Impacto | Estado |
 |---|---|---|---|
 | L-A | **Página de resultado por `profile_id`/`session_token`** (recarregar/partilhar) | §4 — médio | ✅ **fechada** (`GET /result` + `?profile=` no URL + links no dashboard) |
-| L-B | **5–10 artigos educativos seed** | §6 — médio (SEO) | ⬜ aberta (conteúdo) |
+| L-B | **5–10 artigos educativos seed** | §6 — médio (SEO) | ✅ **fechada** (8 artigos EN+PT no seeder) |
 | L-C | **Link "Esqueci-me da password"** no formulário | §5 — baixo | ✅ **fechada** (`wp_lostpassword_url()`) |
 | L-D | **Revisão jurídica** de privacidade/termos/disclaimers (+ menção ao GA) | §5/§9 — **bloqueador legal** | ⚠️ aberta (jurista) |
 
-> Resta a L-B (artigos seed — conteúdo) e a L-D (revisão jurídica — ação tua).
+> **Todas as lacunas de código fechadas.** Resta a L-D (revisão jurídica — ação tua) e os itens operacionais 🔧.
 
 ## Ensaio de lançamento (fazer em staging, fim-a-fim)
 1. Visitante → questionário (desktop + mobile) → resultado (normal + cada trava)

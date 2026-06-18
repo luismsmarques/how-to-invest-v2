@@ -296,6 +296,10 @@ msgid "You do not have permission to do this."
 msgstr ""
 
 #: includes/class-seeder.php
-#. translators: 1: glossary terms created, 2: pages created, 3: entries skipped.
-msgid "Seeding complete: %1$d glossary terms and %2$d pages created, %3$d skipped (already existed)."
+#. translators: 1: glossary terms, 2: pages, 3: articles, 4: entries skipped.
+msgid "Seeding complete: %1$d glossary terms, %2$d pages and %3$d articles created, %4$d skipped (already existed)."
+msgstr ""
+
+#: includes/class-seeder.php
+msgid "Learn more:"
 msgstr ""

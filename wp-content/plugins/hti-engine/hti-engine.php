@@ -142,9 +142,10 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$report = Seeder::seed();
 			\WP_CLI::success(
 				sprintf(
-					'%d glossary terms and %d pages created, %d skipped.',
+					'%d glossary terms, %d pages and %d articles created, %d skipped.',
 					$report['glossary_created'],
 					$report['pages_created'],
+					$report['articles_created'],
 					$report['skipped']
 				)
 			);
