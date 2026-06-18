@@ -45,6 +45,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-fallback.php';
 require_once HTI_ENGINE_PATH . 'includes/class-validator.php';
 require_once HTI_ENGINE_PATH . 'includes/class-prompt.php';
 require_once HTI_ENGINE_PATH . 'includes/class-gemini.php';
+require_once HTI_ENGINE_PATH . 'includes/class-llm.php';
 require_once HTI_ENGINE_PATH . 'includes/class-explainer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-disclaimer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-rate-limit.php';
