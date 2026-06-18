@@ -363,6 +363,18 @@
 	font-size: 0.875rem;
 	margin: 0.75rem 0;
 }
+.hti-auth-forgot {
+	margin: 0.5rem 0 0;
+	font-size: 0.875rem;
+}
+.hti-profile-link {
+	font-weight: 700;
+	color: var( --hti-primary );
+	text-decoration: none;
+}
+.hti-profile-link:hover {
+	text-decoration: underline;
+}
 
 .hti-account h2 { margin: 0 0 1rem; }
 .hti-profile-list {

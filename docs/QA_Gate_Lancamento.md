@@ -48,19 +48,17 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 - [x] ✅ Disclaimer contextual não-dispensável
 - [x] ✅ "Porquê este arquétipo" (LLM ou fallback)
 - [x] ✅ Notas por classe presentes
-- [ ] ⬜ **Resultado guardado é o mesmo ao recarregar** — *lacuna*: o resultado é
-  renderizado client-side; recarregar a página reinicia. O perfil ESTÁ guardado
-  (CPT + dashboard + PDF), mas falta uma **página de resultado por `profile_id`/
-  `session_token`** para reabrir/partilhar. → ver "Lacunas" no fim.
+- [x] ✅ **Resultado guardado é o mesmo ao recarregar** — `GET /result` + o URL
+  passa a `?profile=…&token=…` (history.replaceState); recarregar/partilhar reabre
+  o resultado guardado. Dashboard liga cada perfil ao seu resultado. *(L-A fechada)*
 - [x] ✅ Export PDF contém alocação, justificações, gráfico e disclaimer — `class-pdf` (Dompdf)
 - [x] ✅ CTA de encerramento aponta para conteúdo educativo, nunca corretora
 
 ## 5. Conta e RGPD (gate duro)
 - [x] ✅ Registo + login (email+password) com **verificação por email** (double opt-in)
 - [x] ✅ Login Google (OAuth) — *requer config do OAuth Client em produção*
-- [ ] ⬜ **Recuperação de password** — funciona pelo fluxo **nativo** do WP
-  (`wp-login.php?action=lostpassword`), mas **falta o link "Esqueci-me"** no nosso
-  formulário. → ver "Lacunas".
+- [x] ✅ **Recuperação de password** — link "Esqueceste-te da password?" no
+  formulário, a apontar para `wp_lostpassword_url()` (fluxo nativo do WP). *(L-C fechada)*
 - [x] ✅ `claim-profile` associa o perfil anónimo à conta
 - [x] ✅ Sem conta → nenhum dado identificado retido (só sessão anónima)
 - [x] ✅ Área pessoal lista os perfis do utilizador (`[hti_account]`)
@@ -120,15 +118,14 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 
 ## Lacunas conhecidas no código (a decidir antes do lançamento)
 
-| # | Lacuna | Impacto | Esforço | Recomendação |
-|---|---|---|---|---|
-| L-A | **Página de resultado por `profile_id`/`session_token`** (recarregar/partilhar) | §4 — médio | médio | Adicionar shortcode `[hti_result id=…]` ou `?profile=…` que renderiza o resultado guardado |
-| L-B | **5–10 artigos educativos seed** | §6 — médio (SEO) | conteúdo | Escrever/seedar artigos (reutilizar notas por classe + guias) |
-| L-C | **Link "Esqueci-me da password"** no formulário | §5 — baixo | baixo | Adicionar link para `wp_lostpassword_url()` no `account.js` |
-| L-D | **Revisão jurídica** de privacidade/termos/disclaimers (+ menção ao GA) | §5/§9 — **bloqueador legal** | externo | Enviar os textos ao jurista antes de divulgar |
+| # | Lacuna | Impacto | Estado |
+|---|---|---|---|
+| L-A | **Página de resultado por `profile_id`/`session_token`** (recarregar/partilhar) | §4 — médio | ✅ **fechada** (`GET /result` + `?profile=` no URL + links no dashboard) |
+| L-B | **5–10 artigos educativos seed** | §6 — médio (SEO) | ⬜ aberta (conteúdo) |
+| L-C | **Link "Esqueci-me da password"** no formulário | §5 — baixo | ✅ **fechada** (`wp_lostpassword_url()`) |
+| L-D | **Revisão jurídica** de privacidade/termos/disclaimers (+ menção ao GA) | §5/§9 — **bloqueador legal** | ⚠️ aberta (jurista) |
 
-> As lacunas L-A, L-B e L-C são código e posso fechá-las (cada uma num PR para `develop`).
-> A L-D é decisão/ação tua (jurista).
+> Resta a L-B (artigos seed — conteúdo) e a L-D (revisão jurídica — ação tua).
 
 ## Ensaio de lançamento (fazer em staging, fim-a-fim)
 1. Visitante → questionário (desktop + mobile) → resultado (normal + cada trava)

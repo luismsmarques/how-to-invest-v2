@@ -106,11 +106,12 @@ class Frontend {
 				'hti-questionnaire',
 				'HTI_DATA',
 				array(
-					'restUrl' => esc_url_raw( rest_url( 'htinvest/v1/recommend' ) ),
-					'nonce'   => wp_create_nonce( 'wp_rest' ),
-					'locale'  => $locale,
-					'data'    => Questions::payload( $locale ),
-					'pdf'     => array(
+					'restUrl'   => esc_url_raw( rest_url( 'htinvest/v1/recommend' ) ),
+					'resultUrl' => esc_url_raw( rest_url( 'htinvest/v1/result' ) ),
+					'nonce'     => wp_create_nonce( 'wp_rest' ),
+					'locale'    => $locale,
+					'data'      => Questions::payload( $locale ),
+					'pdf'       => array(
 						'url'   => esc_url_raw( admin_url( 'admin-post.php' ) ),
 						'nonce' => wp_create_nonce( 'hti_pdf' ),
 					),
@@ -135,6 +136,8 @@ class Frontend {
 			'locale'     => $locale,
 			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
 			'homeUrl'    => esc_url( home_url( '/' ) ),
+			'resultBase' => esc_url( home_url( '/investor-profile-quiz/' ) ),
+			'lostUrl'    => esc_url( wp_lostpassword_url() ),
 			'google'     => array(
 				'enabled' => Google::is_configured(),
 				'start'   => esc_url_raw( Google::start_url() ),
@@ -175,6 +178,8 @@ class Frontend {
 				'verify_error'   => 'Esse link de confirmação é inválido ou expirou.',
 				'google'         => 'Continuar com o Google',
 				'or'             => 'ou',
+				'forgot'         => 'Esqueceste-te da password?',
+				'open_profile'   => 'Ver resultado',
 			);
 		}
 		return array(
@@ -201,6 +206,8 @@ class Frontend {
 			'verify_error'   => 'That confirmation link is invalid or has expired.',
 			'google'         => 'Continue with Google',
 			'or'             => 'or',
+			'forgot'         => 'Forgot your password?',
+			'open_profile'   => 'View result',
 		);
 	}
 

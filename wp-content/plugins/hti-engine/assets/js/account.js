@@ -97,6 +97,12 @@
 		actions.appendChild( signin );
 		form.appendChild( actions );
 
+		if ( ctx.lostUrl && s.forgot ) {
+			var forgot = el( 'p', { class: 'hti-auth-forgot' } );
+			forgot.appendChild( el( 'a', { href: ctx.lostUrl }, s.forgot ) );
+			form.appendChild( forgot );
+		}
+
 		var mode = 'register';
 		create.addEventListener( 'click', function () { mode = 'register'; } );
 		signin.addEventListener( 'click', function () { mode = 'login'; } );
@@ -249,7 +255,12 @@
 				profiles.forEach( function ( p ) {
 					var li = el( 'li', { class: 'hti-profile-item' } );
 					var label = ( p.archetype && p.archetype.label ) || ( s.archetype + ' ' + ( p.archetype && p.archetype.id ) );
-					li.appendChild( el( 'strong', null, label ) );
+					// Link to the saved result (owner is authorized server-side).
+					if ( ctx.resultBase && p.profile_id ) {
+						li.appendChild( el( 'a', { href: ctx.resultBase + '?profile=' + encodeURIComponent( p.profile_id ), class: 'hti-profile-link' }, label ) );
+					} else {
+						li.appendChild( el( 'strong', null, label ) );
+					}
 					if ( p.generated_at ) {
 						li.appendChild( el( 'span', { class: 'hti-profile-date' }, ' · ' + String( p.generated_at ).slice( 0, 10 ) ) );
 					}

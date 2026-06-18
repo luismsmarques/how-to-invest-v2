@@ -258,6 +258,15 @@
 					window.sessionStorage.removeItem( 'hti_answers' );
 					window.sessionStorage.removeItem( 'hti_step' );
 				} catch ( e ) {}
+				// Make the result reloadable/shareable via the URL.
+				try {
+					var u = new URL( window.location.href );
+					u.searchParams.set( 'profile', res.profile_id );
+					if ( res.session_token ) {
+						u.searchParams.set( 'token', res.session_token );
+					}
+					window.history.replaceState( {}, '', u.toString() );
+				} catch ( e ) {}
 				window.HTIResult.render( mount, res, cfg.data );
 			} )
 			.catch( function () {
@@ -265,5 +274,33 @@
 			} );
 	}
 
-	renderStep();
+	// Reload a saved result when the URL carries ?profile=… (and a token, if anonymous).
+	function loadSaved( profileId, token ) {
+		renderProcessing();
+		fetch( cfg.resultUrl + '?profile_id=' + encodeURIComponent( profileId ) + '&session_token=' + encodeURIComponent( token || '' ), {
+			method: 'GET',
+			credentials: 'same-origin',
+			headers: { 'X-WP-Nonce': cfg.nonce }
+		} )
+			.then( function ( r ) {
+				if ( ! r.ok ) {
+					throw new Error( 'http ' + r.status );
+				}
+				return r.json();
+			} )
+			.then( function ( res ) {
+				window.HTIResult.render( mount, res, cfg.data );
+			} )
+			.catch( function () {
+				// Saved result unavailable (expired/forbidden) → start fresh.
+				renderStep();
+			} );
+	}
+
+	var urlParams = new URLSearchParams( window.location.search );
+	if ( urlParams.get( 'profile' ) ) {
+		loadSaved( urlParams.get( 'profile' ), urlParams.get( 'token' ) || '' );
+	} else {
+		renderStep();
+	}
 }() );

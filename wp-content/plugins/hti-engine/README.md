@@ -29,7 +29,7 @@ hti-engine/
 │   ├── class-consent.php    # ✅ banner de consentimento (E8, RGPD) + gate analytics
 │   ├── class-analytics.php  # ✅ Google Analytics (GA4) carregado só após consentimento
 │   ├── class-pdf.php        # ✅ export PDF do resultado (Dompdf, fallback HTML)
-│   ├── class-rest.php       # ✅ /recommend · register · login · claim-profile · my-profiles · export · account
+│   ├── class-rest.php       # ✅ /recommend · result · register · login · claim · my-profiles · export · account
 │   ├── class-rate-limit.php # ✅ throttle por-IP nos endpoints públicos (M1)
 │   ├── class-mailer.php     # ✅ email transacional via Brevo (fallback wp_mail)
 │   ├── class-verification.php # ✅ double opt-in (verificação por email) (M2)
