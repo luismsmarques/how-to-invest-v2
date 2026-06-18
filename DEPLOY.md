@@ -93,6 +93,27 @@ cd $HOME/repositories/how-to-invest-v2 && git pull origin main \
 
 ---
 
+## 5.1 Troubleshooting — deploy "queued" eternamente
+
+O cPanel serializa os deploys; um passo que não termina deixa tudo *queued*. O
+suspeito habitual é o `composer install` (rede lenta/sem saída). O `.cpanel.yml`
+já limita o composer com `timeout` e `--no-interaction`, mas se ficares preso:
+
+**Destrava fazendo o deploy à mão no Terminal** (não passa pela fila):
+
+```bash
+cd ~/repositories/how-to-invest-v2 && git fetch origin && git reset --hard origin/main
+WPCONTENT="$HOME/howtoinvest.pro/wp-content"   # ajusta ao teu docroot
+mkdir -p "$WPCONTENT/plugins/hti-engine" "$WPCONTENT/themes/howtoinvest"
+rsync -a --delete --exclude 'vendor/' wp-content/plugins/hti-engine/ "$WPCONTENT/plugins/hti-engine/"
+rsync -a --delete                      wp-content/themes/howtoinvest/ "$WPCONTENT/themes/howtoinvest/"
+cd "$WPCONTENT/plugins/hti-engine" && composer install --no-dev --no-interaction --no-progress || true
+```
+
+- O Dompdf (PDF) é opcional — se o composer pendurar, `Ctrl+C`: o site funciona
+  na mesma (PDF cai para HTML imprimível).
+- Log dos deploys do cPanel: `~/.cpanel/logs/` (ou o painel mostra-o).
+
 ## 6. Notas
 
 - **Nunca** versionar `wp-config.php` nem chaves — usa `define()` no `wp-config.php`

@@ -17,5 +17,7 @@ deployment:
     # Sync the plugin, but preserve its composer-installed vendor/ across deploys.
     - /usr/bin/rsync -a --delete --exclude 'vendor/' wp-content/plugins/hti-engine/ "$WPCONTENT/plugins/hti-engine/"
     - /usr/bin/rsync -a --delete wp-content/themes/howtoinvest/ "$WPCONTENT/themes/howtoinvest/"
-    # Install PHP deps (Dompdf) for the plugin; best-effort so a missing composer never blocks a deploy.
-    - cd "$WPCONTENT/plugins/hti-engine" && ( composer install --no-dev --optimize-autoloader || php composer.phar install --no-dev --optimize-autoloader || true )
+    # Install PHP deps (Dompdf) for the plugin. Bounded by `timeout` and never
+    # fails/hangs the deploy: if composer is missing, offline or slow, the
+    # plugin still works (PDF falls back to printable HTML).
+    - cd "$WPCONTENT/plugins/hti-engine" && ( command -v composer >/dev/null 2>&1 && timeout 180 composer install --no-dev --no-interaction --no-progress --optimize-autoloader ) || true
