@@ -54,6 +54,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
 require_once HTI_ENGINE_PATH . 'includes/class-pdf.php';
+require_once HTI_ENGINE_PATH . 'includes/class-cron.php';
 
 /**
  * Load the plugin text domain (EN default + PT translations in languages/).
@@ -105,6 +106,11 @@ Consent::init();
 PdfExport::init();
 
 /**
+ * Daily pruning of stale anonymous profiles (RGPD minimization).
+ */
+Cron::init();
+
+/**
  * Content seeder (Tools → Seed content, and the `wp hti seed` WP-CLI command).
  */
 Seeder::register();
@@ -133,6 +139,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 function activate(): void {
 	Taxonomy::register();
 	CPT::register();
+	Cron::schedule();
 	flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, __NAMESPACE__ . '\\activate' );
@@ -141,6 +148,7 @@ register_activation_hook( __FILE__, __NAMESPACE__ . '\\activate' );
  * Deactivation: drop the CPT rewrite rules we added.
  */
 function deactivate(): void {
+	Cron::unschedule();
 	flush_rewrite_rules();
 }
 register_deactivation_hook( __FILE__, __NAMESPACE__ . '\\deactivate' );
