@@ -11,6 +11,7 @@ hti-engine/
 ├── hti-engine.php          # bootstrap, hooks, ativação (flush rewrite)
 ├── includes/
 │   ├── class-cpt.php        # ✅ CPTs: glossary + news (públicos) · htinvest_profile (Fase 2)
+│   ├── class-taxonomy.php   # ✅ taxonomias: glossary_topic + news_category (internal linking)
 │   ├── class-seo.php        # ✅ JSON-LD: DefinedTerm (glossary) + Article/NewsArticle (fallback)
 │   ├── class-redirects.php  # ✅ 301s dos URLs antigos do Base44 (mapa filtrável)
 │   ├── class-seeder.php     # ✅ conteúdo seed: termos de glossário + páginas (1.5)
@@ -33,6 +34,13 @@ hti-engine/
 - Ativação faz `flush_rewrite_rules` para os permalinks resolverem de imediato.
 
 > Os CPTs vivem no **plugin** (não no tema) para sobreviverem a trocas de tema. O CPT **privado** `htinvest_profile` (motor) entra na mesma `class-cpt` na Fase 2.
+
+**Taxonomias (feito — `class-taxonomy.php`):**
+- `glossary_topic` (tópicos, hierárquica) em `glossary` → arquivo `/glossary-topic/{termo}/`.
+- `news_category` (categorias, hierárquica) em `news` → arquivo `/news-category/{termo}/`.
+- Públicas, `show_in_rest`, `show_admin_column` — base de **internal linking** (objetivo SEO da Fase 1).
+- O seeder cria o tópico **"Asset classes"** (PT em term meta `hti_name_pt`) e atribui-lhe os 5 termos de glossário → hub de links pronto a usar.
+- Os arquivos de termo usam o template genérico `archive.html` do tema (hierarquia de templates do WP); pode criar-se `taxonomy-glossary_topic.html` depois se quiseres um layout dedicado.
 
 **Schema / sitemap (feito — `class-seo.php`):**
 - Glossário emite sempre **`DefinedTerm`** (JSON-LD), ligado ao `DefinedTermSet` do arquivo `/investing-glossary/`.

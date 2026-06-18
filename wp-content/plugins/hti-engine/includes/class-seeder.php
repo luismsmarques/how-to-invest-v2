@@ -61,6 +61,10 @@ class Seeder {
 			}
 		}
 
+		// Group the seeded glossary terms under an "Asset classes" topic so the
+		// internal-linking hub works out of the box.
+		self::assign_glossary_topic();
+
 		foreach ( self::pages() as $entry ) {
 			$id = self::insert( 'page', $entry );
 			if ( $id > 0 ) {
@@ -118,6 +122,38 @@ class Seeder {
 		}
 
 		return (int) $id;
+	}
+
+	/**
+	 * Ensure the "Asset classes" glossary topic exists and assign every
+	 * seeded glossary term to it. Idempotent (append, never replaces).
+	 */
+	private static function assign_glossary_topic(): void {
+		if ( ! taxonomy_exists( 'glossary_topic' ) ) {
+			return;
+		}
+
+		$existing = term_exists( 'asset-classes', 'glossary_topic' );
+		if ( ! $existing ) {
+			$existing = wp_insert_term(
+				'Asset classes',
+				'glossary_topic',
+				array( 'slug' => 'asset-classes' )
+			);
+		}
+		if ( is_wp_error( $existing ) ) {
+			return;
+		}
+
+		$term_id = (int) ( is_array( $existing ) ? $existing['term_id'] : $existing );
+		update_term_meta( $term_id, 'hti_name_pt', 'Classes de ativos' );
+
+		foreach ( self::glossary_terms() as $entry ) {
+			$post = get_page_by_path( $entry['slug'], OBJECT, 'glossary' );
+			if ( $post instanceof \WP_Post ) {
+				wp_set_object_terms( $post->ID, array( $term_id ), 'glossary_topic', true );
+			}
+		}
 	}
 
 	/**

@@ -151,6 +151,130 @@ msgstr ""
 msgid "Educational news and updates."
 msgstr ""
 
+#: includes/class-taxonomy.php
+msgctxt "taxonomy general name"
+msgid "Topics"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgctxt "taxonomy singular name"
+msgid "Topic"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Topics"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "All topics"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Edit topic"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "View topic"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Update topic"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Add new topic"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "New topic name"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Parent topic"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Parent topic:"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Search topics"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "No topics found."
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "← Back to topics"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Topics that group glossary terms."
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgctxt "taxonomy general name"
+msgid "News categories"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgctxt "taxonomy singular name"
+msgid "News category"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Categories"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "All categories"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Edit category"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "View category"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Update category"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Add new category"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "New category name"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Parent category"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Parent category:"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Search categories"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "No categories found."
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "← Back to categories"
+msgstr ""
+
+#: includes/class-taxonomy.php
+msgid "Categories for news articles."
+msgstr ""
+
 #: includes/class-seeder.php
 msgid "HowToInvest — Seed content"
 msgstr ""
