@@ -1,0 +1,320 @@
+/**
+ * Questionnaire + result styles. Inherits the theme's design tokens (theme.json
+ * CSS custom properties) with safe fallbacks so the app also looks right under
+ * any theme. Calm, accessible, mobile-first; visible focus throughout.
+ */
+
+.hti-app {
+	--hti-primary: var( --wp--preset--color--primary, #1b7a5a );
+	--hti-primary-hover: var( --wp--preset--color--primary-hover, #145c44 );
+	--hti-text: var( --wp--preset--color--contrast, #14241d );
+	--hti-muted: var( --wp--preset--color--muted, #5b6b64 );
+	--hti-border: var( --wp--preset--color--border, #dde5e1 );
+	--hti-surface: var( --wp--preset--color--surface, #f6f8f7 );
+	--hti-soft: var( --wp--preset--color--secondary, #e7f2ed );
+	--hti-info-surface: var( --wp--preset--color--info-surface, #eaf2f7 );
+	--hti-info: var( --wp--preset--color--info, #2a6f97 );
+	--hti-caution: var( --wp--preset--color--caution, #8a5a00 );
+	--hti-caution-surface: var( --wp--preset--color--caution-surface, #fbf3e2 );
+
+	max-width: 680px;
+	margin: 0 auto;
+	color: var( --hti-text );
+	line-height: 1.6;
+}
+
+.hti-app *:focus-visible {
+	outline: 2px solid var( --hti-primary );
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+/* --- Progress --- */
+.hti-progress {
+	margin-bottom: 1.5rem;
+}
+.hti-progress-bar {
+	height: 8px;
+	background: var( --hti-border );
+	border-radius: 999px;
+	overflow: hidden;
+}
+.hti-progress-fill {
+	display: block;
+	height: 100%;
+	background: var( --hti-primary );
+	border-radius: 999px;
+	transition: width 0.3s ease;
+}
+.hti-step-count {
+	margin: 0.5rem 0 0;
+	font-size: 0.875rem;
+	color: var( --hti-muted );
+}
+
+/* --- Question --- */
+.hti-fieldset {
+	border: 0;
+	padding: 0;
+	margin: 0;
+}
+.hti-question {
+	font-size: 1.5rem;
+	font-weight: 700;
+	line-height: 1.3;
+	padding: 0;
+	margin: 0 0 1rem;
+}
+.hti-info {
+	background: var( --hti-info-surface );
+	border-radius: 10px;
+	padding: 0.75rem 1rem;
+	margin-bottom: 1.5rem;
+}
+.hti-info-label {
+	display: block;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var( --hti-info );
+	margin-bottom: 0.25rem;
+}
+.hti-info p {
+	margin: 0;
+	font-size: 0.9375rem;
+}
+
+/* --- Options --- */
+.hti-option {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 1rem;
+	margin-bottom: 0.75rem;
+	border: 1.5px solid var( --hti-border );
+	border-radius: 10px;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+.hti-option:hover {
+	border-color: var( --hti-primary );
+	background: var( --hti-surface );
+}
+.hti-option input {
+	width: 1.25rem;
+	height: 1.25rem;
+	accent-color: var( --hti-primary );
+	flex: 0 0 auto;
+}
+.hti-option:has( input:checked ) {
+	border-color: var( --hti-primary );
+	background: var( --hti-soft );
+}
+.hti-option-label {
+	font-size: 1.0625rem;
+}
+.hti-unknown-note {
+	margin: 0.25rem 0 0;
+	padding: 0.75rem 1rem;
+	background: var( --hti-info-surface );
+	border-radius: 10px;
+	font-size: 0.9375rem;
+}
+
+/* --- Errors / nav --- */
+.hti-error {
+	color: #b3261e;
+	font-weight: 600;
+	margin: 0.5rem 0 0;
+}
+.hti-nav {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-top: 1.5rem;
+}
+.hti-nav .hti-btn-primary {
+	margin-left: auto;
+}
+.hti-microcopy {
+	text-align: center;
+	font-size: 0.8125rem;
+	color: var( --hti-muted );
+	margin-top: 1.25rem;
+}
+
+/* --- Buttons --- */
+.hti-btn {
+	display: inline-block;
+	font: inherit;
+	font-weight: 600;
+	padding: 0.75rem 1.5rem;
+	border-radius: 8px;
+	border: 1.5px solid transparent;
+	cursor: pointer;
+	text-decoration: none;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+.hti-btn-primary {
+	background: var( --hti-primary );
+	color: #fff;
+}
+.hti-btn-primary:hover {
+	background: var( --hti-primary-hover );
+	color: #fff;
+}
+.hti-btn-secondary {
+	background: var( --hti-soft );
+	color: var( --hti-text );
+	border-color: var( --hti-primary );
+}
+.hti-btn-ghost {
+	background: transparent;
+	color: var( --hti-text );
+	border-color: var( --hti-border );
+}
+.hti-btn-ghost:hover {
+	border-color: var( --hti-primary );
+}
+
+/* --- Processing --- */
+.hti-processing {
+	text-align: center;
+	padding: 3rem 1rem;
+}
+.hti-spinner {
+	width: 44px;
+	height: 44px;
+	margin: 0 auto 1.25rem;
+	border: 4px solid var( --hti-border );
+	border-top-color: var( --hti-primary );
+	border-radius: 50%;
+	animation: hti-spin 0.9s linear infinite;
+}
+.hti-processing-main {
+	font-weight: 600;
+	margin: 0 0 0.25rem;
+}
+.hti-processing-sub {
+	color: var( --hti-muted );
+	margin: 0;
+}
+@keyframes hti-spin {
+	to { transform: rotate( 360deg ); }
+}
+@media ( prefers-reduced-motion: reduce ) {
+	.hti-spinner { animation-duration: 2.4s; }
+	.hti-progress-fill { transition: none; }
+}
+
+.hti-error-box {
+	text-align: center;
+	padding: 2rem 1rem;
+	background: var( --hti-caution-surface );
+	border-radius: 12px;
+}
+.hti-error-box p {
+	margin: 0 0 1rem;
+}
+
+/* --- Result --- */
+.hti-result:focus {
+	outline: none;
+}
+.hti-result-pretitle {
+	font-size: 1.25rem;
+	color: var( --hti-muted );
+	margin: 0 0 0.75rem;
+}
+.hti-archetype {
+	font-size: 1.75rem;
+	font-weight: 700;
+	margin: 0 0 1rem;
+}
+.hti-safety {
+	background: var( --hti-caution-surface );
+	border-left: 4px solid var( --hti-caution );
+	border-radius: 8px;
+	padding: 1rem 1.25rem;
+	margin-bottom: 1.25rem;
+}
+.hti-safety p { margin: 0; }
+.hti-disclaimer {
+	background: var( --hti-info-surface );
+	border-radius: 10px;
+	padding: 1rem 1.25rem;
+	margin-bottom: 1.5rem;
+	font-size: 0.9375rem;
+}
+.hti-disclaimer p { margin: 0; }
+
+.hti-alloc { margin-bottom: 1.75rem; }
+.hti-alloc h3 { margin: 0 0 1rem; }
+.hti-alloc-grid {
+	display: grid;
+	gap: 1.5rem;
+	align-items: center;
+}
+.hti-donut {
+	width: 180px;
+	height: 180px;
+	margin: 0 auto;
+	display: block;
+}
+.hti-alloc-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.hti-alloc-item {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.5rem 0;
+	border-bottom: 1px solid var( --hti-border );
+}
+.hti-alloc-item:last-child { border-bottom: 0; }
+.hti-swatch {
+	width: 14px;
+	height: 14px;
+	border-radius: 3px;
+	flex: 0 0 auto;
+}
+.hti-alloc-name { flex: 1 1 auto; }
+.hti-alloc-pct { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+@media ( min-width: 560px ) {
+	.hti-alloc-grid {
+		grid-template-columns: 180px 1fr;
+	}
+}
+
+.hti-why, .hti-notes { margin-bottom: 1.75rem; }
+.hti-why h3, .hti-notes h3 { margin: 0 0 0.5rem; }
+.hti-note {
+	border: 1px solid var( --hti-border );
+	border-radius: 8px;
+	padding: 0.5rem 1rem;
+	margin-bottom: 0.5rem;
+}
+.hti-note summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+.hti-note p { margin: 0.5rem 0 0; }
+
+.hti-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-top: 1.5rem;
+}
+.hti-fineprint {
+	font-size: 0.8125rem;
+	color: var( --hti-muted );
+	margin-top: 0.75rem;
+}
+.hti-noscript {
+	padding: 1rem;
+	background: var( --hti-caution-surface );
+	border-radius: 8px;
+}

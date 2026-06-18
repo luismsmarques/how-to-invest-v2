@@ -231,6 +231,15 @@ class Seeder {
 
 		return array(
 			array(
+				'slug'    => 'investor-profile-quiz',
+				'title'   => 'Discover your investor profile',
+				'content' => '<!-- wp:shortcode -->[hti_questionnaire]<!-- /wp:shortcode -->',
+				'pt'      => array(
+					'title'   => 'Descobre o teu perfil de investidor',
+					'content' => '<!-- wp:shortcode -->[hti_questionnaire]<!-- /wp:shortcode -->',
+				),
+			),
+			array(
 				'slug'    => 'about',
 				'title'   => 'About HowToInvest',
 				'content' => self::paragraph( 'HowToInvest is an educational platform about investing literacy. We help you understand the building blocks of a portfolio — by asset class, never by specific products — through a short questionnaire and clear, illustrative examples. Nothing here is financial advice.' ),
