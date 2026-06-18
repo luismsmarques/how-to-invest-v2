@@ -199,7 +199,8 @@ Submissão: `fetch` POST a `/recommend` com nonce → processing → resultado; 
 
 **Conteúdo seed (feito — `class-seeder.php`, tarefa 1.5):**
 - **5 termos de glossário** (as notas curadas por classe de ativo, Textos §2): `global-equities`, `bonds`, `cash`, `reits-and-alternatives`, `crypto`.
-- **6 páginas**: `investor-profile-quiz` (com o shortcode `[hti_questionnaire]`), `about`, `contact`, `how-to-start-investing` (guia real + CTA), `privacy-policy` e `terms-and-conditions` (placeholders com aviso, **carecem de revisão jurídica**).
+- **7 páginas**: `investor-profile-quiz` (`[hti_questionnaire]`), `my-account` (`[hti_account]`), `about`, `contact`, `how-to-start-investing` (guia + CTA), `privacy-policy` e `terms-and-conditions` (placeholders, **carecem de revisão jurídica**).
+- **8 artigos educativos** (posts, EN+PT, com CTA e links ao glossário): perfil de investidor, classes de ativos, horizonte temporal, manter a calma nas quedas, fundo de emergência, diversificação, risco vs. retorno, ESG.
 - **Bilingue:** EN no post; PT em meta (`hti_title_pt`, `hti_content_pt`, `hti_excerpt_pt`) — *language-aware* até a abordagem multilíngue ser fechada.
 - **Idempotente:** salta entradas já existentes (por slug); nunca sobrescreve edições.
 - Define `wp_page_for_privacy_policy` (alinhamento RGPD).

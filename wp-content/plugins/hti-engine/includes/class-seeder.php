@@ -43,12 +43,13 @@ class Seeder {
 	/**
 	 * Seed everything. Returns a report: created/skipped counts.
 	 *
-	 * @return array{glossary_created:int,pages_created:int,skipped:int}
+	 * @return array{glossary_created:int,pages_created:int,articles_created:int,skipped:int}
 	 */
 	public static function seed(): array {
 		$report = array(
 			'glossary_created' => 0,
 			'pages_created'    => 0,
+			'articles_created' => 0,
 			'skipped'          => 0,
 		);
 
@@ -74,6 +75,15 @@ class Seeder {
 				if ( 'privacy-policy' === $entry['slug'] ) {
 					update_option( 'wp_page_for_privacy_policy', $id );
 				}
+			} else {
+				++$report['skipped'];
+			}
+		}
+
+		foreach ( self::articles() as $entry ) {
+			$id = self::insert( 'post', $entry );
+			if ( $id > 0 ) {
+				++$report['articles_created'];
 			} else {
 				++$report['skipped'];
 			}
@@ -308,6 +318,217 @@ class Seeder {
 	}
 
 	/**
+	 * Educational seed articles (standard posts) — EN body + PT in meta.
+	 * Invariant-safe: by asset class, conditional language, no named instruments.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function articles(): array {
+		$g = static fn( string $slug ): string => home_url( '/investing-glossary/' . $slug . '/' );
+
+		return array(
+			array(
+				'slug'    => 'what-is-an-investor-profile',
+				'title'   => 'What is an investor profile?',
+				'excerpt' => 'A simple way to describe how you might approach investing — based on your time, goals and comfort with risk.',
+				'content' => self::paragraph( 'An investor profile — sometimes called an investor archetype — is a simple way to describe how you might approach investing, based on your time, your goals and your comfort with risk. It is not a label that boxes you in; it is a starting point for understanding which kinds of portfolios tend to suit different situations.' )
+					. self::heading( 'What shapes your profile' )
+					. self::paragraph( 'A few things matter most: how long until you need the money (your horizon), what you are investing for, how you would react if markets fell, and how stable your finances are. Together these hint at how much short-term ups and downs you can comfortably ride out.' )
+					. self::heading( 'Why it is only a starting point' )
+					. self::paragraph( 'Two people with the same profile can still make different choices. A profile is educational — it shows the kind of structure a situation like yours might explore, organised by asset class, never specific products. It is a lens for learning, not a personal recommendation.' )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'O que é um perfil de investidor?',
+					'excerpt' => 'Uma forma simples de descrever como podes abordar o investimento — com base no teu tempo, objetivos e conforto com o risco.',
+					'content' => self::paragraph( 'Um perfil de investidor — por vezes chamado arquétipo de investidor — é uma forma simples de descrever como podes abordar o investimento, com base no teu tempo, nos teus objetivos e no teu conforto com o risco. Não é um rótulo que te prende; é um ponto de partida para perceber que tipos de carteira costumam encaixar em diferentes situações.' )
+						. self::heading( 'O que molda o teu perfil' )
+						. self::paragraph( 'Algumas coisas contam mais: quanto tempo falta até precisares do dinheiro (o teu horizonte), para que estás a investir, como reagirias se os mercados caíssem, e quão estável é a tua situação financeira. Juntas, sugerem quantos altos e baixos de curto prazo consegues atravessar com conforto.' )
+						. self::heading( 'Porque é só um ponto de partida' )
+						. self::paragraph( 'Duas pessoas com o mesmo perfil podem fazer escolhas diferentes. Um perfil é educativo — mostra o tipo de estrutura que uma situação como a tua poderia estudar, organizada por classe de ativos, nunca por produtos específicos. É uma lente para aprender, não uma recomendação pessoal.' )
+						. self::cta(),
+				),
+			),
+			array(
+				'slug'    => 'asset-classes-explained',
+				'title'   => 'Asset classes explained',
+				'excerpt' => 'Portfolios are built from a handful of broad building blocks. Here is what each one does.',
+				'content' => self::paragraph( 'Portfolios are built from a handful of broad building blocks called asset classes. Understanding them is the first step to understanding any example portfolio you will see here.' )
+					. self::heading( 'The main classes' )
+					. self::paragraph( 'Global equities are the growth engine — shares in companies around the world. Bonds are loans to governments or companies that pay interest and usually move more gently. Cash is money you can reach quickly. Real estate and alternatives add variety. And crypto, if it appears at all, is only ever a very small, optional slice.' )
+					. self::related(
+						array(
+							array( $g( 'global-equities' ), 'Global equities' ),
+							array( $g( 'bonds' ), 'Bonds' ),
+							array( $g( 'cash' ), 'Cash' ),
+							array( $g( 'reits-and-alternatives' ), 'REITs & alternatives' ),
+						)
+					)
+					. self::heading( 'Why mix them' )
+					. self::paragraph( 'Each class behaves differently, so combining them can smooth the overall ride. The right mix depends on your situation — mostly your time horizon and how comfortable you are with swings.' )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'As classes de ativos explicadas',
+					'excerpt' => 'As carteiras constroem-se a partir de poucos blocos de construção. Eis o que cada um faz.',
+					'content' => self::paragraph( 'As carteiras constroem-se a partir de poucos blocos de construção chamados classes de ativos. Percebê-los é o primeiro passo para entender qualquer exemplo de carteira que vais ver aqui.' )
+						. self::heading( 'As principais classes' )
+						. self::paragraph( 'As ações globais são o motor de crescimento — participações em empresas de todo o mundo. As obrigações são empréstimos a governos ou empresas que pagam juros e costumam mexer-se de forma mais suave. A liquidez é dinheiro a que chegas depressa. O imobiliário e os alternativos acrescentam variedade. E a cripto, se aparecer, é sempre apenas uma fatia muito pequena e opcional.' )
+						. self::heading( 'Porquê misturá-las' )
+						. self::paragraph( 'Cada classe comporta-se de forma diferente, por isso combiná-las pode suavizar o percurso global. A mistura certa depende da tua situação — sobretudo do teu horizonte temporal e do conforto com as oscilações.' )
+						. self::cta(),
+				),
+			),
+			array(
+				'slug'    => 'why-your-time-horizon-matters',
+				'title'   => 'Why your time horizon is your biggest ally',
+				'excerpt' => 'The further away your goal, the more ups and downs you can ride out along the way.',
+				'content' => self::paragraph( 'Time is an investor\'s biggest ally. The further away your goal, the more ups and downs you can ride out along the way.' )
+					. self::heading( 'Short versus long horizons' )
+					. self::paragraph( 'Money you may need within a few years usually leans on steadier classes, because there is little time to recover from a fall. Money you will not touch for a decade or more can hold more growth assets, which swing more but have time to recover.' )
+					. self::heading( 'Horizon can outweigh appetite' )
+					. self::paragraph( 'Even if you are comfortable with risk, a short horizon often calls for caution — time matters as much as comfort.' )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'Porque o teu horizonte temporal é o maior aliado',
+					'excerpt' => 'Quanto mais longe está o teu objetivo, mais altos e baixos consegues atravessar pelo caminho.',
+					'content' => self::paragraph( 'O tempo é o maior aliado de quem investe. Quanto mais longe está o teu objetivo, mais altos e baixos consegues atravessar pelo caminho.' )
+						. self::heading( 'Horizontes curtos versus longos' )
+						. self::paragraph( 'O dinheiro de que podes precisar dentro de poucos anos costuma apoiar-se em classes mais estáveis, porque há pouco tempo para recuperar de uma queda. O dinheiro que não vais tocar durante uma década ou mais pode ter mais ativos de crescimento, que oscilam mais mas têm tempo para recuperar.' )
+						. self::heading( 'O horizonte pode pesar mais do que o apetite' )
+						. self::paragraph( 'Mesmo que te sintas confortável com o risco, um horizonte curto pede muitas vezes prudência — o tempo conta tanto como o conforto.' )
+						. self::cta(),
+				),
+			),
+			array(
+				'slug'    => 'staying-calm-when-markets-fall',
+				'title'   => 'How to stay calm when markets fall',
+				'excerpt' => 'The best plan is the one you can stick to when markets get scary.',
+				'content' => self::paragraph( 'The best plan is the one you can stick to when markets get scary. Selling at the bottom is one of the costliest mistakes an investor can make.' )
+					. self::heading( 'Why drops feel worse than they are' )
+					. self::paragraph( 'Falls are a normal part of investing in growth assets. Over long periods, markets have tended to recover — but the recovery only helped those who stayed invested.' )
+					. self::heading( 'A simple guardrail' )
+					. self::paragraph( 'Knowing in advance how you would react to a sharp drop helps you avoid panic decisions. A portfolio that fits your comfort makes staying the course far easier.' )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'Como manter a calma quando os mercados caem',
+					'excerpt' => 'O melhor plano é o que consegues manter quando o mercado assusta.',
+					'content' => self::paragraph( 'O melhor plano é o que consegues manter quando o mercado assusta. Vender no fundo é um dos erros mais caros que um investidor pode cometer.' )
+						. self::heading( 'Porque as quedas parecem piores do que são' )
+						. self::paragraph( 'As quedas são uma parte normal de investir em ativos de crescimento. Em períodos longos, os mercados tendem a recuperar — mas a recuperação só ajudou quem se manteve investido.' )
+						. self::heading( 'Uma salvaguarda simples' )
+						. self::paragraph( 'Saber de antemão como reagirias a uma queda acentuada ajuda-te a evitar decisões em pânico. Uma carteira adequada ao teu conforto torna muito mais fácil manter o rumo.' )
+						. self::cta(),
+				),
+			),
+			array(
+				'slug'    => 'why-an-emergency-fund-comes-first',
+				'title'   => 'Why an emergency fund comes before investing',
+				'excerpt' => 'The most important first step is usually money kept somewhere safe and easy to reach.',
+				'content' => self::paragraph( 'Before talking about portfolios, the most important step is usually building an emergency fund — money kept somewhere safe and easy to reach.' )
+					. self::heading( 'Why it comes first' )
+					. self::paragraph( 'An emergency fund — often three to six months of expenses — is what stops a surprise from forcing you to sell investments at a bad time.' )
+					. self::heading( 'Then you can invest with a clear head' )
+					. self::paragraph( 'Once that base is in place, an example portfolio is something to keep in mind. Investing before you have a cushion adds avoidable risk.' )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'Porque o fundo de emergência vem antes de investir',
+					'excerpt' => 'O primeiro passo mais importante é dinheiro guardado num sítio seguro e de fácil acesso.',
+					'content' => self::paragraph( 'Antes de falarmos de carteiras, o passo mais importante costuma ser construir um fundo de emergência — dinheiro guardado num sítio seguro e de fácil acesso.' )
+						. self::heading( 'Porque vem primeiro' )
+						. self::paragraph( 'Um fundo de emergência — muitas vezes três a seis meses de despesas — é o que evita que um imprevisto te obrigue a vender investimentos num mau momento.' )
+						. self::heading( 'Depois podes investir com a cabeça tranquila' )
+						. self::paragraph( 'Com essa base montada, um exemplo de carteira é algo a ter em mente. Investir antes de teres um colchão acrescenta risco evitável.' )
+						. self::cta(),
+				),
+			),
+			array(
+				'slug'    => 'what-is-diversification',
+				'title'   => 'What is diversification?',
+				'excerpt' => 'The simple idea of not putting all your eggs in one basket.',
+				'content' => self::paragraph( 'Diversification is the simple idea of not putting all your eggs in one basket.' )
+					. self::heading( 'How it helps' )
+					. self::paragraph( 'Different asset classes do not always move together. Holding a mix means a bad patch in one part may be cushioned by another, smoothing the overall ride.' )
+					. self::heading( 'It is not a guarantee' )
+					. self::paragraph( 'Diversification reduces some risks, not all — markets can fall together at times. Even so, a sensible spread across classes is a cornerstone of most example portfolios.' )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'O que é diversificação?',
+					'excerpt' => 'A ideia simples de não pôr todos os ovos no mesmo cesto.',
+					'content' => self::paragraph( 'Diversificação é a ideia simples de não pôr todos os ovos no mesmo cesto.' )
+						. self::heading( 'Como ajuda' )
+						. self::paragraph( 'Diferentes classes de ativos nem sempre se movem juntas. Ter uma mistura significa que um mau período numa parte pode ser amortecido por outra, suavizando o percurso global.' )
+						. self::heading( 'Não é uma garantia' )
+						. self::paragraph( 'A diversificação reduz alguns riscos, não todos — por vezes os mercados caem em conjunto. Ainda assim, uma distribuição sensata pelas classes é um pilar da maioria dos exemplos de carteira.' )
+						. self::cta(),
+				),
+			),
+			array(
+				'slug'    => 'risk-and-reward-explained',
+				'title'   => 'Risk and reward: the trade-off explained',
+				'excerpt' => 'Assets that can grow the most usually swing the most along the way.',
+				'content' => self::paragraph( 'In investing, risk and potential reward tend to go hand in hand. Assets that can grow the most usually swing the most along the way.' )
+					. self::heading( 'The trade-off' )
+					. self::paragraph( 'Growth assets like global equities have historically grown more over long periods, but with bigger ups and downs. Steadier classes grow less but move more gently.' )
+					. self::heading( 'Finding your balance' )
+					. self::paragraph( 'There is no single right answer — only the balance that fits your time horizon and how comfortable you are with swings.' )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'Risco e retorno: o equilíbrio explicado',
+					'excerpt' => 'Os ativos que podem crescer mais costumam oscilar mais pelo caminho.',
+					'content' => self::paragraph( 'A investir, o risco e o potencial retorno tendem a andar de mãos dadas. Os ativos que podem crescer mais costumam oscilar mais pelo caminho.' )
+						. self::heading( 'O equilíbrio' )
+						. self::paragraph( 'Os ativos de crescimento como as ações globais cresceram historicamente mais em períodos longos, mas com altos e baixos maiores. As classes mais estáveis crescem menos mas mexem-se de forma mais suave.' )
+						. self::heading( 'Encontrar o teu equilíbrio' )
+						. self::paragraph( 'Não há uma resposta única — apenas o equilíbrio que se adequa ao teu horizonte temporal e ao teu conforto com as oscilações.' )
+						. self::cta(),
+				),
+			),
+			array(
+				'slug'    => 'what-is-esg-investing',
+				'title'   => 'What is ESG investing?',
+				'excerpt' => 'A lens some people like to apply to where their money goes.',
+				'content' => self::paragraph( 'ESG investing means looking at how companies handle environmental, social and governance issues — a lens some people like to apply to where their money goes.' )
+					. self::heading( 'What ESG covers' )
+					. self::paragraph( 'Environmental (for example, climate impact), social (how a company treats people) and governance (how it is run). It is a way of considering more than just financial returns.' )
+					. self::heading( 'A lens, not a strategy' )
+					. self::paragraph( 'ESG is a preference about where money goes, not a risk profile on its own. It does not change how much short-term volatility you can comfortably handle.' )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'O que é investimento ESG?',
+					'excerpt' => 'Uma lente que algumas pessoas gostam de aplicar a onde colocam o dinheiro.',
+					'content' => self::paragraph( 'Investimento ESG significa olhar para a forma como as empresas lidam com questões ambientais, sociais e de governo — uma lente que algumas pessoas gostam de aplicar a onde colocam o seu dinheiro.' )
+						. self::heading( 'O que o ESG abrange' )
+						. self::paragraph( 'Ambiental (por exemplo, impacto climático), social (como a empresa trata as pessoas) e governo (como é gerida). É uma forma de considerar mais do que apenas o retorno financeiro.' )
+						. self::heading( 'Uma lente, não uma estratégia' )
+						. self::paragraph( 'O ESG é uma preferência sobre onde o dinheiro vai, não um perfil de risco por si só. Não altera quanta volatilidade de curto prazo consegues suportar com conforto.' )
+						. self::cta(),
+				),
+			),
+		);
+	}
+
+	/**
+	 * The questionnaire CTA pattern block.
+	 */
+	private static function cta(): string {
+		return '<!-- wp:pattern {"slug":"howtoinvest/cta-questionnaire"} /-->' . "\n\n";
+	}
+
+	/**
+	 * A "Learn more" paragraph of internal links.
+	 *
+	 * @param array<int,array{0:string,1:string}> $links [url, text] pairs.
+	 */
+	private static function related( array $links ): string {
+		$parts = array();
+		foreach ( $links as $link ) {
+			$parts[] = '<a href="' . esc_url( $link[0] ) . '">' . esc_html( $link[1] ) . '</a>';
+		}
+		return '<!-- wp:paragraph {"fontSize":"small"} --><p class="has-small-font-size">'
+			. esc_html__( 'Learn more:', 'hti-engine' ) . ' ' . implode( ' · ', $parts )
+			. '</p><!-- /wp:paragraph -->' . "\n\n";
+	}
+
+	/**
 	 * Wrap text in a paragraph block.
 	 *
 	 * @param string $text Plain text.
@@ -400,10 +621,11 @@ class Seeder {
 		delete_transient( 'hti_seed_report' );
 
 		$message = sprintf(
-			/* translators: 1: glossary terms created, 2: pages created, 3: entries skipped. */
-			__( 'Seeding complete: %1$d glossary terms and %2$d pages created, %3$d skipped (already existed).', 'hti-engine' ),
+			/* translators: 1: glossary terms, 2: pages, 3: articles, 4: entries skipped. */
+			__( 'Seeding complete: %1$d glossary terms, %2$d pages and %3$d articles created, %4$d skipped (already existed).', 'hti-engine' ),
 			(int) $report['glossary_created'],
 			(int) $report['pages_created'],
+			(int) $report['articles_created'],
 			(int) $report['skipped']
 		);
 
