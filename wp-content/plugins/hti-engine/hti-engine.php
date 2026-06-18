@@ -30,6 +30,7 @@ define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'HTI_ENGINE_URL', plugin_dir_url( __FILE__ ) );
 
 require_once HTI_ENGINE_PATH . 'includes/class-cpt.php';
+require_once HTI_ENGINE_PATH . 'includes/class-seo.php';
 
 /**
  * Load the plugin text domain (EN default + PT translations in languages/).
@@ -43,6 +44,11 @@ add_action( 'init', __NAMESPACE__ . '\\load_textdomain', 0 );
  * Register custom post types on every request.
  */
 add_action( 'init', array( CPT::class, 'register' ) );
+
+/**
+ * Wire up SEO structured data (JSON-LD) for the public content types.
+ */
+SEO::init();
 
 /**
  * Activation: register CPTs once, then flush rewrite rules so their
