@@ -1,9 +1,20 @@
-<!-- wp:group {"tagName":"header","style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30"}}},"backgroundColor":"base","layout":{"type":"constrained"}} -->
-<header class="wp-block-group has-base-background-color has-background" style="padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)"><!-- wp:group {"align":"wide","layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
-<div class="wp-block-group alignwide"><!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"center"}} -->
-<div class="wp-block-group"><!-- wp:site-title {"level":0} /--></div>
-<!-- /wp:group -->
+<!-- wp:group {"tagName":"header","className":"hti-header hti-noprint","layout":{"type":"default"}} -->
+<header class="wp-block-group hti-header hti-noprint"><!-- wp:group {"align":"wide","className":"hti-header__inner","layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between","verticalAlignment":"center"}} -->
+<div class="wp-block-group alignwide hti-header__inner"><!-- wp:html -->
+<a class="hti-logo" href="/" aria-label="HowToInvest — início">
+<span class="hti-logo__mark"><svg viewBox="0 0 64 64" width="32" height="32" fill="none" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="32" fill="#1E2147"/><circle cx="32" cy="32" r="29.3" stroke="#fff" stroke-opacity=".28" stroke-width=".8"/><path d="M32 12L50 17.5V32c0 10-7.5 16.6-18 20-10.5-3.4-18-10-18-20V17.5z" fill="#fff"/><g fill="#7C5CFC"><rect x="20.5" y="22" width="1" height="11"/><rect x="19.2" y="25.5" width="3.6" height="5" rx="1"/><rect x="25.6" y="20" width="1" height="12.5"/><rect x="24.3" y="23.5" width="3.6" height="5.5" rx="1"/><rect x="30.2" y="21.5" width="1" height="11"/><rect x="28.9" y="24.5" width="3.6" height="4.5" rx="1"/><rect x="35.6" y="18" width="1" height="12.5"/><rect x="34.3" y="21" width="3.6" height="5.8" rx="1"/><rect x="20.4" y="40" width="3.6" height="6" rx=".8"/><rect x="25.9" y="37.5" width="3.6" height="8.5" rx=".8"/><rect x="31.4" y="35" width="3.6" height="11" rx=".8"/><rect x="36.9" y="32.5" width="3.6" height="13.5" rx=".8"/></g></svg></span>
+<span class="hti-logo__text">HowToInvest</span>
+</a>
+<!-- /wp:html -->
 
-<!-- wp:navigation {"overlayMenu":"mobile","layout":{"type":"flex","justifyContent":"right","flexWrap":"wrap"},"style":{"spacing":{"blockGap":"var:preset|spacing|30"}}} /--></div>
+<!-- wp:group {"className":"hti-nav-wrap","layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
+<div class="wp-block-group hti-nav-wrap"><!-- wp:navigation {"overlayMenu":"mobile","className":"hti-nav","layout":{"type":"flex","justifyContent":"right","flexWrap":"wrap"},"style":{"spacing":{"blockGap":"4px"}}} /-->
+
+<!-- wp:buttons {"className":"hti-cta","layout":{"type":"flex"}} -->
+<div class="wp-block-buttons hti-cta"><!-- wp:button {"className":"is-style-fill"} -->
+<div class="wp-block-button is-style-fill"><a class="wp-block-button__link wp-element-button" href="/investor-profile-quiz/">Começar</a></div>
+<!-- /wp:button --></div>
+<!-- /wp:buttons --></div>
+<!-- /wp:group --></div>
 <!-- /wp:group --></header>
 <!-- /wp:group -->

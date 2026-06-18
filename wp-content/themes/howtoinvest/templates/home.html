@@ -1,36 +1,102 @@
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
 <!-- wp:group {"tagName":"main","layout":{"type":"constrained"}} -->
-<main class="wp-block-group"><!-- wp:group {"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|60"}},"blockGap":"var:preset|spacing|30"},"backgroundColor":"secondary","layout":{"type":"constrained"}} -->
-<div class="wp-block-group alignfull has-secondary-background-color has-background" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)"><!-- wp:heading {"textAlign":"center","level":1,"fontSize":"xx-large"} -->
-<h1 class="wp-block-heading has-text-align-center has-xx-large-font-size">AI-Powered Investing for Everyone</h1>
+<main class="wp-block-group"><!-- wp:group {"align":"wide","className":"hti-hero","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignwide hti-hero"><!-- wp:html -->
+<span class="hti-badge"><span class="hti-badge__dot"></span>Educativo · gratuito · sem registo</span>
+<!-- /wp:html -->
+
+<!-- wp:heading {"textAlign":"center","level":1,"className":"hti-hero__title","fontSize":"huge"} -->
+<h1 class="wp-block-heading has-text-align-center hti-hero__title has-huge-font-size">Descobre que tipo de investidor és.</h1>
 <!-- /wp:heading -->
 
-<!-- wp:paragraph {"align":"center","fontSize":"large","textColor":"muted"} -->
-<p class="has-text-align-center has-muted-color has-text-color has-large-font-size">Discover your investor archetype and an illustrative example portfolio — organised by asset class. An educational tool, not financial advice.</p>
+<!-- wp:paragraph {"align":"center","className":"hti-hero__lead","fontSize":"large","textColor":"muted"} -->
+<p class="has-text-align-center hti-hero__lead has-muted-color has-text-color has-large-font-size">Uma ferramenta educativa que te ajuda a perceber o teu perfil — em poucos minutos, sem jargão e sem te pedir nada.</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} -->
-<div class="wp-block-buttons"><!-- wp:button -->
-<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/investor-profile-quiz/">Discover your profile</a></div>
+<!-- wp:buttons {"className":"hti-hero__actions","layout":{"type":"flex","justifyContent":"center","flexWrap":"wrap"}} -->
+<div class="wp-block-buttons hti-hero__actions"><!-- wp:button {"className":"is-style-fill"} -->
+<div class="wp-block-button is-style-fill"><a class="wp-block-button__link wp-element-button" href="/investor-profile-quiz/">Começar o questionário</a></div>
+<!-- /wp:button -->
+
+<!-- wp:button {"className":"is-style-outline"} -->
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#hti-articles">Explorar artigos</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons -->
 
-<!-- wp:pattern {"slug":"howtoinvest/disclaimer-short"} /--></div>
+<!-- wp:paragraph {"align":"center","className":"hti-hero__fineprint","fontSize":"small"} -->
+<p class="has-text-align-center hti-hero__fineprint has-small-font-size">Ferramenta educativa · não é aconselhamento · exemplos só por classe de ativos</p>
+<!-- /wp:paragraph --></div>
 <!-- /wp:group -->
 
-<!-- wp:group {"align":"wide","style":{"spacing":{"margin":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|60"},"blockGap":"var:preset|spacing|40"}},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group alignwide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--60)"><!-- wp:heading {"level":2} -->
-<h2 class="wp-block-heading">Learn the basics</h2>
+<!-- wp:group {"align":"wide","className":"hti-steps","layout":{"type":"grid","minimumColumnWidth":"220px"}} -->
+<div class="wp-block-group alignwide hti-steps"><!-- wp:group {"className":"hti-step","layout":{"type":"default"}} -->
+<div class="wp-block-group hti-step"><!-- wp:html -->
+<span class="hti-step__num">1</span>
+<!-- /wp:html -->
+
+<!-- wp:heading {"level":3,"className":"hti-step__title"} -->
+<h3 class="wp-block-heading hti-step__title">Respondes</h3>
 <!-- /wp:heading -->
 
-<!-- wp:query {"queryId":0,"query":{"perPage":3,"pages":0,"offset":0,"postType":"post","order":"desc","orderBy":"date","inherit":false},"layout":{"type":"constrained"}} -->
-<div class="wp-block-query"><!-- wp:post-template {"style":{"spacing":{"blockGap":"var:preset|spacing|40"}},"layout":{"type":"grid","columnCount":3}} -->
-<!-- wp:post-featured-image {"isLink":true,"aspectRatio":"16/9","style":{"border":{"radius":"8px"}}} /-->
+<!-- wp:paragraph {"className":"hti-step__text","textColor":"muted"} -->
+<p class="hti-step__text has-muted-color has-text-color">Seis perguntas curtas sobre o teu tempo, objetivos e como reages a quedas.</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group -->
 
-<!-- wp:post-title {"isLink":true,"fontSize":"large"} /-->
+<!-- wp:group {"className":"hti-step","layout":{"type":"default"}} -->
+<div class="wp-block-group hti-step"><!-- wp:html -->
+<span class="hti-step__num">2</span>
+<!-- /wp:html -->
 
-<!-- wp:post-excerpt {"excerptLength":18,"textColor":"muted","fontSize":"small"} /-->
+<!-- wp:heading {"level":3,"className":"hti-step__title"} -->
+<h3 class="wp-block-heading hti-step__title">Vês o teu perfil</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"className":"hti-step__text","textColor":"muted"} -->
+<p class="hti-step__text has-muted-color has-text-color">Um arquétipo claro, com um exemplo ilustrativo por classes — nunca tickers.</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group -->
+
+<!-- wp:group {"className":"hti-step","layout":{"type":"default"}} -->
+<div class="wp-block-group hti-step"><!-- wp:html -->
+<span class="hti-step__num">3</span>
+<!-- /wp:html -->
+
+<!-- wp:heading {"level":3,"className":"hti-step__title"} -->
+<h3 class="wp-block-heading hti-step__title">Aprendes</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"className":"hti-step__text","textColor":"muted"} -->
+<p class="hti-step__text has-muted-color has-text-color">Explicamos porque caíste nesse perfil e o que estudar a seguir.</p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group --></div>
+<!-- /wp:group -->
+
+<!-- wp:group {"align":"wide","className":"hti-articles","anchor":"hti-articles","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignwide hti-articles" id="hti-articles"><!-- wp:group {"className":"hti-section-head","layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between","verticalAlignment":"bottom"}} -->
+<div class="wp-block-group hti-section-head"><!-- wp:heading {"level":2,"className":"hti-section-head__title"} -->
+<h2 class="wp-block-heading hti-section-head__title">Para começar a aprender</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph {"className":"hti-section-head__link"} -->
+<p class="hti-section-head__link"><a href="/how-to-start-investing/">Ver tudo →</a></p>
+<!-- /wp:paragraph --></div>
+<!-- /wp:group -->
+
+<!-- wp:query {"queryId":0,"query":{"perPage":3,"pages":0,"offset":0,"postType":"post","order":"desc","orderBy":"date","inherit":false},"className":"hti-card-grid","layout":{"type":"constrained"}} -->
+<div class="wp-block-query hti-card-grid"><!-- wp:post-template {"className":"hti-card-grid__inner","layout":{"type":"grid","minimumColumnWidth":"260px"}} -->
+<!-- wp:group {"className":"hti-article-card","layout":{"type":"default"}} -->
+<div class="wp-block-group hti-article-card"><!-- wp:group {"className":"hti-article-card__media","layout":{"type":"default"}} -->
+<div class="wp-block-group hti-article-card__media"><!-- wp:post-featured-image {"isLink":true,"height":"120px"} /--></div>
+<!-- /wp:group -->
+
+<!-- wp:group {"className":"hti-article-card__body","layout":{"type":"default"}} -->
+<div class="wp-block-group hti-article-card__body"><!-- wp:post-terms {"term":"category","className":"hti-article-card__eyebrow"} /-->
+
+<!-- wp:post-title {"isLink":true,"className":"hti-article-card__title","fontSize":"large"} /--></div>
+<!-- /wp:group --></div>
+<!-- /wp:group -->
 <!-- /wp:post-template --></div>
 <!-- /wp:query --></div>
 <!-- /wp:group --></main>

@@ -17,5 +17,286 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
 
 /*
  * Design tokens and global styles are defined in theme.json (single source of truth).
- * Keep this file minimal — only small, intentional overrides that theme.json cannot express.
+ * This file holds the layout-specific "chrome" the design needs that theme.json
+ * cannot express: sticky/blurred header, pill nav, brand logo, cards, footer.
+ * Visual system: coral/cream, Poppins (headings) + Plus Jakarta Sans (body).
  */
+
+/* ---------- Brand logo (header + footer) ---------- */
+.hti-logo {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	text-decoration: none;
+}
+.hti-logo__mark {
+	display: flex;
+	flex: none;
+	width: 32px;
+	height: 32px;
+}
+.hti-logo__mark svg { display: block; width: 100%; height: 100%; }
+.hti-logo__text {
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 18px;
+	letter-spacing: -0.02em;
+	color: var( --wp--preset--color--contrast );
+}
+.hti-logo:hover .hti-logo__text { color: var( --wp--preset--color--contrast ); }
+.hti-logo--footer .hti-logo__mark { width: 27px; height: 27px; }
+.hti-logo--footer .hti-logo__text { font-size: 16px; }
+
+/* ---------- Sticky, blurred header ---------- */
+.hti-header {
+	position: sticky;
+	top: 0;
+	z-index: 40;
+	background: rgba( 255, 246, 241, 0.86 );
+	-webkit-backdrop-filter: blur( 12px );
+	backdrop-filter: blur( 12px );
+	border-bottom: 1px solid var( --wp--preset--color--border );
+}
+.hti-header__inner {
+	padding-top: 13px;
+	padding-bottom: 13px;
+	gap: 16px;
+}
+.hti-nav-wrap { gap: 8px; }
+
+/* Header navigation as muted pills (override the global coral link color). */
+.hti-nav .wp-block-navigation-item__content,
+.hti-nav a.wp-block-navigation-item__content {
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 500;
+	font-size: 15px;
+	color: #5A5270;
+	padding: 8px 12px;
+	border-radius: 8px;
+	text-decoration: none;
+}
+.hti-nav .wp-block-navigation-item__content:hover {
+	background: var( --wp--preset--color--accent-soft );
+	color: var( --wp--preset--color--contrast );
+}
+.hti-nav .wp-block-navigation-item.current-menu-item .wp-block-navigation-item__content {
+	color: var( --wp--preset--color--contrast );
+}
+
+/* Header CTA — smaller than the default button. */
+.hti-cta .wp-block-button__link {
+	padding: 9px 18px;
+	font-size: 14px;
+	border-radius: 12px;
+	box-shadow: 0 1px 2px rgba( 28, 76, 124, 0.25 );
+}
+
+/* ---------- Outline (secondary) button ---------- */
+.is-style-outline .wp-block-button__link,
+.is-style-outline > .wp-block-button__link {
+	background-color: var( --wp--preset--color--white );
+	color: var( --wp--preset--color--primary );
+	border: 1.5px solid var( --wp--preset--color--accent-border );
+}
+.is-style-outline .wp-block-button__link:hover {
+	background-color: #FFF1ED;
+	color: var( --wp--preset--color--primary );
+	border-color: var( --wp--preset--color--accent-border );
+}
+
+/* ---------- Homepage hero ---------- */
+.hti-hero {
+	text-align: center;
+	padding-top: clamp( 48px, 8vw, 104px );
+	padding-bottom: clamp( 40px, 6vw, 72px );
+}
+.hti-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: var( --wp--preset--color--primary-soft );
+	color: var( --wp--preset--color--primary );
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 13px;
+	padding: 6px 14px;
+	border-radius: 999px;
+	margin-bottom: 26px;
+}
+.hti-badge__dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var( --wp--preset--color--accent );
+}
+.hti-hero__title {
+	max-width: 14ch;
+	margin-inline: auto;
+	line-height: 1.04;
+	text-wrap: balance;
+}
+.hti-hero__lead {
+	max-width: 46ch;
+	margin: 22px auto 0;
+	line-height: 1.5;
+}
+.hti-hero__actions { margin-top: 34px; gap: 14px; }
+.hti-hero__actions .wp-block-button__link {
+	border-radius: 16px;
+	padding: 16px 30px;
+	font-size: 17px;
+}
+.hti-hero__actions .is-style-fill .wp-block-button__link {
+	box-shadow: 0 2px 10px rgba( 28, 76, 124, 0.22 );
+}
+.hti-hero__fineprint {
+	color: var( --wp--preset--color--muted-light );
+	margin-top: 20px;
+}
+
+/* ---------- "How it works" 3-step card ---------- */
+.hti-steps {
+	background: var( --wp--preset--color--white );
+	border: 1px solid var( --wp--preset--color--border );
+	border-radius: 24px;
+	padding: clamp( 28px, 4vw, 44px );
+	gap: 28px;
+}
+.hti-step__num {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 16px;
+	background: var( --wp--preset--color--primary-soft );
+	color: var( --wp--preset--color--primary );
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 17px;
+	margin-bottom: 14px;
+}
+.hti-step__title {
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 19px;
+	letter-spacing: 0;
+	line-height: 1.25;
+	margin: 0 0 6px;
+}
+.hti-step__text { margin: 0; font-size: 15px; }
+
+/* ---------- Articles section + cards ---------- */
+.hti-articles {
+	padding-top: clamp( 48px, 7vw, 80px );
+	padding-bottom: 8px;
+}
+.hti-section-head { margin-bottom: 22px; gap: 16px; }
+.hti-section-head__title { margin: 0; }
+.hti-section-head__link { margin: 0; }
+.hti-section-head__link a {
+	font-weight: 600;
+	font-size: 15px;
+	text-decoration: none;
+}
+.hti-section-head__link a:hover { text-decoration: underline; }
+.hti-card-grid__inner { gap: 20px; }
+
+.hti-article-card {
+	background: var( --wp--preset--color--white );
+	border: 1px solid var( --wp--preset--color--border );
+	border-radius: 16px;
+	overflow: hidden;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.hti-article-card:hover {
+	border-color: var( --wp--preset--color--accent-border );
+	box-shadow: 0 6px 20px rgba( 22, 38, 58, 0.07 );
+	transform: translateY( -2px );
+}
+.hti-article-card__media {
+	margin: 0;
+	min-height: 120px;
+	background: linear-gradient( 135deg, #FFEDE9, #FFD9D2 );
+}
+.hti-article-card__media img {
+	display: block;
+	width: 100%;
+	height: 120px;
+	object-fit: cover;
+}
+.hti-article-card__body { padding: 18px 20px 22px; }
+.hti-article-card__eyebrow,
+.hti-article-card__eyebrow a {
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 12px;
+	color: var( --wp--preset--color--accent );
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	text-decoration: none;
+}
+.hti-article-card__title { margin: 8px 0 0; line-height: 1.2; }
+.hti-article-card__title a {
+	color: var( --wp--preset--color--contrast );
+	text-decoration: none;
+}
+.hti-article-card__title a:hover { color: var( --wp--preset--color--primary ); }
+
+/* ---------- Footer ---------- */
+.hti-footer {
+	border-top: 1px solid var( --wp--preset--color--border );
+	margin-top: 72px;
+}
+.hti-footer__inner {
+	padding-top: 40px;
+	padding-bottom: 40px;
+	gap: 28px;
+}
+.hti-footer__brand .hti-logo { margin-bottom: 10px; }
+.hti-footer__disclaimer {
+	margin: 0;
+	color: var( --wp--preset--color--muted-light );
+	font-size: 14px;
+	line-height: 1.5;
+}
+.hti-social { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+.hti-social a {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	border: 1.5px solid var( --wp--preset--color--border );
+	color: #5A5270;
+	text-decoration: none;
+	transition: all 0.15s ease;
+}
+.hti-social a:hover {
+	border-color: var( --wp--preset--color--primary );
+	color: var( --wp--preset--color--primary );
+	background: var( --wp--preset--color--primary-soft );
+}
+.hti-footer__links { gap: 10px; }
+.hti-footer__link { margin: 0; }
+.hti-footer__link a {
+	color: #5A5270;
+	font-weight: 500;
+	font-size: 14px;
+	text-decoration: none;
+}
+.hti-footer__link a:hover { color: var( --wp--preset--color--primary ); }
+.hti-footer__bar { border-top: 1px solid #F4E9E3; }
+.hti-footer__copy {
+	margin: 0;
+	padding-top: 16px;
+	padding-bottom: 16px;
+	color: var( --wp--preset--color--muted-light );
+	font-size: 13px;
+}
+
+/* ---------- Print ---------- */
+@media print {
+	.hti-noprint { display: none !important; }
+}

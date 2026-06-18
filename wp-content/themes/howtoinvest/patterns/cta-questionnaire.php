@@ -11,8 +11,8 @@
  */
 
 ?>
-<!-- wp:group {"align":"wide","style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"blockGap":"var:preset|spacing|20"},"border":{"radius":"12px"}},"backgroundColor":"secondary","layout":{"type":"constrained"}} -->
-<div class="wp-block-group alignwide has-secondary-background-color has-background" style="border-radius:12px;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40)"><!-- wp:heading {"textAlign":"center","level":3,"textColor":"contrast"} -->
+<!-- wp:group {"align":"wide","style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"blockGap":"var:preset|spacing|20"},"border":{"radius":"16px","color":"#E7DCFB","width":"1px"}},"backgroundColor":"primary-soft","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignwide has-primary-soft-background-color has-background has-border-color" style="border-color:#E7DCFB;border-width:1px;border-radius:16px;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40)"><!-- wp:heading {"textAlign":"center","level":3,"textColor":"contrast"} -->
 <h3 class="wp-block-heading has-text-align-center has-contrast-color has-text-color"><?php echo esc_html__( 'Curious where you fit?', 'howtoinvest' ); ?></h3>
 <!-- /wp:heading -->
 
