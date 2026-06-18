@@ -1,11 +1,13 @@
 <?php
 /**
- * Front-end mount for the questionnaire/result app (E5–E7).
+ * Front-end mounts for the interactive app (E5–E7) and the account area.
  *
- * Registers the `[hti_questionnaire]` shortcode, enqueues the lightweight
- * vanilla JS + CSS only on the page that uses it, localizes the questions and
- * UI strings (EN/PT), and marks that page noindex. The app talks to
- * `/wp-json/htinvest/v1/recommend`; all scoring stays server-side.
+ * - `[hti_questionnaire]` renders the questionnaire/result (noindex).
+ * - `[hti_account]` renders the logged-in dashboard: saved profiles, data
+ *   export and account deletion (RGPD), and the sign-in/register forms.
+ *
+ * Lightweight vanilla JS, enqueued only where used; all scoring and account
+ * actions go through `/wp-json/htinvest/v1/*`.
  *
  * @package HTI_Engine
  */
@@ -15,30 +17,42 @@ namespace HTI\Engine;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Shortcode + asset wiring for the interactive app.
+ * Shortcodes + asset wiring for the questionnaire/result and account UI.
  */
 class Frontend {
 
-	private const SHORTCODE = 'hti_questionnaire';
+	private const SHORTCODE_APP     = 'hti_questionnaire';
+	private const SHORTCODE_ACCOUNT = 'hti_account';
 
 	/**
-	 * Hook shortcode, assets and robots.
+	 * Hook shortcodes, assets and robots.
 	 */
 	public static function init(): void {
-		add_shortcode( self::SHORTCODE, array( __CLASS__, 'render' ) );
+		add_shortcode( self::SHORTCODE_APP, array( __CLASS__, 'render_app' ) );
+		add_shortcode( self::SHORTCODE_ACCOUNT, array( __CLASS__, 'render_account' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 		add_filter( 'wp_robots', array( __CLASS__, 'robots' ) );
 	}
 
 	/**
-	 * Whether the current singular view contains the questionnaire shortcode.
+	 * Whether the current singular view contains a given shortcode.
+	 *
+	 * @param string $shortcode Shortcode tag.
 	 */
-	private static function is_app_page(): bool {
+	private static function has( string $shortcode ): bool {
 		if ( ! is_singular() ) {
 			return false;
 		}
 		$post = get_queried_object();
-		return $post instanceof \WP_Post && has_shortcode( $post->post_content, self::SHORTCODE );
+		return $post instanceof \WP_Post && has_shortcode( $post->post_content, $shortcode );
+	}
+
+	private static function is_app_page(): bool {
+		return self::has( self::SHORTCODE_APP );
+	}
+
+	private static function is_account_page(): bool {
+		return self::has( self::SHORTCODE_ACCOUNT );
 	}
 
 	/**
@@ -49,77 +63,159 @@ class Frontend {
 	}
 
 	/**
-	 * Enqueue and localize the app assets on the app page only.
+	 * Enqueue assets on the questionnaire and/or account page.
 	 */
 	public static function enqueue(): void {
-		if ( ! self::is_app_page() ) {
+		$app     = self::is_app_page();
+		$account = self::is_account_page();
+		if ( ! $app && ! $account ) {
 			return;
 		}
 
 		$locale = self::locale();
 
-		wp_enqueue_style(
-			'hti-app',
-			HTI_ENGINE_URL . 'assets/css/app.css',
-			array(),
-			VERSION
-		);
+		wp_enqueue_style( 'hti-app', HTI_ENGINE_URL . 'assets/css/app.css', array(), VERSION );
 
+		// Account script + context: needed by the result save-flow and the dashboard.
 		wp_register_script(
-			'hti-result',
-			HTI_ENGINE_URL . 'assets/js/result.js',
+			'hti-account',
+			HTI_ENGINE_URL . 'assets/js/account.js',
 			array(),
-			VERSION,
-			array( 'in_footer' => true )
-		);
-		wp_register_script(
-			'hti-questionnaire',
-			HTI_ENGINE_URL . 'assets/js/questionnaire.js',
-			array( 'hti-result' ),
 			VERSION,
 			array(
 				'in_footer' => true,
 				'strategy'  => 'defer',
 			)
 		);
+		wp_localize_script( 'hti-account', 'HTI_ACCT', self::account_context( $locale ) );
+		wp_enqueue_script( 'hti-account' );
 
-		wp_localize_script(
-			'hti-questionnaire',
-			'HTI_DATA',
-			array(
-				'restUrl' => esc_url_raw( rest_url( 'htinvest/v1/recommend' ) ),
-				'nonce'   => wp_create_nonce( 'wp_rest' ),
-				'locale'  => $locale,
-				'data'    => Questions::payload( $locale ),
-			)
-		);
-
-		wp_enqueue_script( 'hti-result' );
-		wp_enqueue_script( 'hti-questionnaire' );
+		if ( $app ) {
+			wp_register_script( 'hti-result', HTI_ENGINE_URL . 'assets/js/result.js', array( 'hti-account' ), VERSION, array( 'in_footer' => true ) );
+			wp_register_script(
+				'hti-questionnaire',
+				HTI_ENGINE_URL . 'assets/js/questionnaire.js',
+				array( 'hti-result' ),
+				VERSION,
+				array(
+					'in_footer' => true,
+					'strategy'  => 'defer',
+				)
+			);
+			wp_localize_script(
+				'hti-questionnaire',
+				'HTI_DATA',
+				array(
+					'restUrl' => esc_url_raw( rest_url( 'htinvest/v1/recommend' ) ),
+					'nonce'   => wp_create_nonce( 'wp_rest' ),
+					'locale'  => $locale,
+					'data'    => Questions::payload( $locale ),
+					'pdf'     => array(
+						'url'   => esc_url_raw( admin_url( 'admin-post.php' ) ),
+						'nonce' => wp_create_nonce( 'hti_pdf' ),
+					),
+				)
+			);
+			wp_enqueue_script( 'hti-result' );
+			wp_enqueue_script( 'hti-questionnaire' );
+		}
 	}
 
 	/**
-	 * Shortcode output: the mount point + a no-JS message.
+	 * Context for account.js (REST base, nonce, auth state, strings).
 	 *
-	 * @return string
+	 * @param string $locale Locale key.
+	 * @return array<string,mixed>
 	 */
-	public static function render(): string {
-		$noscript = esc_html__( 'This questionnaire needs JavaScript enabled in your browser.', 'hti-engine' );
+	private static function account_context( string $locale ): array {
+		return array(
+			'restBase'   => esc_url_raw( rest_url( 'htinvest/v1' ) ),
+			'nonce'      => wp_create_nonce( 'wp_rest' ),
+			'isLoggedIn' => is_user_logged_in(),
+			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
+			'homeUrl'    => esc_url( home_url( '/' ) ),
+			'strings'    => self::account_strings( 'pt' === $locale ),
+		);
+	}
 
+	/**
+	 * Account UI strings.
+	 *
+	 * @param bool $pt Whether Portuguese.
+	 * @return array<string,string>
+	 */
+	private static function account_strings( bool $pt ): array {
+		if ( $pt ) {
+			return array(
+				'save_profile'   => 'Guardar o meu perfil',
+				'save_intro'     => 'Cria uma conta (ou entra) para guardar este perfil e voltar a ele mais tarde.',
+				'create_account' => 'Criar conta',
+				'sign_in'        => 'Entrar',
+				'email'          => 'Email',
+				'password'       => 'Palavra-passe',
+				'saved'          => 'Perfil guardado ✓',
+				'view_profiles'  => 'Ver os meus perfis',
+				'my_profiles'    => 'Os meus perfis',
+				'no_profiles'    => 'Ainda não tens perfis guardados.',
+				'export_data'    => 'Exportar os meus dados',
+				'delete_account' => 'Apagar a minha conta',
+				'delete_confirm' => 'Apagar a conta remove definitivamente todos os teus perfis e dados. Esta ação é irreversível. Continuar?',
+				'deleted'        => 'A conta foi apagada.',
+				'signin_to_view' => 'Entra para ver os teus perfis guardados.',
+				'archetype'      => 'Arquétipo',
+				'error'          => 'Algo correu mal. Tenta novamente.',
+				'working'        => 'A processar…',
+			);
+		}
+		return array(
+			'save_profile'   => 'Save my profile',
+			'save_intro'     => 'Create an account (or sign in) to save this profile and come back to it later.',
+			'create_account' => 'Create account',
+			'sign_in'        => 'Sign in',
+			'email'          => 'Email',
+			'password'       => 'Password',
+			'saved'          => 'Profile saved ✓',
+			'view_profiles'  => 'View my profiles',
+			'my_profiles'    => 'My profiles',
+			'no_profiles'    => "You don't have any saved profiles yet.",
+			'export_data'    => 'Export my data',
+			'delete_account' => 'Delete my account',
+			'delete_confirm' => 'Deleting your account permanently removes all your profiles and data. This cannot be undone. Continue?',
+			'deleted'        => 'Your account has been deleted.',
+			'signin_to_view' => 'Sign in to view your saved profiles.',
+			'archetype'      => 'Archetype',
+			'error'          => 'Something went wrong. Please try again.',
+			'working'        => 'Working…',
+		);
+	}
+
+	/**
+	 * `[hti_questionnaire]` output.
+	 */
+	public static function render_app(): string {
+		$noscript = esc_html__( 'This questionnaire needs JavaScript enabled in your browser.', 'hti-engine' );
 		return '<div id="hti-app" class="hti-app" aria-live="polite"></div>'
 			. '<noscript><p class="hti-noscript">' . $noscript . '</p></noscript>';
 	}
 
 	/**
-	 * Mark the questionnaire/result page noindex (it is not SEO content).
+	 * `[hti_account]` output (dashboard mount).
+	 */
+	public static function render_account(): string {
+		$noscript = esc_html__( 'Your account area needs JavaScript enabled in your browser.', 'hti-engine' );
+		return '<div id="hti-account" class="hti-app"></div>'
+			. '<noscript><p class="hti-noscript">' . $noscript . '</p></noscript>';
+	}
+
+	/**
+	 * Mark questionnaire/result and account pages noindex (not SEO content).
 	 *
 	 * @param array<string,bool> $robots Robots directives.
 	 * @return array<string,bool>
 	 */
 	public static function robots( array $robots ): array {
-		if ( self::is_app_page() ) {
-			$robots['noindex']  = true;
-			$robots['nofollow'] = false;
+		if ( self::is_app_page() || self::is_account_page() ) {
+			$robots['noindex'] = true;
 		}
 		return $robots;
 	}

@@ -217,6 +217,7 @@ class Questions {
 			'why_archetype'     => array( 'en' => 'Why you landed in this profile', 'pt' => 'Porque caíste neste perfil' ),
 			'what_classes_mean' => array( 'en' => 'What each class means', 'pt' => 'O que significa cada classe' ),
 			'before_portfolios' => array( 'en' => 'Before we talk about portfolios…', 'pt' => 'Antes de falarmos de carteiras…' ),
+			'export_pdf'        => array( 'en' => 'Export PDF', 'pt' => 'Exportar PDF' ),
 			'read_more'         => array( 'en' => 'Learn more', 'pt' => 'Aprender mais' ),
 			'retake'            => array( 'en' => 'Retake', 'pt' => 'Refazer' ),
 			'start_over_note'   => array( 'en' => 'Retaking starts fresh and keeps nothing.', 'pt' => 'Refazer recomeça do zero e não guarda nada.' ),

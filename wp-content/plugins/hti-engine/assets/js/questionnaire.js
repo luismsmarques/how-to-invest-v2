@@ -185,6 +185,15 @@
 		mount.scrollIntoView( { behavior: 'smooth', block: 'start' } );
 	}
 
+	function analyticsConsent() {
+		try {
+			var c = window.HTIConsent && window.HTIConsent.get();
+			return !! ( c && c.analytics );
+		} catch ( e ) {
+			return false;
+		}
+	}
+
 	function buildPayload() {
 		var out = {};
 		Object.keys( answers ).forEach( function ( k ) {
@@ -235,7 +244,7 @@
 			body: JSON.stringify( {
 				locale: cfg.locale,
 				answers: buildPayload(),
-				consent: { analytics: false }
+				consent: { analytics: analyticsConsent() }
 			} )
 		} )
 			.then( function ( r ) {

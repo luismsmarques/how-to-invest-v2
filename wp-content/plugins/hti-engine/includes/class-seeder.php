@@ -240,6 +240,15 @@ class Seeder {
 				),
 			),
 			array(
+				'slug'    => 'my-account',
+				'title'   => 'My account',
+				'content' => '<!-- wp:shortcode -->[hti_account]<!-- /wp:shortcode -->',
+				'pt'      => array(
+					'title'   => 'A minha conta',
+					'content' => '<!-- wp:shortcode -->[hti_account]<!-- /wp:shortcode -->',
+				),
+			),
+			array(
 				'slug'    => 'about',
 				'title'   => 'About HowToInvest',
 				'content' => self::paragraph( 'HowToInvest is an educational platform about investing literacy. We help you understand the building blocks of a portfolio — by asset class, never by specific products — through a short questionnaire and clear, illustrative examples. Nothing here is financial advice.' ),
