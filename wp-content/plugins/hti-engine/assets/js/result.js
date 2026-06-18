@@ -169,6 +169,29 @@
 
 		// Closing actions (educational only — never execution/brokerage).
 		var actions = el( 'div', { class: 'hti-actions' } );
+
+		// Export PDF — POST to admin-post.php (keeps the token out of the URL).
+		var pdfCfg = window.HTI_DATA && window.HTI_DATA.pdf;
+		if ( pdfCfg && res.profile_id ) {
+			var pdfBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-secondary' }, ui.export_pdf );
+			pdfBtn.addEventListener( 'click', function () {
+				var form = el( 'form', { method: 'POST', action: pdfCfg.url, target: '_blank' } );
+				var fields = {
+					action: 'hti_pdf',
+					_wpnonce: pdfCfg.nonce,
+					profile_id: String( res.profile_id ),
+					session_token: res.session_token || ''
+				};
+				Object.keys( fields ).forEach( function ( k ) {
+					form.appendChild( el( 'input', { type: 'hidden', name: k, value: fields[ k ] } ) );
+				} );
+				document.body.appendChild( form );
+				form.submit();
+				document.body.removeChild( form );
+			} );
+			actions.appendChild( pdfBtn );
+		}
+
 		var readMore = el( 'a', { class: 'hti-btn hti-btn-secondary', href: '/investing-glossary/' }, ui.read_more );
 		var retake = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost' }, ui.retake );
 		retake.addEventListener( 'click', function () {

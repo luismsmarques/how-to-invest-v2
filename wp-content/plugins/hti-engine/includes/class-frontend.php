@@ -110,6 +110,10 @@ class Frontend {
 					'nonce'   => wp_create_nonce( 'wp_rest' ),
 					'locale'  => $locale,
 					'data'    => Questions::payload( $locale ),
+					'pdf'     => array(
+						'url'   => esc_url_raw( admin_url( 'admin-post.php' ) ),
+						'nonce' => wp_create_nonce( 'hti_pdf' ),
+					),
 				)
 			);
 			wp_enqueue_script( 'hti-result' );

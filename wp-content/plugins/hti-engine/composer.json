@@ -1,0 +1,16 @@
+{
+	"name": "howtoinvest/hti-engine",
+	"description": "HowToInvest engine plugin dependencies (PDF generation).",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"require": {
+		"php": ">=8.3",
+		"dompdf/dompdf": "^3.0"
+	},
+	"config": {
+		"optimize-autoloader": true,
+		"platform": {
+			"php": "8.3"
+		}
+	}
+}

@@ -27,6 +27,7 @@ hti-engine/
 │   ├── class-frontend.php   # ✅ shortcode [hti_questionnaire] + enqueue + noindex
 │   ├── class-settings.php   # ✅ admin: chave Gemini + scoring/arquétipos (req. 6.7)
 │   ├── class-consent.php    # ✅ banner de consentimento (E8, RGPD) + gate analytics
+│   ├── class-pdf.php        # ✅ export PDF do resultado (Dompdf, fallback HTML)
 │   ├── class-rest.php       # ✅ /recommend · register · login · claim-profile · my-profiles · export · account
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
@@ -110,6 +111,13 @@ Banner próprio, sem dependências, **privacy-first**:
 - Botões: **Aceitar** · **Recusar não-essenciais** · **Personalizar** (toggle de analítica) + link à política de privacidade. EN+PT, acessível.
 - Gate **server-side**: `Consent::analytics_allowed()` (lê o cookie) + filtro `hti_analytics_allowed` — usa-o para condicionar qualquer script de analítica.
 - Gate **client-side**: `window.HTIConsent.get()/open()` + evento `hti-consent-changed`. O questionário já envia o `consent.analytics` real (do cookie) ao `/recommend`.
+
+## Export PDF (`class-pdf.php`)
+
+Botão **Exportar PDF** no resultado → POST a `admin-post.php` (action `hti_pdf`, nonce; token fora do URL) → autoriza por **dono da conta** ou **`session_token`** do perfil → gera o documento (arquétipo, disclaimer, gráfico de barras + tabela, "porquê", notas por classe, rodapé com data/disclaimer curto).
+
+- Render via **Dompdf** (`composer require dompdf/dompdf`, instalado no deploy; `vendor/` não versionado, autoload condicional no bootstrap).
+- **Fallback** sem a lib: serve HTML imprimível (Print → Guardar como PDF), por isso funciona mesmo antes do `composer install`.
 
 ## Frontend (E5–E7 — `class-frontend.php` + `assets/`)
 

@@ -29,6 +29,11 @@ define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'HTI_ENGINE_URL', plugin_dir_url( __FILE__ ) );
 
+// Composer dependencies (e.g. Dompdf for PDF export), installed at deploy.
+if ( is_readable( HTI_ENGINE_PATH . 'vendor/autoload.php' ) ) {
+	require_once HTI_ENGINE_PATH . 'vendor/autoload.php';
+}
+
 require_once HTI_ENGINE_PATH . 'includes/class-cpt.php';
 require_once HTI_ENGINE_PATH . 'includes/class-taxonomy.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seo.php';
@@ -47,6 +52,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-questions.php';
 require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
+require_once HTI_ENGINE_PATH . 'includes/class-pdf.php';
 
 /**
  * Load the plugin text domain (EN default + PT translations in languages/).
@@ -91,6 +97,11 @@ Settings::init();
  * Cookie consent banner (E8, RGPD): privacy-first, analytics opt-in.
  */
 Consent::init();
+
+/**
+ * PDF export of a saved result (admin-post handler).
+ */
+PdfExport::init();
 
 /**
  * Content seeder (Tools → Seed content, and the `wp hti seed` WP-CLI command).
