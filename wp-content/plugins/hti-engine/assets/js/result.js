@@ -183,6 +183,13 @@
 		root.appendChild( actions );
 		root.appendChild( el( 'p', { class: 'hti-fineprint' }, ui.start_over_note ) );
 
+		// "Save my profile" flow (register/login → claim-profile).
+		if ( window.HTIAccount && res.session_token ) {
+			var save = el( 'div', { class: 'hti-save-mount' } );
+			root.appendChild( save );
+			window.HTIAccount.mountSave( save, res.session_token );
+		}
+
 		mount.appendChild( root );
 		root.setAttribute( 'tabindex', '-1' );
 		root.focus();

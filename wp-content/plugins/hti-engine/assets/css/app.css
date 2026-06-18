@@ -318,3 +318,62 @@
 	background: var( --hti-caution-surface );
 	border-radius: 8px;
 }
+
+/* --- Account: save flow + dashboard --- */
+.hti-save {
+	margin-top: 1.5rem;
+	padding: 1.25rem;
+	border: 1px solid var( --hti-border );
+	border-radius: 12px;
+	background: var( --hti-surface );
+}
+.hti-save h3 { margin: 0 0 0.5rem; }
+.hti-save-intro { margin: 0 0 1rem; color: var( --hti-muted ); }
+.hti-save-done { font-weight: 700; color: var( --hti-primary ); margin: 0 0 0.75rem; }
+
+.hti-auth {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	max-width: 380px;
+}
+.hti-auth label { font-weight: 600; font-size: 0.9375rem; }
+.hti-auth input {
+	padding: 0.6rem 0.75rem;
+	border: 1.5px solid var( --hti-border );
+	border-radius: 8px;
+	font: inherit;
+}
+.hti-auth-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+}
+
+.hti-account h2 { margin: 0 0 1rem; }
+.hti-profile-list {
+	list-style: none;
+	margin: 0 0 1.5rem;
+	padding: 0;
+}
+.hti-profile-item {
+	padding: 0.75rem 1rem;
+	border: 1px solid var( --hti-border );
+	border-radius: 8px;
+	margin-bottom: 0.5rem;
+}
+.hti-profile-date { color: var( --hti-muted ); }
+.hti-account-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-top: 1rem;
+}
+.hti-btn-danger {
+	color: #b3261e;
+	border-color: #e6b4b0;
+}
+.hti-btn-danger:hover {
+	border-color: #b3261e;
+}

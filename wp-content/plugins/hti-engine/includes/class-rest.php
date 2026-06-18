@@ -63,6 +63,48 @@ class REST {
 			)
 		);
 
+		// Create a native account and sign in (returns a fresh nonce).
+		register_rest_route(
+			self::NAMESPACE,
+			'/register',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'register_user' ),
+				'permission_callback' => array( __CLASS__, 'check_nonce' ),
+				'args'                => array(
+					'email'    => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'password' => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+				),
+			)
+		);
+
+		// Sign in to a native account (returns a fresh nonce).
+		register_rest_route(
+			self::NAMESPACE,
+			'/login',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'login_user' ),
+				'permission_callback' => array( __CLASS__, 'check_nonce' ),
+				'args'                => array(
+					'login'    => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'password' => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+				),
+			)
+		);
+
 		// Link an anonymous profile (by session token) to the logged-in account.
 		register_rest_route(
 			self::NAMESPACE,
@@ -194,6 +236,85 @@ class REST {
 				'explanation'   => $explained['explanation'],
 				'safety_flags'  => $result['safety_flags'],
 				'disclaimer'    => Disclaimer::contextual( $locale ),
+			),
+			200
+		);
+	}
+
+	/**
+	 * POST /register — create a native subscriber account and sign in.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function register_user( WP_REST_Request $request ) {
+		if ( is_user_logged_in() ) {
+			return new WP_REST_Response( array( 'user_id' => get_current_user_id(), 'nonce' => wp_create_nonce( 'wp_rest' ) ), 200 );
+		}
+
+		$email    = sanitize_email( (string) $request->get_param( 'email' ) );
+		$password = (string) $request->get_param( 'password' );
+
+		if ( ! is_email( $email ) ) {
+			return new WP_Error( 'hti_invalid_email', __( 'Please enter a valid email.', 'hti-engine' ), array( 'status' => 422 ) );
+		}
+		if ( strlen( $password ) < 8 ) {
+			return new WP_Error( 'hti_weak_password', __( 'Password must be at least 8 characters.', 'hti-engine' ), array( 'status' => 422 ) );
+		}
+		if ( email_exists( $email ) || username_exists( $email ) ) {
+			return new WP_Error( 'hti_exists', __( 'An account with that email already exists.', 'hti-engine' ), array( 'status' => 409 ) );
+		}
+
+		$user_id = wp_insert_user(
+			array(
+				'user_login' => $email,
+				'user_email' => $email,
+				'user_pass'  => $password,
+				'role'       => 'subscriber',
+			)
+		);
+		if ( is_wp_error( $user_id ) ) {
+			return new WP_Error( 'hti_register_failed', __( 'Could not create the account.', 'hti-engine' ), array( 'status' => 500 ) );
+		}
+
+		wp_set_current_user( $user_id );
+		wp_set_auth_cookie( $user_id, true );
+
+		return new WP_REST_Response(
+			array(
+				'user_id' => (int) $user_id,
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
+			),
+			200
+		);
+	}
+
+	/**
+	 * POST /login — authenticate against a native account.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function login_user( WP_REST_Request $request ) {
+		$user = wp_signon(
+			array(
+				'user_login'    => sanitize_text_field( (string) $request->get_param( 'login' ) ),
+				'user_password' => (string) $request->get_param( 'password' ),
+				'remember'      => true,
+			),
+			is_ssl()
+		);
+
+		if ( is_wp_error( $user ) ) {
+			return new WP_Error( 'hti_bad_credentials', __( 'Incorrect email or password.', 'hti-engine' ), array( 'status' => 401 ) );
+		}
+
+		wp_set_current_user( $user->ID );
+
+		return new WP_REST_Response(
+			array(
+				'user_id' => (int) $user->ID,
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
 			),
 			200
 		);

@@ -27,10 +27,10 @@ hti-engine/
 │   ├── class-frontend.php   # ✅ shortcode [hti_questionnaire] + enqueue + noindex
 │   ├── class-settings.php   # ✅ admin: chave Gemini + scoring/arquétipos (req. 6.7)
 │   ├── class-consent.php    # ✅ banner de consentimento (E8, RGPD) + gate analytics
-│   ├── class-rest.php       # ✅ /recommend · claim-profile · my-profiles · export · account (RGPD)
+│   ├── class-rest.php       # ✅ /recommend · register · login · claim-profile · my-profiles · export · account
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
-├── assets/                  # ✅ js/{questionnaire,result,consent}.js, css/{app,consent}.css
+├── assets/                  # ✅ js/{questionnaire,result,account,consent}.js, css/{app,consent}.css
 ├── tests/                   # ✅ matriz do motor (bootstrap.php + test-engine.php)
 └── languages/               # ✅ hti-engine.pot + hti-engine-pt_PT.l10n.php
 ```
@@ -96,6 +96,11 @@ A decisão numérica **nunca** depende do LLM: erros do Gemini caem em fallback 
 - **`DELETE /account`** — **(RGPD, P0)** exige `confirm: true`; apaga **em cascata** todos os perfis (e meta) e depois a conta (`wp_delete_user`). Irreversível.
 
 Minimização: perfis anónimos não têm identidade (`user_id` nulo); logs sem PII; contas nativas (`wp_users`).
+
+### Conta — registo/login + UI
+- **`POST /register`** — cria conta nativa (subscriber) e autentica; devolve **novo nonce**. 422 (email/pw inválidos), 409 (já existe).
+- **`POST /login`** — `wp_signon`; devolve novo nonce; 401 em credenciais erradas.
+- **Frontend (`account.js`):** no resultado, **"Guardar o meu perfil"** → se não autenticado, registo/login inline → `claim-profile` (liga o perfil anónimo). Dashboard **`[hti_account]`** (página `my-account`, noindex): lista `/my-profiles`, **Exportar** (download do `/export`) e **Apagar conta** (`/account`, com confirmação). EN+PT, acessível.
 
 ## Consentimento (E8 — `class-consent.php` + `assets/.../consent.*`)
 
