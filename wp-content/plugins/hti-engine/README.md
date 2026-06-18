@@ -15,15 +15,34 @@ hti-engine/
 │   ├── class-seo.php        # ✅ JSON-LD: DefinedTerm (glossary) + Article/NewsArticle (fallback)
 │   ├── class-redirects.php  # ✅ 301s dos URLs antigos do Base44 (mapa filtrável)
 │   ├── class-seeder.php     # ✅ conteúdo seed: termos de glossário + páginas (1.5)
+│   ├── class-config.php     # ✅ scoring + arquétipos curados (editáveis via options)
+│   ├── class-engine.php     # ✅ regras determinísticas (pontuação→arquétipo→alocação→travas)
 │   ├── class-rest.php       # ⬜ endpoints /recommend, /claim-profile, /my-profiles, /account, /export
-│   ├── class-engine.php     # ⬜ regras determinísticas (pontuação→arquétipo→alocação)
 │   ├── class-gemini.php     # ⬜ chamada server-side ao Gemini + validação schema
 │   ├── class-fallback.php   # ⬜ textos pré-escritos por arquétipo/idioma
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
 ├── assets/                  # ⬜ js/questionnaire.js, js/result.js, css/
+├── tests/                   # ✅ matriz do motor (bootstrap.php + test-engine.php)
 └── languages/               # ✅ hti-engine.pot + hti-engine-pt_PT.l10n.php
 ```
+
+## Motor de recomendação (Fase 2 — `class-engine.php` + `class-config.php`)
+
+**Regra de ouro:** as regras decidem, o LLM só explica. O `Engine` é **PHP puro** (sem WordPress, sem LLM) → totalmente determinístico e testável.
+
+- **Scoring P1–P5** com pesos de `htinvest_scoring` (default em `Config`). Soma 0–27.
+- **Arquétipo (1–5)** por thresholds: `0–5→1, 6–11→2, 12–17→3, 18–23→4, 24–27→5`.
+- **Alocação** por classe (`global_equity, bonds, reits_alt, cash, crypto`), dentro dos intervalos curados de `htinvest_archetypes`, **soma sempre 100**.
+- **Travas:** `no_emergency_fund` (P6=não), `horizon_override` (P1=3y + score alto → limita a arquétipo 2), `crypto_blocked` (crypto pedida mas arquétipo <3 ou sem fundo de emergência).
+- **Crypto** só com P8=sim **e** arquétipo ≥3 **e** sem trava 1; fatia pequena fixa (2%) no extremo inferior.
+- `engine_version` gravado em cada resultado (auditoria).
+
+### Testes (matriz repetível — Criterios §1)
+```
+php wp-content/plugins/hti-engine/tests/test-engine.php
+```
+13 cenários (1 por arquétipo, 1 por trava, crypto concedida/bloqueada, ESG-é-lente) + fronteiras dos thresholds + determinismo + input inválido. Corre sem WordPress/PHPUnit; sai com código ≠ 0 em falha. **Estado: 85/85 ✓.**
 
 ## Estado atual (Fase 1 — Fundação SEO)
 

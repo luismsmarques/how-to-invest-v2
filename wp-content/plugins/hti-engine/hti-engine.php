@@ -34,6 +34,8 @@ require_once HTI_ENGINE_PATH . 'includes/class-taxonomy.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seo.php';
 require_once HTI_ENGINE_PATH . 'includes/class-redirects.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seeder.php';
+require_once HTI_ENGINE_PATH . 'includes/class-config.php';
+require_once HTI_ENGINE_PATH . 'includes/class-engine.php';
 
 /**
  * Load the plugin text domain (EN default + PT translations in languages/).
