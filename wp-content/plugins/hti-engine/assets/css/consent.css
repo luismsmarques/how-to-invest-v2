@@ -1,0 +1,88 @@
+/**
+ * Consent banner styles. Inherits theme.json tokens with fallbacks. Fixed to
+ * the bottom, above content, calm and unobtrusive.
+ */
+
+.hti-consent {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 9999;
+	background: var( --wp--preset--color--base, #fff );
+	border-top: 1px solid var( --wp--preset--color--border, #dde5e1 );
+	box-shadow: 0 -4px 16px rgba( 0, 0, 0, 0.08 );
+	color: var( --wp--preset--color--contrast, #14241d );
+}
+.hti-consent:focus {
+	outline: none;
+}
+.hti-consent-inner {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 1rem 1.25rem;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem 1.5rem;
+}
+.hti-consent-msg {
+	margin: 0;
+	flex: 1 1 280px;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+}
+.hti-consent-link {
+	color: var( --wp--preset--color--primary, #1b7a5a );
+	text-decoration: underline;
+}
+.hti-consent-panel {
+	flex: 1 1 100%;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	padding: 0.5rem 0;
+}
+.hti-consent-opt {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.9375rem;
+}
+.hti-consent-opt input {
+	accent-color: var( --wp--preset--color--primary, #1b7a5a );
+}
+.hti-consent-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-left: auto;
+}
+.hti-consent-btn {
+	font: inherit;
+	font-weight: 600;
+	padding: 0.6rem 1.1rem;
+	border-radius: 8px;
+	border: 1.5px solid transparent;
+	cursor: pointer;
+}
+.hti-consent-primary {
+	background: var( --wp--preset--color--primary, #1b7a5a );
+	color: #fff;
+}
+.hti-consent-primary:hover {
+	background: var( --wp--preset--color--primary-hover, #145c44 );
+}
+.hti-consent-ghost {
+	background: transparent;
+	color: var( --wp--preset--color--contrast, #14241d );
+	border-color: var( --wp--preset--color--border, #dde5e1 );
+}
+.hti-consent-ghost:hover {
+	border-color: var( --wp--preset--color--primary, #1b7a5a );
+}
+.hti-consent :focus-visible {
+	outline: 2px solid var( --wp--preset--color--primary, #1b7a5a );
+	outline-offset: 2px;
+	border-radius: 4px;
+}

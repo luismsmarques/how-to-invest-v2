@@ -46,6 +46,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-rest.php';
 require_once HTI_ENGINE_PATH . 'includes/class-questions.php';
 require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
+require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
 
 /**
  * Load the plugin text domain (EN default + PT translations in languages/).
@@ -85,6 +86,11 @@ Frontend::init();
  * Admin settings (Settings → HowToInvest): Gemini key/model + scoring/archetypes.
  */
 Settings::init();
+
+/**
+ * Cookie consent banner (E8, RGPD): privacy-first, analytics opt-in.
+ */
+Consent::init();
 
 /**
  * Content seeder (Tools → Seed content, and the `wp hti seed` WP-CLI command).

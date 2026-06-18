@@ -26,10 +26,11 @@ hti-engine/
 │   ├── class-questions.php  # ✅ definição do questionário (EN+PT) p/ o frontend
 │   ├── class-frontend.php   # ✅ shortcode [hti_questionnaire] + enqueue + noindex
 │   ├── class-settings.php   # ✅ admin: chave Gemini + scoring/arquétipos (req. 6.7)
+│   ├── class-consent.php    # ✅ banner de consentimento (E8, RGPD) + gate analytics
 │   ├── class-rest.php       # ✅ /recommend · claim-profile · my-profiles · export · account (RGPD)
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
-├── assets/                  # ✅ js/questionnaire.js, js/result.js, css/app.css
+├── assets/                  # ✅ js/{questionnaire,result,consent}.js, css/{app,consent}.css
 ├── tests/                   # ✅ matriz do motor (bootstrap.php + test-engine.php)
 └── languages/               # ✅ hti-engine.pot + hti-engine-pt_PT.l10n.php
 ```
@@ -95,6 +96,15 @@ A decisão numérica **nunca** depende do LLM: erros do Gemini caem em fallback 
 - **`DELETE /account`** — **(RGPD, P0)** exige `confirm: true`; apaga **em cascata** todos os perfis (e meta) e depois a conta (`wp_delete_user`). Irreversível.
 
 Minimização: perfis anónimos não têm identidade (`user_id` nulo); logs sem PII; contas nativas (`wp_users`).
+
+## Consentimento (E8 — `class-consent.php` + `assets/.../consent.*`)
+
+Banner próprio, sem dependências, **privacy-first**:
+- Analítica/não-essenciais **OFF por omissão**; só corre após opt-in explícito.
+- Escolha registada no cookie `hti_consent` (`{analytics, ts}`, 180 dias, `SameSite=Lax`/`Secure`).
+- Botões: **Aceitar** · **Recusar não-essenciais** · **Personalizar** (toggle de analítica) + link à política de privacidade. EN+PT, acessível.
+- Gate **server-side**: `Consent::analytics_allowed()` (lê o cookie) + filtro `hti_analytics_allowed` — usa-o para condicionar qualquer script de analítica.
+- Gate **client-side**: `window.HTIConsent.get()/open()` + evento `hti-consent-changed`. O questionário já envia o `consent.analytics` real (do cookie) ao `/recommend`.
 
 ## Frontend (E5–E7 — `class-frontend.php` + `assets/`)
 
