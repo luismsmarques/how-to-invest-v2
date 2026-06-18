@@ -10,7 +10,7 @@ O produto interativo do HowToInvest. Ver `docs/Stack_Concreta §4` para a estrut
 hti-engine/
 ├── hti-engine.php          # bootstrap, hooks, ativação (flush rewrite)
 ├── includes/
-│   ├── class-cpt.php        # ✅ CPTs: glossary + news (públicos) · htinvest_profile (Fase 2)
+│   ├── class-cpt.php        # ✅ CPTs: glossary + news (públicos) · htinvest_profile (privado)
 │   ├── class-taxonomy.php   # ✅ taxonomias: glossary_topic + news_category (internal linking)
 │   ├── class-seo.php        # ✅ JSON-LD: DefinedTerm (glossary) + Article/NewsArticle (fallback)
 │   ├── class-redirects.php  # ✅ 301s dos URLs antigos do Base44 (mapa filtrável)
@@ -22,7 +22,8 @@ hti-engine/
 │   ├── class-prompt.php     # ✅ system + user prompt (Prompt §2–3)
 │   ├── class-gemini.php     # ✅ chamada server-side ao Gemini (chave em header, retry→fallback)
 │   ├── class-explainer.php  # ✅ orquestra Gemini→validação→fallback
-│   ├── class-rest.php       # ⬜ endpoints /recommend, /claim-profile, /my-profiles, /account, /export
+│   ├── class-disclaimer.php # ✅ disclaimer contextual versionado (Textos §1.1)
+│   ├── class-rest.php       # ◑ /recommend ✅ · claim-profile/my-profiles/account/export ⬜
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
 ├── assets/                  # ⬜ js/questionnaire.js, js/result.js, css/
@@ -62,6 +63,19 @@ php wp-content/plugins/hti-engine/tests/test-engine.php
 php wp-content/plugins/hti-engine/tests/test-explainer.php   # 17/17 ✓ (fallback válido + validador rejeita)
 php wp-content/plugins/hti-engine/tests/test-prompt.php       # 11/11 ✓ (prompt carrega a decisão fixa)
 ```
+
+## REST — `POST /wp-json/htinvest/v1/recommend`
+
+Liga o motor ao mundo. Protegido por **nonce** (`X-WP-Nonce`, válido também para sessões anónimas).
+
+1. Sanitiza respostas → `Engine::recommend` (inválido → **422**).
+2. `Explainer::explain` (LLM→validação→fallback; nunca quebra).
+3. Persiste um **perfil anónimo** (`htinvest_profile`, privado) com respostas, score, arquétipo, alocação, explicação (+`source`), `safety_flags`, consent, `engine_version`, `disclaimer_version`, `generated_at`.
+4. Devolve o contrato (Modelo §5): `profile_id`, `session_token`, `archetype`, `allocation`, `explanation`, `safety_flags`, `disclaimer` contextual.
+
+A decisão numérica **nunca** depende do LLM: erros do Gemini caem em fallback e devolvem 200. Chave do Gemini nunca no cliente. CPT `htinvest_profile` é privado, não indexável, fora do REST default.
+
+> A seguir: questionário multi-step + resultado (JS ligeiro) e as rotas de conta/RGPD (claim-profile, my-profiles, export, account).
 
 ## Estado atual (Fase 1 — Fundação SEO)
 

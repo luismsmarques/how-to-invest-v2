@@ -41,6 +41,8 @@ require_once HTI_ENGINE_PATH . 'includes/class-validator.php';
 require_once HTI_ENGINE_PATH . 'includes/class-prompt.php';
 require_once HTI_ENGINE_PATH . 'includes/class-gemini.php';
 require_once HTI_ENGINE_PATH . 'includes/class-explainer.php';
+require_once HTI_ENGINE_PATH . 'includes/class-disclaimer.php';
+require_once HTI_ENGINE_PATH . 'includes/class-rest.php';
 
 /**
  * Load the plugin text domain (EN default + PT translations in languages/).
@@ -65,6 +67,11 @@ SEO::init();
  * 301 redirects from the legacy Base44 URLs.
  */
 Redirects::init();
+
+/**
+ * REST API (htinvest/v1): /recommend and, later, the account/RGPD routes.
+ */
+REST::init();
 
 /**
  * Content seeder (Tools → Seed content, and the `wp hti seed` WP-CLI command).
