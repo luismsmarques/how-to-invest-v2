@@ -25,6 +25,7 @@ hti-engine/
 │   ├── class-disclaimer.php # ✅ disclaimer contextual versionado (Textos §1.1)
 │   ├── class-questions.php  # ✅ definição do questionário (EN+PT) p/ o frontend
 │   ├── class-frontend.php   # ✅ shortcode [hti_questionnaire] + enqueue + noindex
+│   ├── class-settings.php   # ✅ admin: chave Gemini + scoring/arquétipos (req. 6.7)
 │   ├── class-rest.php       # ✅ /recommend · claim-profile · my-profiles · export · account (RGPD)
 │   ├── class-pdf.php        # ⬜ geração do PDF do resultado
 │   └── class-settings.php   # ⬜ página admin: chave API, modelo, arquétipos, scoring
@@ -64,7 +65,17 @@ php wp-content/plugins/hti-engine/tests/test-engine.php
 ```
 php wp-content/plugins/hti-engine/tests/test-explainer.php   # 17/17 ✓ (fallback válido + validador rejeita)
 php wp-content/plugins/hti-engine/tests/test-prompt.php       # 11/11 ✓ (prompt carrega a decisão fixa)
+php wp-content/plugins/hti-engine/tests/test-settings.php     # 16/16 ✓ (normalização rejeita config inválida)
 ```
+
+## Settings admin (req. 6.7 — `class-settings.php`)
+
+Página **Definições → HowToInvest** (cap. `manage_options`), via Settings API:
+- **Gemini:** modelo + chave. A chave dá **prioridade a `HTI_GEMINI_API_KEY` (wp-config) / env**; o campo do admin é só fallback, **nunca é ecoado** de volta (em branco mantém a existente).
+- **Scoring:** pesos P1–P5 e thresholds editáveis.
+- **Arquétipos:** labels (EN+PT) e intervalos de alocação por classe.
+
+A **normalização é pura e testada**: rejeita config que partiria o motor (thresholds não-contíguos, intervalos que não somam 100, `min>max`) revertendo para defaults + `settings_error`; força `crypto.min=0` (para a exclusão ser válida). Assim o motor **garante sempre** uma alocação de 100% dentro dos intervalos.
 
 ## REST — `POST /wp-json/htinvest/v1/recommend`
 

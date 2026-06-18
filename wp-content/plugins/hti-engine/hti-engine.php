@@ -45,6 +45,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-disclaimer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-rest.php';
 require_once HTI_ENGINE_PATH . 'includes/class-questions.php';
 require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
+require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 
 /**
  * Load the plugin text domain (EN default + PT translations in languages/).
@@ -79,6 +80,11 @@ REST::init();
  * Front-end app: the [hti_questionnaire] shortcode (questionnaire + result).
  */
 Frontend::init();
+
+/**
+ * Admin settings (Settings → HowToInvest): Gemini key/model + scoring/archetypes.
+ */
+Settings::init();
 
 /**
  * Content seeder (Tools → Seed content, and the `wp hti seed` WP-CLI command).
