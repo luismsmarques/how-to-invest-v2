@@ -23,6 +23,7 @@ class Groups_Page {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 13 );
 		add_action( 'admin_post_rssai_group_now', array( __CLASS__, 'handle_group_now' ) );
 		add_action( 'admin_post_rssai_dismiss_group', array( __CLASS__, 'handle_dismiss' ) );
+		add_action( 'admin_post_rssai_generate', array( __CLASS__, 'handle_generate' ) );
 	}
 
 	/**
@@ -124,6 +125,8 @@ class Groups_Page {
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( $group->label ); ?></h1>
+			<?php self::maybe_gen_notice(); ?>
+			<?php self::render_generate_box( $group ); ?>
 			<p>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ); ?>">&larr; <?php echo esc_html__( 'Back to groups', 'hti-rss-ai' ); ?></a>
 				&nbsp;·&nbsp;
@@ -152,9 +155,53 @@ class Groups_Page {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
-			<p style="margin-top:16px;color:#646970"><?php echo esc_html__( 'Article generation from a group arrives in M4.', 'hti-rss-ai' ); ?></p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Generate button (open group) or a link to the created post.
+	 *
+	 * @param object $group Group row.
+	 */
+	private static function render_generate_box( object $group ): void {
+		echo '<div class="notice notice-info inline" style="padding:12px 14px;margin:12px 0">';
+		if ( 'generated' === $group->status ) {
+			$posts = get_posts(
+				array(
+					'post_type'        => 'news',
+					'post_status'      => 'any',
+					'meta_key'         => 'rssai_group_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+					'meta_value'       => (int) $group->id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+					'numberposts'      => 1,
+					'suppress_filters' => true,
+				)
+			);
+			if ( $posts ) {
+				$edit = get_edit_post_link( $posts[0]->ID, 'raw' );
+				printf(
+					'%s <a class="button button-primary" href="%s">%s</a>',
+					esc_html__( 'An article was generated for this group.', 'hti-rss-ai' ),
+					esc_url( (string) $edit ),
+					esc_html__( 'Open the pending article', 'hti-rss-ai' )
+				);
+			} else {
+				echo esc_html__( 'This group was marked generated.', 'hti-rss-ai' );
+			}
+		} elseif ( 'open' === $group->status ) {
+			if ( ! Gemini_Client::available() ) {
+				echo esc_html__( 'Set the Gemini API key to enable generation.', 'hti-rss-ai' );
+			} else {
+				echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+				echo '<input type="hidden" name="action" value="rssai_generate" />';
+				echo '<input type="hidden" name="id" value="' . (int) $group->id . '" />';
+				wp_nonce_field( 'rssai_generate_' . (int) $group->id );
+				submit_button( __( 'Generate article', 'hti-rss-ai' ), 'primary', 'submit', false );
+				echo ' <span class="description">' . esc_html__( 'Researches the topic with Gemini and creates a pending news article for review.', 'hti-rss-ai' ) . '</span>';
+				echo '</form>';
+			}
+		}
+		echo '</div>';
 	}
 
 	/**
@@ -196,6 +243,70 @@ class Groups_Page {
 		}
 		wp_safe_redirect( add_query_arg( array( 'page' => self::PAGE, 'rssai_dismissed' => 1 ), admin_url( 'admin.php' ) ) );
 		exit;
+	}
+
+	/**
+	 * Run article generation for a group.
+	 */
+	public static function handle_generate(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Not allowed.', 'hti-rss-ai' ) );
+		}
+		$id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
+		check_admin_referer( 'rssai_generate_' . $id );
+
+		$result = Generator::generate( $id );
+		$key    = 'rssai_gen_msg_' . get_current_user_id();
+		if ( is_wp_error( $result ) ) {
+			set_transient(
+				$key,
+				array(
+					'type' => 'error',
+					'msg'  => $result->get_error_message(),
+				),
+				60
+			);
+		} else {
+			set_transient(
+				$key,
+				array(
+					'type' => 'success',
+					'msg'  => __( 'Article generated and saved as pending review.', 'hti-rss-ai' ),
+					'edit' => (string) get_edit_post_link( (int) $result, 'raw' ),
+				),
+				60
+			);
+		}
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'   => self::PAGE,
+					'action' => 'view',
+					'id'     => $id,
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * Show the generation result notice (from a transient).
+	 */
+	private static function maybe_gen_notice(): void {
+		$key  = 'rssai_gen_msg_' . get_current_user_id();
+		$data = get_transient( $key );
+		if ( ! is_array( $data ) ) {
+			return;
+		}
+		delete_transient( $key );
+		$class = 'error' === ( $data['type'] ?? '' ) ? 'notice-error' : 'notice-success';
+		$extra = '';
+		if ( ! empty( $data['edit'] ) ) {
+			$extra = ' <a href="' . esc_url( $data['edit'] ) . '">' . esc_html__( 'Edit it →', 'hti-rss-ai' ) . '</a>';
+		}
+		printf( '<div class="notice %1$s is-dismissible"><p>%2$s%3$s</p></div>', esc_attr( $class ), esc_html( (string) ( $data['msg'] ?? '' ) ), wp_kses_post( $extra ) );
 	}
 
 	/**

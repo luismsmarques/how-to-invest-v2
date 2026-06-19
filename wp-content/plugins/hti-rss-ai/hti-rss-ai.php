@@ -3,7 +3,7 @@
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Ingests RSS feeds into drafts, clusters similar items, and (on demand) researches facts with Gemini grounding to generate SEO/Google-News articles for review. Feeds the hti-engine "news" content type.
- * Version:           0.4.0
+ * Version:           0.5.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );
@@ -41,6 +41,10 @@ require_once RSSAI_PATH . 'includes/class-items.php';
 require_once RSSAI_PATH . 'includes/class-groups.php';
 require_once RSSAI_PATH . 'includes/class-fetcher.php';
 require_once RSSAI_PATH . 'includes/class-grouping.php';
+require_once RSSAI_PATH . 'includes/class-gemini-client.php';
+require_once RSSAI_PATH . 'includes/class-prompt.php';
+require_once RSSAI_PATH . 'includes/class-validator.php';
+require_once RSSAI_PATH . 'includes/class-generator.php';
 require_once RSSAI_PATH . 'includes/class-admin.php';
 require_once RSSAI_PATH . 'includes/class-drafts.php';
 require_once RSSAI_PATH . 'includes/class-groups-page.php';
