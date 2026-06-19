@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.4.1';
+const VERSION = '0.5.0';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -63,6 +63,16 @@ function enqueue_scripts(): void {
 		VERSION,
 		array( 'strategy' => 'defer', 'in_footer' => true )
 	);
+
+	if ( is_post_type_archive( 'glossary' ) ) {
+		wp_enqueue_script(
+			'howtoinvest-glossary',
+			get_stylesheet_directory_uri() . '/assets/js/glossary.js',
+			array(),
+			VERSION,
+			array( 'strategy' => 'defer', 'in_footer' => true )
+		);
+	}
 }
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
 
@@ -213,4 +223,90 @@ function default_menu( string $location, string $extra ): string {
 	}
 
 	return '<nav class="' . esc_attr( trim( 'hti-menu-nav ' . $extra ) ) . '"><ul class="hti-menu">' . $list . '</ul></nav>';
+}
+
+/**
+ * Server-rendered glossary index: an A–Z filter row (built from the terms that
+ * exist) plus the list of terms as rows with a trailing arrow — matching the
+ * design's E3 Glossary screen. Language-aware (Polylang filters the query to
+ * the current language). Filtering is enhanced by glossary.js; without JS the
+ * full list shows.
+ */
+function register_glossary_block(): void {
+	register_block_type(
+		'howtoinvest/glossary-index',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Glossary index', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_glossary_index',
+		)
+	);
+}
+add_action( 'init', __NAMESPACE__ . '\\register_glossary_block' );
+
+/**
+ * First letter of a title, accent-folded and uppercased (e.g. "Ações" → "A").
+ *
+ * @param string $title Post title.
+ */
+function glossary_letter( string $title ): string {
+	$folded = remove_accents( $title );
+	$first  = strtoupper( substr( ltrim( $folded ), 0, 1 ) );
+	return preg_match( '/[A-Z]/', $first ) ? $first : '#';
+}
+
+/**
+ * Render the glossary index block.
+ *
+ * @return string Safe HTML (empty when there are no terms).
+ */
+function render_glossary_index(): string {
+	if ( ! post_type_exists( 'glossary' ) ) {
+		return '';
+	}
+
+	$query = new \WP_Query(
+		array(
+			'post_type'           => 'glossary',
+			'post_status'         => 'publish',
+			'posts_per_page'      => 300,
+			'orderby'             => 'title',
+			'order'               => 'ASC',
+			'no_found_rows'       => true,
+			'ignore_sticky_posts' => true,
+		)
+	);
+
+	if ( ! $query->have_posts() ) {
+		return '';
+	}
+
+	$rows    = '';
+	$letters = array();
+	while ( $query->have_posts() ) {
+		$query->the_post();
+		$title  = get_the_title();
+		$letter = glossary_letter( $title );
+
+		$letters[ $letter ] = true;
+		$short              = wp_strip_all_tags( (string) get_the_excerpt() );
+
+		$rows .= '<a class="hti-gloss__row" data-letter="' . esc_attr( $letter ) . '" href="' . esc_url( (string) get_permalink() ) . '">'
+			. '<span class="hti-gloss__rowtext"><span class="hti-gloss__term">' . esc_html( $title ) . '</span>'
+			. ( '' !== $short ? '<span class="hti-gloss__short">' . esc_html( $short ) . '</span>' : '' )
+			. '</span><span class="hti-gloss__arrow" aria-hidden="true">→</span></a>';
+	}
+	wp_reset_postdata();
+
+	ksort( $letters );
+	$chips = '<button type="button" class="hti-gloss__letter is-active" data-letter="all">' . esc_html__( 'All', 'howtoinvest' ) . '</button>';
+	foreach ( array_keys( $letters ) as $letter ) {
+		$chips .= '<button type="button" class="hti-gloss__letter" data-letter="' . esc_attr( $letter ) . '">' . esc_html( $letter ) . '</button>';
+	}
+
+	return '<div class="hti-gloss">'
+		. '<div class="hti-gloss__alpha" role="group" aria-label="' . esc_attr__( 'Filter by letter', 'howtoinvest' ) . '">' . $chips . '</div>'
+		. '<div class="hti-gloss__list">' . $rows . '</div>'
+		. '</div>';
 }
