@@ -206,9 +206,9 @@ class Settings {
 						<td>
 							<label>
 								<input name="<?php echo esc_attr( self::OPTION ); ?>[image_generate]" type="checkbox" value="1" <?php checked( ! empty( $s['image_generate'] ) ); ?> />
-								<?php echo esc_html__( 'Generate a branded featured image (square 1080×1080) on each article', 'hti-rss-ai' ); ?>
+								<?php echo esc_html__( 'Generate an AI featured image about the article topic', 'hti-rss-ai' ); ?>
 							</label>
-							<p class="description"><?php echo esc_html__( 'The card layout is rendered locally for brand consistency; only the photo inside it is produced by AI. If image generation is unavailable, it falls back to the feed image, then a branded gradient.', 'hti-rss-ai' ); ?></p>
+							<p class="description"><?php echo esc_html__( 'Saved as the post’s featured image. The same image is reused inside the downloadable social cards (Social media kit) — no extra AI calls. If unavailable, it falls back to the feed image.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
 					<tr>
