@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.7.3';
+const VERSION = '0.7.4';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -110,6 +110,9 @@ function strings(): array {
 		// Header / nav / CTAs.
 		'cta_get_started'  => array( 'en' => 'Get started', 'pt' => 'Começar' ),
 		'cta_start_quiz'   => array( 'en' => 'Start the questionnaire', 'pt' => 'Começar o questionário' ),
+		'cta_curious_h'    => array( 'en' => 'Curious where you fit?', 'pt' => 'Curioso sobre onde te encaixas?' ),
+		'cta_curious_p'    => array( 'en' => 'Answer a few questions and discover your investor archetype — with an illustrative example portfolio by asset class. Educational, not advice.', 'pt' => 'Responde a algumas perguntas e descobre o teu arquétipo de investidor — com um exemplo ilustrativo de carteira por classe de ativos. Educativo, não é aconselhamento.' ),
+		'cta_curious_btn'  => array( 'en' => 'Discover your profile', 'pt' => 'Descobre o teu perfil' ),
 		'nav_learn'        => array( 'en' => 'Learn', 'pt' => 'Aprender' ),
 		'learn_intro'      => array( 'en' => 'Clear, jargon-free articles to build your investing confidence — organised by topic.', 'pt' => 'Artigos claros e sem jargão para ganhares confiança a investir — organizados por tema.' ),
 		'nav_types'        => array( 'en' => 'Investor types', 'pt' => 'Perfis' ),
@@ -622,7 +625,7 @@ function render_t_block( array $a ): string {
 
 	if ( 'a' === $tag ) {
 		$href  = isset( $a['href'] ) ? (string) $a['href'] : '#';
-		$href  = str_starts_with( $href, '/' ) ? home_url( $href ) : $href;
+		$href  = str_starts_with( $href, '/' ) ? localize_internal_href( $href ) : $href;
 		$attr .= ' href="' . esc_url( $href ) . '"';
 	}
 
@@ -841,6 +844,31 @@ function page_url( string $en_slug ): string {
 		}
 	}
 	return home_url( '/' . $en_slug . '/' );
+}
+
+/**
+ * Localize an internal root-relative href ("/learn/", "/about/") to the current
+ * language. CPT archives keep their (EN) base under /pt/; page paths resolve to
+ * their translated permalink. Non-internal hrefs are returned unchanged.
+ *
+ * @param string $href Href starting with '/'.
+ */
+function localize_internal_href( string $href ): string {
+	if ( '' === $href || ! str_starts_with( $href, '/' ) ) {
+		return $href;
+	}
+	$path = trim( $href, '/' );
+
+	// CPT archives: the rewrite base stays English; Polylang serves them under
+	// /pt/<base>/. Use the URL-aware current_lang() (Polylang can misreport it
+	// on the front page).
+	if ( in_array( $path, array( 'learn', 'financial-news', 'investing-glossary' ), true ) ) {
+		$prefix = 'pt' === current_lang() ? '/pt' : '';
+		return home_url( $prefix . '/' . $path . '/' );
+	}
+
+	// Otherwise treat it as a page slug → its localized permalink.
+	return page_url( $path );
 }
 
 /**
