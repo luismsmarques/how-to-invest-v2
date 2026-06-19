@@ -134,6 +134,10 @@ class Frontend {
 			'restBase'   => esc_url_raw( rest_url( 'htinvest/v1' ) ),
 			'nonce'      => wp_create_nonce( 'wp_rest' ),
 			'isLoggedIn' => is_user_logged_in(),
+			'email'      => is_user_logged_in() ? wp_get_current_user()->user_email : '',
+			'deleteAt'   => self::deletion_date( $locale ),
+			'prefs'      => is_user_logged_in() ? Account::get_prefs( get_current_user_id() ) : null,
+			'categories' => Account::categories_list( $locale ),
 			'locale'     => $locale,
 			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
 			'homeUrl'    => esc_url( home_url( '/' ) ),
@@ -145,6 +149,22 @@ class Frontend {
 			),
 			'strings'    => self::account_strings( 'pt' === $locale ),
 		);
+	}
+
+	/**
+	 * Human deletion date for the current user, or '' if none scheduled.
+	 *
+	 * @param string $locale Locale.
+	 */
+	private static function deletion_date( string $locale ): string {
+		if ( ! is_user_logged_in() ) {
+			return '';
+		}
+		$at = Account::deletion_at( get_current_user_id() );
+		if ( $at <= 0 ) {
+			return '';
+		}
+		return (string) wp_date( 'pt' === $locale ? 'j \d\e F \d\e Y' : 'j F Y', $at );
 	}
 
 	/**
@@ -181,6 +201,25 @@ class Frontend {
 				'or'             => 'ou',
 				'forgot'         => 'Esqueceste-te da password?',
 				'open_profile'   => 'Ver resultado',
+				'account_email'  => 'Email da conta',
+				'change_email'   => 'Alterar email',
+				'new_email'      => 'Novo email',
+				'email_pending'  => 'Confirma a alteração no email que enviámos para o novo endereço.',
+				'email_changed'  => 'Email alterado com sucesso.',
+				'email_error'    => 'Esse link de alteração é inválido ou expirou.',
+				'save'           => 'Guardar',
+				'cancel'         => 'Cancelar',
+				'delete_scheduled' => 'A tua conta está agendada para eliminação a %s.',
+				'cancel_deletion'  => 'Cancelar eliminação',
+				'deletion_set'     => 'Conta agendada para eliminação. Enviámos os detalhes por email.',
+				'deletion_off'     => 'Eliminação cancelada. A tua conta continua ativa.',
+				'preferences'      => 'Preferências de email',
+				'pref_newsletter'  => 'Receber a newsletter',
+				'pref_frequency'   => 'Frequência',
+				'pref_weekly'      => 'Semanal',
+				'pref_daily'       => 'Diária',
+				'pref_categories'  => 'Categorias de interesse',
+				'prefs_saved'      => 'Preferências guardadas. Enviámos-te a confirmação por email.',
 			);
 		}
 		return array(
@@ -209,6 +248,25 @@ class Frontend {
 			'or'             => 'or',
 			'forgot'         => 'Forgot your password?',
 			'open_profile'   => 'View result',
+			'account_email'  => 'Account email',
+			'change_email'   => 'Change email',
+			'new_email'      => 'New email',
+			'email_pending'  => 'Confirm the change via the email we sent to the new address.',
+			'email_changed'  => 'Your email was changed.',
+			'email_error'    => 'That change link is invalid or has expired.',
+			'save'           => 'Save',
+			'cancel'         => 'Cancel',
+			'delete_scheduled' => 'Your account is scheduled for deletion on %s.',
+			'cancel_deletion'  => 'Cancel deletion',
+			'deletion_set'     => 'Account scheduled for deletion. We’ve emailed you the details.',
+			'deletion_off'     => 'Deletion cancelled. Your account stays active.',
+			'preferences'      => 'Email preferences',
+			'pref_newsletter'  => 'Receive the newsletter',
+			'pref_frequency'   => 'Frequency',
+			'pref_weekly'      => 'Weekly',
+			'pref_daily'       => 'Daily',
+			'pref_categories'  => 'Topics you care about',
+			'prefs_saved'      => 'Preferences saved. We’ve emailed you the confirmation.',
 		);
 	}
 

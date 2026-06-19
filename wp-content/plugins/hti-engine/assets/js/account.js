@@ -202,6 +202,140 @@
 		container.appendChild( box );
 	}
 
+	/* ---------- account email section ---------- */
+
+	function emailSection() {
+		var box = el( 'div', { class: 'hti-account-email' } );
+		box.appendChild( el( 'h3', null, s.account_email ) );
+
+		var row = el( 'div', { class: 'hti-account-email__row' } );
+		row.appendChild( el( 'span', { class: 'hti-account-email__current' }, ctx.email || '' ) );
+		var changeBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost' }, s.change_email );
+		row.appendChild( changeBtn );
+		box.appendChild( row );
+
+		var status = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
+		box.appendChild( status );
+
+		changeBtn.addEventListener( 'click', function () {
+			if ( box.querySelector( '.hti-account-email__form' ) ) {
+				return;
+			}
+			changeBtn.style.display = 'none';
+			var form = el( 'form', { class: 'hti-account-email__form' } );
+			var input = el( 'input', { type: 'email', class: 'hti-input', placeholder: s.new_email, 'aria-label': s.new_email, required: 'required' } );
+			var save = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-secondary' }, s.save );
+			var cancel = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost' }, s.cancel );
+			form.appendChild( input );
+			form.appendChild( save );
+			form.appendChild( cancel );
+			box.insertBefore( form, status );
+
+			cancel.addEventListener( 'click', function () {
+				form.remove();
+				changeBtn.style.display = '';
+			} );
+
+			form.addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				var email = ( input.value || '' ).trim();
+				if ( ! email || email.indexOf( '@' ) < 1 ) {
+					status.textContent = s.error;
+					return;
+				}
+				save.disabled = true;
+				status.textContent = s.working;
+				request( '/change-email', 'POST', { new_email: email } ).then( function ( res ) {
+					if ( res.ok ) {
+						form.remove();
+						status.textContent = s.email_pending;
+					} else {
+						status.textContent = ( res.data && res.data.message ) || s.error;
+						save.disabled = false;
+					}
+				} ).catch( function () {
+					status.textContent = s.error;
+					save.disabled = false;
+				} );
+			} );
+		} );
+
+		return box;
+	}
+
+	/* ---------- email preferences section ---------- */
+
+	function prefsSection() {
+		var prefs = ctx.prefs || { newsletter: false, frequency: 'weekly', categories: [] };
+		var cats = ctx.categories || [];
+
+		var box = el( 'div', { class: 'hti-account-prefs' } );
+		box.appendChild( el( 'h3', null, s.preferences ) );
+		var form = el( 'form', { class: 'hti-account-prefs__form' } );
+
+		// Newsletter toggle.
+		var nlLabel = el( 'label', { class: 'hti-account-prefs__check' } );
+		var nl = el( 'input', { type: 'checkbox' } );
+		if ( prefs.newsletter ) { nl.checked = true; }
+		nlLabel.appendChild( nl );
+		nlLabel.appendChild( el( 'span', null, ' ' + s.pref_newsletter ) );
+		form.appendChild( nlLabel );
+
+		// Frequency.
+		var freqWrap = el( 'label', { class: 'hti-account-prefs__field' }, s.pref_frequency + ' ' );
+		var freq = el( 'select', null );
+		[ [ 'weekly', s.pref_weekly ], [ 'daily', s.pref_daily ] ].forEach( function ( o ) {
+			var opt = el( 'option', { value: o[ 0 ] }, o[ 1 ] );
+			if ( prefs.frequency === o[ 0 ] ) { opt.selected = true; }
+			freq.appendChild( opt );
+		} );
+		freqWrap.appendChild( freq );
+		form.appendChild( freqWrap );
+
+		// Categories.
+		var checks = [];
+		if ( cats.length ) {
+			var catWrap = el( 'fieldset', { class: 'hti-account-prefs__cats' } );
+			catWrap.appendChild( el( 'legend', null, s.pref_categories ) );
+			cats.forEach( function ( c ) {
+				var lab = el( 'label', { class: 'hti-account-prefs__check' } );
+				var cb = el( 'input', { type: 'checkbox', value: c.slug } );
+				if ( prefs.categories && prefs.categories.indexOf( c.slug ) > -1 ) { cb.checked = true; }
+				checks.push( cb );
+				lab.appendChild( cb );
+				lab.appendChild( el( 'span', null, ' ' + c.name ) );
+				catWrap.appendChild( lab );
+			} );
+			form.appendChild( catWrap );
+		}
+
+		var save = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-secondary' }, s.save );
+		form.appendChild( save );
+		var status = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
+		form.appendChild( status );
+
+		form.addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			save.disabled = true;
+			status.textContent = s.working;
+			var selected = checks.filter( function ( c ) { return c.checked; } ).map( function ( c ) { return c.value; } );
+			request( '/preferences', 'POST', {
+				newsletter: nl.checked,
+				frequency: freq.value,
+				categories: selected
+			} ).then( function ( res ) {
+				status.textContent = res.ok ? s.prefs_saved : s.error;
+				save.disabled = false;
+			} ).catch( function () {
+				status.textContent = s.error;
+				save.disabled = false;
+			} );
+		} );
+
+		box.appendChild( form );
+		return box;
+	}
+
 	/* ---------- dashboard ([hti_account]) ---------- */
 
 	function verifyBanner() {
@@ -211,6 +345,18 @@
 		}
 		if ( params.get( 'verify_error' ) === '1' ) {
 			return el( 'div', { class: 'hti-error', role: 'alert' }, s.verify_error );
+		}
+		if ( params.get( 'email_changed' ) === '1' ) {
+			return el( 'div', { class: 'hti-save-done', role: 'status' }, s.email_changed );
+		}
+		if ( params.get( 'email_error' ) === '1' ) {
+			return el( 'div', { class: 'hti-error', role: 'alert' }, s.email_error );
+		}
+		if ( params.get( 'delete_cancelled' ) === '1' ) {
+			return el( 'div', { class: 'hti-save-done', role: 'status' }, s.deletion_off );
+		}
+		if ( params.get( 'delete_error' ) === '1' ) {
+			return el( 'div', { class: 'hti-error', role: 'alert' }, s.email_error );
 		}
 		return null;
 	}
@@ -273,6 +419,12 @@
 			listWrap.appendChild( el( 'p', { class: 'hti-error' }, s.error ) );
 		} );
 
+		// Account email + change-email form.
+		root.appendChild( emailSection() );
+
+		// Email preferences.
+		root.appendChild( prefsSection() );
+
 		// RGPD actions.
 		var actions = el( 'div', { class: 'hti-account-actions' } );
 
@@ -292,22 +444,54 @@
 			} );
 		} );
 
+		var deleteStatus = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
+
+		function renderDeletion( dateStr ) {
+			actions.querySelectorAll( '.hti-deletion' ).forEach( function ( n ) { n.remove(); } );
+			if ( dateStr ) {
+				var wrap = el( 'div', { class: 'hti-deletion' } );
+				wrap.appendChild( el( 'p', { class: 'hti-error', role: 'alert' }, s.delete_scheduled.replace( '%s', dateStr ) ) );
+				var cancelBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-secondary hti-deletion__cancel' }, s.cancel_deletion );
+				cancelBtn.addEventListener( 'click', function () {
+					cancelBtn.disabled = true;
+					request( '/cancel-deletion', 'POST', {} ).then( function ( res ) {
+						if ( res.ok ) {
+							renderDeletion( '' );
+							deleteStatus.textContent = s.deletion_off;
+							deleteBtn.style.display = '';
+						} else {
+							cancelBtn.disabled = false;
+						}
+					} );
+				} );
+				wrap.appendChild( cancelBtn );
+				actions.appendChild( wrap );
+				deleteBtn.style.display = 'none';
+			}
+		}
+
 		var deleteBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost hti-btn-danger' }, s.delete_account );
 		deleteBtn.addEventListener( 'click', function () {
 			if ( ! window.confirm( s.delete_confirm ) ) {
 				return;
 			}
 			request( '/account', 'DELETE', { confirm: true } ).then( function ( res ) {
-				if ( res.ok ) {
-					window.alert( s.deleted );
-					window.location.href = ctx.homeUrl;
+				if ( res.ok && res.data ) {
+					deleteStatus.textContent = s.deletion_set;
+					renderDeletion( res.data.date || '' );
 				}
 			} );
 		} );
 
 		actions.appendChild( exportBtn );
 		actions.appendChild( deleteBtn );
+		actions.appendChild( deleteStatus );
 		root.appendChild( actions );
+
+		// Reflect an already-scheduled deletion (from a prior request/email).
+		if ( ctx.deleteAt ) {
+			renderDeletion( ctx.deleteAt );
+		}
 
 		mount.appendChild( root );
 	}

@@ -294,6 +294,273 @@ class Emails {
 		return self::layout( $locale, $inner, $heading );
 	}
 
+	/* ---------- NPS survey (template 14) ---------- */
+
+	/**
+	 * Render the NPS survey email with a clickable 0–10 scale.
+	 *
+	 * @param string $locale 'en'|'pt'.
+	 * @param int    $uid    User id (carried in the link).
+	 * @param string $token  Per-user token.
+	 */
+	public static function nps( string $locale, int $uid, string $token ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'Como tem sido a tua experiência?' : 'How’s your experience been?';
+		$lead    = $pt
+			? 'Numa escala de 0 a 10, qual a probabilidade de recomendares a HowToInvest a um amigo?'
+			: 'On a scale of 0 to 10, how likely are you to recommend HowToInvest to a friend?';
+
+		$cells = '';
+		for ( $n = 0; $n <= 10; $n++ ) {
+			$url    = add_query_arg(
+				array( 'hti_nps' => 1, 'u' => $uid, 't' => $token, 'score' => $n ),
+				home_url( '/' )
+			);
+			$cells .= '<td style="padding:3px;">'
+				. '<a href="' . esc_url( $url ) . '" style="display:block;width:34px;height:38px;line-height:38px;text-align:center;border:1px solid #E6E0F2;border-radius:8px;background:#F4F1FA;font:700 15px Arial,sans-serif;color:#1E2147;text-decoration:none;">' . $n . '</a>'
+				. '</td>';
+		}
+		$scale = '<table role="presentation" align="center" style="border-collapse:collapse;margin:0 auto;"><tbody><tr>' . $cells . '</tr></tbody></table>';
+		$ends  = '<table role="presentation" width="100%" style="border-collapse:collapse;max-width:430px;margin:8px auto 0;"><tbody><tr>'
+			. '<td style="font:400 11.5px Arial,sans-serif;color:#9A93A8;text-align:left;">' . esc_html( $pt ? 'Nada provável' : 'Not likely' ) . '</td>'
+			. '<td style="font:400 11.5px Arial,sans-serif;color:#9A93A8;text-align:right;">' . esc_html( $pt ? 'Muito provável' : 'Very likely' ) . '</td>'
+			. '</tr></tbody></table>';
+
+		$inner = self::row(
+			self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'46px 40px 0',
+			true
+		)
+			. self::row( $scale . $ends, '28px 24px 46px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
+	/* ---------- preferences updated (template 13) ---------- */
+
+	/**
+	 * Render the "preferences updated" confirmation.
+	 *
+	 * @param string            $locale     'en'|'pt'.
+	 * @param bool              $newsletter Newsletter on/off.
+	 * @param string            $frequency  'weekly'|'daily'.
+	 * @param array<int,string> $categories Chosen category names.
+	 */
+	public static function preferences( string $locale, bool $newsletter, string $frequency, array $categories ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'Preferências atualizadas' : 'Preferences updated';
+		$lead    = $pt ? 'Guardámos as tuas preferências de email. Aqui fica o resumo:' : 'We’ve saved your email preferences. Here’s the summary:';
+
+		$rowsrc = array(
+			( $pt ? 'Newsletter' : 'Newsletter' )   => $newsletter ? ( $pt ? 'Ativa' : 'On' ) : ( $pt ? 'Desativada' : 'Off' ),
+			( $pt ? 'Frequência' : 'Frequency' )     => 'daily' === $frequency ? ( $pt ? 'Diária' : 'Daily' ) : ( $pt ? 'Semanal' : 'Weekly' ),
+			( $pt ? 'Categorias' : 'Categories' )    => empty( $categories ) ? ( $pt ? 'Todas' : 'All' ) : implode( ', ', $categories ),
+		);
+		$rows  = '';
+		$keys  = array_keys( $rowsrc );
+		$last  = end( $keys );
+		foreach ( $rowsrc as $label => $value ) {
+			$border = $label !== $last ? 'border-bottom:1px solid #EBE6F4;' : '';
+			$rows  .= '<tr><td style="padding:16px 22px;' . $border . '"><table role="presentation" width="100%"><tbody><tr>'
+				. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;vertical-align:top;">' . esc_html( $label ) . '</td>'
+				. '<td style="text-align:right;font:700 13.5px Arial,sans-serif;color:#1E2147;">' . esc_html( $value ) . '</td>'
+				. '</tr></tbody></table></td></tr>';
+		}
+		$card = '<table role="presentation" width="100%" style="border-collapse:collapse;background:#F6F4FB;border-radius:14px;"><tbody>' . $rows . '</tbody></table>';
+
+		$inner = self::row(
+			self::icon_circle( '&#9881;', '#EFEBFF', '#7C5CFC' ) . self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. self::row( $card, '26px 48px 6px' )
+			. self::row( self::note( $pt ? 'Podes atualizar estas preferências a qualquer momento na tua conta.' : 'You can update these preferences any time in your account.' ), '14px 48px 44px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
+	/* ---------- reactivation (template 12) ---------- */
+
+	/**
+	 * Render the re-engagement email for lapsed users.
+	 *
+	 * @param string                                                   $locale  'en'|'pt'.
+	 * @param array<int,array{title:string,url:string,excerpt:string}> $items   What's new.
+	 * @param string                                                   $cta_url "Back to the platform" URL.
+	 */
+	public static function reactivation( string $locale, array $items, string $cta_url ): string {
+		$pt = 'pt' === $locale;
+
+		$eyebrow = $pt ? 'Sentimos a tua falta' : 'We’ve missed you';
+		$heading = $pt ? 'Há novidades à tua espera' : 'There’s something new for you';
+		$intro   = $pt
+			? 'Voltámos com mais conteúdo claro e sem jargão para continuares a aprender a investir. Vê o que tens de novo:'
+			: 'We’re back with more clear, jargon-free content to keep building your investing confidence. Here’s what’s new:';
+		$btn = $pt ? 'Voltar à plataforma' : 'Back to the platform';
+
+		$cards = '';
+		foreach ( $items as $item ) {
+			$cards .= '<tr><td style="padding:0 0 14px;">'
+				. '<a href="' . esc_url( (string) ( $item['url'] ?? '' ) ) . '" style="text-decoration:none;display:block;border:1px solid #EEEAF4;border-radius:12px;padding:14px 18px;">'
+				. '<div style="font:700 16px Poppins,Arial,sans-serif;color:#1E2147;line-height:1.3;">' . esc_html( (string) ( $item['title'] ?? '' ) ) . '</div>'
+				. '</a></td></tr>';
+		}
+		$list = '' !== $cards ? '<table role="presentation" width="100%" style="border-collapse:collapse;"><tbody>' . $cards . '</tbody></table>' : '';
+
+		$inner = self::row(
+			'<div style="background:linear-gradient(135deg,#FF6B5E,#FF8B7E);border-radius:16px;padding:28px 24px;text-align:center;">'
+				. '<div style="font:700 12px Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#FFFFFF;opacity:.9;margin-bottom:8px;">' . esc_html( $eyebrow ) . '</div>'
+				. '<div style="font:800 26px Poppins,Arial,sans-serif;color:#FFFFFF;line-height:1.15;">' . esc_html( $heading ) . '</div>'
+				. '</div>',
+			'40px 44px 0'
+		)
+			. self::row( self::lead( esc_html( $intro ) ), '22px 44px 0', true )
+			. ( '' !== $list ? self::row( $list, '20px 44px 0' ) : '' )
+			. self::row( self::button( $btn, $cta_url ), '16px 44px 44px', true );
+
+		return self::layout( $locale, $inner, $intro );
+	}
+
+	/* ---------- account deletion scheduled (template 11) ---------- */
+
+	/**
+	 * Render the "your account is scheduled for deletion" message.
+	 *
+	 * @param string $locale       'en'|'pt'.
+	 * @param string $date         Human deletion date.
+	 * @param string $cancel_url   Cancel link.
+	 * @param string $download_url Where to download data (account page).
+	 */
+	public static function deletion_scheduled( string $locale, string $date, string $cancel_url, string $download_url ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'A tua conta vai ser eliminada' : 'Your account is scheduled for deletion';
+		$lead    = $pt
+			? 'Recebemos o teu pedido para eliminar a conta. Todos os teus dados serão apagados definitivamente em:'
+			: 'We received your request to delete your account. All your data will be permanently erased on:';
+		$cancel  = $pt ? 'Cancelar eliminação' : 'Cancel deletion';
+		$download = $pt ? 'Descarregar os meus dados' : 'Download my data';
+		$note    = $pt
+			? 'Se mudares de ideias, cancela a qualquer momento antes dessa data. Depois disso, a ação é irreversível.'
+			: 'If you change your mind, cancel any time before that date. After that, this cannot be undone.';
+
+		$datecard = '<div style="background:#FDECEA;border-radius:14px;padding:18px 22px;text-align:center;font:800 20px Poppins,Arial,sans-serif;color:#C0392B;">' . esc_html( $date ) . '</div>';
+
+		$inner = self::row(
+			self::icon_circle( '&#128465;', '#FDECEA', '#C0392B' ) . self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. self::row( $datecard, '22px 48px 0' )
+			. self::row( self::button( $cancel, $cancel_url ), '24px 48px 6px', true )
+			. self::row( '<a href="' . esc_url( $download_url ) . '" style="font:700 13.5px Arial,sans-serif;color:#7C5CFC;">' . esc_html( $download ) . '</a>', '6px 48px 6px', true )
+			. self::row( self::note( $note ), '14px 48px 44px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
+	/* ---------- account email change (template 10) ---------- */
+
+	/**
+	 * Render the "confirm your new email" message (sent to the new address).
+	 *
+	 * @param string $locale 'en'|'pt'.
+	 * @param string $old    Current email.
+	 * @param string $new    Requested new email.
+	 * @param string $url    Confirmation link.
+	 */
+	public static function email_change( string $locale, string $old, string $new, string $url ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'Confirma o teu novo email' : 'Confirm your new email';
+		$lead    = $pt
+			? 'Pediste para alterar o email da tua conta HowToInvest. Confirma a alteração no botão abaixo.'
+			: 'You asked to change the email on your HowToInvest account. Confirm the change with the button below.';
+		$btn  = $pt ? 'Confirmar novo email' : 'Confirm new email';
+		$note = $pt
+			? 'Este link expira em 24 horas. Se não foste tu a pedir isto, ignora este email — nada muda.'
+			: 'This link expires in 24 hours. If you didn’t request this, ignore this email — nothing changes.';
+
+		$rows = '<table role="presentation" width="100%" style="border-collapse:collapse;background:#F6F4FB;border-radius:14px;"><tbody>'
+			. '<tr><td style="padding:16px 22px;border-bottom:1px solid #EBE6F4;"><table role="presentation" width="100%"><tbody><tr>'
+			. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;">' . esc_html( $pt ? 'Email atual' : 'Current email' ) . '</td>'
+			. '<td style="text-align:right;font:700 13.5px Arial,sans-serif;color:#1E2147;">' . esc_html( $old ) . '</td>'
+			. '</tr></tbody></table></td></tr>'
+			. '<tr><td style="padding:16px 22px;"><table role="presentation" width="100%"><tbody><tr>'
+			. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;">' . esc_html( $pt ? 'Novo email' : 'New email' ) . '</td>'
+			. '<td style="text-align:right;font:700 13.5px Arial,sans-serif;color:#147A57;">' . esc_html( $new ) . '</td>'
+			. '</tr></tbody></table></td></tr>'
+			. '</tbody></table>';
+
+		$inner = self::row(
+			self::icon_circle( '&#9993;', '#EFEBFF', '#7C5CFC' ) . self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. self::row( $rows, '26px 48px 0' )
+			. self::row( self::button( $btn, $url ), '24px 48px 6px', true )
+			. self::row( self::note( $note ), '16px 48px 44px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
+	/* ---------- security: password changed (template 09) ---------- */
+
+	/**
+	 * Render the "your password was changed" security alert.
+	 *
+	 * @param string                    $locale    'en'|'pt'.
+	 * @param array{when:string,device:string,ip:string} $meta Event details.
+	 * @param string                    $reset_url "wasn't you" → reset URL.
+	 */
+	public static function security_alert( string $locale, array $meta, string $reset_url ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'A tua password foi alterada' : 'Your password was changed';
+		$lead    = $pt
+			? 'A password da tua conta HowToInvest foi alterada. Se foste tu, está tudo bem — não precisas de fazer nada.'
+			: 'The password for your HowToInvest account was changed. If this was you, all good — there’s nothing to do.';
+		$rows = array(
+			( $pt ? 'Data' : 'Date' )         => $meta['when'] ?? '',
+			( $pt ? 'Dispositivo' : 'Device' ) => $meta['device'] ?? '',
+			( $pt ? 'Endereço IP' : 'IP address' ) => $meta['ip'] ?? '',
+		);
+		$card  = '<table role="presentation" width="100%" style="border-collapse:collapse;background:#F6F4FB;border-radius:14px;"><tbody>';
+		$i     = 0;
+		$count = count( array_filter( $rows, static fn( $v ) => '' !== $v ) );
+		foreach ( $rows as $label => $value ) {
+			if ( '' === $value ) {
+				continue;
+			}
+			++$i;
+			$border = $i < $count ? 'border-bottom:1px solid #EBE6F4;' : '';
+			$card  .= '<tr><td style="padding:16px 22px;' . $border . '"><table role="presentation" width="100%" style="border-collapse:collapse;"><tbody><tr>'
+				. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;">' . esc_html( $label ) . '</td>'
+				. '<td style="text-align:right;font:700 13.5px Arial,sans-serif;color:#1E2147;">' . esc_html( $value ) . '</td>'
+				. '</tr></tbody></table></td></tr>';
+		}
+		$card .= '</tbody></table>';
+
+		$wasnt = $pt ? 'Não foste tu?' : 'Wasn’t you?';
+		$cta   = $pt ? 'Repor a password agora' : 'Reset your password now';
+		$note  = $pt
+			? 'Se não foste tu, repõe a password imediatamente e contacta-nos.'
+			: 'If this wasn’t you, reset your password immediately and contact us.';
+
+		$inner = self::row(
+			self::icon_circle( '&#128274;', '#FDECEA', '#C0392B' ) . self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. self::row( $card, '28px 48px 0' )
+			. self::row( '<div style="font:700 13px Arial,sans-serif;color:#C0392B;margin-bottom:10px;">' . esc_html( $wasnt ) . '</div>' . self::button( $cta, $reset_url ), '24px 48px 4px', true )
+			. self::row( self::note( $note ), '16px 48px 44px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
 	/* ---------- WordPress password reset (template 05) ---------- */
 
 	/**

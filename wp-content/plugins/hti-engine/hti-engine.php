@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.6.4
+ * Version:           0.7.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.4';
+const VERSION = '0.7.0';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -52,6 +52,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-rate-limit.php';
 require_once HTI_ENGINE_PATH . 'includes/class-mailer.php';
 require_once HTI_ENGINE_PATH . 'includes/class-brevo.php';
 require_once HTI_ENGINE_PATH . 'includes/class-emails.php';
+require_once HTI_ENGINE_PATH . 'includes/class-account.php';
 require_once HTI_ENGINE_PATH . 'includes/class-verification.php';
 require_once HTI_ENGINE_PATH . 'includes/class-google.php';
 require_once HTI_ENGINE_PATH . 'includes/class-rest.php';
@@ -60,6 +61,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-frontend.php';
 require_once HTI_ENGINE_PATH . 'includes/class-contact.php';
 require_once HTI_ENGINE_PATH . 'includes/class-subscribe.php';
 require_once HTI_ENGINE_PATH . 'includes/class-campaigns.php';
+require_once HTI_ENGINE_PATH . 'includes/class-nps.php';
 require_once HTI_ENGINE_PATH . 'includes/class-tools.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
@@ -156,7 +158,9 @@ Frontend::init();
 Contact::init();
 Subscribe::init();
 Campaigns::init();
+Nps::init();
 Emails::init();
+Account::init();
 Tools::init();
 
 /**
@@ -226,6 +230,7 @@ register_activation_hook( __FILE__, __NAMESPACE__ . '\\activate' );
 function deactivate(): void {
 	Cron::unschedule();
 	Campaigns::unschedule();
+	Account::unschedule();
 	flush_rewrite_rules();
 }
 register_deactivation_hook( __FILE__, __NAMESPACE__ . '\\deactivate' );

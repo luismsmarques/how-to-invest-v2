@@ -39,6 +39,7 @@ class RateLimit {
 				'contact'   => array( 5, 3600 ),
 				'email_result' => array( 10, 3600 ),
 				'subscribe' => array( 5, 3600 ),
+				'change_email' => array( 5, 3600 ),
 			)
 		);
 	}
