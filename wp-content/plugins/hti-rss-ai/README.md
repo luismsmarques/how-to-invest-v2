@@ -16,8 +16,15 @@ See the full plan: [`docs/RSS_AI_Feed_Plan.md`](../../../docs/RSS_AI_Feed_Plan.m
 - **M4 — research + generation (done):** Gemini (Google Search grounding) fact research → validated JSON → original SEO/Google-News article saved as a pending `news` post (with sources + disclaimer). "Generate article" on a group; daily limit.
 - **M5 — review + SEO (done):** news edit-screen meta box (AI provenance + sources + sitelinking suggestions) and meta-description bridge to RankMath/Yoast.
 - **M6 — hardening (done):** capped activity Logger + Logs page; logging across fetch/group/generate; `uninstall.php` (drops tables + options); pure-PHP test suite (extract-json, validator, grouping).
+- **M7 — featured image (done):** on generation, a branded **square 1080×1080** card is rendered locally (GD + bundled Poppins/Plus Jakarta Sans) and set as the post's featured image. The card chrome (gradient, logo, badge, kicker, headline, disclaimer) is deterministic for brand consistency; only the **photo** is produced by AI (Imagen), with graceful fallback to the feed image, then a branded gradient. "Regenerate image" button in a news-editor meta box. Settings: enable toggle + image model.
 
-The full pipeline (feeds → drafts → groups → generate → review) is complete.
+The full pipeline (feeds → drafts → groups → generate → featured image → review) is complete.
+
+## Featured image
+- Matches the "Notícias · Quadrado" template from the HowToInvest Social Templates design.
+- Fonts are bundled as `.ttf` under `assets/fonts/` (GD cannot read the theme's woff2).
+- Photo source per article is recorded in `rssai_card_photo_source` meta (`ai` / `feed` / `none`).
+- Requires the GD extension with TrueType support (standard on WordPress hosts).
 
 ## Requirements
 - WordPress 6.7+, PHP 8.3+.
