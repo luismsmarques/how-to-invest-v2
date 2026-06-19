@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 19 jun 2026 (RSS AI v1.2 — foto AI de destaque + kit social). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 19 jun 2026 (Tools hub + image-to-image; RSS AI v1.3). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -40,8 +40,15 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
   - Frontend (JS vanilla): `questionnaire.js`, `result.js` (donut conic-gradient), `account.js`, `consent.js`, `analytics.js`.
   - Segurança/RGPD: rate limit (`class-rate-limit`), verificação email double opt-in via **Brevo** (`class-verification`+`class-mailer`), consentimento (`class-consent`), GA gated, cron de limpeza (`class-cron`), login Google (`class-google`).
   - Admin: `class-settings` (Definições → HowToInvest). PDF: `class-pdf` (Dompdf, fallback HTML).
+  - **Conteúdo SEO seedado** (`class-seeder`, bilingue EN+PT, idempotente): glossário, páginas, artigos +
+    **páginas de Arquétipos** (5, com tabela de alocação ilustrativa do `Config`) + **Classes de ativos** (5
+    "explained") + 2 hubs (Perfis / Classes de ativos), todos ligados e por classe de ativos.
+  - **Hub de Ferramentas** (`class-tools`, shortcode `[hti_tool name=…]`): 4 calculadoras educativas
+    (juro composto, inflação, meta de poupança, custo de esperar) — JS vanilla com motor partilhado
+    (`tools-core.js`, testado com Node), gráficos SVG leves, indexáveis; hub `/tools/` + 4 páginas no menu.
+    Travas: taxas hipotéticas, ilustrativo, sem produtos, disclaimers.
 - Detalhe por ficheiro: `wp-content/plugins/hti-engine/README.md`.
-- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.2.0) — alimenta a área de
+- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.3.0) — alimenta a área de
   **notícias** (`news` CPT do hti-engine). Pipeline com **humano no meio (nunca auto-publica)**:
   **Feeds** (CRUD + *Test feed*) → **Fetch** (cron `rssai_fetch_cron` ou *Fetch now*) →
   **Drafts** (itens dedup por `sha1(guid|link)`, imagem extraída) → **Groups** (clustering Jaccard
@@ -52,9 +59,12 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
   - **3 tabelas** (`rssai_feeds`, `rssai_items`, `rssai_groups`); opções `rssai_settings`/`rssai_logs`.
   - **Reutiliza `HTI_GEMINI_API_KEY`** (nunca guarda a chave; filtro `rssai_gemini_api_key` opcional).
   - Modelo texto default `gemini-2.5-flash`; menu próprio *RSS AI Feed* (Settings/Feeds/Drafts/Groups/Logs).
-  - **Imagem de destaque (M7):** **foto AI** sobre o tema da notícia (Imagen, `imagen-3.0-generate-002`, 16:9),
-    guardada como thumbnail do post. Fallback gracioso → imagem do feed. Botão *Regenerate AI image* na meta box.
-    Toggle + modelo nas Settings. **Imagen exige chave com billing + acesso a image-gen** (senão usa o feed).
+  - **Imagem de destaque (M7):** **foto AI** sobre o tema da notícia (16:9), guardada como thumbnail.
+    Cliente **dual-endpoint**: modelos **Imagen** (`:predict`, default `imagen-4.0-generate-001`) e **Gemini-image**
+    (`:generateContent`) escolhidos pelo nome. **Image-to-image:** se o draft tiver imagem de feed, ela é a **base**
+    e é reinventada no estilo da marca por um modelo Gemini-image (default `gemini-2.5-flash-image`); senão
+    text-to-image; senão imagem do feed crua; senão nenhuma. Fonte registada (`ai-from-feed`/`ai`/`feed`/`none`).
+    Botão *Regenerate AI image* na meta box. **Imagen exige billing + acesso a image-gen**.
   - **Kit de redes sociais (M8):** meta box pós-publicação com **download** de cartões de marca renderizados
     **localmente com GD** (fontes `.ttf` em `assets/fonts/`) — **Quadrado 1080×1080** (feed) e **Story 1080×1920**
     (stories) — com a **foto de destaque lá dentro** + título/data/disclaimer. **Reaproveita** a foto (sem gastar AI).
@@ -95,13 +105,15 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - cPanel Git: `Manage → Pull or Deploy → Update from Remote → Deploy HEAD Commit`. O `.cpanel.yml` (simples; destino fixo `howtoinvest.pro/wp-content`) copia **tema + hti-engine + hti-rss-ai**.
 - **Se o deploy do cPanel falhar/pendurar:** ver `DEPLOY.md §5.1` (deploy manual / File Manager copy a partir de `repositories/how-to-invest-v2/wp-content/...`).
 - **Bump de versão obrigatório** ao mexer em CSS/JS do tema/plugin (constante VERSION → `?ver=`), senão a cache serve assets antigos. Em template parts personalizadas no Site Editor, *Clear customizations* para o tema voltar a usar os ficheiros.
-- Testes: `for t in engine settings explainer prompt ratelimit cron mailer google llm; do php wp-content/plugins/hti-engine/tests/test-$t.php; done`
+- Testes engine (157 verdes): `for t in engine settings explainer prompt ratelimit cron mailer google llm; do php wp-content/plugins/hti-engine/tests/test-$t.php; done`
+- Testes calculadoras (Node, 14 verdes): `node wp-content/plugins/hti-engine/tests/test-tools-core.mjs`
 - Testes RSS AI (29 verdes): `for t in extract-json validator grouping social-card image-client; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
 
 ## O que falta para o GO-LIVE público (checklist completa: `docs/QA_Gate_Lancamento.md`)
 **Código (produto):** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
 
 **Código — adiado de propósito (opcional, não bloqueia):**
+- [ ] **Hub de Ferramentas — 2ª leva:** Fundo de emergência, Visualizador de alocação por arquétipo (reusa `result.js`+`Config`), Regra dos 72, Impacto das comissões. (1ª leva — juro composto/inflação/meta/custo de esperar — **feita**.)
 - [ ] Kit social: template **Editorial 4:5** (img3) e **X/Twitter 1600×900**.
 - [ ] Outros templates do design (Facto curioso, Glossário cards, CTA, Infográfico, Resumo diário) — "kit de conteúdo" futuro.
 - [ ] **Base dos slugs dos CPTs em PT** (`/news/`, `/glossary/`) — exige Polylang Pro ou rewrite custom (deixada em EN).
