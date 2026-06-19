@@ -247,6 +247,12 @@ class Seeder {
 			'cash-explained'                   => 'liquidez-explicada',
 			'reits-alternatives-explained'     => 'imobiliario-e-alternativos-explicados',
 			'crypto-explained'                 => 'cripto-explicada',
+			// Tools hub + calculators.
+			'tools'                            => 'ferramentas',
+			'compound-interest-calculator'     => 'calculadora-de-juro-composto',
+			'inflation-calculator'             => 'calculadora-de-inflacao',
+			'savings-goal-calculator'          => 'calculadora-de-meta-de-poupanca',
+			'cost-of-waiting-calculator'       => 'calculadora-do-custo-de-esperar',
 		);
 		return $map[ $en_slug ] ?? sanitize_title( $pt_title );
 	}
@@ -667,9 +673,107 @@ class Seeder {
 			),
 		);
 
-		// Children (archetypes + asset classes) come before the hubs so the
-		// hub→child links can be localized once the PT children exist.
-		return array_merge( $pages, self::explainer_pages() );
+		// Children (archetypes + asset classes + tools) come before the hubs so
+		// the hub→child links can be localized once the PT children exist.
+		return array_merge( $pages, self::explainer_pages(), self::tool_pages() );
+	}
+
+	/**
+	 * The Tools hub + the four educational calculators (children first).
+	 * Each calculator embeds an [hti_tool] shortcode (see class-tools.php).
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function tool_pages(): array {
+		$tools = array(
+			'compound-interest-calculator' => array(
+				'name'     => 'compound',
+				'title_en' => 'Compound interest calculator',
+				'title_pt' => 'Calculadora de juro composto',
+				'intro_en' => 'See how regular contributions can grow over time. Compound growth means your returns can earn returns too — so time in the market often matters more than the amount. Everything below is illustrative, with a hypothetical rate.',
+				'intro_pt' => 'Vê como contribuições regulares podem crescer ao longo do tempo. O juro composto significa que os teus retornos também podem gerar retornos — por isso o tempo no mercado costuma importar mais do que o valor. Tudo abaixo é ilustrativo, com uma taxa hipotética.',
+			),
+			'inflation-calculator'         => array(
+				'name'     => 'inflation',
+				'title_en' => 'Inflation calculator',
+				'title_pt' => 'Calculadora de inflação',
+				'intro_en' => 'Inflation slowly reduces what your money can buy. This shows how much purchasing power an amount may lose over time — and how much you would need later to keep the same buying power. Illustrative, with a hypothetical inflation rate.',
+				'intro_pt' => 'A inflação reduz lentamente o que o teu dinheiro consegue comprar. Isto mostra quanto poder de compra um valor pode perder ao longo do tempo — e quanto precisarias mais tarde para manter o mesmo poder de compra. Ilustrativo, com uma taxa de inflação hipotética.',
+			),
+			'savings-goal-calculator'      => array(
+				'name'     => 'savings_goal',
+				'title_en' => 'Savings goal calculator',
+				'title_pt' => 'Calculadora de meta de poupança',
+				'intro_en' => 'Have a target in mind? See roughly how much you might set aside each month to get there over a chosen number of years, assuming a hypothetical return. Illustrative only.',
+				'intro_pt' => 'Tens um objetivo em mente? Vê aproximadamente quanto poderias pôr de lado por mês para lá chegar num dado número de anos, assumindo um retorno hipotético. Apenas ilustrativo.',
+			),
+			'cost-of-waiting-calculator'   => array(
+				'name'     => 'cost_of_waiting',
+				'title_en' => 'The cost of waiting',
+				'title_pt' => 'O custo de esperar',
+				'intro_en' => 'Starting earlier gives your contributions more time to compound. This compares starting now with waiting a few years — same monthly amount — so you can see what the delay might cost. Illustrative, with a hypothetical rate.',
+				'intro_pt' => 'Começar mais cedo dá às tuas contribuições mais tempo para compor. Isto compara começar já com esperar alguns anos — o mesmo valor mensal — para veres o que o atraso pode custar. Ilustrativo, com uma taxa hipotética.',
+			),
+		);
+
+		$pages = array();
+		foreach ( $tools as $slug => $t ) {
+			$pages[] = array(
+				'slug'    => $slug,
+				'title'   => $t['title_en'],
+				'excerpt' => $t['intro_en'],
+				'content' => self::paragraph( $t['intro_en'] )
+					. self::tool_shortcode( $t['name'] )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => $t['title_pt'],
+					'excerpt' => $t['intro_pt'],
+					'content' => self::paragraph( $t['intro_pt'] )
+						. self::tool_shortcode( $t['name'] ),
+				),
+			);
+		}
+
+		// Hub.
+		$pages[] = array(
+			'slug'    => 'tools',
+			'title'   => 'Tools',
+			'excerpt' => 'Free, educational calculators about saving and investing — time, inflation, goals and the cost of waiting.',
+			'content' => self::paragraph( 'Free, educational calculators to build intuition about saving and investing — time, inflation, goals and the cost of waiting. Each is illustrative, with hypothetical rates, and never advice.' )
+				. self::bullets(
+					array(
+						array( home_url( '/compound-interest-calculator/' ), 'Compound interest', 'see how regular contributions can grow over time.' ),
+						array( home_url( '/inflation-calculator/' ), 'Inflation', 'how much buying power your money may lose.' ),
+						array( home_url( '/savings-goal-calculator/' ), 'Savings goal', 'how much to set aside monthly to reach a goal.' ),
+						array( home_url( '/cost-of-waiting-calculator/' ), 'The cost of waiting', 'what delaying a few years might cost.' ),
+					)
+				)
+				. self::cta(),
+			'pt'      => array(
+				'title'   => 'Ferramentas',
+				'excerpt' => 'Calculadoras gratuitas e educativas sobre poupar e investir — tempo, inflação, objetivos e o custo de esperar.',
+				'content' => self::paragraph( 'Calculadoras gratuitas e educativas para ganhares intuição sobre poupar e investir — tempo, inflação, objetivos e o custo de esperar. Cada uma é ilustrativa, com taxas hipotéticas, e nunca aconselhamento.' )
+					. self::bullets(
+						array(
+							array( home_url( '/compound-interest-calculator/' ), 'Juro composto', 'vê como contribuições regulares podem crescer ao longo do tempo.' ),
+							array( home_url( '/inflation-calculator/' ), 'Inflação', 'quanto poder de compra o teu dinheiro pode perder.' ),
+							array( home_url( '/savings-goal-calculator/' ), 'Meta de poupança', 'quanto pôr de lado por mês para atingir um objetivo.' ),
+							array( home_url( '/cost-of-waiting-calculator/' ), 'O custo de esperar', 'o que adiar alguns anos pode custar.' ),
+						)
+					),
+			),
+		);
+
+		return $pages;
+	}
+
+	/**
+	 * A wp:shortcode block embedding a calculator.
+	 *
+	 * @param string $name Tool name (compound, inflation, …).
+	 */
+	private static function tool_shortcode( string $name ): string {
+		return '<!-- wp:shortcode -->[hti_tool name="' . $name . '"]<!-- /wp:shortcode -->' . "\n\n";
 	}
 
 	/**
@@ -1052,6 +1156,10 @@ class Seeder {
 			'cash-explained',
 			'reits-alternatives-explained',
 			'crypto-explained',
+			'compound-interest-calculator',
+			'inflation-calculator',
+			'savings-goal-calculator',
+			'cost-of-waiting-calculator',
 		);
 	}
 

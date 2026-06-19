@@ -67,14 +67,33 @@ class Featured_Image {
 	}
 
 	/**
-	 * Acquire a photo: AI first, then the group's feed image, else none.
+	 * Acquire a photo. Preference order:
+	 *   1. Image-to-image: reimagine the feed image into the branded illustration.
+	 *   2. Text-to-image (no feed image, or image-to-image unavailable/failed).
+	 *   3. The raw feed image.
+	 *   4. None.
 	 *
 	 * @param array<string,mixed> $data  Article data.
 	 * @param object|null         $group Group row.
 	 * @return array{0:?string,1:string,2:string} [bytes|null, source, mime]
 	 */
 	private static function acquire_photo( array $data, ?object $group ): array {
+		// Grab a feed image up front — used as the base, or as the fallback.
+		[ $feed_bytes, $feed_mime ] = self::feed_image_bytes( $group );
+
 		if ( Image_Client::available() ) {
+			// 1. Use the feed image as a base, reimagined by a Gemini image model.
+			if ( null !== $feed_bytes && Image_Client::base_available() ) {
+				$bytes = Image_Client::generate_from_image( Prompt::image_edit_prompt( $data ), $feed_bytes, $feed_mime );
+				if ( ! is_wp_error( $bytes ) && '' !== $bytes ) {
+					return array( $bytes, 'ai-from-feed', 'image/png' );
+				}
+				if ( is_wp_error( $bytes ) ) {
+					Logger::log( 'image', 'Image-to-image failed, trying text-to-image: ' . $bytes->get_error_message() );
+				}
+			}
+
+			// 2. Plain text-to-image.
 			$bytes = Image_Client::generate( Prompt::image_prompt( $data ), '16:9' );
 			if ( ! is_wp_error( $bytes ) && '' !== $bytes ) {
 				return array( $bytes, 'ai', 'image/png' );
@@ -84,19 +103,34 @@ class Featured_Image {
 			}
 		}
 
-		$url = self::feed_image_url( $group );
-		if ( '' !== $url ) {
-			$resp = wp_remote_get( $url, array( 'timeout' => 20 ) );
-			if ( ! is_wp_error( $resp ) && 200 === (int) wp_remote_retrieve_response_code( $resp ) ) {
-				$body = (string) wp_remote_retrieve_body( $resp );
-				$mime = (string) wp_remote_retrieve_header( $resp, 'content-type' );
-				if ( '' !== $body ) {
-					return array( $body, 'feed', '' !== $mime ? $mime : 'image/jpeg' );
-				}
-			}
+		// 3. The raw feed image.
+		if ( null !== $feed_bytes ) {
+			return array( $feed_bytes, 'feed', '' !== $feed_mime ? $feed_mime : 'image/jpeg' );
 		}
 
 		return array( null, 'none', '' );
+	}
+
+	/**
+	 * Fetch the first feed image's bytes + MIME for the group (or null).
+	 *
+	 * @param object|null $group Group row.
+	 * @return array{0:?string,1:string} [bytes|null, mime]
+	 */
+	private static function feed_image_bytes( ?object $group ): array {
+		$url = self::feed_image_url( $group );
+		if ( '' === $url ) {
+			return array( null, '' );
+		}
+		$resp = wp_remote_get( $url, array( 'timeout' => 20 ) );
+		if ( is_wp_error( $resp ) || 200 !== (int) wp_remote_retrieve_response_code( $resp ) ) {
+			return array( null, '' );
+		}
+		$body = (string) wp_remote_retrieve_body( $resp );
+		if ( '' === $body ) {
+			return array( null, '' );
+		}
+		return array( $body, (string) wp_remote_retrieve_header( $resp, 'content-type' ) );
 	}
 
 	/**

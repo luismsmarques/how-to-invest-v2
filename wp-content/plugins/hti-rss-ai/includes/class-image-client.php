@@ -103,6 +103,85 @@ class Image_Client {
 	}
 
 	/**
+	 * Whether image-to-image (feed image as base) is available.
+	 */
+	public static function base_available(): bool {
+		return Gemini_Client::available() && '' !== trim( (string) Settings::get( 'image_base_model', '' ) );
+	}
+
+	/**
+	 * Image-to-image: reimagine a base image with a Gemini image model.
+	 *
+	 * @param string $prompt      Instruction.
+	 * @param string $image_bytes Base image bytes (e.g. the feed image).
+	 * @param string $mime        Base image MIME type.
+	 * @return string|\WP_Error Raw image bytes, or error.
+	 */
+	public static function generate_from_image( string $prompt, string $image_bytes, string $mime ) {
+		$key = Gemini_Client::api_key();
+		if ( '' === $key ) {
+			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
+		}
+		$model = (string) Settings::get( 'image_base_model', 'gemini-2.5-flash-image' );
+		if ( '' === trim( $model ) ) {
+			return new \WP_Error( 'rssai_no_base_model', __( 'No image-to-image model configured.', 'hti-rss-ai' ) );
+		}
+
+		$mime = strtok( trim( $mime ), ';' );
+		if ( ! is_string( $mime ) || 0 !== strpos( $mime, 'image/' ) ) {
+			$mime = 'image/jpeg';
+		}
+
+		$url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode( $model ) . ':generateContent?key=' . rawurlencode( $key );
+		$body = array(
+			'contents'         => array(
+				array(
+					'role'  => 'user',
+					'parts' => array(
+						array(
+							'inlineData' => array(
+								'mimeType' => $mime,
+								'data'     => base64_encode( $image_bytes ),
+							),
+						),
+						array( 'text' => $prompt ),
+					),
+				),
+			),
+			'generationConfig' => array( 'responseModalities' => array( 'IMAGE' ) ),
+		);
+
+		$response = wp_remote_post(
+			$url,
+			array(
+				'timeout' => 90,
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => wp_json_encode( $body ),
+			)
+		);
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$json = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		if ( $code < 200 || $code >= 300 ) {
+			$message = is_array( $json ) && isset( $json['error']['message'] ) ? $json['error']['message'] : 'HTTP ' . $code;
+			return new \WP_Error( 'rssai_image_api', $message );
+		}
+
+		$b64 = self::extract_base64( is_array( $json ) ? $json : array() );
+		if ( null === $b64 ) {
+			return new \WP_Error( 'rssai_image_empty', __( 'No image returned by the model.', 'hti-rss-ai' ) );
+		}
+		$bytes = base64_decode( $b64, true );
+		if ( false === $bytes || '' === $bytes ) {
+			return new \WP_Error( 'rssai_image_decode', __( 'Could not decode the generated image.', 'hti-rss-ai' ) );
+		}
+		return $bytes;
+	}
+
+	/**
 	 * Pull the base64 image out of the various response shapes Imagen/Gemini use.
 	 *
 	 * @param array<string,mixed> $json Decoded response.

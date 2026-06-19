@@ -46,6 +46,7 @@ class Settings {
 			'default_lang'         => 'en',
 			'image_generate'       => 1,
 			'image_model'          => 'imagen-4.0-generate-001',
+			'image_base_model'     => 'gemini-2.5-flash-image',
 		);
 	}
 
@@ -123,6 +124,7 @@ class Settings {
 			'default_lang'         => in_array( $input['default_lang'] ?? '', $langs, true ) ? $input['default_lang'] : 'en',
 			'image_generate'       => empty( $input['image_generate'] ) ? 0 : 1,
 			'image_model'          => isset( $input['image_model'] ) ? sanitize_text_field( $input['image_model'] ) : 'imagen-4.0-generate-001',
+			'image_base_model'     => isset( $input['image_base_model'] ) ? sanitize_text_field( $input['image_base_model'] ) : 'gemini-2.5-flash-image',
 		);
 	}
 
@@ -214,7 +216,13 @@ class Settings {
 					<tr>
 						<th scope="row"><label for="rssai_image_model"><?php echo esc_html__( 'Image model', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[image_model]" id="rssai_image_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['image_model'] ); ?>" />
-							<p class="description"><?php echo esc_html__( 'Image model your key can access. Imagen models (e.g. imagen-4.0-generate-001, imagen-4.0-fast-generate-001) use :predict; Gemini image models (e.g. gemini-2.5-flash-image) use :generateContent — both are handled automatically. Run ListModels to see exactly what your key supports.', 'hti-rss-ai' ); ?></p>
+							<p class="description"><?php echo esc_html__( 'Text-to-image model, used when there is no feed image. Imagen models (e.g. imagen-4.0-generate-001) use :predict; Gemini image models (e.g. gemini-2.5-flash-image) use :generateContent — both handled automatically. Run ListModels to see what your key supports.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_image_base_model"><?php echo esc_html__( 'Image-to-image model', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[image_base_model]" id="rssai_image_base_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['image_base_model'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'When a draft has a feed image, it is used as the base and reimagined into the branded illustration with this model. Must be a Gemini image model (accepts an input image), e.g. gemini-2.5-flash-image. Leave blank to always use plain text-to-image.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
 				</table>
