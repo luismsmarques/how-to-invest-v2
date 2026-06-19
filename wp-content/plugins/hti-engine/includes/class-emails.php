@@ -294,6 +294,48 @@ class Emails {
 		return self::layout( $locale, $inner, $heading );
 	}
 
+	/* ---------- reactivation (template 12) ---------- */
+
+	/**
+	 * Render the re-engagement email for lapsed users.
+	 *
+	 * @param string                                                   $locale  'en'|'pt'.
+	 * @param array<int,array{title:string,url:string,excerpt:string}> $items   What's new.
+	 * @param string                                                   $cta_url "Back to the platform" URL.
+	 */
+	public static function reactivation( string $locale, array $items, string $cta_url ): string {
+		$pt = 'pt' === $locale;
+
+		$eyebrow = $pt ? 'Sentimos a tua falta' : 'We’ve missed you';
+		$heading = $pt ? 'Há novidades à tua espera' : 'There’s something new for you';
+		$intro   = $pt
+			? 'Voltámos com mais conteúdo claro e sem jargão para continuares a aprender a investir. Vê o que tens de novo:'
+			: 'We’re back with more clear, jargon-free content to keep building your investing confidence. Here’s what’s new:';
+		$btn = $pt ? 'Voltar à plataforma' : 'Back to the platform';
+
+		$cards = '';
+		foreach ( $items as $item ) {
+			$cards .= '<tr><td style="padding:0 0 14px;">'
+				. '<a href="' . esc_url( (string) ( $item['url'] ?? '' ) ) . '" style="text-decoration:none;display:block;border:1px solid #EEEAF4;border-radius:12px;padding:14px 18px;">'
+				. '<div style="font:700 16px Poppins,Arial,sans-serif;color:#1E2147;line-height:1.3;">' . esc_html( (string) ( $item['title'] ?? '' ) ) . '</div>'
+				. '</a></td></tr>';
+		}
+		$list = '' !== $cards ? '<table role="presentation" width="100%" style="border-collapse:collapse;"><tbody>' . $cards . '</tbody></table>' : '';
+
+		$inner = self::row(
+			'<div style="background:linear-gradient(135deg,#FF6B5E,#FF8B7E);border-radius:16px;padding:28px 24px;text-align:center;">'
+				. '<div style="font:700 12px Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#FFFFFF;opacity:.9;margin-bottom:8px;">' . esc_html( $eyebrow ) . '</div>'
+				. '<div style="font:800 26px Poppins,Arial,sans-serif;color:#FFFFFF;line-height:1.15;">' . esc_html( $heading ) . '</div>'
+				. '</div>',
+			'40px 44px 0'
+		)
+			. self::row( self::lead( esc_html( $intro ) ), '22px 44px 0', true )
+			. ( '' !== $list ? self::row( $list, '20px 44px 0' ) : '' )
+			. self::row( self::button( $btn, $cta_url ), '16px 44px 44px', true );
+
+		return self::layout( $locale, $inner, $intro );
+	}
+
 	/* ---------- account deletion scheduled (template 11) ---------- */
 
 	/**
