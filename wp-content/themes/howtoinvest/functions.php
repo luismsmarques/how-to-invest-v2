@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.7.5';
+const VERSION = '0.7.6';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -75,6 +75,47 @@ function enqueue_scripts(): void {
 	);
 }
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
+
+/**
+ * One-time: remove a stale Site-Editor customization of the "Home" template.
+ *
+ * A saved DB version of the Home template was overriding the theme's home.html,
+ * pinning the homepage to the old English-only hero + an empty core Query Loop
+ * (so the dynamic, language-aware blocks and the PT homepage never showed).
+ * Deleting that wp_template post reverts the homepage to the theme file. Scoped
+ * to this theme's "home" template only; runs once (guarded by an option). The
+ * homepage can still be re-customized in the Site Editor afterwards.
+ */
+function maybe_reset_home_template(): void {
+	if ( get_option( 'hti_home_template_reset_v1' ) ) {
+		return;
+	}
+	update_option( 'hti_home_template_reset_v1', 1 ); // Set first: never loop, even on error.
+
+	if ( ! function_exists( 'get_posts' ) ) {
+		return;
+	}
+	$templates = get_posts(
+		array(
+			'post_type'     => 'wp_template',
+			'name'          => 'home',
+			'post_status'   => 'any',
+			'numberposts'   => 10,
+			'no_found_rows' => true,
+			'tax_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+				array(
+					'taxonomy' => 'wp_theme',
+					'field'    => 'name',
+					'terms'    => get_stylesheet(),
+				),
+			),
+		)
+	);
+	foreach ( $templates as $template ) {
+		wp_delete_post( (int) $template->ID, true );
+	}
+}
+add_action( 'init', __NAMESPACE__ . '\\maybe_reset_home_template', 20 );
 
 /**
  * Current front-end language ('pt' or 'en').
@@ -554,12 +595,7 @@ function render_header_cta(): string {
 function render_homepage_intro(): string {
 	$quiz = esc_url( page_url( 'investor-profile-quiz' ) );
 
-	// TEMP diagnostic (remove after debugging): visible in View Source only.
-	$dbg_uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
-	$dbg_pll = function_exists( 'pll_current_language' ) ? (string) pll_current_language( 'slug' ) : 'no-pll';
-	$html    = '<!-- HTI-DIAG intro theme=' . VERSION . ' lang=' . current_lang() . ' uri=' . esc_html( $dbg_uri ) . ' pll=' . esc_html( $dbg_pll ) . ' -->';
-
-	$html .= '<div class="wp-block-group alignwide hti-hero">';
+	$html  = '<div class="wp-block-group alignwide hti-hero">';
 	$html .= '<span class="hti-badge"><span class="hti-badge__dot"></span>' . esc_html( t( 'hero_badge' ) ) . '</span>';
 	$html .= '<h1 class="wp-block-heading has-text-align-center hti-hero__title has-huge-font-size">' . esc_html( t( 'hero_title' ) ) . '</h1>';
 	$html .= '<p class="has-text-align-center hti-hero__lead has-muted-color has-text-color has-large-font-size">' . esc_html( t( 'hero_lead' ) ) . '</p>';
