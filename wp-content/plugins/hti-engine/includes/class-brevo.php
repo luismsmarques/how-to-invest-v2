@@ -78,6 +78,38 @@ class Brevo {
 	}
 
 	/**
+	 * Create an email campaign targeting a list and send it immediately.
+	 * Returns whether it was created + sent.
+	 *
+	 * @param string $name    Internal campaign name.
+	 * @param string $subject Email subject.
+	 * @param string $html    Full HTML body (include an {{ unsubscribe }} link).
+	 * @param int    $list_id Target list id.
+	 */
+	public static function send_campaign( string $name, string $subject, string $html, int $list_id ): bool {
+		if ( ! self::configured() || $list_id <= 0 ) {
+			return false;
+		}
+		$sender = Mailer::sender();
+		$created = self::request_data(
+			'POST',
+			'/emailCampaigns',
+			array(
+				'name'       => $name,
+				'subject'    => $subject,
+				'sender'     => array( 'name' => $sender['name'], 'email' => $sender['email'] ),
+				'htmlContent' => $html,
+				'recipients' => array( 'listIds' => array( $list_id ) ),
+			)
+		);
+		if ( ! $created['ok'] || empty( $created['data']['id'] ) ) {
+			return false;
+		}
+		$id = (int) $created['data']['id'];
+		return self::request( 'POST', '/emailCampaigns/' . $id . '/sendNow' );
+	}
+
+	/**
 	 * Perform an API request; returns whether the response was 2xx.
 	 *
 	 * @param string                   $method HTTP method.
@@ -85,6 +117,18 @@ class Brevo {
 	 * @param array<string,mixed>|null $body   JSON body.
 	 */
 	private static function request( string $method, string $path, ?array $body = null ): bool {
+		return self::request_data( $method, $path, $body )['ok'];
+	}
+
+	/**
+	 * Perform an API request; returns the ok flag + decoded JSON body.
+	 *
+	 * @param string                   $method HTTP method.
+	 * @param string                   $path   Path under the API base.
+	 * @param array<string,mixed>|null $body   JSON body.
+	 * @return array{ok:bool,data:array<string,mixed>}
+	 */
+	private static function request_data( string $method, string $path, ?array $body = null ): array {
 		$args = array(
 			'method'  => $method,
 			'timeout' => self::TIMEOUT,
@@ -99,9 +143,13 @@ class Brevo {
 		}
 		$response = wp_remote_request( self::BASE . $path, $args );
 		if ( is_wp_error( $response ) ) {
-			return false;
+			return array( 'ok' => false, 'data' => array() );
 		}
 		$code = (int) wp_remote_retrieve_response_code( $response );
-		return $code >= 200 && $code < 300;
+		$data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		return array(
+			'ok'   => $code >= 200 && $code < 300,
+			'data' => is_array( $data ) ? $data : array(),
+		);
 	}
 }
