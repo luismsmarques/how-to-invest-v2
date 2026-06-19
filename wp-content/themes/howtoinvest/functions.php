@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.4';
+const VERSION = '0.6.5';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -106,6 +106,7 @@ function strings(): array {
 		'nav_learn'        => array( 'en' => 'Learn', 'pt' => 'Aprender' ),
 		'nav_types'        => array( 'en' => 'Investor types', 'pt' => 'Perfis' ),
 		'nav_classes'      => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
+		'nav_tools'        => array( 'en' => 'Tools', 'pt' => 'Ferramentas' ),
 		'nav_glossary'     => array( 'en' => 'Glossary', 'pt' => 'Glossário' ),
 		'nav_news'         => array( 'en' => 'News', 'pt' => 'Notícias' ),
 		'foot_about'       => array( 'en' => 'About', 'pt' => 'Sobre' ),
@@ -584,6 +585,7 @@ function default_menu( string $location, string $extra ): string {
 			array( page_url( 'how-to-start-investing' ), t( 'nav_learn' ) ),
 			array( page_url( 'investor-types' ), t( 'nav_types' ) ),
 			array( page_url( 'asset-classes' ), t( 'nav_classes' ) ),
+			array( page_url( 'tools' ), t( 'nav_tools' ) ),
 			array( home_url( '/investing-glossary/' ), t( 'nav_glossary' ) ),
 			array( home_url( '/financial-news/' ), t( 'nav_news' ) ),
 		);
