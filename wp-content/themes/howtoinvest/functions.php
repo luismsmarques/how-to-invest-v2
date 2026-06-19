@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.2';
+const VERSION = '0.6.3';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -106,6 +106,7 @@ function strings(): array {
 		'nav_learn'        => array( 'en' => 'Learn', 'pt' => 'Aprender' ),
 		'nav_glossary'     => array( 'en' => 'Glossary', 'pt' => 'Glossário' ),
 		'nav_news'         => array( 'en' => 'News', 'pt' => 'Notícias' ),
+		'foot_about'       => array( 'en' => 'About', 'pt' => 'Sobre' ),
 		'foot_privacy'     => array( 'en' => 'Privacy', 'pt' => 'Privacidade' ),
 		'foot_terms'       => array( 'en' => 'Terms', 'pt' => 'Termos' ),
 		'foot_contact'     => array( 'en' => 'Contact', 'pt' => 'Contacto' ),
@@ -571,24 +572,50 @@ function render_menu_block( array $attributes ): string {
 function default_menu( string $location, string $extra ): string {
 	if ( 'footer' === $location ) {
 		$items = array(
-			'/privacy-policy/'       => t( 'foot_privacy' ),
-			'/terms-and-conditions/' => t( 'foot_terms' ),
-			'/contact/'              => t( 'foot_contact' ),
+			array( page_url( 'about' ), t( 'foot_about' ) ),
+			array( page_url( 'privacy-policy' ), t( 'foot_privacy' ) ),
+			array( page_url( 'terms-and-conditions' ), t( 'foot_terms' ) ),
+			array( page_url( 'contact' ), t( 'foot_contact' ) ),
 		);
 	} else {
 		$items = array(
-			'/how-to-start-investing/' => t( 'nav_learn' ),
-			'/investing-glossary/'     => t( 'nav_glossary' ),
-			'/financial-news/'         => t( 'nav_news' ),
+			array( page_url( 'how-to-start-investing' ), t( 'nav_learn' ) ),
+			array( home_url( '/investing-glossary/' ), t( 'nav_glossary' ) ),
+			array( home_url( '/financial-news/' ), t( 'nav_news' ) ),
 		);
 	}
 
 	$list = '';
-	foreach ( $items as $path => $label ) {
-		$list .= '<li class="menu-item"><a href="' . esc_url( home_url( $path ) ) . '">' . esc_html( $label ) . '</a></li>';
+	foreach ( $items as $item ) {
+		$list .= '<li class="menu-item"><a href="' . esc_url( $item[0] ) . '">' . esc_html( $item[1] ) . '</a></li>';
 	}
 
 	return '<nav class="' . esc_attr( trim( 'hti-menu-nav ' . $extra ) ) . '"><ul class="hti-menu">' . $list . '</ul></nav>';
+}
+
+/**
+ * Permalink of a page identified by its English slug, localized to the
+ * current language via Polylang (falls back to a plain path).
+ *
+ * @param string $en_slug English page slug.
+ */
+function page_url( string $en_slug ): string {
+	$page = get_page_by_path( $en_slug, OBJECT, 'page' );
+	if ( $page instanceof \WP_Post ) {
+		$id = (int) $page->ID;
+		if ( function_exists( 'pll_current_language' ) && function_exists( 'pll_get_post' ) ) {
+			$cur = (string) pll_current_language( 'slug' );
+			$tr  = '' !== $cur ? pll_get_post( $id, $cur ) : 0;
+			if ( $tr ) {
+				$id = (int) $tr;
+			}
+		}
+		$url = get_permalink( $id );
+		if ( $url ) {
+			return $url;
+		}
+	}
+	return home_url( '/' . $en_slug . '/' );
 }
 
 /**
