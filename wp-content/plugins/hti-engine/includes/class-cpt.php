@@ -24,7 +24,59 @@ class CPT {
 	public static function register(): void {
 		self::register_glossary();
 		self::register_news();
+		self::register_learn();
 		self::register_profile();
+	}
+
+	/**
+	 * Learn — public, indexable educational articles (the SEO pillar/cluster
+	 * content). A dedicated type with its own /learn/ base and topic taxonomy,
+	 * kept separate from the WordPress blog and from time-sensitive `news`.
+	 */
+	private static function register_learn(): void {
+		$labels = array(
+			'name'               => _x( 'Learn', 'post type general name', 'hti-engine' ),
+			'singular_name'      => _x( 'Article', 'post type singular name', 'hti-engine' ),
+			'menu_name'          => _x( 'Learn', 'admin menu', 'hti-engine' ),
+			'name_admin_bar'     => _x( 'Article', 'add new on admin bar', 'hti-engine' ),
+			'add_new'            => __( 'Add new', 'hti-engine' ),
+			'add_new_item'       => __( 'Add new article', 'hti-engine' ),
+			'new_item'           => __( 'New article', 'hti-engine' ),
+			'edit_item'          => __( 'Edit article', 'hti-engine' ),
+			'view_item'          => __( 'View article', 'hti-engine' ),
+			'view_items'         => __( 'View Learn', 'hti-engine' ),
+			'all_items'          => __( 'All articles', 'hti-engine' ),
+			'search_items'       => __( 'Search Learn', 'hti-engine' ),
+			'not_found'          => __( 'No articles found.', 'hti-engine' ),
+			'not_found_in_trash' => __( 'No articles found in Trash.', 'hti-engine' ),
+			'archives'           => __( 'Learn', 'hti-engine' ),
+			'item_published'     => __( 'Article published.', 'hti-engine' ),
+			'item_updated'       => __( 'Article updated.', 'hti-engine' ),
+		);
+
+		register_post_type(
+			'learn',
+			array(
+				'labels'              => $labels,
+				'description'         => __( 'Educational articles (the Learn hub).', 'hti-engine' ),
+				'public'              => true,
+				'publicly_queryable'  => true,
+				'show_ui'             => true,
+				'show_in_menu'        => true,
+				'show_in_nav_menus'   => true,
+				'show_in_rest'        => true,
+				'exclude_from_search' => false,
+				'has_archive'         => 'learn',
+				'hierarchical'        => false,
+				'menu_position'       => 20,
+				'menu_icon'           => 'dashicons-welcome-learn-more',
+				'supports'            => array( 'title', 'editor', 'excerpt', 'thumbnail', 'author', 'revisions', 'custom-fields' ),
+				'rewrite'             => array(
+					'slug'       => 'learn',
+					'with_front' => false,
+				),
+			)
+		);
 	}
 
 	/**

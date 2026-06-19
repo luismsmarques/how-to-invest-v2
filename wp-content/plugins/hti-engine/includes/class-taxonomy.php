@@ -27,6 +27,50 @@ class Taxonomy {
 	public static function register(): void {
 		self::register_glossary_topic();
 		self::register_news_category();
+		self::register_learn_topic();
+	}
+
+	/**
+	 * Learn topic — hierarchical categories for educational articles.
+	 */
+	private static function register_learn_topic(): void {
+		$labels = array(
+			'name'              => _x( 'Categories', 'taxonomy general name', 'hti-engine' ),
+			'singular_name'     => _x( 'Category', 'taxonomy singular name', 'hti-engine' ),
+			'menu_name'         => __( 'Categories', 'hti-engine' ),
+			'all_items'         => __( 'All categories', 'hti-engine' ),
+			'edit_item'         => __( 'Edit category', 'hti-engine' ),
+			'view_item'         => __( 'View category', 'hti-engine' ),
+			'update_item'       => __( 'Update category', 'hti-engine' ),
+			'add_new_item'      => __( 'Add new category', 'hti-engine' ),
+			'new_item_name'     => __( 'New category name', 'hti-engine' ),
+			'parent_item'       => __( 'Parent category', 'hti-engine' ),
+			'parent_item_colon' => __( 'Parent category:', 'hti-engine' ),
+			'search_items'      => __( 'Search categories', 'hti-engine' ),
+			'not_found'         => __( 'No categories found.', 'hti-engine' ),
+			'back_to_items'     => __( '← Back to categories', 'hti-engine' ),
+		);
+
+		register_taxonomy(
+			'learn_topic',
+			array( 'learn' ),
+			array(
+				'labels'            => $labels,
+				'description'       => __( 'Categories that group educational articles.', 'hti-engine' ),
+				'public'            => true,
+				'hierarchical'      => true,
+				'show_ui'           => true,
+				'show_in_menu'      => true,
+				'show_in_nav_menus' => true,
+				'show_in_rest'      => true,
+				'show_admin_column' => true,
+				'rewrite'           => array(
+					'slug'         => 'learn-category',
+					'with_front'   => false,
+					'hierarchical' => true,
+				),
+			)
+		);
 	}
 
 	/**
