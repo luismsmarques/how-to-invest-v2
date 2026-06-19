@@ -101,8 +101,16 @@ class REST {
 						'type'     => 'string',
 						'required' => true,
 					),
+					'subject' => array(
+						'type'     => 'string',
+						'required' => false,
+					),
 					'message' => array(
 						'type'     => 'string',
+						'required' => true,
+					),
+					'consent' => array(
+						'type'     => 'boolean',
 						'required' => true,
 					),
 					'hti_hp'  => array(
@@ -335,7 +343,14 @@ class REST {
 
 		$name    = sanitize_text_field( (string) $request->get_param( 'name' ) );
 		$email   = sanitize_email( (string) $request->get_param( 'email' ) );
+		$subject = sanitize_text_field( (string) $request->get_param( 'subject' ) );
 		$message = sanitize_textarea_field( (string) $request->get_param( 'message' ) );
+		$locale  = self::locale( (string) $request->get_param( 'locale' ) );
+
+		// RGPD: the data-processing consent is a required, explicit opt-in.
+		if ( true !== rest_sanitize_boolean( $request->get_param( 'consent' ) ) ) {
+			return new WP_Error( 'hti_no_consent', __( 'Please accept the processing of your data to continue.', 'hti-engine' ), array( 'status' => 422 ) );
+		}
 
 		if ( '' === $name || ! is_email( $email ) || '' === $message ) {
 			return new WP_Error( 'hti_invalid_contact', __( 'Please fill in your name, a valid email and a message.', 'hti-engine' ), array( 'status' => 422 ) );
@@ -343,10 +358,16 @@ class REST {
 		if ( strlen( $message ) > 5000 ) {
 			$message = substr( $message, 0, 5000 );
 		}
+		if ( strlen( $subject ) > 200 ) {
+			$subject = substr( $subject, 0, 200 );
+		}
 
-		if ( ! Contact::deliver( $name, $email, $message ) ) {
+		if ( ! Contact::deliver( $name, $email, $subject, $message ) ) {
 			return new WP_Error( 'hti_contact_failed', __( 'Your message could not be sent. Please try again or email us directly.', 'hti-engine' ), array( 'status' => 502 ) );
 		}
+
+		// Best-effort branded auto-reply in the visitor's language (from the URL).
+		Contact::auto_reply( $name, $email, $subject, $locale );
 
 		return new WP_REST_Response( array( 'sent' => true ), 200 );
 	}
