@@ -138,6 +138,8 @@ class Frontend {
 			'deleteAt'   => self::deletion_date( $locale ),
 			'prefs'      => is_user_logged_in() ? Account::get_prefs( get_current_user_id() ) : null,
 			'categories' => Account::categories_list( $locale ),
+			'onboarded'  => is_user_logged_in() ? Account::is_onboarded( get_current_user_id() ) : true,
+			'pageLocale' => $locale,
 			'locale'     => $locale,
 			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
 			'homeUrl'    => esc_url( home_url( '/' ) ),
@@ -220,6 +222,14 @@ class Frontend {
 				'pref_daily'       => 'Diária',
 				'pref_categories'  => 'Categorias de interesse',
 				'prefs_saved'      => 'Preferências guardadas. Enviámos-te a confirmação por email.',
+				'onb_title'        => 'Bem-vindo! Vamos personalizar a tua experiência',
+				'onb_lang'         => 'Em que língua preferes o conteúdo e os emails?',
+				'onb_en'           => 'Inglês',
+				'onb_pt'           => 'Português',
+				'onb_nl'           => 'Quero receber o resumo de notícias',
+				'onb_q_label'      => 'Qual é a tua maior dúvida ou dificuldade nos investimentos?',
+				'onb_q_ph'         => 'Escreve à vontade — ajuda-nos a criar conteúdo útil para ti.',
+				'onb_finish'       => 'Concluir',
 			);
 		}
 		return array(
@@ -267,6 +277,14 @@ class Frontend {
 			'pref_daily'       => 'Daily',
 			'pref_categories'  => 'Topics you care about',
 			'prefs_saved'      => 'Preferences saved. We’ve emailed you the confirmation.',
+			'onb_title'        => 'Welcome! Let’s personalise your experience',
+			'onb_lang'         => 'Which language do you prefer for content and emails?',
+			'onb_en'           => 'English',
+			'onb_pt'           => 'Portuguese',
+			'onb_nl'           => 'Send me the news roundup',
+			'onb_q_label'      => 'What’s your biggest doubt or difficulty with investing?',
+			'onb_q_ph'         => 'Write freely — it helps us create content that’s useful to you.',
+			'onb_finish'       => 'Finish',
 		);
 	}
 

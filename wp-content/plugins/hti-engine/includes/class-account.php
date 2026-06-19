@@ -149,11 +149,16 @@ class Account {
 	}
 
 	/**
-	 * Locale for a user (PT when their profile language is Portuguese).
+	 * Locale for a user: their explicit onboarding choice if set, else the WP
+	 * profile language. Drives every lifecycle email and their newsletter list.
 	 *
 	 * @param int $user_id User id.
 	 */
 	private static function user_locale( int $user_id ): string {
+		$pref = self::pref_locale( $user_id );
+		if ( '' !== $pref ) {
+			return $pref;
+		}
 		return str_starts_with( strtolower( (string) get_user_locale( $user_id ) ), 'pt' ) ? 'pt' : 'en';
 	}
 
@@ -241,6 +246,92 @@ class Account {
 		if ( $user instanceof \WP_User ) {
 			self::send_alert( $user );
 		}
+	}
+
+	/* ---------- onboarding (post-activation) ---------- */
+
+	private const META_PREF_LOCALE = 'hti_pref_locale';
+	private const META_ONBOARDED   = 'hti_onboarded';
+	private const META_QUESTION    = 'hti_invest_question';
+	private const OPTION_QUESTIONS = 'hti_invest_questions';
+
+	/**
+	 * The user's chosen language ('en'|'pt'), or '' if not chosen yet.
+	 *
+	 * @param int $user_id User id.
+	 */
+	public static function pref_locale( int $user_id ): string {
+		$l = (string) get_user_meta( $user_id, self::META_PREF_LOCALE, true );
+		return in_array( $l, array( 'en', 'pt' ), true ) ? $l : '';
+	}
+
+	/**
+	 * Whether the user has completed onboarding.
+	 *
+	 * @param int $user_id User id.
+	 */
+	public static function is_onboarded( int $user_id ): bool {
+		return '1' === (string) get_user_meta( $user_id, self::META_ONBOARDED, true );
+	}
+
+	/**
+	 * REST: POST /onboarding — save language + newsletter + the open question.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public static function rest_onboarding( \WP_REST_Request $request ) {
+		$user       = wp_get_current_user();
+		$lang       = 'pt' === $request->get_param( 'language' ) ? 'pt' : 'en';
+		$newsletter = (bool) rest_sanitize_boolean( $request->get_param( 'newsletter' ) );
+		$frequency  = 'daily' === $request->get_param( 'frequency' ) ? 'daily' : 'weekly';
+		$question   = trim( sanitize_textarea_field( (string) $request->get_param( 'question' ) ) );
+		if ( strlen( $question ) > 1000 ) {
+			$question = substr( $question, 0, 1000 );
+		}
+
+		update_user_meta( $user->ID, self::META_PREF_LOCALE, $lang );
+		update_user_meta( $user->ID, self::META_ONBOARDED, '1' );
+		$prev = self::get_prefs( $user->ID );
+		update_user_meta( $user->ID, self::META_PREFS, array( 'newsletter' => $newsletter, 'frequency' => $frequency, 'categories' => $prev['categories'] ) );
+		if ( '' !== $question ) {
+			update_user_meta( $user->ID, self::META_QUESTION, $question );
+			self::log_question( $user->ID, $question, $lang );
+		}
+
+		// Sync the contact in Brevo (language drives the list).
+		$list = Brevo::list_id( $lang );
+		$attrs = array( 'LANGUAGE' => strtoupper( $lang ), 'NEWSLETTER' => $newsletter ? 'yes' : 'no', 'FREQUENCY' => strtoupper( $frequency ) );
+		if ( '' !== $question ) {
+			$attrs['QUESTION'] = $question;
+		}
+		if ( $newsletter ) {
+			Brevo::upsert_contact( $user->user_email, $attrs, array_filter( array( $list ) ) );
+		} else {
+			Brevo::upsert_contact( $user->user_email, $attrs );
+		}
+
+		return new \WP_REST_Response(
+			array( 'saved' => true, 'redirect' => home_url( 'pt' === $lang ? '/pt/' : '/' ) ),
+			200
+		);
+	}
+
+	/**
+	 * Append an onboarding question to the research log (capped, no PII beyond uid).
+	 *
+	 * @param int    $user_id  User id.
+	 * @param string $question Free text.
+	 * @param string $lang     Language.
+	 */
+	private static function log_question( int $user_id, string $question, string $lang ): void {
+		$log = get_option( self::OPTION_QUESTIONS, array() );
+		$log = is_array( $log ) ? $log : array();
+		$log[] = array( 'uid' => $user_id, 'q' => $question, 'lang' => $lang, 'at' => time() );
+		if ( count( $log ) > 2000 ) {
+			$log = array_slice( $log, -2000 );
+		}
+		update_option( self::OPTION_QUESTIONS, $log, false );
 	}
 
 	/* ---------- preferences (template 13) ---------- */
