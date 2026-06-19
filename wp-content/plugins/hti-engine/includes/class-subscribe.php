@@ -143,7 +143,7 @@ class Subscribe {
 		wp_enqueue_style( 'hti-subscribe' );
 		wp_enqueue_script( 'hti-subscribe' );
 
-		$atts   = shortcode_atts( array( 'title' => '', 'intro' => '' ), is_array( $atts ) ? $atts : array() );
+		$atts   = shortcode_atts( array( 'title' => '', 'intro' => '', 'variant' => 'default' ), is_array( $atts ) ? $atts : array() );
 		$pt     = 'pt' === self::locale();
 		$title  = '' !== $atts['title'] ? $atts['title'] : ( $pt ? 'Recebe o resumo na tua caixa de entrada' : 'Get the roundup in your inbox' );
 		$intro  = '' !== $atts['intro'] ? $atts['intro'] : ( $pt ? 'Notícias e aprendizagem financeira, sem jargão. Podes cancelar quando quiseres.' : 'Financial news and learning, jargon-free. Unsubscribe anytime.' );
@@ -155,6 +155,10 @@ class Subscribe {
 			$cons = $pt
 				? sprintf( 'Aceito receber emails da HowToInvest e li a <a href="%s" target="_blank" rel="noopener">Política de Privacidade</a>.', esc_url( $privacy ) )
 				: sprintf( 'I agree to receive emails from HowToInvest and have read the <a href="%s" target="_blank" rel="noopener">Privacy Policy</a>.', esc_url( $privacy ) );
+		}
+
+		if ( 'digest' === $atts['variant'] ) {
+			return self::render_digest( $pt, $cons );
 		}
 
 		ob_start();
@@ -176,6 +180,51 @@ class Subscribe {
 				<label for="hti-subscribe-consent"><?php echo wp_kses( $cons, array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) ) ); ?></label>
 			</p>
 			<p class="hti-subscribe__status" role="status" aria-live="polite"></p>
+		</form>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Coral "daily roundup" banner variant (matches the news-hub design).
+	 *
+	 * @param bool   $pt   Whether Portuguese.
+	 * @param string $cons Consent label HTML (with the privacy link).
+	 */
+	private static function render_digest( bool $pt, string $cons ): string {
+		$badge = $pt ? 'Diário · 7h' : 'Daily · 7am';
+		$title = $pt ? 'O resumo do dia, nas finanças.' : 'The day’s roundup, in finance.';
+		$intro = $pt
+			? 'Todas as manhãs, um email curto e calmo com o que aconteceu no mundo das finanças — e o que significa para ti. Sem ruído, sem jargão.'
+			: 'Every morning, a short, calm email on what happened in finance — and what it means for you. No noise, no jargon.';
+		$ph   = $pt ? 'o-teu-email@exemplo.pt' : 'you@example.com';
+		$send = $pt ? 'Subscrever o resumo diário' : 'Subscribe to the daily roundup';
+		$fine = $pt ? 'Grátis. Cancelas quando quiseres, num clique.' : 'Free. Unsubscribe anytime, in one click.';
+		$lbl  = $pt ? 'O teu email para o resumo diário' : 'Your email for the daily roundup';
+
+		ob_start();
+		?>
+		<form id="hti-subscribe-form" class="hti-subscribe hti-subscribe--digest" novalidate>
+			<div class="hti-digest__text">
+				<span class="hti-digest__badge"><span class="hti-digest__dot"></span><?php echo esc_html( $badge ); ?></span>
+				<h2 class="hti-digest__title"><?php echo esc_html( $title ); ?></h2>
+				<p class="hti-digest__intro"><?php echo esc_html( $intro ); ?></p>
+			</div>
+			<div class="hti-digest__form">
+				<label class="screen-reader-text" for="hti-subscribe-email"><?php echo esc_html( $lbl ); ?></label>
+				<input class="hti-digest__input" type="email" id="hti-subscribe-email" name="email" placeholder="<?php echo esc_attr( $ph ); ?>" autocomplete="email" required>
+				<button class="hti-digest__submit" type="submit"><?php echo esc_html( $send ); ?></button>
+				<p class="hti-subscribe__trap" aria-hidden="true">
+					<label for="hti-subscribe-hp"><?php esc_html_e( 'Leave this field blank', 'hti-engine' ); ?></label>
+					<input type="text" id="hti-subscribe-hp" name="hti_hp" tabindex="-1" autocomplete="off">
+				</p>
+				<p class="hti-digest__consent">
+					<input type="checkbox" id="hti-subscribe-consent" name="consent" value="1" required>
+					<label for="hti-subscribe-consent"><?php echo wp_kses( $cons, array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) ) ); ?></label>
+				</p>
+				<p class="hti-digest__fine"><?php echo esc_html( $fine ); ?></p>
+				<p class="hti-subscribe__status" role="status" aria-live="polite"></p>
+			</div>
 		</form>
 		<?php
 		return (string) ob_get_clean();
