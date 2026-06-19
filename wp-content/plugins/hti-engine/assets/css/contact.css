@@ -1,0 +1,100 @@
+/**
+ * Contact form styles. Uses the theme's design tokens where available and
+ * degrades gracefully to sensible defaults.
+ */
+.hti-contact {
+	max-width: 36rem;
+	margin: var(--wp--preset--spacing--40, 1.5rem) 0 0;
+}
+
+.hti-contact__field {
+	margin: 0 0 var(--wp--preset--spacing--30, 1rem);
+}
+
+.hti-contact__label {
+	display: block;
+	margin: 0 0 0.4rem;
+	font-weight: 600;
+	font-size: 0.95rem;
+}
+
+.hti-contact__input {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0.7rem 0.85rem;
+	border: 1px solid var(--wp--preset--color--border, #d4d7e0);
+	border-radius: 0.5rem;
+	background: #fff;
+	color: var(--wp--preset--color--ink, #1c2150);
+	font: inherit;
+	line-height: 1.5;
+}
+
+.hti-contact__input:focus {
+	outline: 2px solid var(--wp--preset--color--accent, #ff6b5e);
+	outline-offset: 1px;
+	border-color: transparent;
+}
+
+textarea.hti-contact__input {
+	resize: vertical;
+	min-height: 8rem;
+}
+
+.hti-contact__actions {
+	margin: var(--wp--preset--spacing--30, 1rem) 0 0;
+}
+
+.hti-contact__submit {
+	display: inline-block;
+	padding: 0.75rem 1.5rem;
+	border: 0;
+	border-radius: 999px;
+	background: var(--wp--preset--color--accent, #ff6b5e);
+	color: #fff;
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.hti-contact__submit:hover {
+	filter: brightness( 0.95 );
+}
+
+.hti-contact__submit:disabled {
+	opacity: 0.6;
+	cursor: progress;
+}
+
+.hti-contact__status {
+	margin: var(--wp--preset--spacing--30, 1rem) 0 0;
+	min-height: 1.4em;
+	font-size: 0.95rem;
+}
+
+.hti-contact__status.is-success {
+	color: #1a7f4b;
+	font-weight: 600;
+}
+
+.hti-contact__status.is-error {
+	color: #c0392b;
+	font-weight: 600;
+}
+
+.hti-contact__status.is-pending {
+	color: var(--wp--preset--color--ink, #1c2150);
+}
+
+/* Honeypot: keep it in the DOM for bots but out of sight/flow for humans. */
+.hti-contact__trap {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.hti-contact__noscript a {
+	font-weight: 600;
+}
