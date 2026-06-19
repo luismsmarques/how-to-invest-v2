@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 19 jun 2026 (Learn CPT + categorias + hub, internal linking, feeds sugeridos; RSS AI v1.4). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -36,7 +36,8 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
 - **Plugin** `wp-content/plugins/hti-engine` (o produto). Regra de ouro: **as regras decidem, o LLM só explica**.
   - Motor determinístico (`class-engine`) + config curada (`class-config`) → arquétipo + alocação por classe (soma 100), 3 travas.
   - LLM: `class-llm` (transporte: **WP 7.0 AI Client / Connectors** → fallback `class-gemini`) · `class-prompt` · `class-validator` · `class-fallback` · `class-explainer`.
-  - REST `htinvest/v1`: recommend, result, register, login, claim-profile, my-profiles, export, account.
+  - REST `htinvest/v1`: recommend, result, register, login, claim-profile, my-profiles, export, account (DELETE = **agenda**
+    eliminação), cancel-deletion, change-email, preferences (GET/POST), email-result, contact, subscribe.
   - Frontend (JS vanilla): `questionnaire.js`, `result.js` (donut conic-gradient), `account.js`, `consent.js`, `analytics.js`.
   - Segurança/RGPD: rate limit (`class-rate-limit`), verificação email double opt-in via **Brevo** (`class-verification`+`class-mailer`), consentimento (`class-consent`), GA gated, cron de limpeza (`class-cron`), login Google (`class-google`).
   - Admin: `class-settings` (Definições → HowToInvest). PDF: `class-pdf` (Dompdf, fallback HTML).
@@ -57,8 +58,30 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
   - **Hub Aprender** (`/learn/`): bloco dinâmico `howtoinvest/learn-hub` (artigos por categoria, por idioma)
     em `archive-learn.html`; menu **Aprender → /learn/**; homepage lista o CPT `learn`.
   - **Menu principal:** Aprender · Perfis · Classes de ativos · Ferramentas · Glossário · Notícias.
+  - **Formulário de contacto** (`class-contact`, shortcode `[hti_contact]` na página Contacto): nome/assunto/mensagem
+    + **consentimento RGPD** obrigatório + honeypot; nonce + rate-limit; envia para **info@howtoinvest.pro** (Reply-To
+    do visitante) e **auto-resposta** branded ao visitante (EN/PT pelo URL). Destinatário filtrável (`HTI_CONTACT_EMAIL`).
+  - **Categorias de notícias** (`news_category`, seedadas bilingues): Market analysis, Stock Analysis, Economy & Central
+    Banks, Companies & Earnings, Commodities & Currencies, Cryptocurrencies, Personal Finance. O prompt do RSS-AI escolhe
+    de entre as existentes.
+- **Sistema de emails** (todos no layout branded partilhado `class-emails`, bilingues EN/PT, via **Brevo** `class-mailer`):
+  - **Transacionais (`class-account`/`class-verification`/`class-contact`):** 01 Boas-vindas (após confirmar), 02 Confirmar
+    registo, 05 Repor password (email core do WP, branded via filtro), 07 Perfil de investidor ("Enviar-me o resultado"
+    no result.js → `POST /email-result`), 08 Auto-resposta de contacto.
+  - **Lifecycle de conta (`class-account`, templates 09–14):** 09 Alerta de segurança (password alterada: data/dispositivo/IP);
+    10 Alteração de email (confirmação 24h, form na conta + `POST /change-email`); 11 **Eliminação RGPD agendada (30 dias)**
+    com cancelar + descarregar (cron diário `hti_account_deletions` apaga no fim do prazo — substitui a eliminação imediata);
+    12 Reativação (tracking de último login via `wp_login` + cron semanal `hti_reactivation` p/ inativos 90+ dias);
+    13 Preferências (newsletter/frequência/categorias na conta → atributos do contacto Brevo + email de confirmação).
+  - **Newsletter/marketing (`class-subscribe` + `class-campaigns` + `class-brevo`):** subscrição **double opt-in** via
+    `[hti_subscribe]` (na archive de Notícias) com tokens HMAC sem estado (confirmar/cancelar) — **contactos geridos no
+    Brevo** (Contacts API), **segmentados por idioma** (listas **EN/PT** separadas, atributo `LANGUAGE`). **Newsletter semanal**
+    (cron seg 09:00) e **Resumo diário** (cron 07:00) construídos do CPT `news` por idioma e enviados via **Brevo Campaigns
+    API**; **Aviso da plataforma** (broadcast manual EN/PT/ambas). Admin: **Settings → HTI Newsletter** (enviar/pré-visualizar).
+  - **NPS (`class-nps`, template 14):** email com escala 0–10 clicável (links com token por utilizador) → regista a resposta;
+    **Settings → HTI NPS** envia o inquérito e mostra resultados (nº, média, score NPS).
 - Detalhe por ficheiro: `wp-content/plugins/hti-engine/README.md`.
-- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.4.0) — alimenta a área de
+- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.5.0) — alimenta a área de
   **notícias** (`news` CPT do hti-engine). Pipeline com **humano no meio (nunca auto-publica)**:
   **Feeds** (CRUD + *Test feed*) → **Fetch** (cron `rssai_fetch_cron` ou *Fetch now*) →
   **Drafts** (itens dedup por `sha1(guid|link)`, imagem extraída) → **Groups** (clustering Jaccard
@@ -93,6 +116,10 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 ```
 - Sem Gemini/Connectors → resultado usa **fallback curado** (funciona).
 - Sem Brevo → `wp_mail` (pode não entregar em shared hosting) → registo de contas não confirma.
+- **Brevo (Definições → HowToInvest):** chave API (`xkeysib-…`), **sender verificado** (SPF/DKIM no domínio),
+  e **IDs das listas Newsletter (EN)** e **(PT)** (criar 2 listas em Brevo → Contacts → Lists). Newsletter/digest/aviso só
+  enviam com lista configurada. Opcional: `HTI_CONTACT_EMAIL` (default `info@howtoinvest.pro`). O **repor password** é do core
+  WP via `wp_mail` (branded) — para o passar por Brevo, instalar o plugin SMTP oficial do Brevo.
 - Google: registar o **Redirect URI** (Definições → HowToInvest) no Google Cloud Console.
 - GA4 já ativo (`G-QWST7PZNBT`), só carrega após aceitar o banner de cookies.
 
@@ -139,7 +166,9 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - [ ] Backups externos automáticos **e restauro testado**
 - [ ] Cache (LiteSpeed/WP) + CDN (Cloudflare) + Core Web Vitals
 - [ ] **RankMath**: instalar/ativar → sitemap inclui `glossary`/`news` → submeter ao Search Console
-- [ ] Configurar **Brevo** (senão o registo de contas não confirma)
+- [ ] Configurar **Brevo** (chave + sender verificado + **2 listas EN/PT** nas Definições) — senão o registo de contas
+      não confirma e a newsletter/digest/NPS não enviam. Testar: subscrever (double opt-in), Settings → HTI Newsletter
+      (preview/send), Settings → HTI NPS (send + resultados).
 - [ ] **Polylang**: atribuir idioma a todo o conteúdo + correr o seeder → confirmar ligações EN↔PT (e `hreflang` no sitemap)
 - [ ] **RSS AI Feed**: ativar o plugin em produção → *Settings* (confirmar `HTI_GEMINI_API_KEY` + acesso Imagen, modelo, intervalo) → adicionar feeds → *Fetch now* → *Group now* → gerar 1 grupo e **rever** (+ kit social) antes de publicar
 - [ ] Acessibilidade: contraste AA + teste com leitor de ecrã
