@@ -294,6 +294,49 @@ class Emails {
 		return self::layout( $locale, $inner, $heading );
 	}
 
+	/* ---------- NPS survey (template 14) ---------- */
+
+	/**
+	 * Render the NPS survey email with a clickable 0–10 scale.
+	 *
+	 * @param string $locale 'en'|'pt'.
+	 * @param int    $uid    User id (carried in the link).
+	 * @param string $token  Per-user token.
+	 */
+	public static function nps( string $locale, int $uid, string $token ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'Como tem sido a tua experiência?' : 'How’s your experience been?';
+		$lead    = $pt
+			? 'Numa escala de 0 a 10, qual a probabilidade de recomendares a HowToInvest a um amigo?'
+			: 'On a scale of 0 to 10, how likely are you to recommend HowToInvest to a friend?';
+
+		$cells = '';
+		for ( $n = 0; $n <= 10; $n++ ) {
+			$url    = add_query_arg(
+				array( 'hti_nps' => 1, 'u' => $uid, 't' => $token, 'score' => $n ),
+				home_url( '/' )
+			);
+			$cells .= '<td style="padding:3px;">'
+				. '<a href="' . esc_url( $url ) . '" style="display:block;width:34px;height:38px;line-height:38px;text-align:center;border:1px solid #E6E0F2;border-radius:8px;background:#F4F1FA;font:700 15px Arial,sans-serif;color:#1E2147;text-decoration:none;">' . $n . '</a>'
+				. '</td>';
+		}
+		$scale = '<table role="presentation" align="center" style="border-collapse:collapse;margin:0 auto;"><tbody><tr>' . $cells . '</tr></tbody></table>';
+		$ends  = '<table role="presentation" width="100%" style="border-collapse:collapse;max-width:430px;margin:8px auto 0;"><tbody><tr>'
+			. '<td style="font:400 11.5px Arial,sans-serif;color:#9A93A8;text-align:left;">' . esc_html( $pt ? 'Nada provável' : 'Not likely' ) . '</td>'
+			. '<td style="font:400 11.5px Arial,sans-serif;color:#9A93A8;text-align:right;">' . esc_html( $pt ? 'Muito provável' : 'Very likely' ) . '</td>'
+			. '</tr></tbody></table>';
+
+		$inner = self::row(
+			self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'46px 40px 0',
+			true
+		)
+			. self::row( $scale . $ends, '28px 24px 46px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
 	/* ---------- preferences updated (template 13) ---------- */
 
 	/**
