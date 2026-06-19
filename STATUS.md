@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 19 jun 2026 (RSS AI v1.1 — imagem de destaque). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 19 jun 2026 (RSS AI v1.2 — foto AI de destaque + kit social). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -41,22 +41,24 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
   - Segurança/RGPD: rate limit (`class-rate-limit`), verificação email double opt-in via **Brevo** (`class-verification`+`class-mailer`), consentimento (`class-consent`), GA gated, cron de limpeza (`class-cron`), login Google (`class-google`).
   - Admin: `class-settings` (Definições → HowToInvest). PDF: `class-pdf` (Dompdf, fallback HTML).
 - Detalhe por ficheiro: `wp-content/plugins/hti-engine/README.md`.
-- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.0.0) — alimenta a área de
+- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.2.0) — alimenta a área de
   **notícias** (`news` CPT do hti-engine). Pipeline com **humano no meio (nunca auto-publica)**:
   **Feeds** (CRUD + *Test feed*) → **Fetch** (cron `rssai_fetch_cron` ou *Fetch now*) →
   **Drafts** (itens dedup por `sha1(guid|link)`, imagem extraída) → **Groups** (clustering Jaccard
   por língua, threshold configurável) → escolher grupo → **Generate** (Gemini com **Google Search
   grounding** → investiga factos + cria artigo SEO/Google-News com fontes citadas) → `news`
-  em **pending review**, **já com imagem de destaque de marca**. Travas: factual/citado/original, **sem conselhos**, **sem tickers**,
+  em **pending review**, **já com imagem de destaque**. Travas: factual/citado/original, **sem conselhos**, **sem tickers**,
   disclaimer; valida via `class-validator` e limite diário de gerações.
   - **3 tabelas** (`rssai_feeds`, `rssai_items`, `rssai_groups`); opções `rssai_settings`/`rssai_logs`.
   - **Reutiliza `HTI_GEMINI_API_KEY`** (nunca guarda a chave; filtro `rssai_gemini_api_key` opcional).
-  - Modelo default `gemini-2.5-flash`; menu próprio *RSS AI Feed* (Settings/Feeds/Drafts/Groups/Logs).
-  - **Imagem de destaque (v1.1):** cartão **quadrado 1080×1080** (template *Notícias · Quadrado*) renderizado
-    **localmente com GD** (chrome determinístico p/ marca + disclaimer; fontes `.ttf` em `assets/fonts/`).
-    **Só a foto** é gerada por **AI (Imagen, `imagen-3.0-generate-002`)**, com fallback gracioso →
-    imagem do feed → gradiente da marca. Botão *Regenerate image* na meta box do editor; toggle + modelo
-    nas Settings. **Imagen exige chave com billing + acesso a image-gen** (senão usa o fallback).
+  - Modelo texto default `gemini-2.5-flash`; menu próprio *RSS AI Feed* (Settings/Feeds/Drafts/Groups/Logs).
+  - **Imagem de destaque (M7):** **foto AI** sobre o tema da notícia (Imagen, `imagen-3.0-generate-002`, 16:9),
+    guardada como thumbnail do post. Fallback gracioso → imagem do feed. Botão *Regenerate AI image* na meta box.
+    Toggle + modelo nas Settings. **Imagen exige chave com billing + acesso a image-gen** (senão usa o feed).
+  - **Kit de redes sociais (M8):** meta box pós-publicação com **download** de cartões de marca renderizados
+    **localmente com GD** (fontes `.ttf` em `assets/fonts/`) — **Quadrado 1080×1080** (feed) e **Story 1080×1920**
+    (stories) — com a **foto de destaque lá dentro** + título/data/disclaimer. **Reaproveita** a foto (sem gastar AI).
+    Templates fiéis a *Notícias · Quadrado* e *Notícias · Story* do design. **Adiados:** editorial 4:5, X/Twitter.
   - Meta box no editor de `news`: proveniência + fontes + sugestões de sitelinking (glossário/related).
   - Detalhe: `wp-content/plugins/hti-rss-ai/README.md`; plano: `docs/RSS_AI_Feed_Plan.md`.
 
@@ -97,9 +99,15 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - Testes RSS AI (29 verdes): `for t in extract-json validator grouping social-card image-client; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
 
 ## O que falta para o GO-LIVE público (checklist completa: `docs/QA_Gate_Lancamento.md`)
-**Código:** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
+**Código (produto):** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
+
+**Código — adiado de propósito (opcional, não bloqueia):**
+- [ ] Kit social: template **Editorial 4:5** (img3) e **X/Twitter 1600×900**.
+- [ ] Outros templates do design (Facto curioso, Glossário cards, CTA, Infográfico, Resumo diário) — "kit de conteúdo" futuro.
+- [ ] **Base dos slugs dos CPTs em PT** (`/news/`, `/glossary/`) — exige Polylang Pro ou rewrite custom (deixada em EN).
 
 **Operacional (teu, no servidor):**
+- [ ] **Deploy para produção** da última `main` (foto AI de destaque + kit social) via cPanel.
 - [ ] HTTPS forçado (redirect http→https em todo o site)
 - [ ] Verificar os 8 redirects 301 do Base44 (ex.: `/About` → `/about/`)
 - [ ] Backups externos automáticos **e restauro testado**
@@ -107,7 +115,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - [ ] **RankMath**: instalar/ativar → sitemap inclui `glossary`/`news` → submeter ao Search Console
 - [ ] Configurar **Brevo** (senão o registo de contas não confirma)
 - [ ] **Polylang**: atribuir idioma a todo o conteúdo + correr o seeder → confirmar ligações EN↔PT (e `hreflang` no sitemap)
-- [ ] **RSS AI Feed**: ativar o plugin → *RSS AI Feed → Settings* (confirmar `HTI_GEMINI_API_KEY`, modelo, intervalo) → adicionar feeds → *Fetch now* → *Group now* → gerar 1 grupo e **rever** antes de publicar
+- [ ] **RSS AI Feed**: ativar o plugin em produção → *Settings* (confirmar `HTI_GEMINI_API_KEY` + acesso Imagen, modelo, intervalo) → adicionar feeds → *Fetch now* → *Group now* → gerar 1 grupo e **rever** (+ kit social) antes de publicar
 - [ ] Acessibilidade: contraste AA + teste com leitor de ecrã
 
 **Legal (⚠️ bloqueador antes de divulgar):**
