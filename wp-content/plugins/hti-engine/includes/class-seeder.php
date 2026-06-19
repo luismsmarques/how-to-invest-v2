@@ -99,6 +99,9 @@ class Seeder {
 		// Group the seeded articles under their Learn categories.
 		self::assign_learn_topic();
 
+		// Ensure the News categories exist for the RSS-AI pipeline to file into.
+		self::assign_news_category();
+
 		// If Polylang is active, mirror every seeded entry into a linked
 		// Portuguese translation (built from the hti_*_pt variants).
 		$report['translations_created'] = self::seed_translations();
@@ -203,6 +206,7 @@ class Seeder {
 		// glossary posts can be filed under its PT term.
 		self::translate_glossary_topic( $en, $pt );
 		self::translate_learn_topic( $en, $pt );
+		self::translate_news_category( $en, $pt );
 
 		$created = 0;
 		$groups  = array(
@@ -650,6 +654,105 @@ class Seeder {
 				continue;
 			}
 			$pt_term_id = (int) $res['term_id'];
+			pll_set_term_language( $pt_term_id, $pt );
+			pll_save_term_translations( array( $en => (int) $en_term->term_id, $pt => $pt_term_id ) );
+		}
+	}
+
+	/* ----------------------------------------------------------------------
+	 * News categories — the taxonomy the RSS-AI generator files articles under.
+	 * News posts are AI-generated (not seeded), so we only create the terms;
+	 * the generator assigns them by matching the AI's category name.
+	 * ---------------------------------------------------------------------- */
+
+	/**
+	 * News category slugs → bilingual names. Derived from the RSS feed mix
+	 * (broad markets, macro/central banks, companies/earnings, crypto,
+	 * commodities/FX, personal finance). The first two mirror the terms the
+	 * editor created by hand ("Market analysis", "Stock Analysis").
+	 *
+	 * @return array<string,array{en:string,pt:string}>
+	 */
+	private static function news_categories(): array {
+		return array(
+			'market-analysis'        => array( 'en' => 'Market analysis', 'pt' => 'Análise de mercado' ),
+			'stock-analysis'         => array( 'en' => 'Stock Analysis', 'pt' => 'Análise de ações' ),
+			'economy-central-banks'  => array( 'en' => 'Economy & Central Banks', 'pt' => 'Economia e Bancos Centrais' ),
+			'companies-earnings'     => array( 'en' => 'Companies & Earnings', 'pt' => 'Empresas e Resultados' ),
+			'commodities-currencies' => array( 'en' => 'Commodities & Currencies', 'pt' => 'Matérias-primas e Câmbios' ),
+			'cryptocurrencies'       => array( 'en' => 'Cryptocurrencies', 'pt' => 'Criptomoedas' ),
+			'personal-finance'       => array( 'en' => 'Personal Finance', 'pt' => 'Finanças Pessoais' ),
+		);
+	}
+
+	/**
+	 * Ensure the News categories exist (idempotent). Matches the editor's
+	 * existing terms by name first, so we never duplicate the two they created
+	 * by hand; otherwise creates the term with our curated slug. Stores the PT
+	 * name as meta for the translation pass.
+	 */
+	private static function assign_news_category(): void {
+		if ( ! taxonomy_exists( 'news_category' ) ) {
+			return;
+		}
+
+		foreach ( self::news_categories() as $slug => $names ) {
+			$existing = get_term_by( 'name', $names['en'], 'news_category' );
+			if ( ! $existing instanceof \WP_Term ) {
+				$by_slug = term_exists( $slug, 'news_category' );
+				if ( $by_slug ) {
+					$existing = get_term( (int) ( is_array( $by_slug ) ? $by_slug['term_id'] : $by_slug ), 'news_category' );
+				}
+			}
+			if ( ! $existing instanceof \WP_Term ) {
+				$res = wp_insert_term( $names['en'], 'news_category', array( 'slug' => $slug ) );
+				if ( is_wp_error( $res ) ) {
+					continue;
+				}
+				$existing = get_term( (int) $res['term_id'], 'news_category' );
+			}
+			if ( $existing instanceof \WP_Term ) {
+				update_term_meta( (int) $existing->term_id, 'hti_name_pt', $names['pt'] );
+			}
+		}
+	}
+
+	/**
+	 * Create the PT translations of the News categories and link them in
+	 * Polylang. Idempotent; mirrors translate_learn_topic().
+	 *
+	 * @param string $en EN language slug.
+	 * @param string $pt PT language slug.
+	 */
+	private static function translate_news_category( string $en, string $pt ): void {
+		if ( ! taxonomy_exists( 'news_category' )
+			|| ! function_exists( 'pll_set_term_language' )
+			|| ! function_exists( 'pll_get_term' )
+			|| ! function_exists( 'pll_save_term_translations' ) ) {
+			return;
+		}
+
+		foreach ( self::news_categories() as $slug => $names ) {
+			$en_term = get_term_by( 'name', $names['en'], 'news_category' );
+			if ( ! $en_term instanceof \WP_Term ) {
+				continue;
+			}
+			if ( ! pll_get_term_language( (int) $en_term->term_id ) ) {
+				pll_set_term_language( (int) $en_term->term_id, $en );
+			}
+			if ( pll_get_term( (int) $en_term->term_id, $pt ) ) {
+				continue;
+			}
+			$pt_existing = get_term_by( 'name', $names['pt'], 'news_category' );
+			if ( $pt_existing instanceof \WP_Term ) {
+				$pt_term_id = (int) $pt_existing->term_id;
+			} else {
+				$res = wp_insert_term( $names['pt'], 'news_category', array( 'slug' => $slug . '-' . $pt ) );
+				if ( is_wp_error( $res ) ) {
+					continue;
+				}
+				$pt_term_id = (int) $res['term_id'];
+			}
 			pll_set_term_language( $pt_term_id, $pt );
 			pll_save_term_translations( array( $en => (int) $en_term->term_id, $pt => $pt_term_id ) );
 		}
