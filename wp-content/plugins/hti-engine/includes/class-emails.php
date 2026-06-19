@@ -294,6 +294,61 @@ class Emails {
 		return self::layout( $locale, $inner, $heading );
 	}
 
+	/* ---------- security: password changed (template 09) ---------- */
+
+	/**
+	 * Render the "your password was changed" security alert.
+	 *
+	 * @param string                    $locale    'en'|'pt'.
+	 * @param array{when:string,device:string,ip:string} $meta Event details.
+	 * @param string                    $reset_url "wasn't you" → reset URL.
+	 */
+	public static function security_alert( string $locale, array $meta, string $reset_url ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'A tua password foi alterada' : 'Your password was changed';
+		$lead    = $pt
+			? 'A password da tua conta HowToInvest foi alterada. Se foste tu, está tudo bem — não precisas de fazer nada.'
+			: 'The password for your HowToInvest account was changed. If this was you, all good — there’s nothing to do.';
+		$rows = array(
+			( $pt ? 'Data' : 'Date' )         => $meta['when'] ?? '',
+			( $pt ? 'Dispositivo' : 'Device' ) => $meta['device'] ?? '',
+			( $pt ? 'Endereço IP' : 'IP address' ) => $meta['ip'] ?? '',
+		);
+		$card  = '<table role="presentation" width="100%" style="border-collapse:collapse;background:#F6F4FB;border-radius:14px;"><tbody>';
+		$i     = 0;
+		$count = count( array_filter( $rows, static fn( $v ) => '' !== $v ) );
+		foreach ( $rows as $label => $value ) {
+			if ( '' === $value ) {
+				continue;
+			}
+			++$i;
+			$border = $i < $count ? 'border-bottom:1px solid #EBE6F4;' : '';
+			$card  .= '<tr><td style="padding:16px 22px;' . $border . '"><table role="presentation" width="100%" style="border-collapse:collapse;"><tbody><tr>'
+				. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;">' . esc_html( $label ) . '</td>'
+				. '<td style="text-align:right;font:700 13.5px Arial,sans-serif;color:#1E2147;">' . esc_html( $value ) . '</td>'
+				. '</tr></tbody></table></td></tr>';
+		}
+		$card .= '</tbody></table>';
+
+		$wasnt = $pt ? 'Não foste tu?' : 'Wasn’t you?';
+		$cta   = $pt ? 'Repor a password agora' : 'Reset your password now';
+		$note  = $pt
+			? 'Se não foste tu, repõe a password imediatamente e contacta-nos.'
+			: 'If this wasn’t you, reset your password immediately and contact us.';
+
+		$inner = self::row(
+			self::icon_circle( '&#128274;', '#FDECEA', '#C0392B' ) . self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. self::row( $card, '28px 48px 0' )
+			. self::row( '<div style="font:700 13px Arial,sans-serif;color:#C0392B;margin-bottom:10px;">' . esc_html( $wasnt ) . '</div>' . self::button( $cta, $reset_url ), '24px 48px 4px', true )
+			. self::row( self::note( $note ), '16px 48px 44px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
 	/* ---------- WordPress password reset (template 05) ---------- */
 
 	/**
