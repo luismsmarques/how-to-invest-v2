@@ -146,12 +146,22 @@ class Seeder {
 					pll_set_post_language( $en_id, $en );
 				}
 
-				// Already translated → nothing to do.
-				if ( pll_get_post( $en_id, $pt ) ) {
+				$pt_data = $entry['pt'] ?? array();
+
+				// Already translated → make sure its slug is the translated one
+				// (older seeds reused the EN slug), then move on.
+				$existing_pt = pll_get_post( $en_id, $pt );
+				if ( $existing_pt ) {
+					if ( ! empty( $pt_data['title'] ) ) {
+						$want = self::pt_slug( $entry['slug'], (string) $pt_data['title'] );
+						$post = get_post( (int) $existing_pt );
+						if ( $post instanceof \WP_Post && $post->post_name !== $want ) {
+							wp_update_post( array( 'ID' => (int) $existing_pt, 'post_name' => $want ) );
+						}
+					}
 					continue;
 				}
 
-				$pt_data = $entry['pt'] ?? array();
 				if ( empty( $pt_data['title'] ) ) {
 					continue;
 				}
@@ -163,6 +173,42 @@ class Seeder {
 		}
 
 		return $created;
+	}
+
+	/**
+	 * Curated Portuguese slug for a seeded entry (keyword-rich, for SEO).
+	 * Falls back to a sanitized PT title for anything not in the map.
+	 *
+	 * @param string $en_slug  English slug (the entry key).
+	 * @param string $pt_title Portuguese title (fallback source).
+	 */
+	private static function pt_slug( string $en_slug, string $pt_title ): string {
+		$map = array(
+			// Glossary.
+			'global-equities'                  => 'acoes-globais',
+			'bonds'                            => 'obrigacoes',
+			'cash'                             => 'liquidez',
+			'reits-and-alternatives'           => 'imobiliario-e-alternativos',
+			'crypto'                           => 'cripto',
+			// Pages.
+			'investor-profile-quiz'            => 'questionario-perfil-investidor',
+			'my-account'                       => 'a-minha-conta',
+			'about'                            => 'sobre',
+			'contact'                          => 'contacto',
+			'how-to-start-investing'           => 'como-comecar-a-investir',
+			'privacy-policy'                   => 'politica-de-privacidade',
+			'terms-and-conditions'             => 'termos-e-condicoes',
+			// Articles.
+			'what-is-an-investor-profile'      => 'o-que-e-um-perfil-de-investidor',
+			'asset-classes-explained'          => 'classes-de-ativos-explicadas',
+			'why-your-time-horizon-matters'    => 'porque-o-horizonte-temporal-importa',
+			'staying-calm-when-markets-fall'   => 'manter-a-calma-quando-os-mercados-caem',
+			'why-an-emergency-fund-comes-first' => 'fundo-de-emergencia-primeiro',
+			'what-is-diversification'          => 'o-que-e-diversificacao',
+			'risk-and-reward-explained'        => 'risco-e-retorno-explicado',
+			'what-is-esg-investing'            => 'o-que-e-investimento-esg',
+		);
+		return $map[ $en_slug ] ?? sanitize_title( $pt_title );
 	}
 
 	/**
@@ -235,10 +281,10 @@ class Seeder {
 		}
 		$pt_id = (int) $pt_id;
 
-		// Set the language first; Polylang then allows the PT post to reuse the
-		// EN slug (URLs are disambiguated by language).
+		// Set the language first; Polylang then allows a per-language slug.
+		// Give the PT post its own translated slug (better SEO than reusing EN).
 		pll_set_post_language( $pt_id, $pt );
-		wp_update_post( array( 'ID' => $pt_id, 'post_name' => $entry['slug'] ) );
+		wp_update_post( array( 'ID' => $pt_id, 'post_name' => self::pt_slug( $entry['slug'], (string) $pt_data['title'] ) ) );
 		pll_save_post_translations( array( $en => $en_id, $pt => $pt_id ) );
 
 		update_post_meta( $pt_id, self::SEED_FLAG, VERSION );
