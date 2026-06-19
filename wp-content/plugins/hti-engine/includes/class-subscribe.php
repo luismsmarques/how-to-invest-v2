@@ -225,7 +225,7 @@ class Subscribe {
 			$ok = Brevo::upsert_contact(
 				$email,
 				array( 'LANGUAGE' => strtoupper( $locale ), 'OPTIN_AT' => gmdate( 'Y-m-d' ) ),
-				array_filter( array( Brevo::list_id() ) )
+				array_filter( array( Brevo::list_id( $locale ) ) )
 			);
 			if ( $ok ) {
 				self::send_confirmed_email( $email, $locale );
@@ -233,8 +233,8 @@ class Subscribe {
 			self::redirect_result( $ok ? 'confirmed' : 'error', $locale );
 		}
 
-		// Unsubscribe.
-		$ok = Brevo::remove_from_list( $email, Brevo::list_id() );
+		// Unsubscribe from the language list they subscribed via.
+		$ok = Brevo::remove_from_list( $email, Brevo::list_id( $locale ) );
 		self::redirect_result( $ok ? 'unsubscribed' : 'error', $locale );
 	}
 

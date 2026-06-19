@@ -143,39 +143,57 @@ class Campaigns {
 	}
 
 	/**
-	 * Build + send a newsletter/digest. Skips when there's nothing to send.
+	 * Build + send a newsletter/digest to each language list, in that language.
+	 * Skips a language with no new articles. Returns true if anything was sent.
 	 *
 	 * @param string $kind 'weekly' | 'daily'.
 	 */
 	private static function dispatch( string $kind ): bool {
-		$list = Brevo::list_id();
-		if ( ! Brevo::configured() || $list <= 0 ) {
+		if ( ! Brevo::configured() ) {
 			return false;
 		}
-		$locale   = self::locale();
-		$campaign = self::build( $locale, $kind );
-		if ( $campaign['count'] < 1 ) {
-			return false; // Nothing new — don't send an empty email.
+		$any = false;
+		foreach ( Brevo::lists_by_language() as $locale => $list ) {
+			$campaign = self::build( $locale, $kind );
+			if ( $campaign['count'] < 1 ) {
+				continue; // Nothing new in this language — don't send empty.
+			}
+			$name = sprintf( 'HTI %s %s %s', $kind, strtoupper( $locale ), gmdate( 'Y-m-d' ) );
+			if ( Brevo::send_campaign( $name, $campaign['subject'], $campaign['html'], $list ) ) {
+				$any = true;
+			}
 		}
-		$name = sprintf( 'HTI %s %s', $kind, gmdate( 'Y-m-d' ) );
-		return Brevo::send_campaign( $name, $campaign['subject'], $campaign['html'], $list );
+		return $any;
 	}
 
 	/**
-	 * Send a manual platform notice to the list.
+	 * Send a manual platform notice to the chosen language list(s).
 	 *
 	 * @param string $subject Subject.
 	 * @param string $title   Heading.
 	 * @param string $body    Body (raw text from the admin form).
+	 * @param string $target  'en' | 'pt' | 'both'.
 	 */
-	public static function send_notice( string $subject, string $title, string $body ): bool {
-		$list = Brevo::list_id();
-		if ( ! Brevo::configured() || $list <= 0 ) {
+	public static function send_notice( string $subject, string $title, string $body, string $target = 'both' ): bool {
+		if ( ! Brevo::configured() ) {
+			return false;
+		}
+		$lists = Brevo::lists_by_language();
+		if ( 'both' !== $target ) {
+			$lists = isset( $lists[ $target ] ) ? array( $target => $lists[ $target ] ) : array();
+		}
+		if ( empty( $lists ) ) {
 			return false;
 		}
 		$body_html = wpautop( wp_kses_post( $body ) );
-		$html      = Emails::notice( self::locale(), $title, $body_html );
-		return Brevo::send_campaign( 'HTI notice ' . gmdate( 'Y-m-d H:i' ), $subject, $html, $list );
+		$any       = false;
+		foreach ( $lists as $locale => $list ) {
+			$html = Emails::notice( $locale, $title, $body_html );
+			if ( Brevo::send_campaign( 'HTI notice ' . strtoupper( $locale ) . ' ' . gmdate( 'Y-m-d H:i' ), $subject, $html, $list ) ) {
+				$any = true;
+			}
+		}
+		return $any;
 	}
 
 	/* ---------- admin ---------- */
@@ -200,11 +218,11 @@ class Campaigns {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		$list      = Brevo::list_id();
-		$ready     = Brevo::configured() && $list > 0;
-		$preview_w = wp_nonce_url( admin_url( 'admin-post.php?action=hti_campaign&do=preview&kind=weekly' ), 'hti_campaign' );
-		$preview_d = wp_nonce_url( admin_url( 'admin-post.php?action=hti_campaign&do=preview&kind=daily' ), 'hti_campaign' );
-		$sent      = isset( $_GET['hti_sent'] ) ? sanitize_key( wp_unslash( $_GET['hti_sent'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$ready  = Brevo::configured() && Brevo::any_list_configured();
+		$sent   = isset( $_GET['hti_sent'] ) ? sanitize_key( wp_unslash( $_GET['hti_sent'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$preview = static function ( string $kind, string $lang ): string {
+			return wp_nonce_url( admin_url( 'admin-post.php?action=hti_campaign&do=preview&kind=' . $kind . '&lang=' . $lang ), 'hti_campaign' );
+		};
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'HTI Newsletter', 'hti-engine' ); ?></h1>
@@ -216,15 +234,18 @@ class Campaigns {
 
 			<?php if ( ! $ready ) : ?>
 				<div class="notice notice-warning"><p>
-					<?php esc_html_e( 'Set the Brevo API key, a verified sender and the Newsletter list ID in Settings → HowToInvest before sending.', 'hti-engine' ); ?>
+					<?php esc_html_e( 'Set the Brevo API key, a verified sender and at least one Newsletter list ID (EN/PT) in Settings → HowToInvest before sending.', 'hti-engine' ); ?>
 				</p></div>
 			<?php endif; ?>
 
 			<h2><?php esc_html_e( 'Newsletter & digest', 'hti-engine' ); ?></h2>
-			<p><?php esc_html_e( 'Sent automatically (weekly on Mondays, daily each morning) to the Brevo list. You can also send now or preview:', 'hti-engine' ); ?></p>
+			<p><?php esc_html_e( 'Sent automatically (weekly on Mondays, daily each morning) to each language list, in that language. You can also send now or preview:', 'hti-engine' ); ?></p>
 			<p>
-				<a class="button" href="<?php echo esc_url( $preview_w ); ?>" target="_blank"><?php esc_html_e( 'Preview weekly', 'hti-engine' ); ?></a>
-				<a class="button" href="<?php echo esc_url( $preview_d ); ?>" target="_blank"><?php esc_html_e( 'Preview daily', 'hti-engine' ); ?></a>
+				<strong><?php esc_html_e( 'Preview:', 'hti-engine' ); ?></strong>
+				<a class="button" href="<?php echo esc_url( $preview( 'weekly', 'en' ) ); ?>" target="_blank"><?php esc_html_e( 'Weekly · EN', 'hti-engine' ); ?></a>
+				<a class="button" href="<?php echo esc_url( $preview( 'weekly', 'pt' ) ); ?>" target="_blank"><?php esc_html_e( 'Weekly · PT', 'hti-engine' ); ?></a>
+				<a class="button" href="<?php echo esc_url( $preview( 'daily', 'en' ) ); ?>" target="_blank"><?php esc_html_e( 'Daily · EN', 'hti-engine' ); ?></a>
+				<a class="button" href="<?php echo esc_url( $preview( 'daily', 'pt' ) ); ?>" target="_blank"><?php esc_html_e( 'Daily · PT', 'hti-engine' ); ?></a>
 			</p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline">
 				<?php wp_nonce_field( 'hti_campaign' ); ?>
@@ -262,6 +283,15 @@ class Campaigns {
 						<th scope="row"><label for="hti-notice-body"><?php esc_html_e( 'Message', 'hti-engine' ); ?></label></th>
 						<td><textarea name="body" id="hti-notice-body" rows="6" class="large-text" required></textarea></td>
 					</tr>
+					<tr>
+						<th scope="row"><label for="hti-notice-target"><?php esc_html_e( 'Send to', 'hti-engine' ); ?></label></th>
+						<td><select name="target" id="hti-notice-target">
+							<option value="both"><?php esc_html_e( 'Both lists (EN + PT)', 'hti-engine' ); ?></option>
+							<option value="en"><?php esc_html_e( 'English list', 'hti-engine' ); ?></option>
+							<option value="pt"><?php esc_html_e( 'Portuguese list', 'hti-engine' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'The message text is sent as written; only the email chrome is localized.', 'hti-engine' ); ?></p></td>
+					</tr>
 				</tbody></table>
 				<?php submit_button( __( 'Send notice to subscribers', 'hti-engine' ), 'primary', 'submit', true, $ready ? array() : array( 'disabled' => 'disabled' ) ); ?>
 			</form>
@@ -280,17 +310,21 @@ class Campaigns {
 		$kind = isset( $_REQUEST['kind'] ) && 'daily' === $_REQUEST['kind'] ? 'daily' : 'weekly';
 
 		if ( 'preview' === $do ) {
-			$campaign = self::build( self::locale(), $kind );
+			$lang     = isset( $_REQUEST['lang'] ) && 'pt' === $_REQUEST['lang'] ? 'pt' : 'en';
+			$campaign = self::build( $lang, $kind );
 			// Admin-only HTML preview (escaped at build time; trusted template).
 			echo $campaign['html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			exit;
 		}
 
 		if ( 'notice' === $do ) {
+			$target = isset( $_POST['target'] ) ? sanitize_key( wp_unslash( $_POST['target'] ) ) : 'both';
+			$target = in_array( $target, array( 'en', 'pt', 'both' ), true ) ? $target : 'both';
 			$ok = self::send_notice(
 				sanitize_text_field( (string) wp_unslash( $_POST['subject'] ?? '' ) ),
 				sanitize_text_field( (string) wp_unslash( $_POST['title'] ?? '' ) ),
-				(string) wp_unslash( $_POST['body'] ?? '' )
+				(string) wp_unslash( $_POST['body'] ?? '' ),
+				$target
 			);
 		} else {
 			$ok = 'daily' === $kind ? self::send_daily() : self::send_weekly();
