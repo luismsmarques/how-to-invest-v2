@@ -31,12 +31,12 @@ class Social_Card {
 	}
 
 	/**
-	 * Render the card to PNG bytes.
+	 * Render the square 1080×1080 "Notícias" card to PNG bytes.
 	 *
 	 * @param array{headline:string,kicker:string,badge:string,handle:string,domain:string,disclaimer:string,photo?:?string} $a Card data.
 	 * @return string|\WP_Error PNG bytes, or error.
 	 */
-	public static function render( array $a ) {
+	public static function render_square( array $a ) {
 		if ( ! self::available() ) {
 			return new \WP_Error( 'rssai_no_gd', __( 'GD with TrueType support is required to render the card.', 'hti-rss-ai' ) );
 		}
@@ -143,6 +143,105 @@ class Social_Card {
 		return $png;
 	}
 
+	/**
+	 * Render the vertical 1080×1920 "Notícias · Story" card to PNG bytes.
+	 *
+	 * @param array{headline:string,kicker:string,badge:string,dek:string,handle:string,disclaimer:string,photo?:?string} $a Card data.
+	 * @return string|\WP_Error PNG bytes, or error.
+	 */
+	public static function render_story( array $a ) {
+		if ( ! self::available() ) {
+			return new \WP_Error( 'rssai_no_gd', __( 'GD with TrueType support is required to render the card.', 'hti-rss-ai' ) );
+		}
+
+		$w   = 1080;
+		$h   = 1920;
+		$px  = 80;
+		$top = 120;
+
+		$img = imagecreatetruecolor( $w, $h );
+		imagealphablending( $img, true );
+		imagesavealpha( $img, true );
+		self::gradient_to( $img, $w, $h, '#1C2150', '#0F1130' );
+
+		$white   = self::color( $img, '#ffffff' );
+		$kicker  = self::color( $img, '#9BA7E8' );
+
+		// Header: logo + wordmark.
+		self::draw_logo( $img, $px, $top, 66 );
+		$wm = self::font( 'poppins-700' );
+		self::text( $img, $wm, 34, $px + 84, $top + 33 + (int) round( self::ascent( $wm, 34 ) / 2 ) - 2, $white, 'HowToInvest' );
+
+		// Badge + date row.
+		$row_y  = $top + 66 + 80;
+		$bh     = self::badge_at( $img, self::upper( (string) $a['badge'] ), $px, $row_y, 22 );
+		$dfont  = self::font( 'plus-jakarta-sans-600' );
+		self::text( $img, $dfont, 24, $px + self::badge_width( self::upper( (string) $a['badge'] ), 22 ) + 24, $row_y + (int) round( ( $bh + self::ascent( $dfont, 24 ) ) / 2 ) - 4, $kicker, (string) $a['kicker'] );
+
+		// Headline.
+		$head_font = self::font( 'poppins-800' );
+		$head_y    = $row_y + $bh + 40;
+		$avail_w   = $w - $px * 2;
+		[ $hsize, $hlines ] = self::fit_lines( $head_font, (string) $a['headline'], $avail_w, 360, array( 84, 76, 68, 60, 52 ) );
+		$hlh = (int) round( $hsize * 1.12 );
+		foreach ( $hlines as $i => $line ) {
+			self::text( $img, $head_font, $hsize, $px, $head_y + self::ascent( $head_font, $hsize ) + $i * $hlh, $white, $line );
+		}
+		$y = $head_y + count( $hlines ) * $hlh;
+
+		// Dek (subtitle).
+		$dek_y = $y + 34;
+		$dek_b = $dek_y;
+		if ( '' !== trim( (string) ( $a['dek'] ?? '' ) ) ) {
+			$dek_font = self::font( 'plus-jakarta-sans-500' );
+			$dek_col  = self::color( $img, '#B6BFEC' );
+			$dek_lh   = (int) round( 36 * 1.45 );
+			$dek_lines = array_slice( self::wrap( $dek_font, 36, (string) $a['dek'], $avail_w ), 0, 3 );
+			foreach ( $dek_lines as $i => $line ) {
+				self::text( $img, $dek_font, 36, $px, $dek_y + self::ascent( $dek_font, 36 ) + $i * $dek_lh, $dek_col, $line );
+			}
+			$dek_b = $dek_y + count( $dek_lines ) * $dek_lh;
+		}
+
+		// Footer (anchored to the bottom).
+		$content_bottom = $h - $top;
+		$disc_font = self::font( 'plus-jakarta-sans-400' );
+		$disc_lh   = (int) round( 17 * 1.45 );
+		$disc_lines = array_slice( self::wrap( $disc_font, 17, (string) $a['disclaimer'], $avail_w ), 0, 3 );
+		$disc_h    = count( $disc_lines ) * $disc_lh;
+		$footer_h  = 28 + 30 + ( $disc_h > 0 ? 18 + $disc_h : 0 );
+		$border_y  = $content_bottom - $footer_h;
+
+		imagefilledrectangle( $img, $px, $border_y, $w - $px, $border_y + 1, self::color( $img, '#ffffff', 0.12 ) );
+		$frow = $border_y + 28;
+		self::text( $img, $dfont, 26, $px, $frow + self::ascent( $dfont, 26 ), $kicker, '@' . $a['handle'] );
+		$swipe = 'pt' === ( $a['lang'] ?? 'en' ) ? 'Desliza para cima ↑' : 'Swipe up ↑';
+		$sw_w  = self::width( $dfont, 24, $swipe );
+		self::text( $img, $dfont, 24, $w - $px - $sw_w, $frow + self::ascent( $dfont, 24 ), self::color( $img, '#6E76A8' ), $swipe );
+		$dy = $frow + 30 + 18;
+		foreach ( $disc_lines as $i => $line ) {
+			self::text( $img, $disc_font, 17, $px, $dy + self::ascent( $disc_font, 17 ) + $i * $disc_lh, self::color( $img, '#6E76A8' ), $line );
+		}
+
+		// Image box: centred between the dek and the footer.
+		$box_w   = $avail_w;
+		$photo_h = 560;
+		$box_h   = $photo_h + 28 + 4;
+		$region_top = $dek_b + 30;
+		$region_bot = $border_y - 30;
+		$box_top = $region_top + (int) max( 0, ( ( $region_bot - $region_top ) - $box_h ) / 2 );
+		self::filled_round( $img, $px, $box_top, $box_w, $box_h, 28, self::color( $img, '#ffffff', 0.13 ) );
+		self::filled_round( $img, $px + 2, $box_top + 2, $box_w - 4, $box_h - 4, 26, self::color( $img, '#ffffff', 0.04 ) );
+		self::place_photo( $img, $a['photo'] ?? null, $px + 16, $box_top + 16, $box_w - 32, $photo_h, 16 );
+
+		ob_start();
+		imagepng( $img );
+		$png = (string) ob_get_clean();
+		imagedestroy( $img );
+
+		return $png;
+	}
+
 	/* -------------------------------------------------------------------------
 	 * Helpers
 	 * ---------------------------------------------------------------------- */
@@ -201,24 +300,37 @@ class Social_Card {
 	}
 
 	/**
-	 * Vertical gradient fill (top → bottom).
+	 * Vertical gradient fill on the square canvas (top → bottom).
 	 *
-	 * @param \GdImage $img  Image.
-	 * @param string   $top  Top colour.
-	 * @param string   $bot  Bottom colour.
+	 * @param \GdImage $img Image.
+	 * @param string   $top Top colour.
+	 * @param string   $bot Bottom colour.
 	 */
 	private static function gradient( $img, string $top, string $bot ): void {
+		self::gradient_to( $img, self::W, self::H, $top, $bot );
+	}
+
+	/**
+	 * Vertical gradient fill on a canvas of arbitrary size.
+	 *
+	 * @param \GdImage $img Image.
+	 * @param int      $w   Width.
+	 * @param int      $h   Height.
+	 * @param string   $top Top colour.
+	 * @param string   $bot Bottom colour.
+	 */
+	private static function gradient_to( $img, int $w, int $h, string $top, string $bot ): void {
 		[ $r1, $g1, $b1 ] = self::parse_hex( $top );
 		[ $r2, $g2, $b2 ] = self::parse_hex( $bot );
-		for ( $y = 0; $y < self::H; $y++ ) {
-			$t = $y / ( self::H - 1 );
+		for ( $y = 0; $y < $h; $y++ ) {
+			$t = $y / max( 1, $h - 1 );
 			$c = imagecolorallocate(
 				$img,
 				(int) round( $r1 + ( $r2 - $r1 ) * $t ),
 				(int) round( $g1 + ( $g2 - $g1 ) * $t ),
 				(int) round( $b1 + ( $b2 - $b1 ) * $t )
 			);
-			imageline( $img, 0, $y, self::W, $y, $c );
+			imageline( $img, 0, $y, $w, $y, $c );
 		}
 	}
 
@@ -319,7 +431,21 @@ class Social_Card {
 	 * @return array{0:int,1:array<int,string>}
 	 */
 	private static function fit_headline( string $font, string $text, int $max_w, int $max_h ): array {
-		foreach ( array( 64, 58, 52, 46, 40, 36 ) as $size ) {
+		return self::fit_lines( $font, $text, $max_w, $max_h, array( 64, 58, 52, 46, 40, 36 ) );
+	}
+
+	/**
+	 * Pick the largest size (from $sizes) whose wrapped lines fit the box.
+	 *
+	 * @param string         $font  Font path.
+	 * @param string         $text  Text.
+	 * @param int            $max_w Width.
+	 * @param int            $max_h Height.
+	 * @param array<int,int> $sizes Candidate sizes, largest first.
+	 * @return array{0:int,1:array<int,string>}
+	 */
+	private static function fit_lines( string $font, string $text, int $max_w, int $max_h, array $sizes ): array {
+		foreach ( $sizes as $size ) {
 			$lines = self::wrap( $font, $size, $text, $max_w );
 			$h     = count( $lines ) * (int) round( $size * 1.14 );
 			$fits  = $h <= $max_h;
@@ -333,8 +459,13 @@ class Social_Card {
 				return array( $size, $lines );
 			}
 		}
-		return array( 36, self::wrap( $font, 36, $text, $max_w ) );
+		$last = (int) end( $sizes );
+		return array( $last, self::wrap( $font, $last, $text, $max_w ) );
 	}
+
+	private const BADGE_LS    = 0.16;
+	private const BADGE_PAD_X = 24;
+	private const BADGE_PAD_Y = 11;
 
 	/**
 	 * Coral pill badge, right-aligned to $right_x and centred on $cy.
@@ -344,20 +475,48 @@ class Social_Card {
 	 * @param int      $right_x Right edge.
 	 * @param int      $cy      Vertical centre.
 	 */
-	private static function badge( $img, string $label, int $right_x, int $cy ): void {
+	private static function badge( $img, string $label, int $right_x, int $cy, int $size = 18 ): void {
+		$bw = self::badge_width( $label, $size );
+		$bh = self::badge_height( $size );
+		self::badge_at( $img, $label, $right_x - $bw, $cy - (int) round( $bh / 2 ), $size );
+	}
+
+	/**
+	 * Coral pill badge with its top-left at ($x,$y). Returns its height.
+	 *
+	 * @param \GdImage $img   Image.
+	 * @param string   $label Uppercase label.
+	 * @param int      $x     Left.
+	 * @param int      $y     Top.
+	 * @param int      $size  Point size.
+	 */
+	private static function badge_at( $img, string $label, int $x, int $y, int $size = 18 ): int {
 		$font = self::font( 'plus-jakarta-sans-700' );
-		$size = 18;
-		$ls   = 0.16;
-		$tw   = self::width( $font, $size, $label, $ls );
-		$pad_x = 24;
-		$pad_y = 11;
-		$th   = self::ascent( $font, $size );
-		$bh   = $th + $pad_y * 2;
-		$bw   = $tw + $pad_x * 2;
-		$x1   = $right_x - $bw;
-		$y1   = $cy - (int) round( $bh / 2 );
-		self::filled_round( $img, $x1, $y1, $bw, $bh, (int) round( $bh / 2 ), self::color( $img, '#FF6B5E' ) );
-		self::text( $img, $font, $size, $x1 + $pad_x, $y1 + $pad_y + $th, self::color( $img, '#ffffff' ), $label, $ls );
+		$bh   = self::badge_height( $size );
+		$bw   = self::badge_width( $label, $size );
+		self::filled_round( $img, $x, $y, $bw, $bh, (int) round( $bh / 2 ), self::color( $img, '#FF6B5E' ) );
+		self::text( $img, $font, $size, $x + self::BADGE_PAD_X, $y + self::BADGE_PAD_Y + self::ascent( $font, $size ), self::color( $img, '#ffffff' ), $label, self::BADGE_LS );
+		return $bh;
+	}
+
+	/**
+	 * Pill badge width for a label/size.
+	 *
+	 * @param string $label Uppercase label.
+	 * @param int    $size  Point size.
+	 */
+	private static function badge_width( string $label, int $size = 18 ): int {
+		$font = self::font( 'plus-jakarta-sans-700' );
+		return self::width( $font, $size, $label, self::BADGE_LS ) + self::BADGE_PAD_X * 2;
+	}
+
+	/**
+	 * Pill badge height for a size.
+	 *
+	 * @param int $size Point size.
+	 */
+	private static function badge_height( int $size = 18 ): int {
+		return self::ascent( self::font( 'plus-jakarta-sans-700' ), $size ) + self::BADGE_PAD_Y * 2;
 	}
 
 	/**

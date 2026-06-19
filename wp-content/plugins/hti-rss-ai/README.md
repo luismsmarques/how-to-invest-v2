@@ -16,14 +16,15 @@ See the full plan: [`docs/RSS_AI_Feed_Plan.md`](../../../docs/RSS_AI_Feed_Plan.m
 - **M4 — research + generation (done):** Gemini (Google Search grounding) fact research → validated JSON → original SEO/Google-News article saved as a pending `news` post (with sources + disclaimer). "Generate article" on a group; daily limit.
 - **M5 — review + SEO (done):** news edit-screen meta box (AI provenance + sources + sitelinking suggestions) and meta-description bridge to RankMath/Yoast.
 - **M6 — hardening (done):** capped activity Logger + Logs page; logging across fetch/group/generate; `uninstall.php` (drops tables + options); pure-PHP test suite (extract-json, validator, grouping).
-- **M7 — featured image (done):** on generation, a branded **square 1080×1080** card is rendered locally (GD + bundled Poppins/Plus Jakarta Sans) and set as the post's featured image. The card chrome (gradient, logo, badge, kicker, headline, disclaimer) is deterministic for brand consistency; only the **photo** is produced by AI (Imagen), with graceful fallback to the feed image, then a branded gradient. "Regenerate image" button in a news-editor meta box. Settings: enable toggle + image model.
+- **M7 — featured image (done):** on generation, an **AI photo** about the article topic (Imagen) is set as the post's featured image, with graceful fallback to the feed image. "Regenerate AI image" button in a news-editor meta box. Settings: enable toggle + image model.
+- **M8 — social media kit (done):** after publishing, downloadable branded cards (**square 1080×1080** for feed, **story 1080×1920** for stories) rendered locally with GD, with the **featured image placed inside** + headline/date/disclaimer. Reuses the featured image — no extra AI calls. "Social media kit" meta box on the news editor.
 
-The full pipeline (feeds → drafts → groups → generate → featured image → review) is complete.
+The full pipeline (feeds → drafts → groups → generate → AI featured image → review → social kit) is complete.
 
-## Featured image
-- Matches the "Notícias · Quadrado" template from the HowToInvest Social Templates design.
+## Featured image & social kit
+- **Featured image** = a plain AI photo about the topic (16:9). Source recorded in `rssai_card_photo_source` meta (`ai` / `feed` / `none`).
+- **Social kit** templates match "Notícias · Quadrado" and "Notícias · Story" from the HowToInvest Social Templates design; the featured image is cover-cropped into each.
 - Fonts are bundled as `.ttf` under `assets/fonts/` (GD cannot read the theme's woff2).
-- Photo source per article is recorded in `rssai_card_photo_source` meta (`ai` / `feed` / `none`).
 - Requires the GD extension with TrueType support (standard on WordPress hosts).
 
 ## Requirements
