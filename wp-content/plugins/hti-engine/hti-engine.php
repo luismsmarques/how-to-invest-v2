@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.4.0
+ * Version:           0.5.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -75,6 +75,21 @@ add_action( 'init', __NAMESPACE__ . '\\load_textdomain', 0 );
  */
 add_action( 'init', array( Taxonomy::class, 'register' ), 9 );
 add_action( 'init', array( CPT::class, 'register' ) );
+
+/**
+ * Flush rewrite rules once per plugin version (so new CPT/taxonomy permalinks
+ * like /learn/ resolve after an update, without re-saving permalinks).
+ */
+add_action(
+	'init',
+	function () {
+		if ( get_option( 'hti_rewrite_version' ) !== VERSION ) {
+			flush_rewrite_rules( false );
+			update_option( 'hti_rewrite_version', VERSION );
+		}
+	},
+	11
+);
 
 /**
  * Wire up SEO structured data (JSON-LD) for the public content types.
