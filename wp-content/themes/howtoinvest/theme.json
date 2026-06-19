@@ -6,7 +6,7 @@
 		"useRootPaddingAwareAlignments": true,
 		"layout": {
 			"contentSize": "680px",
-			"wideSize": "1100px"
+			"wideSize": "1280px"
 		},
 		"color": {
 			"defaultPalette": false,
@@ -330,9 +330,9 @@
 			"blockGap": "var(--wp--preset--spacing--30)",
 			"padding": {
 				"top": "0",
-				"right": "var(--wp--preset--spacing--30)",
+				"right": "clamp(1.25rem, 4vw, 2rem)",
 				"bottom": "0",
-				"left": "var(--wp--preset--spacing--30)"
+				"left": "clamp(1.25rem, 4vw, 2rem)"
 			}
 		},
 		"elements": {
