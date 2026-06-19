@@ -44,6 +44,9 @@ class Account {
 		add_action( 'init', array( __CLASS__, 'schedule' ) );
 		// Track last login for the re-engagement sweep.
 		add_action( 'wp_login', array( __CLASS__, 'record_login' ), 10, 2 );
+		// Admin page to read the onboarding questions (content research).
+		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
+		add_action( 'admin_post_hti_questions_csv', array( __CLASS__, 'export_questions_csv' ) );
 	}
 
 	/**
@@ -332,6 +335,105 @@ class Account {
 			$log = array_slice( $log, -2000 );
 		}
 		update_option( self::OPTION_QUESTIONS, $log, false );
+	}
+
+	/**
+	 * The logged onboarding questions, most recent first.
+	 *
+	 * @return array<int,array{uid:int,q:string,lang:string,at:int}>
+	 */
+	public static function questions(): array {
+		$log = get_option( self::OPTION_QUESTIONS, array() );
+		$log = is_array( $log ) ? array_reverse( $log ) : array();
+		return $log;
+	}
+
+	/* ---------- admin: read the onboarding questions ---------- */
+
+	/**
+	 * Register the "HTI Insights" admin page.
+	 */
+	public static function admin_menu(): void {
+		add_options_page(
+			__( 'HTI Insights', 'hti-engine' ),
+			__( 'HTI Insights', 'hti-engine' ),
+			'manage_options',
+			'hti-insights',
+			array( __CLASS__, 'render_insights_page' )
+		);
+	}
+
+	/**
+	 * Render the insights page: the users' biggest investing doubts.
+	 */
+	public static function render_insights_page(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$rows = self::questions();
+		$csv  = wp_nonce_url( admin_url( 'admin-post.php?action=hti_questions_csv' ), 'hti_questions_csv' );
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'HTI Insights', 'hti-engine' ); ?></h1>
+			<p><?php
+				/* translators: %d: number of responses. */
+				printf( esc_html__( 'What users say is their biggest investing doubt (%d responses). Use it to plan content.', 'hti-engine' ), count( $rows ) );
+			?></p>
+			<?php if ( ! empty( $rows ) ) : ?>
+				<p><a class="button" href="<?php echo esc_url( $csv ); ?>"><?php esc_html_e( 'Download CSV', 'hti-engine' ); ?></a></p>
+				<table class="widefat striped">
+					<thead><tr>
+						<th style="width:140px"><?php esc_html_e( 'Date', 'hti-engine' ); ?></th>
+						<th style="width:60px"><?php esc_html_e( 'Lang', 'hti-engine' ); ?></th>
+						<th style="width:220px"><?php esc_html_e( 'User', 'hti-engine' ); ?></th>
+						<th><?php esc_html_e( 'Question', 'hti-engine' ); ?></th>
+					</tr></thead>
+					<tbody>
+					<?php foreach ( array_slice( $rows, 0, 500 ) as $row ) :
+						$user = get_userdata( (int) ( $row['uid'] ?? 0 ) );
+						?>
+						<tr>
+							<td><?php echo esc_html( wp_date( 'Y-m-d H:i', (int) ( $row['at'] ?? 0 ) ) ); ?></td>
+							<td><?php echo esc_html( strtoupper( (string) ( $row['lang'] ?? '' ) ) ); ?></td>
+							<td><?php echo esc_html( $user ? $user->user_email : '#' . (int) ( $row['uid'] ?? 0 ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $row['q'] ?? '' ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php else : ?>
+				<p><em><?php esc_html_e( 'No responses yet.', 'hti-engine' ); ?></em></p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Stream the questions as a CSV download.
+	 */
+	public static function export_questions_csv(): void {
+		if ( ! current_user_can( 'manage_options' ) || ! check_admin_referer( 'hti_questions_csv' ) ) {
+			wp_die( esc_html__( 'Not allowed.', 'hti-engine' ) );
+		}
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="hti-insights.csv"' );
+		$out = fopen( 'php://output', 'w' );
+		fputcsv( $out, array( 'date', 'language', 'email', 'question' ) );
+		foreach ( self::questions() as $row ) {
+			$user = get_userdata( (int) ( $row['uid'] ?? 0 ) );
+			fputcsv(
+				$out,
+				array(
+					gmdate( 'Y-m-d H:i', (int) ( $row['at'] ?? 0 ) ),
+					(string) ( $row['lang'] ?? '' ),
+					$user ? $user->user_email : '#' . (int) ( $row['uid'] ?? 0 ),
+					(string) ( $row['q'] ?? '' ),
+				)
+			);
+		}
+		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		exit;
 	}
 
 	/* ---------- preferences (template 13) ---------- */
