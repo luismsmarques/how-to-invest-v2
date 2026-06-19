@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.6';
+const VERSION = '0.6.7';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -660,12 +660,12 @@ function default_menu( string $location, string $extra ): string {
 		);
 	} else {
 		$items = array(
-			array( home_url( '/learn/' ), t( 'nav_learn' ) ),
+			array( archive_url( 'learn', '/learn/' ), t( 'nav_learn' ) ),
 			array( page_url( 'investor-types' ), t( 'nav_types' ) ),
 			array( page_url( 'asset-classes' ), t( 'nav_classes' ) ),
 			array( page_url( 'tools' ), t( 'nav_tools' ) ),
-			array( home_url( '/investing-glossary/' ), t( 'nav_glossary' ) ),
-			array( home_url( '/financial-news/' ), t( 'nav_news' ) ),
+			array( archive_url( 'glossary', '/investing-glossary/' ), t( 'nav_glossary' ) ),
+			array( archive_url( 'news', '/financial-news/' ), t( 'nav_news' ) ),
 		);
 	}
 
@@ -675,6 +675,19 @@ function default_menu( string $location, string $extra ): string {
 	}
 
 	return '<nav class="' . esc_attr( trim( 'hti-menu-nav ' . $extra ) ) . '"><ul class="hti-menu">' . $list . '</ul></nav>';
+}
+
+/**
+ * Permalink of a custom post type archive (Learn, Glossary, News), localized
+ * to the current language. Polylang filters get_post_type_archive_link() to
+ * prepend the active language's slug, so the PT nav points at /pt/learn/ etc.
+ *
+ * @param string $post_type Post type with an archive.
+ * @param string $fallback  Path to use if the archive link can't be built.
+ */
+function archive_url( string $post_type, string $fallback ): string {
+	$url = get_post_type_archive_link( $post_type );
+	return $url ? $url : home_url( $fallback );
 }
 
 /**
