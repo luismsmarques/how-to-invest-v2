@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.7.1';
+const VERSION = '0.7.2';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -239,6 +239,15 @@ function register_dynamic_blocks(): void {
 			'render_callback' => __NAMESPACE__ . '\\render_learn_hub',
 		)
 	);
+	register_block_type(
+		'howtoinvest/learn-feed',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Learn feed', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_learn_feed',
+		)
+	);
 }
 add_action( 'init', __NAMESPACE__ . '\\register_dynamic_blocks' );
 
@@ -307,6 +316,92 @@ function render_learn_hub(): string {
 	}
 
 	$out .= '</div>';
+	return $out;
+}
+
+/**
+ * Query a few published Learn articles in a given language (Polylang-aware).
+ *
+ * @param string $lang Language slug ('' = no language constraint).
+ * @param int    $n    How many.
+ * @return array<int,\WP_Post>
+ */
+function learn_feed_posts( string $lang, int $n ): array {
+	$args = array(
+		'post_type'           => 'learn',
+		'post_status'         => 'publish',
+		'posts_per_page'      => $n,
+		'orderby'             => 'date',
+		'order'               => 'DESC',
+		'no_found_rows'       => true,
+		'ignore_sticky_posts' => true,
+	);
+	if ( '' !== $lang && function_exists( 'pll_default_language' ) ) {
+		$args['lang'] = $lang;
+	}
+	$query = new \WP_Query( $args );
+	$posts = $query->posts;
+	wp_reset_postdata();
+	return $posts;
+}
+
+/**
+ * Homepage "Start learning" feed: the latest Learn articles as cards, in the
+ * current language. Falls back to the default language so the section is never
+ * empty (e.g. before PT translations are seeded). Replaces a core Query Loop
+ * that returned nothing once Polylang filtered it by language.
+ */
+function render_learn_feed(): string {
+	if ( ! post_type_exists( 'learn' ) ) {
+		return '';
+	}
+	$lang  = current_lang();
+	$posts = learn_feed_posts( $lang, 3 );
+	if ( empty( $posts ) && function_exists( 'pll_default_language' ) ) {
+		$def = (string) pll_default_language( 'slug' );
+		if ( '' !== $def && $def !== $lang ) {
+			$posts = learn_feed_posts( $def, 3 );
+		}
+	}
+	if ( empty( $posts ) ) {
+		return '';
+	}
+
+	$pt  = 'pt' === $lang;
+	$out = '<div class="wp-block-group alignwide hti-card-grid"><div class="hti-card-grid__inner" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px">';
+	foreach ( $posts as $post ) {
+		$permalink = (string) get_permalink( $post );
+		$title     = (string) get_the_title( $post );
+
+		$eyebrow = '';
+		$terms   = get_the_terms( $post, 'learn_topic' );
+		if ( is_array( $terms ) && ! empty( $terms ) ) {
+			$term = $terms[0];
+			$name = $term->name;
+			if ( $pt ) {
+				$meta = get_term_meta( $term->term_id, 'hti_name_pt', true );
+				if ( is_string( $meta ) && '' !== $meta ) {
+					$name = $meta;
+				}
+			}
+			$eyebrow = '<div class="hti-article-card__eyebrow">' . esc_html( $name ) . '</div>';
+		}
+
+		$media = '';
+		if ( has_post_thumbnail( $post ) ) {
+			$media = '<a href="' . esc_url( $permalink ) . '">'
+				. get_the_post_thumbnail( $post, 'medium', array( 'style' => 'width:100%;height:120px;object-fit:cover;display:block' ) )
+				. '</a>';
+		}
+
+		$out .= '<div class="wp-block-group hti-article-card">'
+			. '<div class="wp-block-group hti-article-card__media">' . $media . '</div>'
+			. '<div class="wp-block-group hti-article-card__body">'
+			. $eyebrow
+			. '<h3 class="wp-block-heading hti-article-card__title"><a href="' . esc_url( $permalink ) . '">' . esc_html( $title ) . '</a></h3>'
+			. '</div></div>';
+	}
+	$out .= '</div></div>';
 	return $out;
 }
 
