@@ -65,6 +65,9 @@ class Generator {
 			return $post_id;
 		}
 
+		// Featured image: best-effort, never blocks the article.
+		Featured_Image::maybe_generate( $post_id, $data, $group, $lang );
+
 		Groups::set_status( $group_id, 'generated' );
 		Items::update_status( array_map( static fn( $item ) => (int) $item->id, $items ), 'used' );
 		self::bump_daily();
@@ -104,6 +107,7 @@ class Generator {
 		$post_id = (int) $post_id;
 
 		update_post_meta( $post_id, 'rssai_group_id', (int) $group->id );
+		update_post_meta( $post_id, 'rssai_lang', $lang );
 		update_post_meta( $post_id, 'rssai_sources', array_values( (array) ( $data['sources'] ?? array() ) ) );
 		update_post_meta( $post_id, 'rssai_model', (string) Settings::get( 'gemini_model', '' ) );
 		update_post_meta( $post_id, 'rssai_generated_at', current_time( 'mysql' ) );
