@@ -441,6 +441,30 @@
 	border-radius: 12px;
 }
 
+/* --- Email my result (inline form on the result page) --- */
+.hti-email-result {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	width: 100%;
+	margin-top: 1rem;
+}
+.hti-email-result__input {
+	flex: 1 1 14rem;
+	min-width: 0;
+	padding: 0.6rem 0.85rem;
+	border: 1px solid var( --hti-border );
+	border-radius: 10px;
+	font: inherit;
+}
+.hti-email-result__status {
+	flex-basis: 100%;
+	margin: 0.25rem 0 0;
+	font-size: 0.875rem;
+	color: var( --hti-muted );
+}
+
 /* --- Account: save flow + dashboard --- */
 .hti-save {
 	margin-top: 1.5rem;

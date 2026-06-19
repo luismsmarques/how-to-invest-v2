@@ -163,6 +163,75 @@ class Emails {
 		return '<tr><td style="padding:' . esc_attr( $pad ) . ';' . $align . '">' . $html . '</td></tr>';
 	}
 
+	/* ---------- investor-profile email (template 07) ---------- */
+
+	/**
+	 * Render the investor-profile result email.
+	 *
+	 * @param string                                $locale     'en' or 'pt'.
+	 * @param string                                $label      Archetype label.
+	 * @param array<int,array{class:string,pct:int}> $allocation Allocation slices.
+	 * @param string                                $cta_url    "Explore" CTA URL.
+	 */
+	public static function profile_email( string $locale, string $label, array $allocation, string $cta_url ): string {
+		$pt = 'pt' === $locale;
+
+		$class_names = $pt
+			? array(
+				'global_equity' => 'Ações globais',
+				'bonds'         => 'Obrigações',
+				'cash'          => 'Liquidez',
+				'reits_alt'     => 'Imobiliário e alternativos',
+				'crypto'        => 'Cripto',
+			)
+			: array(
+				'global_equity' => 'Global equities',
+				'bonds'         => 'Bonds',
+				'cash'          => 'Cash',
+				'reits_alt'     => 'Real estate & alternatives',
+				'crypto'        => 'Crypto',
+			);
+
+		$rows = '';
+		foreach ( $allocation as $slice ) {
+			$key = (string) ( $slice['class'] ?? '' );
+			$pct = (int) ( $slice['pct'] ?? 0 );
+			if ( '' === $key ) {
+				continue;
+			}
+			$rows .= '<tr>'
+				. '<td style="padding:11px 0;border-bottom:1px solid #EEEAF4;font:600 14px Arial,sans-serif;color:#1E2147;">' . esc_html( $class_names[ $key ] ?? $key ) . '</td>'
+				. '<td style="padding:11px 0;border-bottom:1px solid #EEEAF4;text-align:right;font:700 14px Arial,sans-serif;color:#5A3FD6;">' . $pct . '%</td>'
+				. '</tr>';
+		}
+		$alloc_table = '<table role="presentation" width="100%" style="border-collapse:collapse;"><tbody>' . $rows . '</tbody></table>';
+
+		$eyebrow  = $pt ? 'Questionário concluído' : 'Questionnaire complete';
+		$heading  = $pt ? 'O teu perfil de investidor' : 'Your investor profile';
+		$intro    = $pt ? 'Com base nas tuas respostas, o teu perfil é:' : 'Based on your answers, your profile is:';
+		$badge     = '<div style="display:inline-block;background:#EFEBFF;border-radius:999px;padding:12px 30px;font:800 22px Poppins,Arial,sans-serif;color:#5A3FD6;letter-spacing:-.01em;">' . esc_html( $label ) . '</div>';
+		$alloc_lbl = $pt ? 'Exemplo de estrutura por classe de ativos' : 'Example structure by asset class';
+		$disc      = $pt
+			? 'Exemplo ilustrativo e apenas por classe de ativos — nunca produtos específicos. Não é aconselhamento financeiro.'
+			: 'Illustrative example, by asset class only — never specific products. This is not financial advice.';
+		$btn       = $pt ? 'Explorar a plataforma' : 'Explore the platform';
+
+		$inner = self::row(
+			self::eyebrow( $eyebrow, '#7C5CFC' ) . self::h1( $heading ) . self::lead( esc_html( $intro ) ),
+			'42px 48px 0',
+			true
+		)
+			. self::row( $badge, '22px 48px 0', true )
+			. self::row(
+				'<div style="font:700 11.5px Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#8A8676;margin-bottom:6px;">' . esc_html( $alloc_lbl ) . '</div>' . $alloc_table,
+				'30px 48px 0'
+			)
+			. self::row( self::note( $disc ), '22px 48px 4px', true )
+			. self::row( self::button( $btn, $cta_url ), '24px 48px 46px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
 	/* ---------- WordPress password reset (template 05) ---------- */
 
 	/**
