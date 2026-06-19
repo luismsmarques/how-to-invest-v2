@@ -449,6 +449,11 @@
 			"name": "page-no-sidebar",
 			"title": "Page (full width, no header padding)",
 			"postTypes": [ "page" ]
+		},
+		{
+			"name": "page-about",
+			"title": "About page",
+			"postTypes": [ "page" ]
 		}
 	]
 }
