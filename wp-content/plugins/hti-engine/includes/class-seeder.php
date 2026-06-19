@@ -334,15 +334,16 @@ class Seeder {
 		pll_save_post_translations( array( $en => $en_id, $pt => $pt_id ) );
 
 		update_post_meta( $pt_id, self::SEED_FLAG, VERSION );
+		self::write_seo_meta( $pt_id, (array) ( $pt_data['seo'] ?? array() ) );
 
 		// Mirror the privacy-page option for the PT page (GDPR alignment).
 		if ( 'page' === $type && 'privacy-policy' === $entry['slug'] && function_exists( 'pll_set_post_language' ) ) {
 			update_option( 'wp_page_for_privacy_policy_' . $pt, $pt_id );
 		}
 
-		// File PT glossary posts under the PT "Asset classes" topic.
+		// File PT glossary posts under the PT topic matching the EN entry.
 		if ( 'glossary' === $type ) {
-			$pt_term = get_term_by( 'slug', 'asset-classes-' . $pt, 'glossary_topic' );
+			$pt_term = get_term_by( 'slug', ( $entry['topic'] ?? 'asset-classes' ) . '-' . $pt, 'glossary_topic' );
 			if ( $pt_term instanceof \WP_Term ) {
 				wp_set_object_terms( $pt_id, array( (int) $pt_term->term_id ), 'glossary_topic', true );
 			}
@@ -422,31 +423,49 @@ class Seeder {
 			return;
 		}
 
-		$en_term = get_term_by( 'slug', 'asset-classes', 'glossary_topic' );
-		if ( ! $en_term instanceof \WP_Term ) {
-			return;
-		}
+		foreach ( self::glossary_topics() as $slug => $names ) {
+			$en_term = get_term_by( 'slug', $slug, 'glossary_topic' );
+			if ( ! $en_term instanceof \WP_Term ) {
+				continue;
+			}
 
-		if ( ! pll_get_term_language( $en_term->term_id ) ) {
-			pll_set_term_language( (int) $en_term->term_id, $en );
-		}
+			if ( ! pll_get_term_language( $en_term->term_id ) ) {
+				pll_set_term_language( (int) $en_term->term_id, $en );
+			}
 
-		if ( pll_get_term( (int) $en_term->term_id, $pt ) ) {
-			return;
-		}
+			if ( pll_get_term( (int) $en_term->term_id, $pt ) ) {
+				continue;
+			}
 
-		$res = wp_insert_term(
-			'Classes de ativos',
-			'glossary_topic',
-			array( 'slug' => 'asset-classes-' . $pt )
-		);
-		if ( is_wp_error( $res ) ) {
-			return;
-		}
+			$res = wp_insert_term( $names['pt'], 'glossary_topic', array( 'slug' => $slug . '-' . $pt ) );
+			if ( is_wp_error( $res ) ) {
+				continue;
+			}
 
-		$pt_term_id = (int) $res['term_id'];
-		pll_set_term_language( $pt_term_id, $pt );
-		pll_save_term_translations( array( $en => (int) $en_term->term_id, $pt => $pt_term_id ) );
+			$pt_term_id = (int) $res['term_id'];
+			pll_set_term_language( $pt_term_id, $pt );
+			pll_save_term_translations( array( $en => (int) $en_term->term_id, $pt => $pt_term_id ) );
+		}
+	}
+
+	/**
+	 * Store SEO title/description as meta for both RankMath and Yoast, so
+	 * whichever plugin is active picks them up. No-op when empty.
+	 *
+	 * @param int                                $id  Post id.
+	 * @param array{title?:string,desc?:string}  $seo SEO fields.
+	 */
+	private static function write_seo_meta( int $id, array $seo ): void {
+		$title = trim( (string) ( $seo['title'] ?? '' ) );
+		$desc  = trim( (string) ( $seo['desc'] ?? '' ) );
+		if ( '' !== $title ) {
+			update_post_meta( $id, 'rank_math_title', $title );
+			update_post_meta( $id, '_yoast_wpseo_title', $title );
+		}
+		if ( '' !== $desc ) {
+			update_post_meta( $id, 'rank_math_description', $desc );
+			update_post_meta( $id, '_yoast_wpseo_metadesc', $desc );
+		}
 	}
 
 	/**
@@ -476,6 +495,7 @@ class Seeder {
 		}
 
 		update_post_meta( $id, self::SEED_FLAG, VERSION );
+		self::write_seo_meta( (int) $id, (array) ( $entry['seo'] ?? array() ) );
 
 		$pt = $entry['pt'] ?? array();
 		if ( ! empty( $pt['title'] ) ) {
@@ -492,35 +512,50 @@ class Seeder {
 	}
 
 	/**
-	 * Ensure the "Asset classes" glossary topic exists and assign every
-	 * seeded glossary term to it. Idempotent (append, never replaces).
+	 * Ensure the glossary topics exist and assign each seeded term to its topic
+	 * ("Asset classes" or "Key terms"). Idempotent (append, never replaces).
 	 */
 	private static function assign_glossary_topic(): void {
 		if ( ! taxonomy_exists( 'glossary_topic' ) ) {
 			return;
 		}
 
-		$existing = term_exists( 'asset-classes', 'glossary_topic' );
-		if ( ! $existing ) {
-			$existing = wp_insert_term(
-				'Asset classes',
-				'glossary_topic',
-				array( 'slug' => 'asset-classes' )
-			);
+		$term_id = array();
+		foreach ( self::glossary_topics() as $slug => $names ) {
+			$existing = term_exists( $slug, 'glossary_topic' );
+			if ( ! $existing ) {
+				$existing = wp_insert_term( $names['en'], 'glossary_topic', array( 'slug' => $slug ) );
+			}
+			if ( is_wp_error( $existing ) ) {
+				continue;
+			}
+			$tid = (int) ( is_array( $existing ) ? $existing['term_id'] : $existing );
+			update_term_meta( $tid, 'hti_name_pt', $names['pt'] );
+			$term_id[ $slug ] = $tid;
 		}
-		if ( is_wp_error( $existing ) ) {
-			return;
-		}
-
-		$term_id = (int) ( is_array( $existing ) ? $existing['term_id'] : $existing );
-		update_term_meta( $term_id, 'hti_name_pt', 'Classes de ativos' );
 
 		foreach ( self::glossary_terms() as $entry ) {
+			$topic = $entry['topic'] ?? 'asset-classes';
+			if ( ! isset( $term_id[ $topic ] ) ) {
+				continue;
+			}
 			$post = get_page_by_path( $entry['slug'], OBJECT, 'glossary' );
 			if ( $post instanceof \WP_Post ) {
-				wp_set_object_terms( $post->ID, array( $term_id ), 'glossary_topic', true );
+				wp_set_object_terms( $post->ID, array( $term_id[ $topic ] ), 'glossary_topic', true );
 			}
 		}
+	}
+
+	/**
+	 * Glossary topic slugs → bilingual names.
+	 *
+	 * @return array<string,array{en:string,pt:string}>
+	 */
+	private static function glossary_topics(): array {
+		return array(
+			'asset-classes' => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
+			'key-terms'     => array( 'en' => 'Key terms', 'pt' => 'Conceitos-chave' ),
+		);
 	}
 
 	/**
@@ -529,7 +564,7 @@ class Seeder {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public static function glossary_terms(): array {
-		return array(
+		$terms = array(
 			array(
 				'slug'    => 'global-equities',
 				'title'   => 'Global equities',
@@ -583,6 +618,538 @@ class Seeder {
 					'title'   => 'Cripto',
 					'excerpt' => 'Categoria jovem e muito volátil — sempre apenas uma fatia muito pequena e opcional.',
 					'content' => self::paragraph( 'A cripto é uma categoria jovem e muito volátil — pode subir e descer bruscamente em curtos períodos. Se aparecer num exemplo, é apenas como uma fatia muito pequena e opcional, e só para perfis com horizonte longo e uma base financeira sólida.' ),
+				),
+			),
+		);
+
+		return array_merge( $terms, self::glossary_key_terms() );
+	}
+
+	/**
+	 * Glossary A–Z: key financial terms (EN+PT) with SEO title/description.
+	 * Filed under the "Key terms" topic. Invariant-safe: definitions only,
+	 * no named instruments to buy/sell, no advice.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function glossary_key_terms(): array {
+		return array(
+			array(
+				'slug'    => 'stock',
+				'topic'   => 'key-terms',
+				'title'   => 'Stock',
+				'excerpt' => 'A fraction of a company\'s social capital. The buyer becomes a shareholder or partner in it.',
+				'content' => self::paragraph( 'A fraction of a company\'s social capital. The buyer becomes a shareholder or partner in it.' ),
+				'seo'     => array( 'title' => 'What is a Stock? A Complete Financial Guide', 'desc' => 'Discover what a stock is, how the stock market works, and how to start investing in shares today. Essential financial literacy guide.' ),
+				'pt'      => array(
+					'title'   => 'Ação',
+					'excerpt' => 'Fração do capital social de uma empresa. Quem a compra torna-se acionista ou sócio da mesma.',
+					'content' => self::paragraph( 'Fração do capital social de uma empresa. Quem a compra torna-se acionista ou sócio da mesma.' ),
+					'seo'     => array( 'title' => 'O Que é uma Ação Financeira? Guia Completo', 'desc' => 'Descubra o que é uma ação, como funciona o mercado de ações e como se tornar acionista de grandes empresas. Guia essencial de literacia...' ),
+				),
+			),
+			array(
+				'slug'    => 'leverage',
+				'topic'   => 'key-terms',
+				'title'   => 'Leverage',
+				'excerpt' => 'The use of borrowed capital (debt) to increase the potential return of an investment.',
+				'content' => self::paragraph( 'The use of borrowed capital (debt) to increase the potential return of an investment.' ),
+				'seo'     => array( 'title' => 'Financial Leverage: What It Is and How It Works', 'desc' => 'Understand financial leverage, its risks, and how investors use borrowed money to maximize potential returns in the market.' ),
+				'pt'      => array(
+					'title'   => 'Alavancagem',
+					'excerpt' => 'Uso de dívida (capital emprestado) para aumentar o retorno potencial de um investimento.',
+					'content' => self::paragraph( 'Uso de dívida (capital emprestado) para aumentar o retorno potencial de um investimento.' ),
+					'seo'     => array( 'title' => 'Alavancagem Financeira: O Que É e Como Funciona?', 'desc' => 'Entenda o conceito de alavancagem financeira, os seus riscos e como os investidores usam capital emprestado para maximizar os retornos.' ),
+				),
+			),
+			array(
+				'slug'    => 'asset',
+				'topic'   => 'key-terms',
+				'title'   => 'Asset',
+				'excerpt' => 'A resource with economic value that an individual or corporation owns with the expectation that it will provide a future benefit.',
+				'content' => self::paragraph( 'A resource with economic value that an individual or corporation owns with the expectation that it will provide a future benefit.' ),
+				'seo'     => array( 'title' => 'What Are Financial Assets? Types and Examples', 'desc' => 'Learn the definition of a financial asset, the different asset classes, and how to build a profitable and diversified investment portfo...' ),
+				'pt'      => array(
+					'title'   => 'Ativo',
+					'excerpt' => 'Bem ou direito que possui valor económico e pode ser convertido em dinheiro.',
+					'content' => self::paragraph( 'Bem ou direito que possui valor económico e pode ser convertido em dinheiro.' ),
+					'seo'     => array( 'title' => 'O Que São Ativos Financeiros? Tipos e Exemplos', 'desc' => 'Aprenda o que é um ativo no mundo financeiro, os diferentes tipos de ativos e como criar um portfólio rentável e diversificado.' ),
+				),
+			),
+			array(
+				'slug'    => 'bear-market',
+				'topic'   => 'key-terms',
+				'title'   => 'Bear Market',
+				'excerpt' => 'A prolonged period of declining market prices, typically characterized by pessimism and significant asset devaluation.',
+				'content' => self::paragraph( 'A prolonged period of declining market prices, typically characterized by pessimism and significant asset devaluation.' ),
+				'seo'     => array( 'title' => 'Bear Market Explained: How to Invest During a Downturn', 'desc' => 'Learn what a bear market is, what causes it, and discover the best strategies to protect your wealth during a financial crisis.' ),
+				'pt'      => array(
+					'title'   => 'Bear Market',
+					'excerpt' => 'Mercado em queda prolongada, geralmente caracterizado por pessimismo e forte desvalorização dos ativos.',
+					'content' => self::paragraph( 'Mercado em queda prolongada, geralmente caracterizado por pessimismo e forte desvalorização dos ativos.' ),
+					'seo'     => array( 'title' => 'Bear Market: Como Investir num Mercado em Queda?', 'desc' => 'Saiba o que significa Bear Market, as suas causas e conheça as melhores estratégias para proteger o seu dinheiro durante crises finance...' ),
+				),
+			),
+			array(
+				'slug'    => 'bull-market',
+				'topic'   => 'key-terms',
+				'title'   => 'Bull Market',
+				'excerpt' => 'A prolonged period of rising market prices, characterized by optimism and constant asset appreciation.',
+				'content' => self::paragraph( 'A prolonged period of rising market prices, characterized by optimism and constant asset appreciation.' ),
+				'seo'     => array( 'title' => 'Bull Market: What It Is and How to Maximize Profits', 'desc' => 'What is a bull market? Understand this phase of financial optimism and learn how to maximize your gains during an extended market rally.' ),
+				'pt'      => array(
+					'title'   => 'Bull Market',
+					'excerpt' => 'Mercado em alta prolongada, caracterizado por otimismo e valorização constante dos ativos.',
+					'content' => self::paragraph( 'Mercado em alta prolongada, caracterizado por otimismo e valorização constante dos ativos.' ),
+					'seo'     => array( 'title' => 'Bull Market: O Que É e Como Aproveitar a Alta?', 'desc' => 'O que é um Bull Market? Entenda este conceito de otimismo financeiro e saiba como maximizar os seus lucros num mercado em alta.' ),
+				),
+			),
+			array(
+				'slug'    => 'benchmark',
+				'topic'   => 'key-terms',
+				'title'   => 'Benchmark',
+				'excerpt' => 'A standard or index against which the performance of an asset or investment fund can be measured.',
+				'content' => self::paragraph( 'A standard or index against which the performance of an asset or investment fund can be measured.' ),
+				'seo'     => array( 'title' => 'What is a Financial Benchmark in Investing?', 'desc' => 'Discover what a financial benchmark is and how to use it to accurately evaluate the performance of your investments and mutual funds.' ),
+				'pt'      => array(
+					'title'   => 'Benchmark',
+					'excerpt' => 'Índice de referência utilizado para avaliar o desempenho de um ativo ou fundo de investimento.',
+					'content' => self::paragraph( 'Índice de referência utilizado para avaliar o desempenho de um ativo ou fundo de investimento.' ),
+					'seo'     => array( 'title' => 'O Que é um Benchmark nos Investimentos?', 'desc' => 'Descubra o que é um benchmark financeiro e como utilizá-lo para avaliar corretamente a rentabilidade dos seus investimentos e fundos.' ),
+				),
+			),
+			array(
+				'slug'    => 'market-capitalization',
+				'topic'   => 'key-terms',
+				'title'   => 'Market Capitalization',
+				'excerpt' => 'The total market value of a company\'s outstanding shares of stock.',
+				'content' => self::paragraph( 'The total market value of a company\'s outstanding shares of stock.' ),
+				'seo'     => array( 'title' => 'Market Capitalization: The Ultimate Guide', 'desc' => 'Learn what market cap is, how to calculate it, and why it\'s a crucial indicator for evaluating stocks and companies.' ),
+				'pt'      => array(
+					'title'   => 'Capitalização de Mercado',
+					'excerpt' => 'Valor total das ações de uma empresa negociadas no mercado.',
+					'content' => self::paragraph( 'Valor total das ações de uma empresa negociadas no mercado.' ),
+					'seo'     => array( 'title' => 'Capitalização de Mercado: O Guia Definitivo', 'desc' => 'Aprenda o que é o Market Cap, como calcular a capitalização de mercado e por que é um indicador crucial para escolher ações.' ),
+				),
+			),
+			array(
+				'slug'    => 'commodities',
+				'topic'   => 'key-terms',
+				'title'   => 'Commodities',
+				'excerpt' => 'Basic raw materials (e.g., gold, oil, wheat) standardized and traded on the global financial market.',
+				'content' => self::paragraph( 'Basic raw materials (e.g., gold, oil, wheat) standardized and traded on the global financial market.' ),
+				'seo'     => array( 'title' => 'What Are Commodities and How to Invest in Them?', 'desc' => 'Understand the commodities market. Learn about tradable raw materials and how to invest in gold, oil, and agricultural products.' ),
+				'pt'      => array(
+					'title'   => 'Commodities',
+					'excerpt' => 'Matérias-primas básicas (ex: ouro, petróleo, trigo) padronizadas e negociadas no mercado financeiro global.',
+					'content' => self::paragraph( 'Matérias-primas básicas (ex: ouro, petróleo, trigo) padronizadas e negociadas no mercado financeiro global.' ),
+					'seo'     => array( 'title' => 'O Que São Commodities e Como Investir?', 'desc' => 'Entenda o mercado de commodities. Saiba o que são matérias-primas transacionáveis e como investir em ouro, petróleo e produtos agrícola...' ),
+				),
+			),
+			array(
+				'slug'    => 'dividend',
+				'topic'   => 'key-terms',
+				'title'   => 'Dividend',
+				'excerpt' => 'A portion of a company\'s net earnings distributed to its shareholders.',
+				'content' => self::paragraph( 'A portion of a company\'s net earnings distributed to its shareholders.' ),
+				'seo'     => array( 'title' => 'What Are Dividends? How to Earn Passive Income', 'desc' => 'Find out how dividends work, payout dates, and how to build a portfolio focused on generating monthly passive income.' ),
+				'pt'      => array(
+					'title'   => 'Dividendo',
+					'excerpt' => 'Parcela dos lucros líquidos de uma empresa que é distribuída aos seus acionistas.',
+					'content' => self::paragraph( 'Parcela dos lucros líquidos de uma empresa que é distribuída aos seus acionistas.' ),
+					'seo'     => array( 'title' => 'O Que São Dividendos? Como Viver de Renda Passiva', 'desc' => 'Descubra como funcionam os dividendos, as datas de pagamento e como construir uma carteira focada em renda passiva mensal.' ),
+				),
+			),
+			array(
+				'slug'    => 'diversification',
+				'topic'   => 'key-terms',
+				'title'   => 'Diversification',
+				'excerpt' => 'A risk management strategy that mixes a wide variety of investments within a portfolio.',
+				'content' => self::paragraph( 'A risk management strategy that mixes a wide variety of investments within a portfolio.' ),
+				'seo'     => array( 'title' => 'Portfolio Diversification: How to Reduce Risk', 'desc' => 'Learn how to diversify your investments. See how spreading your capital across various asset classes can protect your wealth.' ),
+				'pt'      => array(
+					'title'   => 'Diversificação',
+					'excerpt' => 'Estratégia de gestão de risco que consiste em distribuir os investimentos por diferentes tipos de ativos.',
+					'content' => self::paragraph( 'Estratégia de gestão de risco que consiste em distribuir os investimentos por diferentes tipos de ativos.' ),
+					'seo'     => array( 'title' => 'Diversificação de Carteira: Como Reduzir Riscos', 'desc' => 'Aprenda a diversificar os seus investimentos. Veja como distribuir o seu capital por várias classes de ativos para proteger o seu patri...' ),
+				),
+			),
+			array(
+				'slug'    => 'etf',
+				'topic'   => 'key-terms',
+				'title'   => 'ETF',
+				'excerpt' => 'An investment fund traded on stock exchanges, much like stocks.',
+				'content' => self::paragraph( 'An investment fund traded on stock exchanges, much like stocks.' ),
+				'seo'     => array( 'title' => 'What is an ETF? Benefits and How to Start Investing', 'desc' => 'Everything you need to know about ETFs. Discover index funds, their low costs, and how to invest simply and passively.' ),
+				'pt'      => array(
+					'title'   => 'ETF',
+					'excerpt' => 'Fundo de investimento negociado em bolsa como se fosse uma ação.',
+					'content' => self::paragraph( 'Fundo de investimento negociado em bolsa como se fosse uma ação.' ),
+					'seo'     => array( 'title' => 'O Que é um ETF? Vantagens e Como Começar', 'desc' => 'Tudo o que precisa de saber sobre ETFs. Descubra os fundos de índice, os seus baixos custos e como investir de forma simples e passiva.' ),
+				),
+			),
+			array(
+				'slug'    => 'ebitda',
+				'topic'   => 'key-terms',
+				'title'   => 'EBITDA',
+				'excerpt' => 'Earnings Before Interest, Taxes, Depreciation, and Amortization.',
+				'content' => self::paragraph( 'Earnings Before Interest, Taxes, Depreciation, and Amortization.' ),
+				'seo'     => array( 'title' => 'What Does EBITDA Mean in Financial Analysis?', 'desc' => 'Learn how to analyze a company\'s financial health. What EBITDA is, how to calculate it, and its importance in corporate valuation.' ),
+				'pt'      => array(
+					'title'   => 'EBITDA',
+					'excerpt' => 'Lucro antes de juros, impostos, depreciação e amortização.',
+					'content' => self::paragraph( 'Lucro antes de juros, impostos, depreciação e amortização.' ),
+					'seo'     => array( 'title' => 'O Que Significa EBITDA na Análise Financeira?', 'desc' => 'Aprenda a analisar a saúde de uma empresa. O que é o EBITDA, como calculá-lo e a sua importância na avaliação corporativa.' ),
+				),
+			),
+			array(
+				'slug'    => 'cash-flow',
+				'topic'   => 'key-terms',
+				'title'   => 'Cash Flow',
+				'excerpt' => 'The net amount of cash and cash-equivalents being transferred into and out of a business.',
+				'content' => self::paragraph( 'The net amount of cash and cash-equivalents being transferred into and out of a business.' ),
+				'seo'     => array( 'title' => 'Cash Flow: The Engine of Financial Health', 'desc' => 'Understand the importance of Cash Flow. Learn about free cash flow and how to analyze a company\'s actual liquidity.' ),
+				'pt'      => array(
+					'title'   => 'Fluxo de Caixa',
+					'excerpt' => 'Diferença entre as entradas e saídas de dinheiro de uma empresa num determinado período.',
+					'content' => self::paragraph( 'Diferença entre as entradas e saídas de dinheiro de uma empresa num determinado período.' ),
+					'seo'     => array( 'title' => 'Fluxo de Caixa: O Motor da Saúde Financeira', 'desc' => 'Compreenda a importância do Cash Flow. Saiba o que é fluxo de caixa livre e como analisar a liquidez real de uma empresa.' ),
+				),
+			),
+			array(
+				'slug'    => 'investment-fund',
+				'topic'   => 'key-terms',
+				'title'   => 'Investment Fund',
+				'excerpt' => 'A supply of capital belonging to numerous investors used to collectively purchase securities.',
+				'content' => self::paragraph( 'A supply of capital belonging to numerous investors used to collectively purchase securities.' ),
+				'seo'     => array( 'title' => 'Investment Funds: A Beginner\'s Guide', 'desc' => 'Discover what mutual funds are, the associated fees, and how professional managers can grow your savings.' ),
+				'pt'      => array(
+					'title'   => 'Fundo de Investimento',
+					'excerpt' => 'Veículo gerido por profissionais que reúne capital de vários investidores para aplicar numa carteira.',
+					'content' => self::paragraph( 'Veículo gerido por profissionais que reúne capital de vários investidores para aplicar numa carteira.' ),
+					'seo'     => array( 'title' => 'Fundos de Investimento: Guia para Principiantes', 'desc' => 'Descubra o que são fundos de investimento, as taxas envolvidas e como os gestores profissionais podem rentabilizar as suas poupanças.' ),
+				),
+			),
+			array(
+				'slug'    => 'capital-gain',
+				'topic'   => 'key-terms',
+				'title'   => 'Capital Gain',
+				'excerpt' => 'A profit from the sale of property or an investment.',
+				'content' => self::paragraph( 'A profit from the sale of property or an investment.' ),
+				'seo'     => array( 'title' => 'Capital Gains: What They Are and How They Work', 'desc' => 'Understand how capital gains work. Learn how to calculate profits from selling stocks or real estate and the associated tax implications.' ),
+				'pt'      => array(
+					'title'   => 'Ganho de Capital',
+					'excerpt' => 'Lucro obtido com a venda de um ativo financeiro ou imobiliário por um preço superior ao seu custo de aquisição.',
+					'content' => self::paragraph( 'Lucro obtido com a venda de um ativo financeiro ou imobiliário por um preço superior ao seu custo de aquisição.' ),
+					'seo'     => array( 'title' => 'Ganho de Capital: O Que É e Como Funciona?', 'desc' => 'Entenda como funcionam as mais-valias. Saiba como se calcula o ganho de capital na venda de ações ou imóveis e a respetiva tributação....' ),
+				),
+			),
+			array(
+				'slug'    => 'hedge',
+				'topic'   => 'key-terms',
+				'title'   => 'Hedge',
+				'excerpt' => 'An investment made with the intention of reducing the risk of adverse price movements in an asset.',
+				'content' => self::paragraph( 'An investment made with the intention of reducing the risk of adverse price movements in an asset.' ),
+				'seo'     => array( 'title' => 'Hedging: Strategies for Financial Protection', 'desc' => 'What does it mean to hedge? Learn how to protect your investment portfolio against market crashes and high volatility.' ),
+				'pt'      => array(
+					'title'   => 'Hedge',
+					'excerpt' => 'Estratégia de proteção financeira utilizada para reduzir ou anular o risco de flutuações adversas de preços.',
+					'content' => self::paragraph( 'Estratégia de proteção financeira utilizada para reduzir ou anular o risco de flutuações adversas de preços.' ),
+					'seo'     => array( 'title' => 'Hedging: Estratégias de Proteção Financeira', 'desc' => 'O que é fazer um hedge? Aprenda a proteger a sua carteira de investimentos contra quedas de mercado e forte volatilidade.' ),
+				),
+			),
+			array(
+				'slug'    => 'inflation',
+				'topic'   => 'key-terms',
+				'title'   => 'Inflation',
+				'excerpt' => 'The rate at which the general level of prices for goods and services is rising.',
+				'content' => self::paragraph( 'The rate at which the general level of prices for goods and services is rising.' ),
+				'seo'     => array( 'title' => 'What is Inflation and How to Protect Your Money?', 'desc' => 'Everything about inflation: what causes price hikes, its impact on the cost of living, and the best assets to preserve purchasing power.' ),
+				'pt'      => array(
+					'title'   => 'Inflação',
+					'excerpt' => 'Aumento contínuo e generalizado dos preços de bens e serviços na economia.',
+					'content' => self::paragraph( 'Aumento contínuo e generalizado dos preços de bens e serviços na economia.' ),
+					'seo'     => array( 'title' => 'O Que é a Inflação e Como Protege o Seu Dinheiro?', 'desc' => 'Tudo sobre inflação: o que causa o aumento dos preços, o impacto no custo de vida e os melhores ativos para manter o poder de compra.' ),
+				),
+			),
+			array(
+				'slug'    => 'ipo',
+				'topic'   => 'key-terms',
+				'title'   => 'IPO',
+				'excerpt' => 'The process of offering shares of a private corporation to the public in a new stock issuance.',
+				'content' => self::paragraph( 'The process of offering shares of a private corporation to the public in a new stock issuance.' ),
+				'seo'     => array( 'title' => 'What is an IPO? How to Participate in Public Offerings', 'desc' => 'Learn what an Initial Public Offering is, its benefits for companies, and how retail investors can buy into them.' ),
+				'pt'      => array(
+					'title'   => 'IPO',
+					'excerpt' => 'Primeira vez que uma empresa de capital fechado vende as suas ações ao público geral numa bolsa.',
+					'content' => self::paragraph( 'Primeira vez que uma empresa de capital fechado vende as suas ações ao público geral numa bolsa.' ),
+					'seo'     => array( 'title' => 'O Que é um IPO? Como Participar Numa Oferta Pública', 'desc' => 'Saiba o que é uma Oferta Pública Inicial (IPO), as suas vantagens para as empresas e como os investidores de retalho podem participar.' ),
+				),
+			),
+			array(
+				'slug'    => 'compound-interest',
+				'topic'   => 'key-terms',
+				'title'   => 'Compound Interest',
+				'excerpt' => 'Interest calculated on the initial principal, which also includes all of the accumulated interest from previous periods.',
+				'content' => self::paragraph( 'Interest calculated on the initial principal, which also includes all of the accumulated interest from previous periods.' ),
+				'seo'     => array( 'title' => 'The Power of Compound Interest in Investing', 'desc' => 'The 8th wonder of the world: understand the math behind compound interest and how time can multiply your wealth exponentially.' ),
+				'pt'      => array(
+					'title'   => 'Juros Compostos',
+					'excerpt' => 'Juros calculados sobre o capital inicial e também sobre os juros acumulados de períodos anteriores.',
+					'content' => self::paragraph( 'Juros calculados sobre o capital inicial e também sobre os juros acumulados de períodos anteriores.' ),
+					'seo'     => array( 'title' => 'O Poder dos Juros Compostos nos Investimentos', 'desc' => 'A 8ª maravilha do mundo: entenda a matemática dos juros compostos e como o tempo pode multiplicar o seu património de forma exponencial...' ),
+				),
+			),
+			array(
+				'slug'    => 'kyc',
+				'topic'   => 'key-terms',
+				'title'   => 'KYC',
+				'excerpt' => 'The standard practice of verifying the identity of clients to assess potential risks of illegal intentions.',
+				'content' => self::paragraph( 'The standard practice of verifying the identity of clients to assess potential risks of illegal intentions.' ),
+				'seo'     => array( 'title' => 'What is KYC? Its Importance in Financial Security', 'desc' => 'Understand the Know Your Customer (KYC) process. Discover why banks and brokers require ID verification to prevent fraud and money laun...' ),
+				'pt'      => array(
+					'title'   => 'KYC',
+					'excerpt' => 'Processo regulatório para verificar a identidade, perfil e legalidade dos clientes.',
+					'content' => self::paragraph( 'Processo regulatório para verificar a identidade, perfil e legalidade dos clientes.' ),
+					'seo'     => array( 'title' => 'O Que é KYC? A Importância na Segurança Financeira', 'desc' => 'Entenda o processo Know Your Customer (KYC). Descubra por que bancos e corretoras exigem documentos de identificação para prevenção de ...' ),
+				),
+			),
+			array(
+				'slug'    => 'margin',
+				'topic'   => 'key-terms',
+				'title'   => 'Margin',
+				'excerpt' => 'The money borrowed from a brokerage firm to purchase an investment.',
+				'content' => self::paragraph( 'The money borrowed from a brokerage firm to purchase an investment.' ),
+				'seo'     => array( 'title' => 'Margin Trading: Risks and Benefits Explained', 'desc' => 'What is margin trading? Discover the dangers and advantages of borrowing money from a brokerage to invest in the stock market.' ),
+				'pt'      => array(
+					'title'   => 'Margem',
+					'excerpt' => 'Dinheiro exigido por uma corretora como garantia para operações alavancadas.',
+					'content' => self::paragraph( 'Dinheiro exigido por uma corretora como garantia para operações alavancadas.' ),
+					'seo'     => array( 'title' => 'Trading com Margem: Riscos e Benefícios', 'desc' => 'O que é operar com margem? Conheça os perigos e as vantagens de pedir dinheiro emprestado à corretora para investir na bolsa.' ),
+				),
+			),
+			array(
+				'slug'    => 'nasdaq',
+				'topic'   => 'key-terms',
+				'title'   => 'NASDAQ',
+				'excerpt' => 'An American stock exchange based in New York City, heavily weighted towards information technology companies.',
+				'content' => self::paragraph( 'An American stock exchange based in New York City, heavily weighted towards information technology companies.' ),
+				'seo'     => array( 'title' => 'What is the NASDAQ Exchange? Top Companies', 'desc' => 'A guide to the NASDAQ tech index. Discover how the electronic stock exchange works and the largest tech companies listed in the US.' ),
+				'pt'      => array(
+					'title'   => 'NASDAQ',
+					'excerpt' => 'Bolsa de valores dos EUA conhecida por listar as principais empresas tecnológicas globais.',
+					'content' => self::paragraph( 'Bolsa de valores dos EUA conhecida por listar as principais empresas tecnológicas globais.' ),
+					'seo'     => array( 'title' => 'O Que é a Bolsa NASDAQ? Principais Empresas', 'desc' => 'Guia sobre o índice tecnológico NASDAQ. Descubra como funciona a bolsa eletrónica e as maiores empresas de tech listadas nos EUA.' ),
+				),
+			),
+			array(
+				'slug'    => 'option',
+				'topic'   => 'key-terms',
+				'title'   => 'Option',
+				'excerpt' => 'A financial derivative that represents a contract sold by one party to another, offering the right to buy or sell a security.',
+				'content' => self::paragraph( 'A financial derivative that represents a contract sold by one party to another, offering the right to buy or sell a security.' ),
+				'seo'     => array( 'title' => 'What Are Financial Options? Calls and Puts', 'desc' => 'Intro to derivatives: learn how Call and Put options work and how to use them effectively for speculation or portfolio hedging.' ),
+				'pt'      => array(
+					'title'   => 'Opção',
+					'excerpt' => 'Contrato derivativo que dá o direito de comprar ou vender um ativo a um preço fixo numa data futura.',
+					'content' => self::paragraph( 'Contrato derivativo que dá o direito de comprar ou vender um ativo a um preço fixo numa data futura.' ),
+					'seo'     => array( 'title' => 'O Que São Opções Financeiras? Calls e Puts', 'desc' => 'Introdução aos derivativos: aprenda como funcionam as opções de compra (Call) e de venda (Put) e como usá-las para especulação ou prote...' ),
+				),
+			),
+			array(
+				'slug'    => 'pe-ratio',
+				'topic'   => 'key-terms',
+				'title'   => 'P/E Ratio',
+				'excerpt' => 'The ratio for valuing a company that measures its current share price relative to its per-share earnings.',
+				'content' => self::paragraph( 'The ratio for valuing a company that measures its current share price relative to its per-share earnings.' ),
+				'seo'     => array( 'title' => 'What is the P/E Ratio? Valuing Stock Prices', 'desc' => 'A practical guide to the Price-to-Earnings Ratio. Learn how investors use P/E to determine if a stock is overvalued or undervalued.' ),
+				'pt'      => array(
+					'title'   => 'P/E Ratio',
+					'excerpt' => 'Rácio Preço/Lucro. Mede a relação entre o preço atual da ação e os lucros.',
+					'content' => self::paragraph( 'Rácio Preço/Lucro. Mede a relação entre o preço atual da ação e os lucros.' ),
+					'seo'     => array( 'title' => 'O Que é o P/E Ratio? Avaliando o Preço das Ações', 'desc' => 'Guia prático sobre o Rácio Preço/Lucro. Saiba como os investidores usam o P/E para determinar se uma ação está cara ou barata.' ),
+				),
+			),
+			array(
+				'slug'    => 'portfolio',
+				'topic'   => 'key-terms',
+				'title'   => 'Portfolio',
+				'excerpt' => 'A collection of financial investments like stocks, bonds, commodities, cash, and cash equivalents.',
+				'content' => self::paragraph( 'A collection of financial investments like stocks, bonds, commodities, cash, and cash equivalents.' ),
+				'seo'     => array( 'title' => 'What is an Investment Portfolio?', 'desc' => 'How to build and manage your financial portfolio. Asset allocation and portfolio management tips to achieve financial independence.' ),
+				'pt'      => array(
+					'title'   => 'Portfólio',
+					'excerpt' => 'O conjunto de investimentos detidos por um indivíduo ou instituição.',
+					'content' => self::paragraph( 'O conjunto de investimentos detidos por um indivíduo ou instituição.' ),
+					'seo'     => array( 'title' => 'O Que é um Portfólio de Investimentos?', 'desc' => 'Como construir e gerir o seu portfólio financeiro. Dicas de alocação de ativos e gestão de carteiras para atingir a independência finan...' ),
+				),
+			),
+			array(
+				'slug'    => 'quantitative-easing',
+				'topic'   => 'key-terms',
+				'title'   => 'Quantitative Easing',
+				'excerpt' => 'A monetary policy whereby a central bank purchases predetermined amounts of government bonds or other financial assets.',
+				'content' => self::paragraph( 'A monetary policy whereby a central bank purchases predetermined amounts of government bonds or other financial assets.' ),
+				'seo'     => array( 'title' => 'Quantitative Easing (QE) Explained Simply', 'desc' => 'Understand how central banks inject liquidity into the economy through Quantitative Easing (QE) and its impact on global financial mark...' ),
+				'pt'      => array(
+					'title'   => 'Quantitative Easing',
+					'excerpt' => 'Política monetária em que um banco central cria dinheiro para comprar ativos financeiros.',
+					'content' => self::paragraph( 'Política monetária em que um banco central cria dinheiro para comprar ativos financeiros.' ),
+					'seo'     => array( 'title' => 'Quantitative Easing (Flexibilização Quantitativa) Explicado', 'desc' => 'Entenda como os bancos centrais injetam liquidez na economia através do Quantitative Easing (QE) e o impacto nos mercados globais.' ),
+				),
+			),
+			array(
+				'slug'    => 'fixed-income',
+				'topic'   => 'key-terms',
+				'title'   => 'Fixed Income',
+				'excerpt' => 'A type of investment in which real return rates or periodic income is received at regular intervals at reasonably predictable levels.',
+				'content' => self::paragraph( 'A type of investment in which real return rates or periodic income is received at regular intervals at reasonably predictable levels.' ),
+				'seo'     => array( 'title' => 'What is Fixed Income and Why You Should Invest?', 'desc' => 'A guide for conservative investors: what fixed income is, how to guarantee predictable returns, and shield yourself from stock market v...' ),
+				'pt'      => array(
+					'title'   => 'Renda Fixa',
+					'excerpt' => 'Investimento onde a rentabilidade é previamente conhecida no momento da aplicação.',
+					'content' => self::paragraph( 'Investimento onde a rentabilidade é previamente conhecida no momento da aplicação.' ),
+					'seo'     => array( 'title' => 'O Que é a Renda Fixa e Porque Deve Investir?', 'desc' => 'Guia para investidores conservadores: o que é a renda fixa, como garantir retornos previsíveis e proteger-se da volatilidade da bolsa.' ),
+				),
+			),
+			array(
+				'slug'    => 'variable-income',
+				'topic'   => 'key-terms',
+				'title'   => 'Variable Income',
+				'excerpt' => 'Investments where the future return cannot be guaranteed or anticipated, such as stocks, being subject to market fluctuations.',
+				'content' => self::paragraph( 'Investments where the future return cannot be guaranteed or anticipated, such as stocks, being subject to market fluctuations.' ),
+				'seo'     => array( 'title' => 'Variable Income: The Complete Guide for Beginners', 'desc' => 'Learn what variable income is, the main assets (stocks, REITs), and how to invest safely to maximize long-term returns.' ),
+				'pt'      => array(
+					'title'   => 'Renda Variável',
+					'excerpt' => 'Investimentos cuja rentabilidade futura não pode ser garantida nem antecipada, como ações, estando sujeitos às oscilações do mercado.',
+					'content' => self::paragraph( 'Investimentos cuja rentabilidade futura não pode ser garantida nem antecipada, como ações, estando sujeitos às oscilações do mercado.' ),
+					'seo'     => array( 'title' => 'Renda Variável: O Guia Completo para Iniciantes', 'desc' => 'Saiba o que é renda variável, quais os principais ativos (ações, FIIs) e como investir com segurança para maximizar retornos a longo prazo.' ),
+				),
+			),
+			array(
+				'slug'    => 'short-selling',
+				'topic'   => 'key-terms',
+				'title'   => 'Short Selling',
+				'excerpt' => 'A financial strategy where one bets on the decline of an asset\'s price.',
+				'content' => self::paragraph( 'A financial strategy where one bets on the decline of an asset\'s price.' ),
+				'seo'     => array( 'title' => 'Short Selling: How to Profit from Falling Stocks', 'desc' => 'Understand short selling. Discover the risks and opportunities of betting against the market.' ),
+				'pt'      => array(
+					'title'   => 'Short Selling',
+					'excerpt' => 'Estratégia financeira onde se aposta na queda do preço de um ativo.',
+					'content' => self::paragraph( 'Estratégia financeira onde se aposta na queda do preço de um ativo.' ),
+					'seo'     => array( 'title' => 'Short Selling: Como Lucrar com a Qeda das Ações', 'desc' => 'Entenda a venda a descoberto (short selling). Descubra os riscos e as oportunidades de apostar contra o mercado.' ),
+				),
+			),
+			array(
+				'slug'    => 'spread',
+				'topic'   => 'key-terms',
+				'title'   => 'Spread',
+				'excerpt' => 'The mathematical difference between the price at which someone is willing to buy an asset (bid) and sell (ask).',
+				'content' => self::paragraph( 'The mathematical difference between the price at which someone is willing to buy an asset (bid) and sell (ask).' ),
+				'seo'     => array( 'title' => 'What is Spread and How Does It Affect Investments?', 'desc' => 'Discover what the bid-ask spread is and how brokers profit from your trades.' ),
+				'pt'      => array(
+					'title'   => 'Spread',
+					'excerpt' => 'A diferença matemática entre o preço pelo qual alguém está disposto a comprar um ativo (bid) e o preço pelo qual alguém está disposto a vender (ask).',
+					'content' => self::paragraph( 'A diferença matemática entre o preço pelo qual alguém está disposto a comprar um ativo (bid) e o preço pelo qual alguém está disposto a vender (ask).' ),
+					'seo'     => array( 'title' => 'O Que é o Spread e Como Afeta os Investimentos?', 'desc' => 'Descubra o que é o spread bid-ask e como as corretoras lucram com as suas transações.' ),
+				),
+			),
+			array(
+				'slug'    => 'interest-rate',
+				'topic'   => 'key-terms',
+				'title'   => 'Interest Rate',
+				'excerpt' => 'The cost of borrowing money or the return on investment for lending money.',
+				'content' => self::paragraph( 'The cost of borrowing money or the return on investment for lending money.' ),
+				'seo'     => array( 'title' => 'What Are Interest Rates and How They Impact the Economy', 'desc' => 'Understand interest rates, how they affect inflation, credit, and the value of your investments.' ),
+				'pt'      => array(
+					'title'   => 'Taxa de Juro',
+					'excerpt' => 'O custo do dinheiro. Representa a taxa cobrada pelo empréstimo de um capital, ou a remuneração paga pela aplicação de fundos.',
+					'content' => self::paragraph( 'O custo do dinheiro. Representa a taxa cobrada pelo empréstimo de um capital, ou a remuneração paga pela aplicação de fundos.' ),
+					'seo'     => array( 'title' => 'O Que São Taxas de Juro e Como Impactam a Economia', 'desc' => 'Entenda a taxa de juro, como afeta a inflação, o crédito e o valor dos seus investimentos.' ),
+				),
+			),
+			array(
+				'slug'    => 'underwriting',
+				'topic'   => 'key-terms',
+				'title'   => 'Underwriting',
+				'excerpt' => 'The process through which financial institutions evaluate and assume the risk of issuing new securities.',
+				'content' => self::paragraph( 'The process through which financial institutions evaluate and assume the risk of issuing new securities.' ),
+				'seo'     => array( 'title' => 'Underwriting: The Role of Investment Banks', 'desc' => 'What is underwriting? Learn how banks ensure the success of an IPO by assuming market risks.' ),
+				'pt'      => array(
+					'title'   => 'Underwriting',
+					'excerpt' => 'Processo através do qual instituições financeiras avaliam e assumem o risco na emissão de novos títulos.',
+					'content' => self::paragraph( 'Processo através do qual instituições financeiras avaliam e assumem o risco na emissão de novos títulos.' ),
+					'seo'     => array( 'title' => 'Underwriting: O Papel dos Bancos de Investimento', 'desc' => 'O que é o underwriting? Saiba como os bancos garantem o sucesso de um IPO assumindo os riscos de mercado.' ),
+				),
+			),
+			array(
+				'slug'    => 'volatility',
+				'topic'   => 'key-terms',
+				'title'   => 'Volatility',
+				'excerpt' => 'A statistical measure of the dispersion of returns for a given security or market index.',
+				'content' => self::paragraph( 'A statistical measure of the dispersion of returns for a given security or market index.' ),
+				'seo'     => array( 'title' => 'Volatility: What It Is and How to Deal With It?', 'desc' => 'Learn what volatility is in financial markets and how to use it to your advantage when investing.' ),
+				'pt'      => array(
+					'title'   => 'Volatilidade',
+					'excerpt' => 'Medida estatística que indica a dispersão dos retornos de um ativo, refletindo a frequência e a intensidade com que o seu preço varia ao longo do tempo.',
+					'content' => self::paragraph( 'Medida estatística que indica a dispersão dos retornos de um ativo, refletindo a frequência e a intensidade com que o seu preço varia ao longo do tempo.' ),
+					'seo'     => array( 'title' => 'Volatilidade: O Que É e Como Lidar com Ela?', 'desc' => 'Aprenda o que é a volatilidade no mercado financeiro e como usá-la a seu favor na hora de investir.' ),
+				),
+			),
+			array(
+				'slug'    => 'value-investing',
+				'topic'   => 'key-terms',
+				'title'   => 'Value Investing',
+				'excerpt' => 'An investment strategy that involves picking stocks that appear to be trading for less than their intrinsic or book value.',
+				'content' => self::paragraph( 'An investment strategy that involves picking stocks that appear to be trading for less than their intrinsic or book value.' ),
+				'seo'     => array( 'title' => 'Value Investing: Warren Buffett\'s Strategy', 'desc' => 'What is Value Investing? Learn how to identify undervalued stocks and invest like the top billionaires.' ),
+				'pt'      => array(
+					'title'   => 'Value Investing',
+					'excerpt' => 'Estratégia de investimento que consiste em identificar e comprar ações que o mercado está a subvalorizar.',
+					'content' => self::paragraph( 'Estratégia de investimento que consiste em identificar e comprar ações que o mercado está a subvalorizar.' ),
+					'seo'     => array( 'title' => 'Value Investing: A Estratégia de Warren Buffett', 'desc' => 'O que é o Value Investing? Aprenda a identificar ações subvalorizadas e invista como os grandes bilionários.' ),
+				),
+			),
+			array(
+				'slug'    => 'wall-street',
+				'topic'   => 'key-terms',
+				'title'   => 'Wall Street',
+				'excerpt' => 'A street in lower Manhattan that is the original home of the New York Stock Exchange and the historic headquarters of the largest U.S. brokerages.',
+				'content' => self::paragraph( 'A street in lower Manhattan that is the original home of the New York Stock Exchange and the historic headquarters of the largest U.S. brokerages.' ),
+				'seo'     => array( 'title' => 'Wall Street: The World\'s Financial Hub', 'desc' => 'Learn about the history of Wall Street, the New York Stock Exchange, and its influence on the global economy.' ),
+				'pt'      => array(
+					'title'   => 'Wall Street',
+					'excerpt' => 'Rua localizada em Manhattan, Nova Iorque, que abriga a principal Bolsa de Valores (NYSE).',
+					'content' => self::paragraph( 'Rua localizada em Manhattan, Nova Iorque, que abriga a principal Bolsa de Valores (NYSE).' ),
+					'seo'     => array( 'title' => 'Wall Street: O Centro Financeiro Mundial', 'desc' => 'Conheça a história de Wall Street, a bolsa de Nova Iorque e a sua influência na economia global.' ),
+				),
+			),
+			array(
+				'slug'    => 'yield',
+				'topic'   => 'key-terms',
+				'title'   => 'Yield',
+				'excerpt' => 'The income returned on an investment, such as the interest received from holding a particular security.',
+				'content' => self::paragraph( 'The income returned on an investment, such as the interest received from holding a particular security.' ),
+				'seo'     => array( 'title' => 'What is Yield in Investing?', 'desc' => 'Discover the meaning of yield and how to calculate the percentage return on your financial assets.' ),
+				'pt'      => array(
+					'title'   => 'Yield',
+					'excerpt' => 'A taxa de rendimento gerada e devolvida por um investimento ao longo do tempo.',
+					'content' => self::paragraph( 'A taxa de rendimento gerada e devolvida por um investimento ao longo do tempo.' ),
+					'seo'     => array( 'title' => 'O Que é o Yield (Rendimento) nos Investimentos?', 'desc' => 'Descubra o significado de yield e como calcular o retorno percentual dos seus ativos financeiros.' ),
+				),
+			),
+			array(
+				'slug'    => 'zero-coupon-bond',
+				'topic'   => 'key-terms',
+				'title'   => 'Zero-Coupon Bond',
+				'excerpt' => 'A debt security that doesn\'t pay interest but is traded at a deep discount, rendering profit at maturity.',
+				'content' => self::paragraph( 'A debt security that doesn\'t pay interest but is traded at a deep discount, rendering profit at maturity.' ),
+				'seo'     => array( 'title' => 'Zero-Coupon Bonds: What Are They?', 'desc' => 'What are Zero-Coupon Bonds? Learn how they work and why you should consider them for long-term investing.' ),
+				'pt'      => array(
+					'title'   => 'Zero-Coupon Bond',
+					'excerpt' => 'Tipo de obrigação de dívida que não paga juros periodicamente, vendida com desconto face ao valor nominal.',
+					'content' => self::paragraph( 'Tipo de obrigação de dívida que não paga juros periodicamente, vendida com desconto face ao valor nominal.' ),
+					'seo'     => array( 'title' => 'Obrigações de Cupão Zero: O Que São?', 'desc' => 'O que são Zero-Coupon Bonds? Saiba como funcionam estas obrigações e por que investir para o longo prazo.' ),
 				),
 			),
 		);
