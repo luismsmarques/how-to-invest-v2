@@ -3,7 +3,7 @@
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Ingests RSS feeds into drafts, clusters similar items, and (on demand) researches facts with Gemini grounding to generate SEO/Google-News articles for review. Feeds the hti-engine "news" content type.
- * Version:           0.6.0
+ * Version:           1.0.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '0.6.0';
+const VERSION = '1.0.0';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );
@@ -35,6 +35,7 @@ define( 'RSSAI_URL', plugin_dir_url( __FILE__ ) );
 const CRON_HOOK = 'rssai_fetch_cron';
 
 require_once RSSAI_PATH . 'includes/class-activator.php';
+require_once RSSAI_PATH . 'includes/class-logger.php';
 require_once RSSAI_PATH . 'includes/class-settings.php';
 require_once RSSAI_PATH . 'includes/class-feeds.php';
 require_once RSSAI_PATH . 'includes/class-items.php';
@@ -49,6 +50,7 @@ require_once RSSAI_PATH . 'includes/class-admin.php';
 require_once RSSAI_PATH . 'includes/class-drafts.php';
 require_once RSSAI_PATH . 'includes/class-groups-page.php';
 require_once RSSAI_PATH . 'includes/class-review.php';
+require_once RSSAI_PATH . 'includes/class-logs-page.php';
 
 register_activation_hook( __FILE__, array( Activator::class, 'activate' ) );
 register_deactivation_hook( __FILE__, array( Activator::class, 'deactivate' ) );
@@ -74,6 +76,7 @@ Admin::init();
 Drafts::init();
 Groups_Page::init();
 Review::init();
+Logs_Page::init();
 Fetcher::init();
 
 /**
