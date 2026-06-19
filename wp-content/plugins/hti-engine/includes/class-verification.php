@@ -26,6 +26,7 @@ class Verification {
 	private const META_TOKEN   = 'hti_verify_token';
 	private const META_EXPIRES = 'hti_verify_expires';
 	private const META_PENDING = 'hti_pending_claim';
+	private const META_LOCALE  = 'hti_verify_locale';
 	private const TTL          = DAY_IN_SECONDS; // 24 hours.
 
 	/**
@@ -153,6 +154,11 @@ class Verification {
 				delete_user_meta( $uid, self::META_PENDING );
 			}
 
+			// Welcome aboard (template 01), in the locale they registered in.
+			$locale = 'pt' === get_user_meta( $uid, self::META_LOCALE, true ) ? 'pt' : 'en';
+			delete_user_meta( $uid, self::META_LOCALE );
+			self::send_welcome( $user, $locale );
+
 			wp_safe_redirect( add_query_arg( 'verified', '1', $dest ) );
 			exit;
 		}
@@ -196,20 +202,87 @@ class Verification {
 	 * @param string   $locale Locale.
 	 */
 	private static function send( \WP_User $user, string $token, string $locale ): void {
-		$pt   = 'pt' === $locale;
-		$url  = self::verify_url( $user->ID, $token );
-		$site = get_bloginfo( 'name' );
+		// Remember the locale so the post-verification welcome email matches.
+		update_user_meta( $user->ID, self::META_LOCALE, 'pt' === $locale ? 'pt' : 'en' );
+
+		$pt  = 'pt' === $locale;
+		$url = self::verify_url( $user->ID, $token );
 
 		$subject = $pt ? 'Confirma o teu email — HowToInvest' : 'Confirm your email — HowToInvest';
+		$heading = $pt ? 'Confirma o teu email' : 'Confirm your email';
 		$intro   = $pt
-			? 'Para guardar o teu perfil e criar a conta, confirma o teu email clicando no botão abaixo. O link é válido por 24 horas.'
-			: 'To save your profile and finish creating your account, confirm your email using the button below. The link is valid for 24 hours.';
+			? 'Falta só um passo para ativar a tua conta e guardar o teu perfil. Confirma o teu email com o botão abaixo. O link é válido por 24 horas.'
+			: 'Just one step left to activate your account and save your profile. Confirm your email with the button below. The link is valid for 24 hours.';
 		$btn     = $pt ? 'Confirmar email' : 'Confirm email';
 		$ignore  = $pt
 			? 'Se não foste tu a pedir isto, podes ignorar esta mensagem em segurança.'
 			: "If you didn't request this, you can safely ignore this message.";
 
-		self::deliver( $user->user_email, $subject, $intro, $btn, $url, $ignore, $site );
+		$inner = Emails::row(
+			Emails::icon_circle( '&#10003;', '#EAF6F0', '#147A57' ) . Emails::h1( $heading ) . Emails::lead( esc_html( $intro ) ),
+			'44px 48px 0',
+			true
+		)
+			. Emails::row( Emails::button( $btn, $url ), '28px 48px 6px', true )
+			. Emails::row( Emails::url_fallback( $url, $locale ), '18px 48px 8px' )
+			. Emails::row( Emails::note( $ignore ), '18px 48px 44px', true );
+
+		Mailer::send( $user->user_email, $subject, Emails::layout( $locale, $inner, $heading ) );
+	}
+
+	/**
+	 * Send the welcome email (template 01) after a successful verification.
+	 *
+	 * @param \WP_User $user   User.
+	 * @param string   $locale Locale.
+	 */
+	private static function send_welcome( \WP_User $user, string $locale ): void {
+		$pt   = 'pt' === $locale;
+		$name = $user->display_name ? $user->display_name : explode( '@', $user->user_email )[0];
+		$quiz = home_url( $pt ? '/pt/questionario-perfil-investidor/' : '/investor-profile-quiz/' );
+
+		$eyebrow = $pt ? 'Bem-vindo a bordo' : 'Welcome aboard';
+		$heading = $pt ? 'A tua conta está pronta.' : 'Your account is ready.';
+		$intro   = $pt
+			? 'Em poucos minutos defines o teu perfil de investidor e começas a aprender com conteúdo financeiro claro e sem jargão.'
+			: 'In a few minutes you can set your investor profile and start learning with clear, jargon-free financial content.';
+		$btn     = $pt ? 'Definir o meu perfil' : 'Set my profile';
+
+		$steps = $pt
+			? array(
+				array( 'Define o teu perfil de investidor', 'Um questionário rápido para personalizar tudo.' ),
+				array( 'Explora as classes de ativos', 'Percebe como se constrói uma carteira, por classe.' ),
+				array( 'Aprende ao teu ritmo', 'Artigos e um glossário claros, quando precisares.' ),
+			)
+			: array(
+				array( 'Set your investor profile', 'A quick questionnaire so we can tailor things.' ),
+				array( 'Explore the asset classes', 'See how a portfolio is built, by asset class.' ),
+				array( 'Learn at your own pace', 'Clear articles and a glossary, whenever you need.' ),
+			);
+
+		$steps_html = '<table role="presentation" width="100%" style="border-collapse:collapse;"><tbody>';
+		$i          = 1;
+		foreach ( $steps as $step ) {
+			$steps_html .= '<tr>'
+				. '<td style="padding:0 0 16px;vertical-align:top;width:46px;"><div style="width:34px;height:34px;border-radius:999px;background:#EFEBFF;font:700 16px Poppins,Arial,sans-serif;color:#7C5CFC;text-align:center;line-height:34px;">' . $i . '</div></td>'
+				. '<td style="padding:0 0 16px 4px;vertical-align:top;">'
+				. '<div style="font:700 15.5px Arial,sans-serif;color:#1E2147;">' . esc_html( $step[0] ) . '</div>'
+				. '<div style="font:400 14px Arial,sans-serif;color:#7A7488;line-height:1.5;">' . esc_html( $step[1] ) . '</div>'
+				. '</td></tr>';
+			++$i;
+		}
+		$steps_html .= '</tbody></table>';
+
+		$inner = Emails::row(
+			Emails::eyebrow( $eyebrow ) . '<h1 style="margin:0;font:800 32px Poppins,Arial,sans-serif;line-height:1.1;letter-spacing:-.02em;color:#1E2147;">' . esc_html( $heading ) . '</h1>'
+				. '<p style="margin:16px 0 0;font:400 16px Arial,sans-serif;color:#5C5670;line-height:1.6;">' . esc_html( $intro ) . '</p>',
+			'46px 48px 8px'
+		)
+			. Emails::row( $steps_html, '24px 48px 6px' )
+			. Emails::row( Emails::button( $btn, $quiz ), '20px 48px 48px' );
+
+		$subject = $pt ? 'Bem-vindo à HowToInvest' : 'Welcome to HowToInvest';
+		Mailer::send( $user->user_email, $subject, Emails::layout( $locale, $inner, $intro ) );
 	}
 
 	/**
@@ -220,38 +293,23 @@ class Verification {
 	 */
 	private static function send_existing_notice( \WP_User $user, string $locale ): void {
 		$pt      = 'pt' === $locale;
-		$site    = get_bloginfo( 'name' );
 		$subject = $pt ? 'Já tens uma conta — HowToInvest' : 'You already have an account — HowToInvest';
+		$heading = $pt ? 'Já tens uma conta' : 'You already have an account';
 		$intro   = $pt
 			? 'Alguém (talvez tu) tentou criar uma conta com este email, mas já existe uma. Podes entrar com a tua palavra-passe ou recuperá-la na página de login.'
 			: 'Someone (maybe you) tried to create an account with this email, but one already exists. You can sign in with your password, or reset it on the login page.';
-		$btn     = $pt ? 'Ir para o login' : 'Go to sign in';
-		$ignore  = $pt ? 'Se não foste tu, podes ignorar esta mensagem.' : "If this wasn't you, you can ignore this message.";
+		$btn    = $pt ? 'Ir para o login' : 'Go to sign in';
+		$ignore = $pt ? 'Se não foste tu, podes ignorar esta mensagem.' : "If this wasn't you, you can ignore this message.";
 
-		self::deliver( $user->user_email, $subject, $intro, $btn, wp_login_url(), $ignore, $site );
-	}
+		$inner = Emails::row(
+			Emails::icon_circle( '&#128274;', '#EFEBFF', '#7C5CFC' ) . Emails::h1( $heading ) . Emails::lead( esc_html( $intro ) ),
+			'44px 48px 0',
+			true
+		)
+			. Emails::row( Emails::button( $btn, wp_login_url() ), '28px 48px 6px', true )
+			. Emails::row( Emails::note( $ignore ), '18px 48px 44px', true );
 
-	/**
-	 * Render a simple HTML email and hand it to the mailer.
-	 *
-	 * @param string $to      Recipient.
-	 * @param string $subject Subject.
-	 * @param string $intro   Intro paragraph.
-	 * @param string $btn     Button label.
-	 * @param string $url     Button URL.
-	 * @param string $ignore  "ignore" footnote.
-	 * @param string $site    Site name.
-	 */
-	private static function deliver( string $to, string $subject, string $intro, string $btn, string $url, string $ignore, string $site ): void {
-		$html = '<div style="font-family:system-ui,Arial,sans-serif;max-width:480px;margin:0 auto;color:#14241d;line-height:1.6">'
-			. '<h2 style="color:#1b7a5a">' . esc_html( $site ) . '</h2>'
-			. '<p>' . esc_html( $intro ) . '</p>'
-			. '<p><a href="' . esc_url( $url ) . '" style="display:inline-block;background:#1b7a5a;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">' . esc_html( $btn ) . '</a></p>'
-			. '<p style="font-size:13px;color:#5b6b64;word-break:break-all">' . esc_url( $url ) . '</p>'
-			. '<p style="font-size:13px;color:#5b6b64">' . esc_html( $ignore ) . '</p>'
-			. '</div>';
-
-		Mailer::send( $to, $subject, $html );
+		Mailer::send( $user->user_email, $subject, Emails::layout( $locale, $inner, $heading ) );
 	}
 
 	/* ---------- cleanup ---------- */
