@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.9';
+const VERSION = '0.7.0';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -64,15 +64,15 @@ function enqueue_scripts(): void {
 		array( 'strategy' => 'defer', 'in_footer' => true )
 	);
 
-	if ( is_post_type_archive( 'glossary' ) ) {
-		wp_enqueue_script(
-			'howtoinvest-glossary',
-			get_stylesheet_directory_uri() . '/assets/js/glossary.js',
-			array(),
-			VERSION,
-			array( 'strategy' => 'defer', 'in_footer' => true )
-		);
-	}
+	// Registered (not enqueued) so the glossary-index block can enqueue it on
+	// render — works wherever the block appears, not only on the CPT archive.
+	wp_register_script(
+		'howtoinvest-glossary',
+		get_stylesheet_directory_uri() . '/assets/js/glossary.js',
+		array(),
+		VERSION,
+		array( 'strategy' => 'defer', 'in_footer' => true )
+	);
 }
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
 
@@ -796,6 +796,9 @@ function render_glossary_index(): string {
 	if ( ! $query->have_posts() ) {
 		return '';
 	}
+
+	// Load the A–Z filter behaviour wherever this block renders.
+	wp_enqueue_script( 'howtoinvest-glossary' );
 
 	$rows    = '';
 	$letters = array();
