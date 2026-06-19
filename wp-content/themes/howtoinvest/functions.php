@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.0';
+const VERSION = '0.6.1';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -137,6 +137,8 @@ function strings(): array {
 		// Glossary index.
 		'gloss_all'        => array( 'en' => 'All', 'pt' => 'Todos' ),
 		'gloss_filter'     => array( 'en' => 'Filter by letter', 'pt' => 'Filtrar por letra' ),
+		// Language switcher.
+		'lang_switch'      => array( 'en' => 'Language', 'pt' => 'Idioma' ),
 	);
 }
 
@@ -177,8 +179,53 @@ function register_dynamic_blocks(): void {
 			'render_callback' => __NAMESPACE__ . '\\render_header_cta',
 		)
 	);
+	register_block_type(
+		'howtoinvest/lang-switcher',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Language switcher', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_lang_switcher',
+		)
+	);
 }
 add_action( 'init', __NAMESPACE__ . '\\register_dynamic_blocks' );
+
+/**
+ * Language switcher (Polylang) — links to the current page's translations.
+ * Renders nothing when Polylang is inactive or only one language exists.
+ */
+function render_lang_switcher(): string {
+	if ( ! function_exists( 'pll_the_languages' ) ) {
+		return '';
+	}
+
+	$langs = pll_the_languages(
+		array(
+			'raw'                    => 1,
+			'hide_if_no_translation' => 0,
+			'display_names_as'       => 'slug',
+		)
+	);
+	if ( ! is_array( $langs ) || count( $langs ) < 2 ) {
+		return '';
+	}
+
+	$items = '';
+	foreach ( $langs as $lang ) {
+		$label   = strtoupper( (string) ( $lang['slug'] ?? '' ) );
+		$current = ! empty( $lang['current_lang'] );
+		$class   = 'hti-lang__item' . ( $current ? ' is-current' : '' );
+
+		if ( $current ) {
+			$items .= '<span class="' . esc_attr( $class ) . '" aria-current="true">' . esc_html( $label ) . '</span>';
+		} else {
+			$items .= '<a class="' . esc_attr( $class ) . '" href="' . esc_url( (string) ( $lang['url'] ?? '#' ) ) . '" hreflang="' . esc_attr( (string) ( $lang['slug'] ?? '' ) ) . '" rel="alternate">' . esc_html( $label ) . '</a>';
+		}
+	}
+
+	return '<nav class="hti-lang" aria-label="' . esc_attr( t( 'lang_switch' ) ) . '">' . $items . '</nav>';
+}
 
 /**
  * Language-aware header CTA button.
