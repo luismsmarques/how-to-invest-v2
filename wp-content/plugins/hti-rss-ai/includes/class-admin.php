@@ -23,6 +23,28 @@ class Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 11 );
 		add_action( 'admin_post_rssai_save_feed', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_post_rssai_delete_feed', array( __CLASS__, 'handle_delete' ) );
+		add_action( 'admin_post_rssai_seed_feeds', array( __CLASS__, 'handle_seed_feeds' ) );
+	}
+
+	/**
+	 * Add the curated starter feeds (idempotent), then return to the list.
+	 */
+	public static function handle_seed_feeds(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Not allowed.', 'hti-rss-ai' ) );
+		}
+		check_admin_referer( 'rssai_seed_feeds' );
+		$added = Feeds::seed_suggested();
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'        => self::PAGE,
+					'rssai_added' => (int) $added,
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		exit;
 	}
 
 	/**
@@ -62,11 +84,16 @@ class Admin {
 	 */
 	private static function render_list(): void {
 		require_once RSSAI_PATH . 'includes/class-feeds-list-table.php';
-		$add = add_query_arg( array( 'action' => 'add' ), admin_url( 'admin.php?page=' . self::PAGE ) );
+		$add  = add_query_arg( array( 'action' => 'add' ), admin_url( 'admin.php?page=' . self::PAGE ) );
+		$seed = wp_nonce_url(
+			admin_url( 'admin-post.php?action=rssai_seed_feeds' ),
+			'rssai_seed_feeds'
+		);
 		?>
 		<div class="wrap">
 			<h1 class="wp-heading-inline"><?php echo esc_html__( 'Feeds', 'hti-rss-ai' ); ?></h1>
 			<a href="<?php echo esc_url( $add ); ?>" class="page-title-action"><?php echo esc_html__( 'Add new', 'hti-rss-ai' ); ?></a>
+			<a href="<?php echo esc_url( $seed ); ?>" class="page-title-action"><?php echo esc_html__( 'Add suggested feeds', 'hti-rss-ai' ); ?></a>
 			<hr class="wp-header-end" />
 			<?php
 			self::maybe_notice();
@@ -208,6 +235,20 @@ class Admin {
 	 * Show a success notice after an action.
 	 */
 	private static function maybe_notice(): void {
+		if ( isset( $_GET['rssai_added'] ) ) {
+			$added = absint( wp_unslash( $_GET['rssai_added'] ) );
+			printf(
+				'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %d: number of feeds added. */
+						_n( '%d suggested feed added. Test each before relying on it.', '%d suggested feeds added. Test each before relying on them.', $added, 'hti-rss-ai' ),
+						$added
+					)
+				)
+			);
+			return;
+		}
 		$notice = isset( $_GET['rssai_notice'] ) ? sanitize_key( wp_unslash( $_GET['rssai_notice'] ) ) : '';
 		$map    = array(
 			'created' => __( 'Feed added.', 'hti-rss-ai' ),
