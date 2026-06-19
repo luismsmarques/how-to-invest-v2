@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -51,6 +51,20 @@ function enqueue_styles(): void {
 	);
 }
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_styles' );
+
+/**
+ * Enqueue the small mobile-header menu toggle (deferred, footer).
+ */
+function enqueue_scripts(): void {
+	wp_enqueue_script(
+		'howtoinvest-header',
+		get_stylesheet_directory_uri() . '/assets/js/header.js',
+		array(),
+		VERSION,
+		array( 'strategy' => 'defer', 'in_footer' => true )
+	);
+}
+add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
 
 /**
  * Register a dedicated block-pattern category for our reusable patterns.
