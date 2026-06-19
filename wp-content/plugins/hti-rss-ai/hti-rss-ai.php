@@ -3,7 +3,7 @@
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Ingests RSS feeds into drafts, clusters similar items, and (on demand) researches facts with Gemini grounding to generate SEO/Google-News articles for review. Feeds the hti-engine "news" content type.
- * Version:           0.1.0
+ * Version:           0.2.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );
@@ -36,6 +36,8 @@ const CRON_HOOK = 'rssai_fetch_cron';
 
 require_once RSSAI_PATH . 'includes/class-activator.php';
 require_once RSSAI_PATH . 'includes/class-settings.php';
+require_once RSSAI_PATH . 'includes/class-feeds.php';
+require_once RSSAI_PATH . 'includes/class-admin.php';
 
 register_activation_hook( __FILE__, array( Activator::class, 'activate' ) );
 register_deactivation_hook( __FILE__, array( Activator::class, 'deactivate' ) );
@@ -54,9 +56,10 @@ add_action( 'init', __NAMESPACE__ . '\\load_textdomain', 0 );
 add_action( 'plugins_loaded', array( Activator::class, 'maybe_upgrade' ) );
 
 /**
- * Admin settings page (Definições do plugin).
+ * Admin settings page + feeds management.
  */
 Settings::init();
+Admin::init();
 
 /**
  * Warn (without breaking) when hti-engine's "news" type is missing — the
