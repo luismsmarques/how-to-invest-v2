@@ -234,6 +234,19 @@ class Seeder {
 			'what-is-diversification'          => 'o-que-e-diversificacao',
 			'risk-and-reward-explained'        => 'risco-e-retorno-explicado',
 			'what-is-esg-investing'            => 'o-que-e-investimento-esg',
+			// Explainer hubs + pages.
+			'investor-types'                   => 'perfis-de-investidor',
+			'asset-classes'                    => 'classes-de-ativos',
+			'preservation-investor'            => 'investidor-de-preservacao',
+			'balanced-income-investor'         => 'investidor-de-rendimento-equilibrado',
+			'balanced-investor'                => 'investidor-equilibrado',
+			'growth-investor'                  => 'investidor-de-crescimento',
+			'aggressive-growth-investor'       => 'investidor-de-crescimento-agressivo',
+			'global-equities-explained'        => 'acoes-globais-explicadas',
+			'bonds-explained'                  => 'obrigacoes-explicadas',
+			'cash-explained'                   => 'liquidez-explicada',
+			'reits-alternatives-explained'     => 'imobiliario-e-alternativos-explicados',
+			'crypto-explained'                 => 'cripto-explicada',
 		);
 		return $map[ $en_slug ] ?? sanitize_title( $pt_title );
 	}
@@ -347,7 +360,7 @@ class Seeder {
 			return $content;
 		}
 
-		return (string) preg_replace_callback(
+		$content = (string) preg_replace_callback(
 			'#https?://[^"\'\s]*?/investing-glossary/([a-z0-9-]+)/#i',
 			static function ( array $m ) use ( $pt ): string {
 				$glossary = get_page_by_path( $m[1], OBJECT, 'glossary' );
@@ -366,6 +379,26 @@ class Seeder {
 			},
 			$content
 		);
+
+		// Hub → explainer-child links: swap the EN page URL for its PT permalink.
+		// The children are seeded before the hubs, so their PT posts already
+		// exist by the time a hub's PT content is localized.
+		foreach ( self::explainer_page_slugs() as $slug ) {
+			$en_page = get_page_by_path( $slug, OBJECT, 'page' );
+			if ( ! $en_page instanceof \WP_Post ) {
+				continue;
+			}
+			$pt_id = pll_get_post( (int) $en_page->ID, $pt );
+			if ( ! $pt_id ) {
+				continue;
+			}
+			$pt_url = get_permalink( (int) $pt_id );
+			if ( $pt_url ) {
+				$content = str_replace( home_url( '/' . $slug . '/' ), $pt_url, $content );
+			}
+		}
+
+		return $content;
 	}
 
 	/**
@@ -557,7 +590,7 @@ class Seeder {
 	public static function pages(): array {
 		$legal_notice = self::notice( 'Placeholder content — replace with legally reviewed text before launch.' );
 
-		return array(
+		$pages = array(
 			array(
 				'slug'    => 'investor-profile-quiz',
 				'title'   => 'Discover your investor profile',
@@ -632,6 +665,393 @@ class Seeder {
 					'content' => self::notice( 'Conteúdo provisório — substituir por texto com revisão jurídica antes do lançamento.' ) . self::paragraph( 'Estes termos regem a utilização da HowToInvest. A plataforma é educativa e não presta aconselhamento financeiro, de investimento, fiscal ou jurídico.' ),
 				),
 			),
+		);
+
+		// Children (archetypes + asset classes) come before the hubs so the
+		// hub→child links can be localized once the PT children exist.
+		return array_merge( $pages, self::explainer_pages() );
+	}
+
+	/**
+	 * Explainer pages: 5 archetype profiles + 5 asset-class deep-dives + 2 hubs.
+	 * Allocation tables are built live from Config so the numbers never drift.
+	 * Invariant-safe: by asset class, illustrative language, no named instruments.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function explainer_pages(): array {
+		$pages = array();
+
+		// --- Archetype profile pages (children). ---------------------------
+		foreach ( self::archetype_meta() as $id => $m ) {
+			$alloc_intro_en = 'Here is the kind of structure a profile like this might explore — by asset class, never specific products. The ranges are illustrative, not a recommendation.';
+			$alloc_intro_pt = 'Aqui está o tipo de estrutura que um perfil como este poderia estudar — por classe de ativos, nunca por produtos específicos. Os intervalos são ilustrativos, não uma recomendação.';
+			$disc_en        = 'Illustrative example, by asset class only. Not a recommendation — investing involves risk, including loss of capital.';
+			$disc_pt        = 'Exemplo ilustrativo, apenas por classe de ativos. Não é uma recomendação — investir envolve risco, incluindo a perda de capital.';
+
+			$pages[] = array(
+				'slug'    => $m['slug'],
+				'title'   => $m['title_en'],
+				'excerpt' => $m['intro_en'],
+				'content' => self::paragraph( $m['intro_en'] )
+					. self::heading( 'An illustrative allocation' )
+					. self::paragraph( $alloc_intro_en )
+					. self::alloc_table( $id, 'en' )
+					. self::small( $disc_en )
+					. self::heading( 'How the pieces fit' )
+					. self::paragraph( $m['fit_en'] )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => $m['title_pt'],
+					'excerpt' => $m['intro_pt'],
+					'content' => self::paragraph( $m['intro_pt'] )
+						. self::heading( 'Uma alocação ilustrativa' )
+						. self::paragraph( $alloc_intro_pt )
+						. self::alloc_table( $id, 'pt' )
+						. self::small( $disc_pt )
+						. self::heading( 'Como as peças encaixam' )
+						. self::paragraph( $m['fit_pt'] ),
+				),
+			);
+		}
+
+		// --- Asset-class deep-dive pages (children). -----------------------
+		foreach ( self::asset_meta() as $m ) {
+			$pages[] = array(
+				'slug'    => $m['slug'],
+				'title'   => $m['title_en'],
+				'excerpt' => $m['intro_en'],
+				'content' => self::paragraph( $m['intro_en'] )
+					. self::heading( 'Its role in a portfolio' )
+					. self::paragraph( $m['role_en'] )
+					. self::heading( 'Which profiles lean into it' )
+					. self::paragraph( $m['profiles_en'] )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => $m['title_pt'],
+					'excerpt' => $m['intro_pt'],
+					'content' => self::paragraph( $m['intro_pt'] )
+						. self::heading( 'O seu papel numa carteira' )
+						. self::paragraph( $m['role_pt'] )
+						. self::heading( 'Que perfis se apoiam nela' )
+						. self::paragraph( $m['profiles_pt'] ),
+				),
+			);
+		}
+
+		// --- Hub: Investor types. ------------------------------------------
+		$pages[] = array(
+			'slug'    => 'investor-types',
+			'title'   => 'Investor types',
+			'excerpt' => 'Five educational investor profiles, from cautious to adventurous — each shown as an illustrative allocation by asset class.',
+			'content' => self::paragraph( 'Everyone approaches investing a little differently. These five educational profiles describe common starting points — from cautious to adventurous — each shown as an illustrative allocation by asset class. Take the short questionnaire to see which one fits you today.' )
+				. self::bullets(
+					array(
+						array( home_url( '/preservation-investor/' ), 'Preservation', 'protects capital first, with a small growth slice.' ),
+						array( home_url( '/balanced-income-investor/' ), 'Balanced income', 'prudent, but open to some growth over a medium horizon.' ),
+						array( home_url( '/balanced-investor/' ), 'Balanced', 'an even split between growth and stability.' ),
+						array( home_url( '/growth-investor/' ), 'Growth', 'lets global equities do the heavy lifting.' ),
+						array( home_url( '/aggressive-growth-investor/' ), 'Aggressive growth', 'almost entirely growth assets, for very long horizons.' ),
+					)
+				)
+				. self::cta(),
+			'pt'      => array(
+				'title'   => 'Perfis de investidor',
+				'excerpt' => 'Cinco perfis de investidor educativos, do mais prudente ao mais arrojado — cada um mostrado como uma alocação ilustrativa por classe de ativos.',
+				'content' => self::paragraph( 'Cada pessoa aborda o investimento de forma um pouco diferente. Estes cinco perfis educativos descrevem pontos de partida comuns — do mais prudente ao mais arrojado — cada um mostrado como uma alocação ilustrativa por classe de ativos. Faz o questionário curto para veres qual encaixa em ti hoje.' )
+					. self::bullets(
+						array(
+							array( home_url( '/preservation-investor/' ), 'Preservação', 'protege o capital primeiro, com uma pequena fatia de crescimento.' ),
+							array( home_url( '/balanced-income-investor/' ), 'Rendimento equilibrado', 'prudente, mas aberto a algum crescimento num horizonte médio.' ),
+							array( home_url( '/balanced-investor/' ), 'Equilibrado', 'uma divisão equilibrada entre crescimento e estabilidade.' ),
+							array( home_url( '/growth-investor/' ), 'Crescimento', 'deixa as ações globais fazer o trabalho pesado.' ),
+							array( home_url( '/aggressive-growth-investor/' ), 'Crescimento agressivo', 'quase só ativos de crescimento, para horizontes muito longos.' ),
+						)
+					),
+			),
+		);
+
+		// --- Hub: Asset classes. -------------------------------------------
+		$pages[] = array(
+			'slug'    => 'asset-classes',
+			'title'   => 'Asset classes',
+			'excerpt' => 'The building blocks of any portfolio — global equities, bonds, cash, real estate & alternatives, and crypto — each explained in plain language.',
+			'content' => self::paragraph( 'Portfolios are built from a handful of asset classes, each behaving differently. Understanding them is the first step to understanding any portfolio — including the illustrative ones in your result. Here is what each one does.' )
+				. self::bullets(
+					array(
+						array( home_url( '/global-equities-explained/' ), 'Global equities', 'the growth engine — shares in companies worldwide.' ),
+						array( home_url( '/bonds-explained/' ), 'Bonds', 'loans that pay interest and add stability.' ),
+						array( home_url( '/cash-explained/' ), 'Cash & equivalents', 'money you can reach quickly, for short-term needs.' ),
+						array( home_url( '/reits-alternatives-explained/' ), 'Real estate & alternatives', 'variety that does not always move with shares.' ),
+						array( home_url( '/crypto-explained/' ), 'Crypto', 'a young, very volatile, strictly optional slice.' ),
+					)
+				)
+				. self::cta(),
+			'pt'      => array(
+				'title'   => 'Classes de ativos',
+				'excerpt' => 'Os blocos de construção de qualquer carteira — ações globais, obrigações, liquidez, imobiliário e alternativos, e cripto — cada um explicado em linguagem simples.',
+				'content' => self::paragraph( 'As carteiras constroem-se a partir de um punhado de classes de ativos, cada uma a comportar-se de forma diferente. Compreendê-las é o primeiro passo para compreender qualquer carteira — incluindo as ilustrativas do teu resultado. Aqui está o que cada uma faz.' )
+					. self::bullets(
+						array(
+							array( home_url( '/global-equities-explained/' ), 'Ações globais', 'o motor de crescimento — participações em empresas de todo o mundo.' ),
+							array( home_url( '/bonds-explained/' ), 'Obrigações', 'empréstimos que pagam juros e dão estabilidade.' ),
+							array( home_url( '/cash-explained/' ), 'Liquidez e equivalentes', 'dinheiro a que chegas depressa, para necessidades de curto prazo.' ),
+							array( home_url( '/reits-alternatives-explained/' ), 'Imobiliário e alternativos', 'variedade que nem sempre se move com as ações.' ),
+							array( home_url( '/crypto-explained/' ), 'Cripto', 'uma fatia jovem, muito volátil e estritamente opcional.' ),
+						)
+					),
+			),
+		);
+
+		return $pages;
+	}
+
+	/**
+	 * Per-archetype copy (intro from "why this profile" + a short synthesis).
+	 *
+	 * @return array<int,array<string,string>>
+	 */
+	private static function archetype_meta(): array {
+		return array(
+			1 => array(
+				'slug'     => 'preservation-investor',
+				'title_en' => 'The Preservation investor profile',
+				'title_pt' => 'O perfil de investidor de Preservação',
+				'intro_en' => 'A profile like this usually puts protecting the money first, because it may be needed soon or because big swings feel uncomfortable. That is why an example for this profile leans heavily on steadier asset classes and keeps growth assets small.',
+				'intro_pt' => 'Um perfil como este costuma pôr a proteção do dinheiro em primeiro lugar, porque pode vir a ser preciso em breve ou porque grandes oscilações causam desconforto. Por isso um exemplo para este perfil apoia-se sobretudo em classes mais estáveis e mantém pequena a fatia de crescimento.',
+				'fit_en'   => 'Stability leads here: a large share in bonds and cash cushions the ups and downs, while a small slice of global equities leaves room to grow. Crypto is left out for this profile.',
+				'fit_pt'   => 'A estabilidade lidera aqui: uma fatia grande em obrigações e liquidez amortece os altos e baixos, enquanto uma pequena fatia de ações globais deixa espaço para crescer. A cripto fica de fora neste perfil.',
+			),
+			2 => array(
+				'slug'     => 'balanced-income-investor',
+				'title_en' => 'The Balanced income investor profile',
+				'title_pt' => 'O perfil de investidor de Rendimento equilibrado',
+				'intro_en' => 'This profile leans toward caution but is open to some growth over a medium horizon. An example here tends to balance steadier classes with a meaningful, but not dominant, slice of shares.',
+				'intro_pt' => 'Este perfil inclina-se para a prudência, mas está aberto a algum crescimento num horizonte médio. Um exemplo aqui costuma equilibrar classes mais estáveis com uma fatia de ações relevante, mas não dominante.',
+				'fit_en'   => 'Bonds still anchor the example, but global equities take a larger role than in a preservation profile, with real estate and alternatives adding a little variety.',
+				'fit_pt'   => 'As obrigações continuam a ancorar o exemplo, mas as ações globais ganham um papel maior do que num perfil de preservação, com imobiliário e alternativos a acrescentar alguma variedade.',
+			),
+			3 => array(
+				'slug'     => 'balanced-investor',
+				'title_en' => 'The Balanced investor profile',
+				'title_pt' => 'O perfil de investidor Equilibrado',
+				'intro_en' => 'This is the middle ground: enough time and comfort to hold a solid share of growth assets, balanced by steadier ones. An example for this profile tends to split fairly evenly between growth and stability.',
+				'intro_pt' => 'Este é o meio-termo: tempo e conforto suficientes para manter uma boa fatia de ativos de crescimento, equilibrada por outros mais estáveis. Um exemplo para este perfil costuma dividir-se de forma relativamente equilibrada entre crescimento e estabilidade.',
+				'fit_en'   => 'Global equities take the lead, balanced by a meaningful share of bonds. A small, optional slice of crypto may appear for those who want it.',
+				'fit_pt'   => 'As ações globais assumem a liderança, equilibradas por uma fatia relevante de obrigações. Uma pequena fatia opcional de cripto pode aparecer para quem a queira.',
+			),
+			4 => array(
+				'slug'     => 'growth-investor',
+				'title_en' => 'The Growth investor profile',
+				'title_pt' => 'O perfil de investidor de Crescimento',
+				'intro_en' => 'With a long horizon and comfort with ups and downs, this profile can let growth assets do the heavy lifting. An example here tends to weight global shares strongly, with a smaller cushion of steadier classes.',
+				'intro_pt' => 'Com um horizonte longo e conforto com os altos e baixos, este perfil pode deixar os ativos de crescimento fazer o trabalho pesado. Um exemplo aqui costuma dar bastante peso às ações globais, com uma almofada menor de classes mais estáveis.',
+				'fit_en'   => 'Global equities dominate, with bonds providing a smaller cushion. Real estate, alternatives and an optional slice of crypto round out the example.',
+				'fit_pt'   => 'As ações globais dominam, com as obrigações a dar uma almofada menor. Imobiliário, alternativos e uma fatia opcional de cripto completam o exemplo.',
+			),
+			5 => array(
+				'slug'     => 'aggressive-growth-investor',
+				'title_en' => 'The Aggressive growth investor profile',
+				'title_pt' => 'O perfil de investidor de Crescimento agressivo',
+				'intro_en' => 'A very long horizon and a high tolerance for volatility let this profile lean almost entirely on growth assets, accepting bigger swings in exchange for more long-term growth potential. An example here keeps steadier classes minimal.',
+				'intro_pt' => 'Um horizonte muito longo e uma elevada tolerância à volatilidade permitem que este perfil se apoie quase totalmente em ativos de crescimento, aceitando oscilações maiores em troca de mais potencial de crescimento a longo prazo. Um exemplo aqui mantém as classes mais estáveis ao mínimo.',
+				'fit_en'   => 'Almost everything sits in global equities, with only a thin layer of bonds and cash. Real estate and a small optional crypto slice add the rest.',
+				'fit_pt'   => 'Quase tudo está em ações globais, com apenas uma camada fina de obrigações e liquidez. Imobiliário e uma pequena fatia opcional de cripto acrescentam o resto.',
+			),
+		);
+	}
+
+	/**
+	 * Per-asset-class copy (note from Bloco 2 + role + which profiles).
+	 *
+	 * @return array<int,array<string,string>>
+	 */
+	private static function asset_meta(): array {
+		return array(
+			array(
+				'slug'        => 'global-equities-explained',
+				'title_en'    => 'Global equities, explained',
+				'title_pt'    => 'Ações globais, explicadas',
+				'intro_en'    => 'Global equities are the growth engine of a portfolio — shares in companies around the world. Over long periods they have tended to grow the most, but they also swing the most along the way. The longer your horizon, the more time they have to ride out the bumps.',
+				'intro_pt'    => 'As ações globais são o motor de crescimento de uma carteira — participações em empresas de todo o mundo. Em períodos longos, tendem a crescer mais, mas também oscilam mais pelo caminho. Quanto maior o teu horizonte, mais tempo têm para absorver os altos e baixos.',
+				'role_en'     => 'Because they tend to grow the most over long periods, global equities usually drive a portfolio long-term returns — and its short-term swings. They reward patience more than timing.',
+				'role_pt'     => 'Como tendem a crescer mais em períodos longos, as ações globais costumam impulsionar os retornos de longo prazo de uma carteira — e também as suas oscilações de curto prazo. Recompensam mais a paciência do que o timing.',
+				'profiles_en' => 'Growth and aggressive-growth profiles lean into global equities the most; preservation profiles keep only a small slice. The right amount depends on your time horizon and comfort with volatility.',
+				'profiles_pt' => 'Os perfis de Crescimento e Crescimento agressivo apoiam-se mais nas ações globais; os perfis de Preservação mantêm apenas uma pequena fatia. A quantidade certa depende do teu horizonte temporal e do conforto com a volatilidade.',
+			),
+			array(
+				'slug'        => 'bonds-explained',
+				'title_en'    => 'Bonds, explained',
+				'title_pt'    => 'Obrigações, explicadas',
+				'intro_en'    => 'Bonds are loans to governments or companies that pay you interest. They usually move more gently than shares, which is why they are often used to add stability and soften the ups and downs of a portfolio.',
+				'intro_pt'    => 'As obrigações são empréstimos a governos ou empresas que te pagam juros. Costumam mexer-se de forma mais suave do que as ações, por isso são muitas vezes usadas para dar estabilidade e atenuar os altos e baixos de uma carteira.',
+				'role_en'     => 'Bonds act as a portfolio shock absorber. They typically grow more slowly than equities, but their steadier behaviour can make the overall ride easier to stick with.',
+				'role_pt'     => 'As obrigações funcionam como o amortecedor da carteira. Costumam crescer mais devagar do que as ações, mas o seu comportamento mais estável pode tornar o percurso global mais fácil de manter.',
+				'profiles_en' => 'Preservation and balanced-income profiles lean on bonds the most; growth profiles hold a smaller cushion. They rarely disappear entirely except in the most aggressive examples.',
+				'profiles_pt' => 'Os perfis de Preservação e Rendimento equilibrado apoiam-se mais nas obrigações; os perfis de Crescimento mantêm uma almofada menor. Raramente desaparecem por completo, exceto nos exemplos mais agressivos.',
+			),
+			array(
+				'slug'        => 'cash-explained',
+				'title_en'    => 'Cash & equivalents, explained',
+				'title_pt'    => 'Liquidez e equivalentes, explicada',
+				'intro_en'    => 'Cash and equivalents are money you can reach quickly without much risk to its value. It grows little, but it is there when you need it — useful for short-term needs and peace of mind.',
+				'intro_pt'    => 'A liquidez e equivalentes são dinheiro a que consegues chegar depressa sem grande risco para o seu valor. Cresce pouco, mas está lá quando precisas — útil para necessidades de curto prazo e tranquilidade.',
+				'role_en'     => 'Cash is about readiness, not growth. A slice of it means a surprise expense never forces you to sell other assets at a bad moment.',
+				'role_pt'     => 'A liquidez é sobre estar preparado, não sobre crescer. Uma fatia dela significa que uma despesa inesperada nunca te obriga a vender outros ativos num mau momento.',
+				'profiles_en' => 'Preservation profiles hold the most cash; growth and aggressive profiles keep only a thin layer. An emergency fund usually comes before any portfolio at all.',
+				'profiles_pt' => 'Os perfis de Preservação mantêm mais liquidez; os perfis de Crescimento e agressivos mantêm apenas uma camada fina. Um fundo de emergência costuma vir antes de qualquer carteira.',
+			),
+			array(
+				'slug'        => 'reits-alternatives-explained',
+				'title_en'    => 'Real estate & alternatives, explained',
+				'title_pt'    => 'Imobiliário e alternativos, explicados',
+				'intro_en'    => 'This bucket covers things like real estate or other assets that do not always move in step with shares and bonds. A small slice can add variety, which sometimes helps smooth the overall ride.',
+				'intro_pt'    => 'Este grupo cobre coisas como imobiliário ou outros ativos que nem sempre se movem ao mesmo ritmo das ações e obrigações. Uma pequena fatia pode acrescentar variedade, o que por vezes ajuda a suavizar o percurso global.',
+				'role_en'     => 'Real estate and alternatives are mainly about variety. Because they do not always move with shares and bonds, a small slice can sometimes smooth a portfolio overall path.',
+				'role_pt'     => 'O imobiliário e os alternativos são sobretudo variedade. Como nem sempre se movem com as ações e obrigações, uma pequena fatia pode por vezes suavizar o percurso global de uma carteira.',
+				'profiles_en' => 'Most profiles include only a small slice of real estate and alternatives — enough to add variety without taking over.',
+				'profiles_pt' => 'A maioria dos perfis inclui apenas uma pequena fatia de imobiliário e alternativos — o suficiente para acrescentar variedade sem dominar.',
+			),
+			array(
+				'slug'        => 'crypto-explained',
+				'title_en'    => 'Crypto, explained',
+				'title_pt'    => 'Cripto, explicada',
+				'intro_en'    => 'Crypto is a young, highly volatile category — it can rise and fall sharply in short periods. If it appears here at all, it is only as a very small, optional slice, and only for profiles with a long horizon and a solid financial base.',
+				'intro_pt'    => 'A cripto é uma categoria jovem e muito volátil — pode subir e descer bruscamente em curtos períodos. Se aparecer aqui, é apenas como uma fatia muito pequena e opcional, e só para perfis com horizonte longo e uma base financeira sólida.',
+				'role_en'     => 'Crypto role is strictly optional and small. Its sharp swings sit better with a long horizon and a solid financial base, which is why it is left out of cautious profiles entirely.',
+				'role_pt'     => 'O papel da cripto é estritamente opcional e pequeno. As suas oscilações bruscas encaixam melhor com um horizonte longo e uma base financeira sólida, e por isso fica totalmente de fora dos perfis prudentes.',
+				'profiles_en' => 'Only balanced, growth and aggressive-growth profiles may include a small, optional crypto slice; preservation and balanced-income profiles leave it out.',
+				'profiles_pt' => 'Apenas os perfis Equilibrado, de Crescimento e de Crescimento agressivo podem incluir uma pequena fatia opcional de cripto; os perfis de Preservação e Rendimento equilibrado deixam-na de fora.',
+			),
+		);
+	}
+
+	/**
+	 * Build an illustrative allocation table (core/table block) for an archetype.
+	 *
+	 * @param int    $id   Archetype id (1–5).
+	 * @param string $lang 'en' or 'pt'.
+	 */
+	private static function alloc_table( int $id, string $lang ): string {
+		$archetypes = Config::archetypes();
+		$ranges     = $archetypes[ $id ]['ranges'] ?? array();
+		if ( ! $ranges ) {
+			return '';
+		}
+		$h1   = 'pt' === $lang ? 'Classe de ativos' : 'Asset class';
+		$h2   = 'pt' === $lang ? 'Intervalo ilustrativo' : 'Illustrative range';
+		$rows = '';
+		foreach ( self::class_order() as $key ) {
+			if ( ! isset( $ranges[ $key ] ) ) {
+				continue;
+			}
+			$url   = home_url( '/investing-glossary/' . self::class_gloss_slug( $key ) . '/' );
+			$rows .= '<tr><td><a href="' . esc_url( $url ) . '">' . esc_html( self::class_label( $key, $lang ) ) . '</a></td><td>' . esc_html( self::fmt_range( (array) $ranges[ $key ] ) ) . '</td></tr>';
+		}
+		return '<!-- wp:table --><figure class="wp-block-table"><table><thead><tr><th>'
+			. esc_html( $h1 ) . '</th><th>' . esc_html( $h2 ) . '</th></tr></thead><tbody>'
+			. $rows . '</tbody></table></figure><!-- /wp:table -->' . "\n\n";
+	}
+
+	/**
+	 * Asset-class display order.
+	 *
+	 * @return array<int,string>
+	 */
+	private static function class_order(): array {
+		return array( 'global_equity', 'bonds', 'reits_alt', 'cash', 'crypto' );
+	}
+
+	/**
+	 * Localized asset-class label.
+	 *
+	 * @param string $key  Class key.
+	 * @param string $lang 'en' or 'pt'.
+	 */
+	private static function class_label( string $key, string $lang ): string {
+		$labels = array(
+			'global_equity' => array( 'en' => 'Global equities', 'pt' => 'Ações globais' ),
+			'bonds'         => array( 'en' => 'Bonds', 'pt' => 'Obrigações' ),
+			'reits_alt'     => array( 'en' => 'Real estate & alternatives', 'pt' => 'Imobiliário e alternativos' ),
+			'cash'          => array( 'en' => 'Cash & equivalents', 'pt' => 'Liquidez e equivalentes' ),
+			'crypto'        => array( 'en' => 'Crypto', 'pt' => 'Cripto' ),
+		);
+		return $labels[ $key ][ $lang ] ?? ( $labels[ $key ]['en'] ?? $key );
+	}
+
+	/**
+	 * Glossary slug for an asset-class key (for cross-linking).
+	 *
+	 * @param string $key Class key.
+	 */
+	private static function class_gloss_slug( string $key ): string {
+		$map = array(
+			'global_equity' => 'global-equities',
+			'bonds'         => 'bonds',
+			'reits_alt'     => 'reits-and-alternatives',
+			'cash'          => 'cash',
+			'crypto'        => 'crypto',
+		);
+		return $map[ $key ] ?? $key;
+	}
+
+	/**
+	 * Format a [min, max] range as an illustrative percentage string.
+	 *
+	 * @param array<int,int> $range [min, max].
+	 */
+	private static function fmt_range( array $range ): string {
+		$min = (int) ( $range[0] ?? 0 );
+		$max = (int) ( $range[1] ?? 0 );
+		if ( 0 === $min && 0 === $max ) {
+			return '0%';
+		}
+		if ( 0 === $min ) {
+			return '0–' . $max . '%';
+		}
+		return $min . '–' . $max . '%';
+	}
+
+	/**
+	 * Small, italic note paragraph block.
+	 *
+	 * @param string $text Plain text.
+	 */
+	private static function small( string $text ): string {
+		return '<!-- wp:paragraph {"fontSize":"small"} --><p class="has-small-font-size"><em>'
+			. esc_html( $text ) . '</em></p><!-- /wp:paragraph -->' . "\n\n";
+	}
+
+	/**
+	 * A bulleted list of internal links with one-line descriptions.
+	 *
+	 * @param array<int,array{0:string,1:string,2:string}> $items [url, title, desc].
+	 */
+	private static function bullets( array $items ): string {
+		$lis = '';
+		foreach ( $items as $item ) {
+			$lis .= '<li><a href="' . esc_url( $item[0] ) . '">' . esc_html( $item[1] ) . '</a> — ' . esc_html( $item[2] ) . '</li>';
+		}
+		return '<!-- wp:list --><ul class="wp-block-list">' . $lis . '</ul><!-- /wp:list -->' . "\n\n";
+	}
+
+	/**
+	 * Explainer child slugs that hubs link to (relinked to PT in localize_links).
+	 *
+	 * @return array<int,string>
+	 */
+	private static function explainer_page_slugs(): array {
+		return array(
+			'preservation-investor',
+			'balanced-income-investor',
+			'balanced-investor',
+			'growth-investor',
+			'aggressive-growth-investor',
+			'global-equities-explained',
+			'bonds-explained',
+			'cash-explained',
+			'reits-alternatives-explained',
+			'crypto-explained',
 		);
 	}
 
