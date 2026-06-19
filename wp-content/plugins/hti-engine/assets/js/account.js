@@ -279,6 +279,12 @@
 		if ( params.get( 'email_error' ) === '1' ) {
 			return el( 'div', { class: 'hti-error', role: 'alert' }, s.email_error );
 		}
+		if ( params.get( 'delete_cancelled' ) === '1' ) {
+			return el( 'div', { class: 'hti-save-done', role: 'status' }, s.deletion_off );
+		}
+		if ( params.get( 'delete_error' ) === '1' ) {
+			return el( 'div', { class: 'hti-error', role: 'alert' }, s.email_error );
+		}
 		return null;
 	}
 
@@ -362,22 +368,54 @@
 			} );
 		} );
 
+		var deleteStatus = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
+
+		function renderDeletion( dateStr ) {
+			actions.querySelectorAll( '.hti-deletion' ).forEach( function ( n ) { n.remove(); } );
+			if ( dateStr ) {
+				var wrap = el( 'div', { class: 'hti-deletion' } );
+				wrap.appendChild( el( 'p', { class: 'hti-error', role: 'alert' }, s.delete_scheduled.replace( '%s', dateStr ) ) );
+				var cancelBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-secondary hti-deletion__cancel' }, s.cancel_deletion );
+				cancelBtn.addEventListener( 'click', function () {
+					cancelBtn.disabled = true;
+					request( '/cancel-deletion', 'POST', {} ).then( function ( res ) {
+						if ( res.ok ) {
+							renderDeletion( '' );
+							deleteStatus.textContent = s.deletion_off;
+							deleteBtn.style.display = '';
+						} else {
+							cancelBtn.disabled = false;
+						}
+					} );
+				} );
+				wrap.appendChild( cancelBtn );
+				actions.appendChild( wrap );
+				deleteBtn.style.display = 'none';
+			}
+		}
+
 		var deleteBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost hti-btn-danger' }, s.delete_account );
 		deleteBtn.addEventListener( 'click', function () {
 			if ( ! window.confirm( s.delete_confirm ) ) {
 				return;
 			}
 			request( '/account', 'DELETE', { confirm: true } ).then( function ( res ) {
-				if ( res.ok ) {
-					window.alert( s.deleted );
-					window.location.href = ctx.homeUrl;
+				if ( res.ok && res.data ) {
+					deleteStatus.textContent = s.deletion_set;
+					renderDeletion( res.data.date || '' );
 				}
 			} );
 		} );
 
 		actions.appendChild( exportBtn );
 		actions.appendChild( deleteBtn );
+		actions.appendChild( deleteStatus );
 		root.appendChild( actions );
+
+		// Reflect an already-scheduled deletion (from a prior request/email).
+		if ( ctx.deleteAt ) {
+			renderDeletion( ctx.deleteAt );
+		}
 
 		mount.appendChild( root );
 	}

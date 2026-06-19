@@ -19,17 +19,40 @@ class Account {
 	private const META_PENDING_EMAIL = 'hti_pending_email';
 	private const META_EMAIL_TOKEN   = 'hti_email_token';
 	private const META_EMAIL_EXPIRES = 'hti_email_expires';
+	public const META_DELETE_AT      = 'hti_delete_at';
+	private const GRACE_DAYS         = 30;
+	public const DELETE_HOOK         = 'hti_account_deletions';
 
 	/**
-	 * Hook the account-security emails and the email-change confirm link.
+	 * Hook the account-security emails, confirm links and the deletion cron.
 	 */
 	public static function init(): void {
 		// Brand WordPress's own "password changed" email (profile updates).
 		add_filter( 'password_change_email', array( __CLASS__, 'brand_password_email' ), 10, 2 );
 		// The reset flow doesn't email the user by default — send our alert.
 		add_action( 'after_password_reset', array( __CLASS__, 'on_password_reset' ), 10, 1 );
-		// Email-change double opt-in confirmation link.
+		// Email-change + cancel-deletion confirmation links.
 		add_action( 'template_redirect', array( __CLASS__, 'handle_email_change' ) );
+		add_action( 'template_redirect', array( __CLASS__, 'handle_cancel_deletion' ) );
+		// Daily sweep that erases due accounts.
+		add_action( self::DELETE_HOOK, array( __CLASS__, 'run_due_deletions' ) );
+		add_action( 'init', array( __CLASS__, 'schedule' ) );
+	}
+
+	/**
+	 * Ensure the deletion-sweep cron exists.
+	 */
+	public static function schedule(): void {
+		if ( ! wp_next_scheduled( self::DELETE_HOOK ) ) {
+			wp_schedule_event( strtotime( 'tomorrow 4:00' ), 'daily', self::DELETE_HOOK );
+		}
+	}
+
+	/**
+	 * Clear the deletion-sweep cron (deactivation).
+	 */
+	public static function unschedule(): void {
+		wp_clear_scheduled_hook( self::DELETE_HOOK );
 	}
 
 	/**
@@ -226,6 +249,133 @@ class Account {
 
 		wp_safe_redirect( add_query_arg( 'email_error', '1', $dest ) );
 		exit;
+	}
+
+	/* ---------- scheduled account deletion (template 11) ---------- */
+
+	/**
+	 * Schedule a user's account for deletion after the grace period and email
+	 * them the date + cancel/download links. Returns the deletion timestamp.
+	 *
+	 * @param int $user_id User id.
+	 */
+	public static function schedule_deletion( int $user_id ): int {
+		$at = time() + self::GRACE_DAYS * DAY_IN_SECONDS;
+		update_user_meta( $user_id, self::META_DELETE_AT, $at );
+
+		$user = get_user_by( 'id', $user_id );
+		if ( $user instanceof \WP_User ) {
+			$locale = self::user_locale( $user_id );
+			$date   = function_exists( 'wp_date' ) ? (string) wp_date( 'pt' === $locale ? 'j \d\e F \d\e Y' : 'j F Y', $at ) : gmdate( 'Y-m-d', $at );
+			$cancel = self::cancel_link( $user_id, $at );
+			$html   = Emails::deletion_scheduled( $locale, $date, $cancel, home_url( '/my-account/' ) );
+			$subject = 'pt' === $locale ? 'A tua conta vai ser eliminada — HowToInvest' : 'Your account is scheduled for deletion — HowToInvest';
+			Mailer::send( $user->user_email, $subject, $html );
+		}
+		return $at;
+	}
+
+	/**
+	 * Cancel a scheduled deletion.
+	 *
+	 * @param int $user_id User id.
+	 */
+	public static function cancel_deletion( int $user_id ): void {
+		delete_user_meta( $user_id, self::META_DELETE_AT );
+	}
+
+	/**
+	 * The scheduled deletion timestamp for a user (0 if none).
+	 *
+	 * @param int $user_id User id.
+	 */
+	public static function deletion_at( int $user_id ): int {
+		return (int) get_user_meta( $user_id, self::META_DELETE_AT, true );
+	}
+
+	/**
+	 * Stateless cancel link (bound to the user + scheduled time).
+	 *
+	 * @param int $user_id User id.
+	 * @param int $at      Deletion timestamp.
+	 */
+	private static function cancel_link( int $user_id, int $at ): string {
+		$token = substr( hash_hmac( 'sha256', $user_id . '|' . $at . '|cancel', wp_salt( 'auth' ) ), 0, 40 );
+		return add_query_arg(
+			array( 'hti_cancel_delete' => $token, 'u' => $user_id ),
+			home_url( '/' )
+		);
+	}
+
+	/**
+	 * Handle the cancel-deletion link from the email.
+	 */
+	public static function handle_cancel_deletion(): void {
+		if ( empty( $_GET['hti_cancel_delete'] ) || empty( $_GET['u'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- token is the capability.
+			return;
+		}
+		$uid   = absint( wp_unslash( $_GET['u'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$token = sanitize_text_field( wp_unslash( $_GET['hti_cancel_delete'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$at    = self::deletion_at( $uid );
+		$valid = $at > 0 && hash_equals( substr( hash_hmac( 'sha256', $uid . '|' . $at . '|cancel', wp_salt( 'auth' ) ), 0, 40 ), $token );
+
+		if ( $valid ) {
+			self::cancel_deletion( $uid );
+			wp_safe_redirect( add_query_arg( 'delete_cancelled', '1', home_url( '/my-account/' ) ) );
+			exit;
+		}
+		wp_safe_redirect( add_query_arg( 'delete_error', '1', home_url( '/my-account/' ) ) );
+		exit;
+	}
+
+	/**
+	 * Cron: hard-delete accounts whose grace period has elapsed.
+	 */
+	public static function run_due_deletions(): void {
+		$users = get_users(
+			array(
+				'meta_key'   => self::META_DELETE_AT, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'number'     => 50,
+				'fields'     => array( 'ID' ),
+				'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => self::META_DELETE_AT,
+						'value'   => time(),
+						'compare' => '<=',
+						'type'    => 'NUMERIC',
+					),
+				),
+			)
+		);
+		foreach ( $users as $user ) {
+			self::hard_delete( (int) $user->ID );
+		}
+	}
+
+	/**
+	 * Erase a user and all their saved profiles (RGPD cascade). Irreversible.
+	 *
+	 * @param int $user_id User id.
+	 */
+	public static function hard_delete( int $user_id ): void {
+		if ( ! $user_id ) {
+			return;
+		}
+		require_once ABSPATH . 'wp-admin/includes/user.php';
+
+		$profiles = get_posts(
+			array(
+				'post_type'   => 'htinvest_profile',
+				'post_status' => 'any',
+				'author'      => $user_id,
+				'numberposts' => -1,
+				'fields'      => 'ids',
+			)
+		);
+		foreach ( $profiles as $id ) {
+			wp_delete_post( (int) $id, true );
+		}
+		wp_delete_user( $user_id );
 	}
 
 	/**

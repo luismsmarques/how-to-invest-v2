@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.6.6
+ * Version:           0.6.7
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.6';
+const VERSION = '0.6.7';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -228,6 +228,7 @@ register_activation_hook( __FILE__, __NAMESPACE__ . '\\activate' );
 function deactivate(): void {
 	Cron::unschedule();
 	Campaigns::unschedule();
+	Account::unschedule();
 	flush_rewrite_rules();
 }
 register_deactivation_hook( __FILE__, __NAMESPACE__ . '\\deactivate' );
