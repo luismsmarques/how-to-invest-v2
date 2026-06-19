@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.7.4';
+const VERSION = '0.7.5';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -554,7 +554,12 @@ function render_header_cta(): string {
 function render_homepage_intro(): string {
 	$quiz = esc_url( page_url( 'investor-profile-quiz' ) );
 
-	$html  = '<div class="wp-block-group alignwide hti-hero">';
+	// TEMP diagnostic (remove after debugging): visible in View Source only.
+	$dbg_uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+	$dbg_pll = function_exists( 'pll_current_language' ) ? (string) pll_current_language( 'slug' ) : 'no-pll';
+	$html    = '<!-- HTI-DIAG intro theme=' . VERSION . ' lang=' . current_lang() . ' uri=' . esc_html( $dbg_uri ) . ' pll=' . esc_html( $dbg_pll ) . ' -->';
+
+	$html .= '<div class="wp-block-group alignwide hti-hero">';
 	$html .= '<span class="hti-badge"><span class="hti-badge__dot"></span>' . esc_html( t( 'hero_badge' ) ) . '</span>';
 	$html .= '<h1 class="wp-block-heading has-text-align-center hti-hero__title has-huge-font-size">' . esc_html( t( 'hero_title' ) ) . '</h1>';
 	$html .= '<p class="has-text-align-center hti-hero__lead has-muted-color has-text-color has-large-font-size">' . esc_html( t( 'hero_lead' ) ) . '</p>';
