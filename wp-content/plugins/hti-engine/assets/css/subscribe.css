@@ -100,3 +100,91 @@
 	height: 1px;
 	overflow: hidden;
 }
+
+/* ---- Coral "daily roundup" banner variant (news hub) ---- */
+.hti-subscribe--digest {
+	max-width: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 28px;
+	align-items: center;
+	justify-content: space-between;
+	background: var(--wp--preset--color--primary, #ff6b5e);
+	border: 0;
+	border-radius: 24px;
+	padding: clamp(24px, 4vw, 34px);
+	text-align: left;
+	color: #fff;
+}
+.hti-digest__text { flex: 1 1 240px; min-width: 240px; }
+.hti-digest__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: rgba(255, 255, 255, 0.14);
+	font-weight: 600;
+	font-size: 12px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	padding: 5px 12px;
+	border-radius: 999px;
+	margin-bottom: 14px;
+}
+.hti-digest__dot { width: 6px; height: 6px; border-radius: 50%; background: #7fe0b0; }
+.hti-digest__title {
+	margin: 0;
+	font-family: var(--wp--preset--font-family--heading, 'Poppins', sans-serif);
+	font-weight: 700;
+	font-size: clamp(24px, 3vw, 30px);
+	line-height: 1.12;
+	letter-spacing: -0.01em;
+	color: #fff;
+}
+.hti-digest__intro {
+	margin: 10px 0 0;
+	max-width: 42ch;
+	color: #ffe7e2;
+	font-size: 16px;
+	line-height: 1.5;
+}
+.hti-digest__form { flex: none; width: min(100%, 340px); display: flex; flex-direction: column; gap: 10px; }
+.hti-digest__input {
+	width: 100%;
+	box-sizing: border-box;
+	background: #fff;
+	border: 0;
+	border-radius: 16px;
+	padding: 15px 16px;
+	font: inherit;
+	font-size: 16px;
+	color: var(--wp--preset--color--contrast, #2a2438);
+}
+.hti-digest__input:focus { outline: 0; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6); }
+.hti-digest__submit {
+	width: 100%;
+	background: #fff;
+	color: var(--wp--preset--color--primary, #ff6b5e);
+	border: 0;
+	border-radius: 16px;
+	padding: 15px;
+	font: inherit;
+	font-weight: 600;
+	font-size: 16px;
+	cursor: pointer;
+}
+.hti-digest__submit:hover { background: var(--wp--preset--color--accent-soft, #efe9fe); }
+.hti-digest__submit:disabled { opacity: 0.7; cursor: progress; }
+.hti-digest__consent {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #ffe7e2;
+}
+.hti-digest__consent input { margin-top: 0.15rem; flex: none; accent-color: #fff; }
+.hti-digest__consent a { color: #fff; font-weight: 600; text-decoration: underline; }
+.hti-digest__fine { margin: 0; font-size: 12.5px; line-height: 1.4; color: #ffd9d2; }
+.hti-subscribe--digest .hti-subscribe__status { margin: 0; color: #fff; font-weight: 600; }
+.hti-subscribe--digest .hti-subscribe__status.is-success { color: #eafff4; }
