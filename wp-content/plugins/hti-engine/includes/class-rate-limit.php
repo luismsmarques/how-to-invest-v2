@@ -36,6 +36,7 @@ class RateLimit {
 				'recommend' => array( 15, 600 ),
 				'register'  => array( 5, 3600 ),
 				'login'     => array( 10, 900 ),
+				'contact'   => array( 5, 3600 ),
 			)
 		);
 	}

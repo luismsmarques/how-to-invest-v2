@@ -109,6 +109,10 @@ class Seeder {
 		// Render the About page(s) with the designed template/block.
 		self::ensure_about_template();
 
+		// Ensure the contact form shortcode is present on existing Contact pages
+		// (the seeder is otherwise create-only).
+		self::ensure_contact_form();
+
 		// Final pass: re-localize internal links in every PT post now that all
 		// EN+PT posts exist (fixes cross-links whose target was seeded later).
 		self::relocalize_pt();
@@ -153,6 +157,42 @@ class Seeder {
 					wp_update_post( array( 'ID' => (int) $pt_id, 'post_content' => wp_slash( $new ) ) );
 				}
 			}
+		}
+	}
+
+	/**
+	 * Append the [hti_contact] form shortcode to the Contact page (and its PT
+	 * translation) when it isn't there yet. Idempotent — runs even when the
+	 * page already exists (the seeder otherwise never updates existing posts).
+	 */
+	private static function ensure_contact_form(): void {
+		if ( ! function_exists( 'has_shortcode' ) ) {
+			return;
+		}
+		$en = get_page_by_path( 'contact', OBJECT, 'page' );
+		if ( ! $en instanceof \WP_Post ) {
+			return;
+		}
+
+		$targets = array( (int) $en->ID );
+		if ( self::polylang_active() ) {
+			$default = (string) pll_default_language( 'slug' );
+			$pt      = self::portuguese_slug( '' !== $default ? $default : 'en' );
+			if ( '' !== $pt ) {
+				$pt_id = pll_get_post( (int) $en->ID, $pt );
+				if ( $pt_id ) {
+					$targets[] = (int) $pt_id;
+				}
+			}
+		}
+
+		foreach ( $targets as $id ) {
+			$post = get_post( $id );
+			if ( ! $post instanceof \WP_Post || has_shortcode( (string) $post->post_content, 'hti_contact' ) ) {
+				continue;
+			}
+			$new = rtrim( (string) $post->post_content ) . "\n\n" . '<!-- wp:shortcode -->[hti_contact]<!-- /wp:shortcode -->';
+			wp_update_post( array( 'ID' => $id, 'post_content' => wp_slash( $new ) ) );
 		}
 	}
 
@@ -1719,10 +1759,12 @@ class Seeder {
 			array(
 				'slug'    => 'contact',
 				'title'   => 'Contact',
-				'content' => self::paragraph( 'Questions or feedback about the educational content? Reach us at hello@howtoinvest.pro.' ),
+				'content' => self::paragraph( 'Questions or feedback about the educational content? Send us a message and we’ll get back to you.' )
+					. '<!-- wp:shortcode -->[hti_contact]<!-- /wp:shortcode -->',
 				'pt'      => array(
 					'title'   => 'Contacto',
-					'content' => self::paragraph( 'Tens questões ou sugestões sobre o conteúdo educativo? Fala connosco em hello@howtoinvest.pro.' ),
+					'content' => self::paragraph( 'Tens questões ou sugestões sobre o conteúdo educativo? Envia-nos uma mensagem e respondemos assim que possível.' )
+						. '<!-- wp:shortcode -->[hti_contact]<!-- /wp:shortcode -->',
 				),
 			),
 			array(
