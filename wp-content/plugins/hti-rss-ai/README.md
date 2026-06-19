@@ -9,11 +9,9 @@ never publishes — a human finalizes (featured image, category, sitelinking) an
 See the full plan: [`docs/RSS_AI_Feed_Plan.md`](../../../docs/RSS_AI_Feed_Plan.md).
 
 ## Status
-- **M0 — scaffold (done):** bootstrap, activation with the three custom tables
-  (`rssai_feeds`, `rssai_items`, `rssai_groups`), Settings page, hti-engine
-  dependency notice, i18n.
-- M1 — feeds management · M2 — fetcher + drafts · M3 — grouping · M4 — research +
-  generation · M5 — review + SEO · M6 — hardening.
+- **M0 — scaffold (done):** bootstrap, activation with the three custom tables, Settings page, dependency notice, i18n.
+- **M1 — feeds management (done):** add/edit/delete feeds (WP_List_Table) + "Test feed" preview.
+- M2 — fetcher + drafts · M3 — grouping · M4 — research + generation · M5 — review + SEO · M6 — hardening.
 
 ## Requirements
 - WordPress 6.7+, PHP 8.3+.
