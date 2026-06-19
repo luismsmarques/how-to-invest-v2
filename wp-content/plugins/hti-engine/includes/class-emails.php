@@ -294,6 +294,51 @@ class Emails {
 		return self::layout( $locale, $inner, $heading );
 	}
 
+	/* ---------- account email change (template 10) ---------- */
+
+	/**
+	 * Render the "confirm your new email" message (sent to the new address).
+	 *
+	 * @param string $locale 'en'|'pt'.
+	 * @param string $old    Current email.
+	 * @param string $new    Requested new email.
+	 * @param string $url    Confirmation link.
+	 */
+	public static function email_change( string $locale, string $old, string $new, string $url ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'Confirma o teu novo email' : 'Confirm your new email';
+		$lead    = $pt
+			? 'Pediste para alterar o email da tua conta HowToInvest. Confirma a alteração no botão abaixo.'
+			: 'You asked to change the email on your HowToInvest account. Confirm the change with the button below.';
+		$btn  = $pt ? 'Confirmar novo email' : 'Confirm new email';
+		$note = $pt
+			? 'Este link expira em 24 horas. Se não foste tu a pedir isto, ignora este email — nada muda.'
+			: 'This link expires in 24 hours. If you didn’t request this, ignore this email — nothing changes.';
+
+		$rows = '<table role="presentation" width="100%" style="border-collapse:collapse;background:#F6F4FB;border-radius:14px;"><tbody>'
+			. '<tr><td style="padding:16px 22px;border-bottom:1px solid #EBE6F4;"><table role="presentation" width="100%"><tbody><tr>'
+			. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;">' . esc_html( $pt ? 'Email atual' : 'Current email' ) . '</td>'
+			. '<td style="text-align:right;font:700 13.5px Arial,sans-serif;color:#1E2147;">' . esc_html( $old ) . '</td>'
+			. '</tr></tbody></table></td></tr>'
+			. '<tr><td style="padding:16px 22px;"><table role="presentation" width="100%"><tbody><tr>'
+			. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;">' . esc_html( $pt ? 'Novo email' : 'New email' ) . '</td>'
+			. '<td style="text-align:right;font:700 13.5px Arial,sans-serif;color:#147A57;">' . esc_html( $new ) . '</td>'
+			. '</tr></tbody></table></td></tr>'
+			. '</tbody></table>';
+
+		$inner = self::row(
+			self::icon_circle( '&#9993;', '#EFEBFF', '#7C5CFC' ) . self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. self::row( $rows, '26px 48px 0' )
+			. self::row( self::button( $btn, $url ), '24px 48px 6px', true )
+			. self::row( self::note( $note ), '16px 48px 44px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
 	/* ---------- security: password changed (template 09) ---------- */
 
 	/**
