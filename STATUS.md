@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 19 jun 2026. Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 19 jun 2026 (RSS AI v1.1 — imagem de destaque). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -47,11 +47,16 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
   **Drafts** (itens dedup por `sha1(guid|link)`, imagem extraída) → **Groups** (clustering Jaccard
   por língua, threshold configurável) → escolher grupo → **Generate** (Gemini com **Google Search
   grounding** → investiga factos + cria artigo SEO/Google-News com fontes citadas) → `news`
-  em **pending review**. Travas: factual/citado/original, **sem conselhos**, **sem tickers**,
+  em **pending review**, **já com imagem de destaque de marca**. Travas: factual/citado/original, **sem conselhos**, **sem tickers**,
   disclaimer; valida via `class-validator` e limite diário de gerações.
   - **3 tabelas** (`rssai_feeds`, `rssai_items`, `rssai_groups`); opções `rssai_settings`/`rssai_logs`.
   - **Reutiliza `HTI_GEMINI_API_KEY`** (nunca guarda a chave; filtro `rssai_gemini_api_key` opcional).
   - Modelo default `gemini-2.5-flash`; menu próprio *RSS AI Feed* (Settings/Feeds/Drafts/Groups/Logs).
+  - **Imagem de destaque (v1.1):** cartão **quadrado 1080×1080** (template *Notícias · Quadrado*) renderizado
+    **localmente com GD** (chrome determinístico p/ marca + disclaimer; fontes `.ttf` em `assets/fonts/`).
+    **Só a foto** é gerada por **AI (Imagen, `imagen-3.0-generate-002`)**, com fallback gracioso →
+    imagem do feed → gradiente da marca. Botão *Regenerate image* na meta box do editor; toggle + modelo
+    nas Settings. **Imagen exige chave com billing + acesso a image-gen** (senão usa o fallback).
   - Meta box no editor de `news`: proveniência + fontes + sugestões de sitelinking (glossário/related).
   - Detalhe: `wp-content/plugins/hti-rss-ai/README.md`; plano: `docs/RSS_AI_Feed_Plan.md`.
 
@@ -89,7 +94,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - **Se o deploy do cPanel falhar/pendurar:** ver `DEPLOY.md §5.1` (deploy manual / File Manager copy a partir de `repositories/how-to-invest-v2/wp-content/...`).
 - **Bump de versão obrigatório** ao mexer em CSS/JS do tema/plugin (constante VERSION → `?ver=`), senão a cache serve assets antigos. Em template parts personalizadas no Site Editor, *Clear customizations* para o tema voltar a usar os ficheiros.
 - Testes: `for t in engine settings explainer prompt ratelimit cron mailer google llm; do php wp-content/plugins/hti-engine/tests/test-$t.php; done`
-- Testes RSS AI (19 verdes): `for t in extract-json validator grouping; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
+- Testes RSS AI (29 verdes): `for t in extract-json validator grouping social-card image-client; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
 
 ## O que falta para o GO-LIVE público (checklist completa: `docs/QA_Gate_Lancamento.md`)
 **Código:** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
