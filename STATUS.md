@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 18 jun 2026. Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 19 jun 2026. Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -15,10 +15,21 @@ tokens em `theme.json`, **fontes self-hosted** Poppins + Plus Jakarta Sans (em
 `themes/howtoinvest/assets/fonts/`, subset latino), header sticky com blur, **donut
 conic** no resultado, banner de disclaimer escuro, consentimento escuro.
 
-**Idioma:** **EN por default** (regra do projeto). Os templates de bloco do tema têm
-texto fixo em EN (o FSE não permite `__()` no HTML); os *patterns* usam `__()` (EN+PT)
-e o app do plugin é EN-default com PT via `ui()`. O **PT** é servido pelo **Polylang**
-(língua adicional `pt_PT_ao90`) — ver secção *Multilíngue* abaixo.
+**Idioma:** **EN por default** (regra do projeto). O *chrome* do tema (header, footer,
+hero, passos, glossário, about, switcher) é resolvido **em tempo de render** por
+**blocos dinâmicos** (`render_callback`) que usam um mapa EN/PT inline (`t()`/`strings()`
+em `functions.php`) + `current_lang()` via Polylang. **Importante:** *patterns* correm no
+`init` (antes do Polylang saber a língua) → **não** servem para texto multilíngue; por isso
+o chrome usa blocos dinâmicos. O app do plugin é EN-default com PT via `ui()`. O **PT** é
+servido pelo **Polylang** (língua adicional `pt_PT_ao90`) — ver secção *Multilíngue* abaixo.
+
+**Header/footer iguais em todo o lado e editáveis:** os menus (primary/footer) voltam a
+ser editáveis em *Aparência → Menus* (restaurados no tema de blocos via `register_nav_menus`)
+e são renderizados pelo bloco `howtoinvest/menu`. **Mobile:** header responsivo limpo —
+hamburger que abre painel do lado direito (CSS-only via checkbox + `header.js`), tap targets
+full-width. **About:** página bilingue moderna (template `page-about`, bloco `howtoinvest/about`)
+com foco no fundador (Luis Marques) e nos objetivos; ligada no footer. **Switcher de língua**
+no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
 
 ## Arquitetura (resumo)
 - **Tema** `wp-content/themes/howtoinvest` (FSE, tokens em `theme.json`, design coral/cream, disclaimer no rodapé).
@@ -30,6 +41,19 @@ e o app do plugin é EN-default com PT via `ui()`. O **PT** é servido pelo **Po
   - Segurança/RGPD: rate limit (`class-rate-limit`), verificação email double opt-in via **Brevo** (`class-verification`+`class-mailer`), consentimento (`class-consent`), GA gated, cron de limpeza (`class-cron`), login Google (`class-google`).
   - Admin: `class-settings` (Definições → HowToInvest). PDF: `class-pdf` (Dompdf, fallback HTML).
 - Detalhe por ficheiro: `wp-content/plugins/hti-engine/README.md`.
+- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.0.0) — alimenta a área de
+  **notícias** (`news` CPT do hti-engine). Pipeline com **humano no meio (nunca auto-publica)**:
+  **Feeds** (CRUD + *Test feed*) → **Fetch** (cron `rssai_fetch_cron` ou *Fetch now*) →
+  **Drafts** (itens dedup por `sha1(guid|link)`, imagem extraída) → **Groups** (clustering Jaccard
+  por língua, threshold configurável) → escolher grupo → **Generate** (Gemini com **Google Search
+  grounding** → investiga factos + cria artigo SEO/Google-News com fontes citadas) → `news`
+  em **pending review**. Travas: factual/citado/original, **sem conselhos**, **sem tickers**,
+  disclaimer; valida via `class-validator` e limite diário de gerações.
+  - **3 tabelas** (`rssai_feeds`, `rssai_items`, `rssai_groups`); opções `rssai_settings`/`rssai_logs`.
+  - **Reutiliza `HTI_GEMINI_API_KEY`** (nunca guarda a chave; filtro `rssai_gemini_api_key` opcional).
+  - Modelo default `gemini-2.5-flash`; menu próprio *RSS AI Feed* (Settings/Feeds/Drafts/Groups/Logs).
+  - Meta box no editor de `news`: proveniência + fontes + sugestões de sitelinking (glossário/related).
+  - Detalhe: `wp-content/plugins/hti-rss-ai/README.md`; plano: `docs/RSS_AI_Feed_Plan.md`.
 
 ## Chaves a definir (no `wp-config.php` de `howtoinvest.pro/`)
 ```php
@@ -50,16 +74,22 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
   variantes `hti_*_pt`, define o idioma, partilha o slug EN e **liga EN↔PT**
   (`pll_save_post_translations`). Traduz/liga também o topic `glossary_topic`
   (*Asset classes → Classes de ativos*). Idempotente; sem Polylang degrada para EN+meta.
+- **Slugs/permalinks PT traduzidos** para SEO: o seeder usa um mapa curado (`pt_slug()` em
+  `class-seeder.php`, ex.: `global-equities → acoes-globais`, `how-to-start-investing →
+  como-comecar-a-investir`). A **base dos CPTs fica em EN por agora** (traduzir a base exigiria
+  Polylang Pro ou rewrite custom frágil — decisão adiada).
 - Os **links internos** dos artigos PT são reescritos para o **permalink PT** do glossário
-  (via `pll_get_post`/`get_permalink`) — robusto mesmo que traduzas os slugs no futuro.
+  (via `pll_get_post`/`get_permalink`) — robusto mesmo com os slugs traduzidos.
 - Correr depois de cada deploy que mude o seed: **Ferramentas → Semear conteúdo → Run seeder**
   (ou `wp hti seed`). O aviso mostra quantas traduções PT foram ligadas.
 
 ## Deploy
 - Branches: **`main`** = produção · **`develop`** = staging/integração · feature → PR para `develop` → release `develop → main`. Ver `CONTRIBUTING.md`.
-- cPanel Git: `Manage → Pull or Deploy → Update from Remote → Deploy HEAD Commit`. O `.cpanel.yml` (simples; destino fixo `howtoinvest.pro/wp-content`) copia tema+plugin.
+- cPanel Git: `Manage → Pull or Deploy → Update from Remote → Deploy HEAD Commit`. O `.cpanel.yml` (simples; destino fixo `howtoinvest.pro/wp-content`) copia **tema + hti-engine + hti-rss-ai**.
 - **Se o deploy do cPanel falhar/pendurar:** ver `DEPLOY.md §5.1` (deploy manual / File Manager copy a partir de `repositories/how-to-invest-v2/wp-content/...`).
+- **Bump de versão obrigatório** ao mexer em CSS/JS do tema/plugin (constante VERSION → `?ver=`), senão a cache serve assets antigos. Em template parts personalizadas no Site Editor, *Clear customizations* para o tema voltar a usar os ficheiros.
 - Testes: `for t in engine settings explainer prompt ratelimit cron mailer google llm; do php wp-content/plugins/hti-engine/tests/test-$t.php; done`
+- Testes RSS AI (19 verdes): `for t in extract-json validator grouping; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
 
 ## O que falta para o GO-LIVE público (checklist completa: `docs/QA_Gate_Lancamento.md`)
 **Código:** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
@@ -72,6 +102,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - [ ] **RankMath**: instalar/ativar → sitemap inclui `glossary`/`news` → submeter ao Search Console
 - [ ] Configurar **Brevo** (senão o registo de contas não confirma)
 - [ ] **Polylang**: atribuir idioma a todo o conteúdo + correr o seeder → confirmar ligações EN↔PT (e `hreflang` no sitemap)
+- [ ] **RSS AI Feed**: ativar o plugin → *RSS AI Feed → Settings* (confirmar `HTI_GEMINI_API_KEY`, modelo, intervalo) → adicionar feeds → *Fetch now* → *Group now* → gerar 1 grupo e **rever** antes de publicar
 - [ ] Acessibilidade: contraste AA + teste com leitor de ecrã
 
 **Legal (⚠️ bloqueador antes de divulgar):**
@@ -82,3 +113,4 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 2. Configurar Brevo e testar o fluxo de registo/verificação.
 3. Verificar 301s + HTTPS.
 4. Enviar textos legais ao jurista (L-D).
+5. Ativar o **HTI RSS AI Feed**, adicionar feeds e validar 1 geração ponta a ponta antes de a usar em produção.
