@@ -29,7 +29,7 @@
 		var name = ( form.elements.name.value || '' ).trim();
 		var email = ( form.elements.email.value || '' ).trim();
 		var message = ( form.elements.message.value || '' ).trim();
-		var company = form.elements.company ? form.elements.company.value : '';
+		var honeypot = form.elements.hti_hp ? form.elements.hti_hp.value : '';
 
 		if ( ! name || ! email || ! message ) {
 			setStatus( strings.invalid, 'error' );
@@ -49,7 +49,7 @@
 				name: name,
 				email: email,
 				message: message,
-				company: company,
+				hti_hp: honeypot,
 				locale: cfg.locale || 'en',
 			} ),
 		} )
