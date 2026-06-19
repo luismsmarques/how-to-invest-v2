@@ -81,7 +81,31 @@ class Items {
 			$where[]  = 'lang = %s';
 			$params[] = (string) $args['lang'];
 		}
+		if ( ! empty( $args['group_id'] ) ) {
+			$where[]  = 'group_id = %d';
+			$params[] = (int) $args['group_id'];
+		}
 		return array( implode( ' AND ', $where ), $params );
+	}
+
+	/**
+	 * Assign several items to a group and flag them grouped.
+	 *
+	 * @param array<int,int> $ids      Item ids.
+	 * @param int            $group_id Group id.
+	 * @return int Rows affected.
+	 */
+	public static function set_group( array $ids, int $group_id ): int {
+		global $wpdb;
+		$table = self::table();
+		$ids   = array_values( array_filter( array_map( 'absint', $ids ) ) );
+		if ( ! $ids ) {
+			return 0;
+		}
+		$place  = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$params = array_merge( array( $group_id ), $ids );
+		$sql    = "UPDATE `$table` SET group_id = %d, status = 'grouped' WHERE id IN ($place)";
+		return (int) $wpdb->query( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
