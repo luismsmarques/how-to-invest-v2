@@ -206,6 +206,7 @@ class Settings {
 		// Brevo (transactional email).
 		$out['brevo_sender_email'] = isset( $input['brevo_sender_email'] ) ? sanitize_email( $input['brevo_sender_email'] ) : ( $out['brevo_sender_email'] ?? '' );
 		$out['brevo_sender_name']  = isset( $input['brevo_sender_name'] ) ? sanitize_text_field( $input['brevo_sender_name'] ) : ( $out['brevo_sender_name'] ?? '' );
+		$out['brevo_list_id']      = isset( $input['brevo_list_id'] ) ? absint( $input['brevo_list_id'] ) : ( $out['brevo_list_id'] ?? 0 );
 
 		if ( ! self::brevo_key_managed() ) {
 			$brevo = isset( $input['brevo_api_key'] ) ? trim( (string) $input['brevo_api_key'] ) : '';
@@ -351,6 +352,12 @@ class Settings {
 						<td><input name="htinvest_settings[brevo_sender_name]" id="hti-brevo-name" type="text" class="regular-text"
 							value="<?php echo esc_attr( $settings['brevo_sender_name'] ?? '' ); ?>"
 							placeholder="<?php echo esc_attr( (string) get_option( 'blogname' ) ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-brevo-list"><?php echo esc_html__( 'Newsletter list ID', 'hti-engine' ); ?></label></th>
+						<td><input name="htinvest_settings[brevo_list_id]" id="hti-brevo-list" type="number" min="0" step="1" class="small-text"
+							value="<?php echo esc_attr( (string) ( $settings['brevo_list_id'] ?? '' ) ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Brevo list that confirmed newsletter subscribers are added to (Brevo → Contacts → Lists).', 'hti-engine' ); ?></p></td>
 					</tr>
 				</table>
 
