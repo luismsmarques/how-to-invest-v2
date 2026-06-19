@@ -258,6 +258,11 @@ class Groups_Page {
 		$result = Generator::generate( $id );
 		$key    = 'rssai_gen_msg_' . get_current_user_id();
 		if ( is_wp_error( $result ) ) {
+			Logger::log( 'generate-error', sprintf( 'group=%d: %s', $id, $result->get_error_message() ) );
+		} else {
+			Logger::log( 'generate', sprintf( 'group=%d → news post #%d (pending)', $id, (int) $result ) );
+		}
+		if ( is_wp_error( $result ) ) {
 			set_transient(
 				$key,
 				array(

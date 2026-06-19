@@ -14,8 +14,10 @@ See the full plan: [`docs/RSS_AI_Feed_Plan.md`](../../../docs/RSS_AI_Feed_Plan.m
 - **M2 — fetcher + drafts (done):** WP-Cron fetch + parse + dedupe + image extraction → drafts; Drafts list with filters, "Fetch now" and bulk "ignore".
 - **M3 — grouping (done):** Jaccard clustering of similar drafts per language + Groups page (view items, "Group now", dismiss).
 - **M4 — research + generation (done):** Gemini (Google Search grounding) fact research → validated JSON → original SEO/Google-News article saved as a pending `news` post (with sources + disclaimer). "Generate article" on a group; daily limit.
-- **M5 — review + SEO (done):** news edit-screen meta box (AI provenance + sources + sitelinking suggestions) and meta-description bridge to RankMath/Yoast. (NewsArticle schema already emitted by HTI Engine; the news sitemap is owned by RankMath News.)
-- M6 — hardening.
+- **M5 — review + SEO (done):** news edit-screen meta box (AI provenance + sources + sitelinking suggestions) and meta-description bridge to RankMath/Yoast.
+- **M6 — hardening (done):** capped activity Logger + Logs page; logging across fetch/group/generate; `uninstall.php` (drops tables + options); pure-PHP test suite (extract-json, validator, grouping).
+
+The full pipeline (feeds → drafts → groups → generate → review) is complete.
 
 ## Requirements
 - WordPress 6.7+, PHP 8.3+.

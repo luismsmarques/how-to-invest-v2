@@ -106,16 +106,17 @@ class Grouping {
 			}
 		}
 
+		Logger::log( 'group', sprintf( 'groups=%d items=%d', $report['groups'], $report['items'] ) );
 		return $report;
 	}
 
 	/**
-	 * Normalize text into a set of significant tokens.
+	 * Normalize text into a set of significant tokens. Public for testing.
 	 *
 	 * @param string $text Title + description.
 	 * @return array<string,bool>
 	 */
-	private static function tokenize( string $text ): array {
+	public static function tokenize( string $text ): array {
 		$text  = strtolower( remove_accents( $text ) );
 		$text  = preg_replace( '/[^a-z0-9 ]+/', ' ', $text );
 		$words = preg_split( '/\s+/', trim( (string) $text ) );
@@ -131,12 +132,12 @@ class Grouping {
 	}
 
 	/**
-	 * Jaccard similarity of two token sets.
+	 * Jaccard similarity of two token sets. Public for testing.
 	 *
 	 * @param array<string,bool> $a First set.
 	 * @param array<string,bool> $b Second set.
 	 */
-	private static function jaccard( array $a, array $b ): float {
+	public static function jaccard( array $a, array $b ): float {
 		if ( ! $a || ! $b ) {
 			return 0.0;
 		}

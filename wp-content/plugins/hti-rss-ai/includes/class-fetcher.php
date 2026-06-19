@@ -64,6 +64,11 @@ class Fetcher {
 			$report['items'] += $result['items'];
 			$report['dupes'] += $result['dupes'];
 		}
+
+		Logger::log(
+			'fetch',
+			sprintf( 'feeds=%d new=%d dupes=%d errors=%d', $report['feeds'], $report['items'], $report['dupes'], $report['errors'] )
+		);
 		return $report;
 	}
 
