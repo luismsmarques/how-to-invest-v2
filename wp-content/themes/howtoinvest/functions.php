@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.3';
+const VERSION = '0.6.4';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -104,6 +104,8 @@ function strings(): array {
 		'cta_get_started'  => array( 'en' => 'Get started', 'pt' => 'Começar' ),
 		'cta_start_quiz'   => array( 'en' => 'Start the questionnaire', 'pt' => 'Começar o questionário' ),
 		'nav_learn'        => array( 'en' => 'Learn', 'pt' => 'Aprender' ),
+		'nav_types'        => array( 'en' => 'Investor types', 'pt' => 'Perfis' ),
+		'nav_classes'      => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
 		'nav_glossary'     => array( 'en' => 'Glossary', 'pt' => 'Glossário' ),
 		'nav_news'         => array( 'en' => 'News', 'pt' => 'Notícias' ),
 		'foot_about'       => array( 'en' => 'About', 'pt' => 'Sobre' ),
@@ -580,6 +582,8 @@ function default_menu( string $location, string $extra ): string {
 	} else {
 		$items = array(
 			array( page_url( 'how-to-start-investing' ), t( 'nav_learn' ) ),
+			array( page_url( 'investor-types' ), t( 'nav_types' ) ),
+			array( page_url( 'asset-classes' ), t( 'nav_classes' ) ),
 			array( home_url( '/investing-glossary/' ), t( 'nav_glossary' ) ),
 			array( home_url( '/financial-news/' ), t( 'nav_news' ) ),
 		);
