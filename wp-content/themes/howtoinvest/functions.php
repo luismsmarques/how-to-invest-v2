@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.7.2';
+const VERSION = '0.7.3';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -84,6 +84,13 @@ add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
  * locale, e.g. pt_PT_ao90, may not match the shipped translations).
  */
 function current_lang(): string {
+	// The URL language prefix is the ground truth for what the visitor sees
+	// (Polylang serves PT under /pt/). Trust it first: on the front page,
+	// pll_current_language() can report the default language even under /pt/.
+	$uri = isset( $_SERVER['REQUEST_URI'] ) ? strtolower( (string) wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+	if ( '' !== $uri && preg_match( '#^/pt(/|$|\?)#', $uri ) ) {
+		return 'pt';
+	}
 	if ( function_exists( 'pll_current_language' ) ) {
 		$slug = (string) pll_current_language( 'slug' );
 		if ( '' !== $slug ) {
@@ -413,7 +420,7 @@ function render_learn_feed(): string {
 function render_about(): string {
 	$linkedin = 'https://www.linkedin.com/in/luismsmarques/';
 	$coffee   = 'https://buymeacoffee.com/luismarques';
-	$quiz     = esc_url( home_url( '/investor-profile-quiz/' ) );
+	$quiz     = esc_url( page_url( 'investor-profile-quiz' ) );
 
 	// Founder avatar: featured image of the About page, else initials.
 	$avatar = '<span class="hti-about__initials" aria-hidden="true">LM</span>';
@@ -534,7 +541,7 @@ function render_lang_switcher(): string {
  */
 function render_header_cta(): string {
 	return '<div class="wp-block-buttons hti-cta"><div class="wp-block-button is-style-fill">'
-		. '<a class="wp-block-button__link wp-element-button" href="' . esc_url( home_url( '/investor-profile-quiz/' ) ) . '">'
+		. '<a class="wp-block-button__link wp-element-button" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '">'
 		. esc_html( t( 'cta_get_started' ) ) . '</a></div></div>';
 }
 
@@ -542,7 +549,7 @@ function render_header_cta(): string {
  * Language-aware homepage hero + "how it works" steps.
  */
 function render_homepage_intro(): string {
-	$quiz = esc_url( home_url( '/investor-profile-quiz/' ) );
+	$quiz = esc_url( page_url( 'investor-profile-quiz' ) );
 
 	$html  = '<div class="wp-block-group alignwide hti-hero">';
 	$html .= '<span class="hti-badge"><span class="hti-badge__dot"></span>' . esc_html( t( 'hero_badge' ) ) . '</span>';
@@ -820,9 +827,10 @@ function page_url( string $en_slug ): string {
 	$page = get_page_by_path( $en_slug, OBJECT, 'page' );
 	if ( $page instanceof \WP_Post ) {
 		$id = (int) $page->ID;
-		if ( function_exists( 'pll_current_language' ) && function_exists( 'pll_get_post' ) ) {
-			$cur = (string) pll_current_language( 'slug' );
-			$tr  = '' !== $cur ? pll_get_post( $id, $cur ) : 0;
+		// Use our current_lang() (URL-aware) rather than pll_current_language(),
+		// which can report the default language on the front page.
+		if ( function_exists( 'pll_get_post' ) ) {
+			$tr = pll_get_post( $id, current_lang() );
 			if ( $tr ) {
 				$id = (int) $tr;
 			}
