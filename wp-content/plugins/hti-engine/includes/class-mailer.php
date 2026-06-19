@@ -77,10 +77,11 @@ class Mailer {
 	 * @param string                          $subject  Subject.
 	 * @param string                          $html     HTML body.
 	 * @param array{email:string,name:string} $sender   Sender identity.
+	 * @param string                          $reply_to Optional Reply-To address.
 	 * @return array<string,mixed>
 	 */
-	public static function build_payload( string $to_email, string $subject, string $html, array $sender ): array {
-		return array(
+	public static function build_payload( string $to_email, string $subject, string $html, array $sender, string $reply_to = '' ): array {
+		$payload = array(
 			'sender'      => array(
 				'email' => $sender['email'],
 				'name'  => $sender['name'],
@@ -89,6 +90,10 @@ class Mailer {
 			'subject'     => $subject,
 			'htmlContent' => $html,
 		);
+		if ( '' !== $reply_to && is_email( $reply_to ) ) {
+			$payload['replyTo'] = array( 'email' => $reply_to );
+		}
+		return $payload;
 	}
 
 	/**
@@ -97,8 +102,9 @@ class Mailer {
 	 * @param string $to_email Recipient.
 	 * @param string $subject  Subject.
 	 * @param string $html     HTML body.
+	 * @param string $reply_to Optional Reply-To address (e.g. the visitor).
 	 */
-	public static function send( string $to_email, string $subject, string $html ): bool {
+	public static function send( string $to_email, string $subject, string $html, string $reply_to = '' ): bool {
 		if ( self::is_brevo_configured() ) {
 			$response = wp_remote_post(
 				self::ENDPOINT,
@@ -109,7 +115,7 @@ class Mailer {
 						'Content-Type' => 'application/json',
 						'Accept'       => 'application/json',
 					),
-					'body'    => wp_json_encode( self::build_payload( $to_email, $subject, $html, self::sender() ) ),
+					'body'    => wp_json_encode( self::build_payload( $to_email, $subject, $html, self::sender(), $reply_to ) ),
 				)
 			);
 
@@ -126,6 +132,9 @@ class Mailer {
 			'Content-Type: text/html; charset=UTF-8',
 			sprintf( 'From: %s <%s>', $sender['name'], $sender['email'] ),
 		);
+		if ( '' !== $reply_to && is_email( $reply_to ) ) {
+			$headers[] = 'Reply-To: ' . $reply_to;
+		}
 		return (bool) wp_mail( $to_email, $subject, $html, $headers );
 	}
 }

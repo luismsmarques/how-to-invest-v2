@@ -84,6 +84,39 @@ class REST {
 			)
 		);
 
+		// Public contact form → emails the site (anonymous; nothing retained).
+		register_rest_route(
+			self::NAMESPACE,
+			'/contact',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'contact' ),
+				'permission_callback' => array( __CLASS__, 'check_nonce' ),
+				'args'                => array(
+					'name'    => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'email'   => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'message' => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'company' => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+					'locale'  => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+				),
+			)
+		);
+
 		// Create a native account and sign in (returns a fresh nonce).
 		register_rest_route(
 			self::NAMESPACE,
@@ -281,6 +314,41 @@ class REST {
 			),
 			200
 		);
+	}
+
+	/**
+	 * POST /contact — validate and email a visitor's message to the site.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function contact( WP_REST_Request $request ) {
+		if ( RateLimit::exceeded( 'contact' ) ) {
+			return self::too_many();
+		}
+
+		// Honeypot: a filled "company" field means a bot — drop it but report
+		// success so the bot gets no signal.
+		if ( '' !== trim( (string) $request->get_param( 'company' ) ) ) {
+			return new WP_REST_Response( array( 'sent' => true ), 200 );
+		}
+
+		$name    = sanitize_text_field( (string) $request->get_param( 'name' ) );
+		$email   = sanitize_email( (string) $request->get_param( 'email' ) );
+		$message = sanitize_textarea_field( (string) $request->get_param( 'message' ) );
+
+		if ( '' === $name || ! is_email( $email ) || '' === $message ) {
+			return new WP_Error( 'hti_invalid_contact', __( 'Please fill in your name, a valid email and a message.', 'hti-engine' ), array( 'status' => 422 ) );
+		}
+		if ( strlen( $message ) > 5000 ) {
+			$message = substr( $message, 0, 5000 );
+		}
+
+		if ( ! Contact::deliver( $name, $email, $message ) ) {
+			return new WP_Error( 'hti_contact_failed', __( 'Your message could not be sent. Please try again or email us directly.', 'hti-engine' ), array( 'status' => 502 ) );
+		}
+
+		return new WP_REST_Response( array( 'sent' => true ), 200 );
 	}
 
 	/**
