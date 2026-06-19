@@ -281,7 +281,7 @@ class Contact {
 				'discl'    => 'Educational content about financial literacy. Not financial, investment, tax or legal advice. Investing involves risk, including loss of capital.',
 			);
 
-		$html = self::auto_reply_html( $t, $subject );
+		$html = self::auto_reply_html( $t, $subject, $locale );
 
 		// Reply-To the team so a visitor reply lands in the shared inbox.
 		return Mailer::send( $email, $t['subject'], $html, self::recipient() );
@@ -294,52 +294,31 @@ class Contact {
 	 * @param array<string,string> $t       Localized strings.
 	 * @param string               $subject Visitor's subject line.
 	 */
-	private static function auto_reply_html( array $t, string $subject ): string {
-		$subject_row = '';
+	private static function auto_reply_html( array $t, string $subject, string $locale ): string {
+		$rows = '';
 		if ( '' !== $subject ) {
-			$subject_row = '<tr><td style="padding:18px 22px;border-bottom:1px solid #EBE6F4;">'
-				. '<table role="presentation" style="border-collapse:collapse;width:100%"><tbody><tr>'
+			$rows .= '<tr><td style="padding:18px 22px;border-bottom:1px solid #EBE6F4;">'
+				. '<table role="presentation" width="100%" style="border-collapse:collapse;"><tbody><tr>'
 				. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;">' . esc_html( $t['subj_lbl'] ) . '</td>'
 				. '<td style="text-align:right;font:700 14px Arial,sans-serif;color:#1E2147;">' . esc_html( $subject ) . '</td>'
 				. '</tr></tbody></table></td></tr>';
 		}
-
-		return '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F1F0F6;">'
-			. '<table role="presentation" style="border-collapse:collapse;width:100%;background:#F1F0F6;"><tbody><tr><td style="padding:24px 12px;">'
-			. '<table role="presentation" align="center" style="border-collapse:collapse;width:600px;max-width:100%;margin:0 auto;background:#FFFFFF;border-radius:8px;overflow:hidden;"><tbody>'
-
-			// Header.
-			. '<tr><td style="background:#1E2147;padding:24px 36px;font:700 21px Poppins,Arial,sans-serif;color:#fff;letter-spacing:-.01em;">HowToInvest</td></tr>'
-
-			// Confirmation.
-			. '<tr><td style="padding:44px 48px 0;text-align:center;">'
-			. '<div style="width:72px;height:72px;line-height:72px;margin:0 auto;border-radius:999px;background:#EAF6F0;color:#147A57;font:700 34px Arial,sans-serif;">&#10003;</div>'
-			. '<h1 style="margin:24px 0 0;font:800 28px Poppins,Arial,sans-serif;line-height:1.15;color:#1E2147;">' . esc_html( $t['heading'] ) . '</h1>'
-			. '<p style="margin:14px auto 0;max-width:44ch;font:400 16px Arial,sans-serif;color:#5C5670;line-height:1.6;">' . esc_html( $t['greeting'] ) . '</p>'
-			. '</td></tr>'
-
-			// Summary card.
-			. '<tr><td style="padding:30px 48px 0;">'
-			. '<table role="presentation" style="border-collapse:collapse;width:100%;background:#F6F4FB;border-radius:14px;"><tbody>'
-			. $subject_row
-			. '<tr><td style="padding:18px 22px;"><table role="presentation" style="border-collapse:collapse;width:100%"><tbody><tr>'
+		$rows .= '<tr><td style="padding:18px 22px;">'
+			. '<table role="presentation" width="100%" style="border-collapse:collapse;"><tbody><tr>'
 			. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;">' . esc_html( $t['eta_lbl'] ) . '</td>'
 			. '<td style="text-align:right;font:700 14px Arial,sans-serif;color:#147A57;">' . esc_html( $t['eta_val'] ) . '</td>'
-			. '</tr></tbody></table></td></tr>'
-			. '</tbody></table></td></tr>'
+			. '</tr></tbody></table></td></tr>';
 
-			// Auto-reply note.
-			. '<tr><td style="padding:26px 48px 44px;text-align:center;">'
-			. '<p style="margin:0 auto;max-width:48ch;font:400 12.5px Arial,sans-serif;color:#9A93A8;line-height:1.55;">' . esc_html( $t['note'] ) . '</p>'
-			. '</td></tr>'
+		$card = '<table role="presentation" width="100%" style="border-collapse:collapse;background:#F6F4FB;border-radius:14px;"><tbody>' . $rows . '</tbody></table>';
 
-			// Footer.
-			. '<tr><td style="background:#14162E;padding:30px 40px;text-align:center;">'
-			. '<p style="margin:0 auto;max-width:52ch;font:400 11.5px Arial,sans-serif;color:#6E72A0;line-height:1.55;">' . esc_html( $t['discl'] ) . '</p>'
-			. '<div style="margin-top:14px;font:400 11.5px Arial,sans-serif;color:#5B5F86;">&copy; 2026 HowToInvest &middot; howtoinvest.pro</div>'
-			. '</td></tr>'
+		$inner = Emails::row(
+			Emails::icon_circle( '&#10003;', '#EAF6F0', '#147A57' ) . Emails::h1( $t['heading'] ) . Emails::lead( esc_html( $t['greeting'] ) ),
+			'44px 48px 0',
+			true
+		)
+			. Emails::row( $card, '30px 48px 0' )
+			. Emails::row( Emails::note( $t['note'] ), '26px 48px 44px', true );
 
-			. '</tbody></table>'
-			. '</td></tr></tbody></table></body></html>';
+		return Emails::layout( $locale, $inner, $t['heading'] );
 	}
 }

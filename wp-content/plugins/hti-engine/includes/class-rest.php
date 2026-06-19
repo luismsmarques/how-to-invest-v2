@@ -125,6 +125,35 @@ class REST {
 			)
 		);
 
+		// Email a saved result to the visitor (the investor-profile email).
+		register_rest_route(
+			self::NAMESPACE,
+			'/email-result',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'email_result' ),
+				'permission_callback' => array( __CLASS__, 'check_nonce' ),
+				'args'                => array(
+					'profile_id'    => array(
+						'type'     => 'integer',
+						'required' => true,
+					),
+					'session_token' => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+					'email'         => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'locale'        => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+				),
+			)
+		);
+
 		// Create a native account and sign in (returns a fresh nonce).
 		register_rest_route(
 			self::NAMESPACE,
@@ -368,6 +397,49 @@ class REST {
 
 		// Best-effort branded auto-reply in the visitor's language (from the URL).
 		Contact::auto_reply( $name, $email, $subject, $locale );
+
+		return new WP_REST_Response( array( 'sent' => true ), 200 );
+	}
+
+	/**
+	 * POST /email-result — email a saved result to the visitor (template 07).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function email_result( WP_REST_Request $request ) {
+		if ( RateLimit::exceeded( 'email_result' ) ) {
+			return self::too_many();
+		}
+
+		$profile_id = absint( $request->get_param( 'profile_id' ) );
+		$token      = sanitize_text_field( (string) $request->get_param( 'session_token' ) );
+		$email      = sanitize_email( (string) $request->get_param( 'email' ) );
+		$locale     = self::locale( (string) $request->get_param( 'locale' ) );
+
+		if ( ! is_email( $email ) ) {
+			return new WP_Error( 'hti_invalid_email', __( 'Please enter a valid email.', 'hti-engine' ), array( 'status' => 422 ) );
+		}
+
+		$post = $profile_id ? get_post( $profile_id ) : null;
+		if ( ! $post || 'htinvest_profile' !== $post->post_type ) {
+			return new WP_Error( 'hti_not_found', __( 'Result not found.', 'hti-engine' ), array( 'status' => 404 ) );
+		}
+		if ( ! self::can_read_profile( $profile_id, $token ) ) {
+			return new WP_Error( 'hti_forbidden', __( 'You are not allowed to send this result.', 'hti-engine' ), array( 'status' => 403 ) );
+		}
+
+		$label      = (string) get_post_meta( $profile_id, 'hti_archetype_label', true );
+		$allocation = get_post_meta( $profile_id, 'hti_allocation', true );
+		$allocation = is_array( $allocation ) ? $allocation : array();
+		$cta        = home_url( 'pt' === $locale ? '/pt/' : '/' );
+
+		$subject = 'pt' === $locale ? 'O teu perfil de investidor — HowToInvest' : 'Your investor profile — HowToInvest';
+		$html    = Emails::profile_email( $locale, $label, $allocation, $cta );
+
+		if ( ! Mailer::send( $email, $subject, $html ) ) {
+			return new WP_Error( 'hti_email_failed', __( 'Could not send. Please try again.', 'hti-engine' ), array( 'status' => 502 ) );
+		}
 
 		return new WP_REST_Response( array( 'sent' => true ), 200 );
 	}
