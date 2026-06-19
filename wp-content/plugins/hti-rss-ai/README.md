@@ -11,7 +11,8 @@ See the full plan: [`docs/RSS_AI_Feed_Plan.md`](../../../docs/RSS_AI_Feed_Plan.m
 ## Status
 - **M0 — scaffold (done):** bootstrap, activation with the three custom tables, Settings page, dependency notice, i18n.
 - **M1 — feeds management (done):** add/edit/delete feeds (WP_List_Table) + "Test feed" preview.
-- M2 — fetcher + drafts · M3 — grouping · M4 — research + generation · M5 — review + SEO · M6 — hardening.
+- **M2 — fetcher + drafts (done):** WP-Cron fetch + parse + dedupe + image extraction → drafts; Drafts list with filters, "Fetch now" and bulk "ignore".
+- M3 — grouping · M4 — research + generation · M5 — review + SEO · M6 — hardening.
 
 ## Requirements
 - WordPress 6.7+, PHP 8.3+.
