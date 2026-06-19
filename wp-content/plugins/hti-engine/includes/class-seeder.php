@@ -212,7 +212,7 @@ class Seeder {
 		$groups  = array(
 			'glossary' => self::glossary_terms(),
 			'page'     => self::pages(),
-			'post'     => self::articles(),
+			'learn'    => self::articles(),
 		);
 
 		foreach ( $groups as $type => $entries ) {
