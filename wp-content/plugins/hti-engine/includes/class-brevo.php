@@ -29,11 +29,46 @@ class Brevo {
 	}
 
 	/**
-	 * The configured newsletter list id (0 when unset).
+	 * The configured newsletter list id for a language. Falls back to the
+	 * legacy single list when the per-language one isn't set.
+	 *
+	 * @param string $locale 'en' | 'pt' | '' (legacy/any).
 	 */
-	public static function list_id(): int {
+	public static function list_id( string $locale = '' ): int {
 		$settings = function_exists( 'get_option' ) ? get_option( 'htinvest_settings' ) : array();
-		return is_array( $settings ) ? (int) ( $settings['brevo_list_id'] ?? 0 ) : 0;
+		$settings = is_array( $settings ) ? $settings : array();
+
+		if ( 'pt' === $locale && ! empty( $settings['brevo_list_id_pt'] ) ) {
+			return (int) $settings['brevo_list_id_pt'];
+		}
+		if ( 'en' === $locale && ! empty( $settings['brevo_list_id_en'] ) ) {
+			return (int) $settings['brevo_list_id_en'];
+		}
+		// Legacy single list (or fallback when a language list is missing).
+		return (int) ( $settings['brevo_list_id'] ?? 0 );
+	}
+
+	/**
+	 * Map of languages that have a configured list: [ locale => list_id ].
+	 *
+	 * @return array<string,int>
+	 */
+	public static function lists_by_language(): array {
+		$out = array();
+		foreach ( array( 'en', 'pt' ) as $locale ) {
+			$id = self::list_id( $locale );
+			if ( $id > 0 ) {
+				$out[ $locale ] = $id;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Whether at least one newsletter list is configured.
+	 */
+	public static function any_list_configured(): bool {
+		return ! empty( self::lists_by_language() );
 	}
 
 	/**
