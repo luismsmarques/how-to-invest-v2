@@ -453,7 +453,8 @@
 		}
 
 		// First-run onboarding (language + newsletter + open question).
-		if ( loggedIn && ctx.onboarded === false ) {
+		// Note: wp_localize_script stringifies booleans, so false arrives as "".
+		if ( loggedIn && ! ctx.onboarded ) {
 			root.appendChild( onboardingPanel( mount ) );
 			mount.appendChild( root );
 			return;
