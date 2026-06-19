@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.1';
+const VERSION = '0.6.2';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -139,6 +139,31 @@ function strings(): array {
 		'gloss_filter'     => array( 'en' => 'Filter by letter', 'pt' => 'Filtrar por letra' ),
 		// Language switcher.
 		'lang_switch'      => array( 'en' => 'Language', 'pt' => 'Idioma' ),
+		// About page.
+		'about_eyebrow'    => array( 'en' => 'About', 'pt' => 'Sobre' ),
+		'about_title'      => array( 'en' => 'About this project', 'pt' => 'Sobre este projeto' ),
+		'about_lead'       => array( 'en' => 'A personal journey to explore AI, help the community, and show the power of modern programming.', 'pt' => 'Uma jornada pessoal para explorar IA, ajudar a comunidade e mostrar o poder da programação moderna.' ),
+		'about_why_h'      => array( 'en' => 'Why does this project exist?', 'pt' => 'Porque é que este projeto existe?' ),
+		'about_why_p1'     => array( 'en' => 'This project was born from a personal need: to sharpen my artificial-intelligence skills while solving a real problem I keep running into.', 'pt' => 'Este projeto nasceu de uma necessidade pessoal: aprimorar as minhas competências em inteligência artificial enquanto resolvo um problema real com que me cruzo constantemente.' ),
+		'about_why_p2'     => array( 'en' => 'Friends constantly ask me: "Where should I invest?", "How do I start?", "What\'s my risk profile?". On Reddit and other communities, I see the same questions over and over. It was the perfect problem to solve while exploring AI technologies.', 'pt' => 'Os amigos perguntam-me constantemente: "Onde devo investir?", "Como começo?", "Qual é o meu perfil de risco?". No Reddit e noutras comunidades, vejo as mesmas perguntas repetidamente. Era o problema perfeito para resolver enquanto explorava tecnologias de IA.' ),
+		'about_why_p3'     => array( 'en' => 'The result? A fully functional application that genuinely helps people understand the financial world better and make more informed decisions about their investments.', 'pt' => 'O resultado? Uma aplicação totalmente funcional que ajuda mesmo as pessoas a compreender melhor o mundo financeiro e a tomar decisões mais informadas sobre os seus investimentos.' ),
+		'about_founder_name' => array( 'en' => 'Luis Marques', 'pt' => 'Luis Marques' ),
+		'about_founder_role' => array( 'en' => 'Founder & developer', 'pt' => 'Fundador & programador' ),
+		'about_founder_bio'  => array( 'en' => '12+ years in iGaming, specializing in programming and automation. Now focused on helping others solve problems with code.', 'pt' => 'Mais de 12 anos em iGaming, especializado em programação e automação. Agora focado em ajudar os outros a resolver problemas com código.' ),
+		'about_linkedin'   => array( 'en' => 'LinkedIn', 'pt' => 'LinkedIn' ),
+		'about_coffee'     => array( 'en' => 'Buy me a coffee', 'pt' => 'Compra-me um café' ),
+		'about_goals_h'    => array( 'en' => 'Project goals', 'pt' => 'Objetivos do projeto' ),
+		'about_goal1_t'    => array( 'en' => 'Sharpen my AI skills', 'pt' => 'Aprimorar as minhas competências em IA' ),
+		'about_goal1_d'    => array( 'en' => 'Build something real with modern AI — not just demos.', 'pt' => 'Construir algo real com IA moderna — não apenas demonstrações.' ),
+		'about_goal2_t'    => array( 'en' => 'Stay on top of financial news', 'pt' => 'Acompanhar as notícias financeiras' ),
+		'about_goal2_d'    => array( 'en' => 'Follow the markets and turn noise into clarity.', 'pt' => 'Seguir os mercados e transformar ruído em clareza.' ),
+		'about_goal3_t'    => array( 'en' => 'Help the community', 'pt' => 'Ajudar a comunidade' ),
+		'about_goal3_d'    => array( 'en' => 'Answer the questions friends and forums keep asking.', 'pt' => 'Responder às perguntas que amigos e fóruns repetem.' ),
+		'about_journey_h'  => array( 'en' => 'The project\'s journey', 'pt' => 'A vida do projeto' ),
+		'about_journey_p'  => array( 'en' => 'It started as a vibe-coded project on the Base44 platform, then moved to a WordPress solution under my own control — for SEO and full ownership.', 'pt' => 'Começou como um projeto "vibe coded" na plataforma Base44 e migrou para uma solução em WordPress sob o meu controlo — para efeitos de SEO e total autonomia.' ),
+		'about_journey_1'  => array( 'en' => 'Prototype on Base44', 'pt' => 'Protótipo no Base44' ),
+		'about_journey_2'  => array( 'en' => 'Self-hosted WordPress (SEO)', 'pt' => 'WordPress próprio (SEO)' ),
+		'about_cta'        => array( 'en' => 'Discover your investor profile', 'pt' => 'Descobre o teu perfil de investidor' ),
 	);
 }
 
@@ -188,8 +213,105 @@ function register_dynamic_blocks(): void {
 			'render_callback' => __NAMESPACE__ . '\\render_lang_switcher',
 		)
 	);
+	register_block_type(
+		'howtoinvest/about',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'About page', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_about',
+		)
+	);
 }
 add_action( 'init', __NAMESPACE__ . '\\register_dynamic_blocks' );
+
+/**
+ * Language-aware, designed About page (hero, why, founder card, goals,
+ * journey). The founder avatar uses the page's featured image when set,
+ * otherwise initials.
+ */
+function render_about(): string {
+	$linkedin = 'https://www.linkedin.com/in/luismsmarques/';
+	$coffee   = 'https://buymeacoffee.com/luismarques';
+	$quiz     = esc_url( home_url( '/investor-profile-quiz/' ) );
+
+	// Founder avatar: featured image of the About page, else initials.
+	$avatar = '<span class="hti-about__initials" aria-hidden="true">LM</span>';
+	$thumb  = get_post_thumbnail_id();
+	if ( $thumb ) {
+		$img = wp_get_attachment_image( $thumb, 'medium', false, array( 'class' => 'hti-about__photo', 'alt' => t( 'about_founder_name' ) ) );
+		if ( $img ) {
+			$avatar = $img;
+		}
+	}
+
+	$goals = array(
+		array( 'about_goal1_t', 'about_goal1_d', '<path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6 6l1.5 1.5M16.5 16.5 18 18M18 6l-1.5 1.5M7.5 16.5 6 18"/><circle cx="12" cy="12" r="3.5"/>' ),
+		array( 'about_goal2_t', 'about_goal2_d', '<path d="M4 5h13v14H5a1 1 0 0 1-1-1z"/><path d="M17 8h3v9a2 2 0 0 1-2 2"/><path d="M7 9h7M7 13h7M7 17h4"/>' ),
+		array( 'about_goal3_t', 'about_goal3_d', '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 3.5a3 3 0 0 1 0 5.8M21 20c0-2.6-1.7-4.9-4-5.7"/>' ),
+	);
+
+	$h  = '<div class="alignwide hti-about">';
+
+	// Hero.
+	$h .= '<header class="hti-about__hero">';
+	$h .= '<span class="hti-badge"><span class="hti-badge__dot"></span>' . esc_html( t( 'about_eyebrow' ) ) . '</span>';
+	$h .= '<h1 class="hti-about__title">' . esc_html( t( 'about_title' ) ) . '</h1>';
+	$h .= '<p class="hti-about__lead">' . esc_html( t( 'about_lead' ) ) . '</p>';
+	$h .= '</header>';
+
+	// Why.
+	$h .= '<section class="hti-about__why">';
+	$h .= '<h2 class="hti-about__h2">' . esc_html( t( 'about_why_h' ) ) . '</h2>';
+	$h .= '<p>' . esc_html( t( 'about_why_p1' ) ) . '</p>';
+	$h .= '<p>' . esc_html( t( 'about_why_p2' ) ) . '</p>';
+	$h .= '<p class="hti-about__result">' . esc_html( t( 'about_why_p3' ) ) . '</p>';
+	$h .= '</section>';
+
+	// Founder card.
+	$h .= '<section class="hti-about__founder">';
+	$h .= '<div class="hti-about__avatar">' . $avatar . '</div>';
+	$h .= '<div class="hti-about__founderbody">';
+	$h .= '<span class="hti-about__role">' . esc_html( t( 'about_founder_role' ) ) . '</span>';
+	$h .= '<h2 class="hti-about__name">' . esc_html( t( 'about_founder_name' ) ) . '</h2>';
+	$h .= '<p class="hti-about__bio">' . esc_html( t( 'about_founder_bio' ) ) . '</p>';
+	$h .= '<div class="hti-about__social">';
+	$h .= '<a class="hti-btn-about hti-btn-about--ghost" href="' . esc_url( $linkedin ) . '" target="_blank" rel="noopener noreferrer">';
+	$h .= '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.94 7.5a1.94 1.94 0 1 1 0-3.88 1.94 1.94 0 0 1 0 3.88zM5.2 20.4V9h3.48v11.4H5.2zM10.6 9h3.34v1.56h.05c.46-.88 1.6-1.8 3.3-1.8 3.53 0 4.18 2.32 4.18 5.34v6.3h-3.48v-5.6c0-1.34-.02-3.06-1.86-3.06-1.87 0-2.15 1.46-2.15 2.96v5.7H10.6z"/></svg>'
+		. esc_html( t( 'about_linkedin' ) ) . '</a>';
+	$h .= '<a class="hti-btn-about hti-btn-about--coffee" href="' . esc_url( $coffee ) . '" target="_blank" rel="noopener noreferrer">☕ ' . esc_html( t( 'about_coffee' ) ) . '</a>';
+	$h .= '</div></div></section>';
+
+	// Goals.
+	$h .= '<section class="hti-about__goals-wrap">';
+	$h .= '<h2 class="hti-about__h2 hti-about__h2--center">' . esc_html( t( 'about_goals_h' ) ) . '</h2>';
+	$h .= '<div class="hti-about__goals">';
+	foreach ( $goals as $g ) {
+		$h .= '<div class="hti-about__goal">'
+			. '<span class="hti-about__goalicon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $g[2] . '</svg></span>'
+			. '<h3 class="hti-about__goalt">' . esc_html( t( $g[0] ) ) . '</h3>'
+			. '<p class="hti-about__goald">' . esc_html( t( $g[1] ) ) . '</p>'
+			. '</div>';
+	}
+	$h .= '</div></section>';
+
+	// Journey.
+	$h .= '<section class="hti-about__journey">';
+	$h .= '<h2 class="hti-about__h2">' . esc_html( t( 'about_journey_h' ) ) . '</h2>';
+	$h .= '<p>' . esc_html( t( 'about_journey_p' ) ) . '</p>';
+	$h .= '<div class="hti-about__timeline">'
+		. '<span class="hti-about__step">' . esc_html( t( 'about_journey_1' ) ) . '</span>'
+		. '<span class="hti-about__arrow" aria-hidden="true">→</span>'
+		. '<span class="hti-about__step is-now">' . esc_html( t( 'about_journey_2' ) ) . '</span>'
+		. '</div>';
+	$h .= '</section>';
+
+	// Closing CTA.
+	$h .= '<div class="hti-about__cta"><a class="wp-block-button__link wp-element-button" href="' . $quiz . '">' . esc_html( t( 'about_cta' ) ) . '</a></div>';
+
+	$h .= '</div>';
+	return $h;
+}
 
 /**
  * Language switcher (Polylang) — links to the current page's translations.

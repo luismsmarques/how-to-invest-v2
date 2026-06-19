@@ -97,7 +97,34 @@ class Seeder {
 		// Portuguese translation (built from the hti_*_pt variants).
 		$report['translations_created'] = self::seed_translations();
 
+		// Render the About page(s) with the designed template/block.
+		self::ensure_about_template();
+
 		return $report;
+	}
+
+	/**
+	 * Point the About page (and its PT translation) at the custom
+	 * "About page" template, which renders the designed howtoinvest/about
+	 * block. Idempotent.
+	 */
+	private static function ensure_about_template(): void {
+		$en = get_page_by_path( 'about', OBJECT, 'page' );
+		if ( ! $en instanceof \WP_Post ) {
+			return;
+		}
+		update_post_meta( $en->ID, '_wp_page_template', 'page-about' );
+
+		if ( self::polylang_active() ) {
+			$default = (string) pll_default_language( 'slug' );
+			$pt      = self::portuguese_slug( '' !== $default ? $default : 'en' );
+			if ( '' !== $pt ) {
+				$pt_id = pll_get_post( (int) $en->ID, $pt );
+				if ( $pt_id ) {
+					update_post_meta( (int) $pt_id, '_wp_page_template', 'page-about' );
+				}
+			}
+		}
 	}
 
 	/**
