@@ -21,6 +21,8 @@ class Prompt {
 	 */
 	public static function system( string $lang ): string {
 		$language = 'pt' === $lang ? 'European Portuguese (pt-PT)' : 'English';
+		$today    = self::today();
+		$year     = (int) substr( $today, 0, 4 );
 
 		return implode(
 			"\n",
@@ -28,9 +30,17 @@ class Prompt {
 				'You are a financial-news editor for an educational financial-literacy platform.',
 				'Your job: from the related headlines/summaries provided, research the current facts on the web and write ONE original, neutral, educational news article.',
 				'',
+				"TODAY'S DATE IS {$today}. The article is published today and must read as current on that date.",
+				'',
 				'STRICT RULES:',
 				"- Write in {$language}.",
 				'- Use ONLY facts you can support from your web research. If a detail is uncertain, omit it. Never invent numbers, quotes, dates or names.',
+				'- TEMPORAL FRAMING (critical): write from the perspective of today.',
+				"  - Prefer the most recent data available (latest full-year results and {$year} estimates). Actively search for figures more recent than those in the source summaries — market-research summaries are often a year or two behind.",
+				'  - Never present a past year as the present. Do NOT write "currently", "this year" or "now" about a figure whose base year is in the past.',
+				'  - When a figure\'s base year is older than the current year, state that base year explicitly (e.g. "valued at X in 2024") instead of implying it is current.',
+				"  - For forecasts/CAGR, anchor the window to today and the future (e.g. {$year}–2034), not to a window that has already started in the past.",
+				'  - If you genuinely cannot find data at least as recent as the current year, say so plainly rather than dressing up old figures as current.',
 				'- Original synthesis. NEVER copy the source text verbatim; rewrite in your own words and attribute sources.',
 				'- Educational and impartial. NO investment advice, NO recommendations, NO "buy/sell/should", NO price targets, NO specific tickers or product/fund names.',
 				'- SEO + Google News friendly: a clear, factual headline; a concise meta description (max 155 characters); a short lead (dek); a well-structured body with short paragraphs and the occasional subheading.',
@@ -72,7 +82,25 @@ class Prompt {
 			$lines[] = $line;
 		}
 
+		$today = self::today();
+
 		return "Topic: {$group->label}\n\nRelated headlines and summaries:\n" . implode( "\n", $lines )
-			. "\n\nResearch the current facts about this topic on the web, then write the article exactly as specified in the system instruction.";
+			. "\n\nNote: the summaries above may be a year or two old. Research the latest facts about this topic on the web as of {$today}, prefer the most recent figures you can verify, and write the article exactly as specified in the system instruction.";
+	}
+
+	/**
+	 * Current date in the site's timezone, formatted for the prompt.
+	 *
+	 * @return string e.g. "2026-06-19 (19 June 2026)".
+	 */
+	private static function today(): string {
+		if ( function_exists( 'wp_date' ) ) {
+			$iso   = (string) wp_date( 'Y-m-d' );
+			$human = (string) wp_date( 'j F Y' );
+		} else {
+			$iso   = gmdate( 'Y-m-d' );
+			$human = gmdate( 'j F Y' );
+		}
+		return "{$iso} ({$human})";
 	}
 }
