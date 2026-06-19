@@ -28,11 +28,17 @@
 
 		var name = ( form.elements.name.value || '' ).trim();
 		var email = ( form.elements.email.value || '' ).trim();
+		var subject = form.elements.subject ? ( form.elements.subject.value || '' ).trim() : '';
 		var message = ( form.elements.message.value || '' ).trim();
+		var consent = form.elements.consent ? form.elements.consent.checked : false;
 		var honeypot = form.elements.hti_hp ? form.elements.hti_hp.value : '';
 
-		if ( ! name || ! email || ! message ) {
+		if ( ! name || ! email || ! subject || ! message ) {
 			setStatus( strings.invalid, 'error' );
+			return;
+		}
+		if ( ! consent ) {
+			setStatus( strings.consent, 'error' );
 			return;
 		}
 
@@ -48,7 +54,9 @@
 			body: JSON.stringify( {
 				name: name,
 				email: email,
+				subject: subject,
 				message: message,
+				consent: consent,
 				hti_hp: honeypot,
 				locale: cfg.locale || 'en',
 			} ),
