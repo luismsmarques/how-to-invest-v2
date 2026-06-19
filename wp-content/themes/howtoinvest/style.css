@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.4.0
+Version: 0.4.1
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -516,12 +516,19 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
 	/* :checked compound (0,3,0) beats the closed rule. */
 	.hti-nav-check:checked ~ .hti-nav-wrap { display: flex; }
 
+	/* Full-width rows: let the nav + list fill the panel so each link's
+	   click area spans the whole width (not just the text). */
+	.hti-nav-wrap .hti-menu-nav { display: block; width: 100%; }
 	.hti-nav .hti-menu {
+		width: 100%;
 		flex-direction: column;
 		align-items: stretch;
 		gap: 2px;
 	}
+	.hti-nav .hti-menu li { width: 100%; }
 	.hti-nav .hti-menu a {
+		display: block;
+		width: 100%;
 		padding: 12px;
 		font-size: 16px;
 		border-radius: 10px;
