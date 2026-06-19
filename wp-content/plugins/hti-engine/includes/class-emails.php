@@ -294,6 +294,50 @@ class Emails {
 		return self::layout( $locale, $inner, $heading );
 	}
 
+	/* ---------- preferences updated (template 13) ---------- */
+
+	/**
+	 * Render the "preferences updated" confirmation.
+	 *
+	 * @param string            $locale     'en'|'pt'.
+	 * @param bool              $newsletter Newsletter on/off.
+	 * @param string            $frequency  'weekly'|'daily'.
+	 * @param array<int,string> $categories Chosen category names.
+	 */
+	public static function preferences( string $locale, bool $newsletter, string $frequency, array $categories ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'Preferências atualizadas' : 'Preferences updated';
+		$lead    = $pt ? 'Guardámos as tuas preferências de email. Aqui fica o resumo:' : 'We’ve saved your email preferences. Here’s the summary:';
+
+		$rowsrc = array(
+			( $pt ? 'Newsletter' : 'Newsletter' )   => $newsletter ? ( $pt ? 'Ativa' : 'On' ) : ( $pt ? 'Desativada' : 'Off' ),
+			( $pt ? 'Frequência' : 'Frequency' )     => 'daily' === $frequency ? ( $pt ? 'Diária' : 'Daily' ) : ( $pt ? 'Semanal' : 'Weekly' ),
+			( $pt ? 'Categorias' : 'Categories' )    => empty( $categories ) ? ( $pt ? 'Todas' : 'All' ) : implode( ', ', $categories ),
+		);
+		$rows  = '';
+		$keys  = array_keys( $rowsrc );
+		$last  = end( $keys );
+		foreach ( $rowsrc as $label => $value ) {
+			$border = $label !== $last ? 'border-bottom:1px solid #EBE6F4;' : '';
+			$rows  .= '<tr><td style="padding:16px 22px;' . $border . '"><table role="presentation" width="100%"><tbody><tr>'
+				. '<td style="font:600 13.5px Arial,sans-serif;color:#7A7488;vertical-align:top;">' . esc_html( $label ) . '</td>'
+				. '<td style="text-align:right;font:700 13.5px Arial,sans-serif;color:#1E2147;">' . esc_html( $value ) . '</td>'
+				. '</tr></tbody></table></td></tr>';
+		}
+		$card = '<table role="presentation" width="100%" style="border-collapse:collapse;background:#F6F4FB;border-radius:14px;"><tbody>' . $rows . '</tbody></table>';
+
+		$inner = self::row(
+			self::icon_circle( '&#9881;', '#EFEBFF', '#7C5CFC' ) . self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. self::row( $card, '26px 48px 6px' )
+			. self::row( self::note( $pt ? 'Podes atualizar estas preferências a qualquer momento na tua conta.' : 'You can update these preferences any time in your account.' ), '14px 48px 44px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
 	/* ---------- reactivation (template 12) ---------- */
 
 	/**

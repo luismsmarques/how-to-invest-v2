@@ -125,6 +125,29 @@ class REST {
 			)
 		);
 
+		// Email preferences (auth): get + save (syncs to Brevo, emails a summary).
+		register_rest_route(
+			self::NAMESPACE,
+			'/preferences',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( Account::class, 'rest_get_prefs' ),
+					'permission_callback' => array( __CLASS__, 'check_auth' ),
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( Account::class, 'rest_save_prefs' ),
+					'permission_callback' => array( __CLASS__, 'check_auth' ),
+					'args'                => array(
+						'newsletter' => array( 'type' => 'boolean', 'required' => true ),
+						'frequency'  => array( 'type' => 'string', 'required' => false ),
+						'categories' => array( 'type' => 'array', 'required' => false ),
+					),
+				),
+			)
+		);
+
 		// Change account email (auth) → sends a 24h confirmation to the new address.
 		register_rest_route(
 			self::NAMESPACE,

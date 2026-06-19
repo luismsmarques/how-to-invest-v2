@@ -136,6 +136,8 @@ class Frontend {
 			'isLoggedIn' => is_user_logged_in(),
 			'email'      => is_user_logged_in() ? wp_get_current_user()->user_email : '',
 			'deleteAt'   => self::deletion_date( $locale ),
+			'prefs'      => is_user_logged_in() ? Account::get_prefs( get_current_user_id() ) : null,
+			'categories' => Account::categories_list( $locale ),
 			'locale'     => $locale,
 			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
 			'homeUrl'    => esc_url( home_url( '/' ) ),
@@ -211,6 +213,13 @@ class Frontend {
 				'cancel_deletion'  => 'Cancelar eliminação',
 				'deletion_set'     => 'Conta agendada para eliminação. Enviámos os detalhes por email.',
 				'deletion_off'     => 'Eliminação cancelada. A tua conta continua ativa.',
+				'preferences'      => 'Preferências de email',
+				'pref_newsletter'  => 'Receber a newsletter',
+				'pref_frequency'   => 'Frequência',
+				'pref_weekly'      => 'Semanal',
+				'pref_daily'       => 'Diária',
+				'pref_categories'  => 'Categorias de interesse',
+				'prefs_saved'      => 'Preferências guardadas. Enviámos-te a confirmação por email.',
 			);
 		}
 		return array(
@@ -251,6 +260,13 @@ class Frontend {
 			'cancel_deletion'  => 'Cancel deletion',
 			'deletion_set'     => 'Account scheduled for deletion. We’ve emailed you the details.',
 			'deletion_off'     => 'Deletion cancelled. Your account stays active.',
+			'preferences'      => 'Email preferences',
+			'pref_newsletter'  => 'Receive the newsletter',
+			'pref_frequency'   => 'Frequency',
+			'pref_weekly'      => 'Weekly',
+			'pref_daily'       => 'Daily',
+			'pref_categories'  => 'Topics you care about',
+			'prefs_saved'      => 'Preferences saved. We’ve emailed you the confirmation.',
 		);
 	}
 
