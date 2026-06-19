@@ -20,11 +20,23 @@ defined( 'ABSPATH' ) || exit;
 class Gemini_Client {
 
 	/**
-	 * Resolve the API key (constant or filter).
+	 * Resolve the API key, reusing HTI Engine's own resolution so the key is
+	 * configured in a single place.
+	 *
+	 * Order: HTI_GEMINI_API_KEY constant → HTI Engine's resolver (which also
+	 * checks the GEMINI_API_KEY env var and the htinvest_settings option) →
+	 * the rssai_gemini_api_key filter. Grounding needs a *raw* key, so a key
+	 * held only in WordPress core "Connectors" (the AI Client) cannot be used
+	 * here — define HTI_GEMINI_API_KEY or paste it in HTI Engine settings.
 	 */
 	public static function api_key(): string {
 		$key = defined( 'HTI_GEMINI_API_KEY' ) ? (string) constant( 'HTI_GEMINI_API_KEY' ) : '';
-		return (string) apply_filters( 'rssai_gemini_api_key', $key );
+
+		if ( '' === trim( $key ) && class_exists( '\\HTI\\Engine\\Gemini' ) ) {
+			$key = (string) \HTI\Engine\Gemini::api_key();
+		}
+
+		return trim( (string) apply_filters( 'rssai_gemini_api_key', $key ) );
 	}
 
 	/**
