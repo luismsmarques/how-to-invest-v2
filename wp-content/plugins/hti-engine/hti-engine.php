@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.5.0
+ * Version:           0.5.2
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.5.0';
+const VERSION = '0.5.2';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -75,6 +75,34 @@ add_action( 'init', __NAMESPACE__ . '\\load_textdomain', 0 );
  */
 add_action( 'init', array( Taxonomy::class, 'register' ), 9 );
 add_action( 'init', array( CPT::class, 'register' ) );
+
+/**
+ * Make our public content types translatable in Polylang via code, so PT
+ * translations link without anyone having to enable each type in Polylang's
+ * settings. No-op when Polylang is inactive (the filters never fire).
+ */
+add_filter(
+	'pll_get_post_types',
+	function ( $post_types, $is_settings = false ) {
+		foreach ( array( 'glossary', 'news', 'learn' ) as $pt ) {
+			$post_types[ $pt ] = $pt;
+		}
+		return $post_types;
+	},
+	10,
+	2
+);
+add_filter(
+	'pll_get_taxonomies',
+	function ( $taxonomies, $is_settings = false ) {
+		foreach ( array( 'glossary_topic', 'news_category', 'learn_topic' ) as $tax ) {
+			$taxonomies[ $tax ] = $tax;
+		}
+		return $taxonomies;
+	},
+	10,
+	2
+);
 
 /**
  * Flush rewrite rules once per plugin version (so new CPT/taxonomy permalinks

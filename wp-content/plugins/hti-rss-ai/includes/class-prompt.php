@@ -23,6 +23,7 @@ class Prompt {
 		$language = 'pt' === $lang ? 'European Portuguese (pt-PT)' : 'English';
 		$today    = self::today();
 		$year     = (int) substr( $today, 0, 4 );
+		$cats     = self::category_rule( $lang );
 
 		return implode(
 			"\n",
@@ -45,6 +46,7 @@ class Prompt {
 				'- Educational and impartial. NO investment advice, NO recommendations, NO "buy/sell/should", NO price targets, NO specific tickers or product/fund names.',
 				'- SEO + Google News friendly: a clear, factual headline; a concise meta description (max 155 characters); a short lead (dek); a well-structured body with short paragraphs and the occasional subheading.',
 				'- Include the sources you actually used.',
+				$cats,
 				'',
 				'OUTPUT: respond with ONLY a JSON object (no markdown, no commentary) of this exact shape:',
 				'{',
@@ -125,6 +127,50 @@ class Prompt {
 			. 'Colour palette: deep navy blue (#1C2150) with warm coral (#FF6B5E) accents. '
 			. 'Absolutely NO text, NO words, NO letters, NO numbers, NO logos, NO watermarks, NO readable charts. '
 			. 'No recognizable real people. Wide 16:9 composition.';
+	}
+
+	/**
+	 * Build the "choose a category" instruction from the news_category terms
+	 * that exist in the article's language. Returns '' (no constraint) when the
+	 * taxonomy or its terms aren't available, so generation never breaks.
+	 *
+	 * @param string $lang 'en' or 'pt'.
+	 */
+	private static function category_rule( string $lang ): string {
+		if ( ! function_exists( 'get_terms' ) || ! taxonomy_exists( 'news_category' ) ) {
+			return '';
+		}
+		$terms = get_terms(
+			array(
+				'taxonomy'   => 'news_category',
+				'hide_empty' => false,
+			)
+		);
+		if ( is_wp_error( $terms ) || empty( $terms ) ) {
+			return '';
+		}
+
+		// Prefer terms in the article's language when Polylang exposes it;
+		// otherwise list every term name (both languages co-exist in the list).
+		$names = array();
+		foreach ( $terms as $term ) {
+			if ( function_exists( 'pll_get_term_language' ) ) {
+				$tl = pll_get_term_language( (int) $term->term_id );
+				if ( $tl && $tl !== $lang ) {
+					continue;
+				}
+			}
+			$names[] = $term->name;
+		}
+		if ( empty( $names ) ) {
+			foreach ( $terms as $term ) {
+				$names[] = $term->name;
+			}
+		}
+		$names = array_values( array_unique( $names ) );
+
+		return '- CATEGORY: set "suggested_category" to EXACTLY one of these existing category names, copied verbatim (do not invent new ones): '
+			. implode( '; ', $names ) . '.';
 	}
 
 	/**
