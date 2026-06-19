@@ -108,6 +108,7 @@ class Frontend {
 				array(
 					'restUrl'   => esc_url_raw( rest_url( 'htinvest/v1/recommend' ) ),
 					'resultUrl' => esc_url_raw( rest_url( 'htinvest/v1/result' ) ),
+					'emailUrl'  => esc_url_raw( rest_url( 'htinvest/v1/email-result' ) ),
 					'nonce'     => wp_create_nonce( 'wp_rest' ),
 					'locale'    => $locale,
 					'data'      => Questions::payload( $locale ),

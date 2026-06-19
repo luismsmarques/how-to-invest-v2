@@ -82,6 +82,62 @@
 	}
 
 	/**
+	 * Build the inline "email me my result" form (email input + send + status).
+	 *
+	 * @param {Object} res Server response (profile_id, session_token).
+	 * @param {Object} ui  UI strings.
+	 * @param {Object} cfg HTI_DATA (emailUrl, nonce, locale).
+	 */
+	function buildEmailForm( res, ui, cfg ) {
+		var form = el( 'form', { class: 'hti-email-result', novalidate: 'novalidate' } );
+		var input = el( 'input', { type: 'email', class: 'hti-email-result__input', placeholder: ui.email_placeholder, 'aria-label': ui.email_result, required: 'required' } );
+		var send = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-secondary' }, ui.email_send );
+		var status = el( 'p', { class: 'hti-email-result__status', role: 'status', 'aria-live': 'polite' } );
+
+		form.appendChild( input );
+		form.appendChild( send );
+		form.appendChild( status );
+
+		form.addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			var email = ( input.value || '' ).trim();
+			if ( ! email || email.indexOf( '@' ) < 1 ) {
+				status.textContent = ui.email_invalid;
+				return;
+			}
+			send.disabled = true;
+			status.textContent = ui.email_sending;
+
+			fetch( cfg.emailUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce || '' },
+				body: JSON.stringify( {
+					profile_id: res.profile_id,
+					session_token: res.session_token || '',
+					email: email,
+					locale: cfg.locale || 'en'
+				} )
+			} )
+				.then( function ( r ) {
+					if ( r.ok ) {
+						form.innerHTML = '';
+						status.textContent = ui.email_sent;
+						form.appendChild( status );
+						return;
+					}
+					status.textContent = r.status === 422 ? ui.email_invalid : ui.email_error;
+					send.disabled = false;
+				} )
+				.catch( function () {
+					status.textContent = ui.email_error;
+					send.disabled = false;
+				} );
+		} );
+
+		return form;
+	}
+
+	/**
 	 * Render the full result into the mount.
 	 *
 	 * @param {HTMLElement} mount   Container.
@@ -168,6 +224,17 @@
 				document.body.removeChild( form );
 			} );
 			actions.appendChild( pdfBtn );
+		}
+
+		// Email my result — POST to the REST endpoint (anonymous, nothing kept).
+		var emailCfg = window.HTI_DATA || {};
+		if ( emailCfg.emailUrl && res.profile_id ) {
+			var emailBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-secondary' }, ui.email_result );
+			emailBtn.addEventListener( 'click', function () {
+				emailBtn.style.display = 'none';
+				root.appendChild( buildEmailForm( res, ui, emailCfg ) );
+			} );
+			actions.appendChild( emailBtn );
 		}
 
 		var readMore = el( 'a', { class: 'hti-btn hti-btn-secondary', href: '/investing-glossary/' }, ui.read_more );
