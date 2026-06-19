@@ -16,6 +16,7 @@
 
 # Exceções: o NOSSO código versiona-se
 !/wp-content/plugins/hti-engine/
+!/wp-content/plugins/hti-rss-ai/
 !/wp-content/themes/howtoinvest/
 
 # Segredos — NUNCA versionar
