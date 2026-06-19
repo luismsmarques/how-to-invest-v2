@@ -243,6 +243,111 @@ class Account {
 		}
 	}
 
+	/* ---------- preferences (template 13) ---------- */
+
+	private const META_PREFS = 'hti_prefs';
+
+	/**
+	 * A user's saved email preferences (with defaults).
+	 *
+	 * @param int $user_id User id.
+	 * @return array{newsletter:bool,frequency:string,categories:array<int,string>}
+	 */
+	public static function get_prefs( int $user_id ): array {
+		$p = get_user_meta( $user_id, self::META_PREFS, true );
+		$p = is_array( $p ) ? $p : array();
+		return array(
+			'newsletter' => (bool) ( $p['newsletter'] ?? false ),
+			'frequency'  => 'daily' === ( $p['frequency'] ?? 'weekly' ) ? 'daily' : 'weekly',
+			'categories' => array_values( array_filter( array_map( 'sanitize_title', (array) ( $p['categories'] ?? array() ) ) ) ),
+		);
+	}
+
+	/**
+	 * Available news categories for the preferences UI, in the user's language.
+	 *
+	 * @param string $locale Locale.
+	 * @return array<int,array{slug:string,name:string}>
+	 */
+	public static function categories_list( string $locale ): array {
+		if ( ! taxonomy_exists( 'news_category' ) ) {
+			return array();
+		}
+		$terms = get_terms( array( 'taxonomy' => 'news_category', 'hide_empty' => false ) );
+		if ( is_wp_error( $terms ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $terms as $term ) {
+			// Skip the alternate-language duplicate terms when Polylang is active.
+			if ( function_exists( 'pll_get_term_language' ) ) {
+				$tl = pll_get_term_language( (int) $term->term_id );
+				if ( $tl && $tl !== $locale ) {
+					continue;
+				}
+			}
+			$out[] = array( 'slug' => $term->slug, 'name' => $term->name );
+		}
+		return $out;
+	}
+
+	/**
+	 * REST: GET /preferences.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public static function rest_get_prefs( \WP_REST_Request $request ) {
+		return new \WP_REST_Response( self::get_prefs( get_current_user_id() ), 200 );
+	}
+
+	/**
+	 * REST: POST /preferences — save, sync to Brevo, and email a confirmation.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public static function rest_save_prefs( \WP_REST_Request $request ) {
+		$user      = wp_get_current_user();
+		$newsletter = (bool) rest_sanitize_boolean( $request->get_param( 'newsletter' ) );
+		$frequency = 'daily' === $request->get_param( 'frequency' ) ? 'daily' : 'weekly';
+		$cats      = array_values( array_filter( array_map( 'sanitize_title', (array) $request->get_param( 'categories' ) ) ) );
+
+		update_user_meta( $user->ID, self::META_PREFS, array( 'newsletter' => $newsletter, 'frequency' => $frequency, 'categories' => $cats ) );
+
+		$locale = self::user_locale( $user->ID );
+		$list   = Brevo::list_id( $locale );
+		if ( $newsletter ) {
+			Brevo::upsert_contact(
+				$user->user_email,
+				array(
+					'NEWSLETTER' => 'yes',
+					'FREQUENCY'  => strtoupper( $frequency ),
+					'CATEGORIES' => implode( ',', $cats ),
+					'LANGUAGE'   => strtoupper( $locale ),
+				),
+				array_filter( array( $list ) )
+			);
+		} else {
+			Brevo::upsert_contact( $user->user_email, array( 'NEWSLETTER' => 'no' ) );
+			if ( $list > 0 ) {
+				Brevo::remove_from_list( $user->user_email, $list );
+			}
+		}
+
+		// Confirmation email (template 13).
+		$names   = array();
+		foreach ( self::categories_list( $locale ) as $cat ) {
+			if ( in_array( $cat['slug'], $cats, true ) ) {
+				$names[] = $cat['name'];
+			}
+		}
+		$subject = 'pt' === $locale ? 'Preferências atualizadas — HowToInvest' : 'Preferences updated — HowToInvest';
+		Mailer::send( $user->user_email, $subject, Emails::preferences( $locale, $newsletter, $frequency, $names ) );
+
+		return new \WP_REST_Response( array( 'saved' => true ), 200 );
+	}
+
 	/* ---------- email change (template 10) ---------- */
 
 	/**

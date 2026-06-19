@@ -263,6 +263,79 @@
 		return box;
 	}
 
+	/* ---------- email preferences section ---------- */
+
+	function prefsSection() {
+		var prefs = ctx.prefs || { newsletter: false, frequency: 'weekly', categories: [] };
+		var cats = ctx.categories || [];
+
+		var box = el( 'div', { class: 'hti-account-prefs' } );
+		box.appendChild( el( 'h3', null, s.preferences ) );
+		var form = el( 'form', { class: 'hti-account-prefs__form' } );
+
+		// Newsletter toggle.
+		var nlLabel = el( 'label', { class: 'hti-account-prefs__check' } );
+		var nl = el( 'input', { type: 'checkbox' } );
+		if ( prefs.newsletter ) { nl.checked = true; }
+		nlLabel.appendChild( nl );
+		nlLabel.appendChild( el( 'span', null, ' ' + s.pref_newsletter ) );
+		form.appendChild( nlLabel );
+
+		// Frequency.
+		var freqWrap = el( 'label', { class: 'hti-account-prefs__field' }, s.pref_frequency + ' ' );
+		var freq = el( 'select', null );
+		[ [ 'weekly', s.pref_weekly ], [ 'daily', s.pref_daily ] ].forEach( function ( o ) {
+			var opt = el( 'option', { value: o[ 0 ] }, o[ 1 ] );
+			if ( prefs.frequency === o[ 0 ] ) { opt.selected = true; }
+			freq.appendChild( opt );
+		} );
+		freqWrap.appendChild( freq );
+		form.appendChild( freqWrap );
+
+		// Categories.
+		var checks = [];
+		if ( cats.length ) {
+			var catWrap = el( 'fieldset', { class: 'hti-account-prefs__cats' } );
+			catWrap.appendChild( el( 'legend', null, s.pref_categories ) );
+			cats.forEach( function ( c ) {
+				var lab = el( 'label', { class: 'hti-account-prefs__check' } );
+				var cb = el( 'input', { type: 'checkbox', value: c.slug } );
+				if ( prefs.categories && prefs.categories.indexOf( c.slug ) > -1 ) { cb.checked = true; }
+				checks.push( cb );
+				lab.appendChild( cb );
+				lab.appendChild( el( 'span', null, ' ' + c.name ) );
+				catWrap.appendChild( lab );
+			} );
+			form.appendChild( catWrap );
+		}
+
+		var save = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-secondary' }, s.save );
+		form.appendChild( save );
+		var status = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
+		form.appendChild( status );
+
+		form.addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			save.disabled = true;
+			status.textContent = s.working;
+			var selected = checks.filter( function ( c ) { return c.checked; } ).map( function ( c ) { return c.value; } );
+			request( '/preferences', 'POST', {
+				newsletter: nl.checked,
+				frequency: freq.value,
+				categories: selected
+			} ).then( function ( res ) {
+				status.textContent = res.ok ? s.prefs_saved : s.error;
+				save.disabled = false;
+			} ).catch( function () {
+				status.textContent = s.error;
+				save.disabled = false;
+			} );
+		} );
+
+		box.appendChild( form );
+		return box;
+	}
+
 	/* ---------- dashboard ([hti_account]) ---------- */
 
 	function verifyBanner() {
@@ -348,6 +421,9 @@
 
 		// Account email + change-email form.
 		root.appendChild( emailSection() );
+
+		// Email preferences.
+		root.appendChild( prefsSection() );
 
 		// RGPD actions.
 		var actions = el( 'div', { class: 'hti-account-actions' } );
