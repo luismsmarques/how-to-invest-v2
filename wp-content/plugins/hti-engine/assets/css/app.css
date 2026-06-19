@@ -465,6 +465,40 @@
 	color: var( --hti-muted );
 }
 
+/* --- Account: email section --- */
+.hti-account-email {
+	margin-top: 1.75rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var( --hti-border );
+}
+.hti-account-email h3 { margin: 0 0 0.5rem; font-family: var( --hti-font-body ); font-weight: 600; }
+.hti-account-email__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem;
+}
+.hti-account-email__current { font-weight: 600; }
+.hti-account-email__form {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 0.75rem;
+}
+.hti-account-email__form .hti-input {
+	flex: 1 1 14rem;
+	min-width: 0;
+	padding: 0.6rem 0.85rem;
+	border: 1px solid var( --hti-border );
+	border-radius: 10px;
+	font: inherit;
+}
+.hti-account-email__status {
+	margin: 0.6rem 0 0;
+	font-size: 0.9rem;
+	color: var( --hti-muted );
+}
+
 /* --- Account: save flow + dashboard --- */
 .hti-save {
 	margin-top: 1.5rem;

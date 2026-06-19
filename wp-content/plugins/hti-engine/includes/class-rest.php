@@ -125,6 +125,23 @@ class REST {
 			)
 		);
 
+		// Change account email (auth) → sends a 24h confirmation to the new address.
+		register_rest_route(
+			self::NAMESPACE,
+			'/change-email',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( Account::class, 'rest_change_email' ),
+				'permission_callback' => array( __CLASS__, 'check_auth' ),
+				'args'                => array(
+					'new_email' => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+				),
+			)
+		);
+
 		// Newsletter double opt-in: request the confirmation email.
 		register_rest_route(
 			self::NAMESPACE,

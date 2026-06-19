@@ -202,6 +202,67 @@
 		container.appendChild( box );
 	}
 
+	/* ---------- account email section ---------- */
+
+	function emailSection() {
+		var box = el( 'div', { class: 'hti-account-email' } );
+		box.appendChild( el( 'h3', null, s.account_email ) );
+
+		var row = el( 'div', { class: 'hti-account-email__row' } );
+		row.appendChild( el( 'span', { class: 'hti-account-email__current' }, ctx.email || '' ) );
+		var changeBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost' }, s.change_email );
+		row.appendChild( changeBtn );
+		box.appendChild( row );
+
+		var status = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
+		box.appendChild( status );
+
+		changeBtn.addEventListener( 'click', function () {
+			if ( box.querySelector( '.hti-account-email__form' ) ) {
+				return;
+			}
+			changeBtn.style.display = 'none';
+			var form = el( 'form', { class: 'hti-account-email__form' } );
+			var input = el( 'input', { type: 'email', class: 'hti-input', placeholder: s.new_email, 'aria-label': s.new_email, required: 'required' } );
+			var save = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-secondary' }, s.save );
+			var cancel = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost' }, s.cancel );
+			form.appendChild( input );
+			form.appendChild( save );
+			form.appendChild( cancel );
+			box.insertBefore( form, status );
+
+			cancel.addEventListener( 'click', function () {
+				form.remove();
+				changeBtn.style.display = '';
+			} );
+
+			form.addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				var email = ( input.value || '' ).trim();
+				if ( ! email || email.indexOf( '@' ) < 1 ) {
+					status.textContent = s.error;
+					return;
+				}
+				save.disabled = true;
+				status.textContent = s.working;
+				request( '/change-email', 'POST', { new_email: email } ).then( function ( res ) {
+					if ( res.ok ) {
+						form.remove();
+						status.textContent = s.email_pending;
+					} else {
+						status.textContent = ( res.data && res.data.message ) || s.error;
+						save.disabled = false;
+					}
+				} ).catch( function () {
+					status.textContent = s.error;
+					save.disabled = false;
+				} );
+			} );
+		} );
+
+		return box;
+	}
+
 	/* ---------- dashboard ([hti_account]) ---------- */
 
 	function verifyBanner() {
@@ -211,6 +272,12 @@
 		}
 		if ( params.get( 'verify_error' ) === '1' ) {
 			return el( 'div', { class: 'hti-error', role: 'alert' }, s.verify_error );
+		}
+		if ( params.get( 'email_changed' ) === '1' ) {
+			return el( 'div', { class: 'hti-save-done', role: 'status' }, s.email_changed );
+		}
+		if ( params.get( 'email_error' ) === '1' ) {
+			return el( 'div', { class: 'hti-error', role: 'alert' }, s.email_error );
 		}
 		return null;
 	}
@@ -272,6 +339,9 @@
 			listWrap.innerHTML = '';
 			listWrap.appendChild( el( 'p', { class: 'hti-error' }, s.error ) );
 		} );
+
+		// Account email + change-email form.
+		root.appendChild( emailSection() );
 
 		// RGPD actions.
 		var actions = el( 'div', { class: 'hti-account-actions' } );
