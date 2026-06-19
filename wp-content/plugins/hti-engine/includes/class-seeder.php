@@ -186,6 +186,13 @@ class Seeder {
 							wp_update_post( array( 'ID' => (int) $existing_pt, 'post_name' => $want ) );
 						}
 					}
+					// Re-file existing PT glossary posts under the correct PT topic.
+					if ( 'glossary' === $type ) {
+						$pt_term = get_term_by( 'slug', self::glossary_topic_of( (string) $entry['slug'] ) . '-' . $pt, 'glossary_topic' );
+						if ( $pt_term instanceof \WP_Term ) {
+							wp_set_object_terms( (int) $existing_pt, array( (int) $pt_term->term_id ), 'glossary_topic', false );
+						}
+					}
 					continue;
 				}
 
@@ -343,9 +350,9 @@ class Seeder {
 
 		// File PT glossary posts under the PT topic matching the EN entry.
 		if ( 'glossary' === $type ) {
-			$pt_term = get_term_by( 'slug', ( $entry['topic'] ?? 'asset-classes' ) . '-' . $pt, 'glossary_topic' );
+			$pt_term = get_term_by( 'slug', self::glossary_topic_of( (string) $entry['slug'] ) . '-' . $pt, 'glossary_topic' );
 			if ( $pt_term instanceof \WP_Term ) {
-				wp_set_object_terms( $pt_id, array( (int) $pt_term->term_id ), 'glossary_topic', true );
+				wp_set_object_terms( $pt_id, array( (int) $pt_term->term_id ), 'glossary_topic', false );
 			}
 		}
 
@@ -535,13 +542,14 @@ class Seeder {
 		}
 
 		foreach ( self::glossary_terms() as $entry ) {
-			$topic = $entry['topic'] ?? 'asset-classes';
+			$topic = self::glossary_topic_of( (string) $entry['slug'] );
 			if ( ! isset( $term_id[ $topic ] ) ) {
 				continue;
 			}
 			$post = get_page_by_path( $entry['slug'], OBJECT, 'glossary' );
 			if ( $post instanceof \WP_Post ) {
-				wp_set_object_terms( $post->ID, array( $term_id[ $topic ] ), 'glossary_topic', true );
+				// Replace (not append) so a re-run moves terms to the right topic.
+				wp_set_object_terms( $post->ID, array( $term_id[ $topic ] ), 'glossary_topic', false );
 			}
 		}
 	}
@@ -554,8 +562,47 @@ class Seeder {
 	private static function glossary_topics(): array {
 		return array(
 			'asset-classes' => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
-			'key-terms'     => array( 'en' => 'Key terms', 'pt' => 'Conceitos-chave' ),
+			'stocks'        => array( 'en' => 'Stocks & equities', 'pt' => 'Ações e capital próprio' ),
+			'bonds-income'  => array( 'en' => 'Bonds & income', 'pt' => 'Obrigações e rendimento' ),
+			'funds'         => array( 'en' => 'Funds & ETFs', 'pt' => 'Fundos e ETFs' ),
+			'markets'       => array( 'en' => 'Markets & indices', 'pt' => 'Mercados e índices' ),
+			'trading'       => array( 'en' => 'Trading & strategies', 'pt' => 'Negociação e estratégias' ),
+			'risk'          => array( 'en' => 'Risk & portfolio', 'pt' => 'Risco e carteira' ),
+			'economy'       => array( 'en' => 'Economy & policy', 'pt' => 'Economia e política monetária' ),
+			'fundamentals'  => array( 'en' => 'Fundamentals & analysis', 'pt' => 'Fundamentos e análise' ),
+			'compliance'    => array( 'en' => 'Process & compliance', 'pt' => 'Processos e conformidade' ),
 		);
+	}
+
+	/**
+	 * Map each glossary term slug to its topic. Centralized so a term lands in
+	 * exactly one topic. Unknown slugs fall back to "fundamentals".
+	 *
+	 * @param string $slug Glossary term slug.
+	 */
+	private static function glossary_topic_of( string $slug ): string {
+		static $map = null;
+		if ( null === $map ) {
+			$groups = array(
+				'asset-classes' => array( 'global-equities', 'bonds', 'cash', 'reits-and-alternatives', 'crypto', 'commodities' ),
+				'stocks'        => array( 'stock', 'dividend', 'ipo', 'market-capitalization', 'capital-gain' ),
+				'bonds-income'  => array( 'fixed-income', 'variable-income', 'zero-coupon-bond', 'yield' ),
+				'funds'         => array( 'etf', 'investment-fund' ),
+				'markets'       => array( 'bull-market', 'bear-market', 'benchmark', 'nasdaq', 'wall-street', 'spread' ),
+				'trading'       => array( 'leverage', 'margin', 'hedge', 'option', 'short-selling', 'value-investing' ),
+				'risk'          => array( 'volatility', 'diversification', 'portfolio' ),
+				'economy'       => array( 'inflation', 'interest-rate', 'quantitative-easing' ),
+				'fundamentals'  => array( 'asset', 'compound-interest', 'cash-flow', 'pe-ratio', 'ebitda' ),
+				'compliance'    => array( 'kyc', 'underwriting' ),
+			);
+			$map = array();
+			foreach ( $groups as $topic => $slugs ) {
+				foreach ( $slugs as $s ) {
+					$map[ $s ] = $topic;
+				}
+			}
+		}
+		return $map[ $slug ] ?? 'fundamentals';
 	}
 
 	/**
