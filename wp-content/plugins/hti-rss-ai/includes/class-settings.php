@@ -130,15 +130,20 @@ class Settings {
 			return;
 		}
 		$s        = wp_parse_args( (array) get_option( self::OPTION, array() ), self::defaults() );
-		$has_key  = defined( 'HTI_GEMINI_API_KEY' ) && '' !== (string) constant( 'HTI_GEMINI_API_KEY' );
+		$has_key  = Gemini_Client::available();
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'RSS AI Feed — Settings', 'hti-rss-ai' ); ?></h1>
 
 			<p>
 				<?php echo esc_html__( 'Gemini API key:', 'hti-rss-ai' ); ?>
-				<strong><?php echo $has_key ? esc_html__( 'detected (from HTI Engine)', 'hti-rss-ai' ) : esc_html__( 'not configured — set HTI_GEMINI_API_KEY or HTI Engine Connectors', 'hti-rss-ai' ); ?></strong>
+				<strong><?php echo $has_key ? esc_html__( 'detected (from HTI Engine)', 'hti-rss-ai' ) : esc_html__( 'not configured', 'hti-rss-ai' ); ?></strong>
 			</p>
+			<?php if ( ! $has_key ) : ?>
+				<p class="description">
+					<?php echo esc_html__( 'Grounded generation needs a raw Gemini key. Define HTI_GEMINI_API_KEY in wp-config.php (recommended) or paste a key in HTI Engine → Settings. A key held only in WordPress “Connectors” (the AI Client) cannot be reused here.', 'hti-rss-ai' ); ?>
+				</p>
+			<?php endif; ?>
 
 			<form method="post" action="options.php">
 				<?php settings_fields( self::GROUP ); ?>
