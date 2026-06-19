@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.2.0
+Version: 0.3.0
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -458,6 +458,99 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
 	margin: 28px 0 6px;
 }
 .hti-page .wp-block-post-content { color: var( --wp--preset--color--body-alt ); }
+
+/* ---------- Mobile header (hamburger) ---------- */
+.hti-nav-toggle {
+	display: none;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	padding: 0;
+	background: var( --wp--preset--color--white );
+	border: 1px solid var( --wp--preset--color--border );
+	border-radius: 12px;
+	color: var( --wp--preset--color--contrast );
+	cursor: pointer;
+}
+.hti-nav-toggle__icon { display: block; }
+.hti-nav-toggle__close { display: none; }
+.hti-header.is-open .hti-nav-toggle__open { display: none; }
+.hti-header.is-open .hti-nav-toggle__close { display: block; }
+
+@media ( max-width: 782px ) {
+	.hti-header__inner { position: relative; }
+	.hti-nav-toggle { display: flex; }
+	.hti-nav-wrap {
+		display: none;
+		position: absolute;
+		top: calc( 100% + 1px );
+		left: 0;
+		right: 0;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 6px;
+		padding: 12px 24px 18px;
+		background: var( --wp--preset--color--background );
+		border-bottom: 1px solid var( --wp--preset--color--border );
+		box-shadow: 0 10px 24px rgba( 22, 38, 58, 0.08 );
+	}
+	.hti-header.is-open .hti-nav-wrap { display: flex; }
+	.hti-nav .hti-menu {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 2px;
+	}
+	.hti-nav .hti-menu a {
+		padding: 12px;
+		font-size: 16px;
+		border-radius: 10px;
+	}
+	.hti-cta { width: 100%; margin-top: 6px; }
+	.hti-cta .wp-block-button,
+	.hti-cta .wp-block-button__link { width: 100%; }
+	.hti-cta .wp-block-button__link { text-align: center; padding: 14px; font-size: 15px; }
+}
+
+/* ---------- Mobile content sizing (match the mobile design) ---------- */
+@media ( max-width: 600px ) {
+	.hti-hero { padding-top: 28px; padding-bottom: 8px; }
+	.hti-hero__lead { margin-top: 14px; }
+	.hti-hero__actions { flex-direction: column; align-items: stretch; gap: 10px; }
+	.hti-hero__actions .wp-block-button { width: 100%; }
+	.hti-hero__actions .wp-block-button__link {
+		display: block;
+		width: 100%;
+		text-align: center;
+		padding: 16px;
+		border-radius: 14px;
+	}
+
+	/* Steps as one card with divided rows: number badge left, text right. */
+	.hti-steps { gap: 0; padding: 6px 18px; border-radius: 16px; }
+	.hti-step {
+		display: grid;
+		grid-template-columns: 30px 1fr;
+		column-gap: 14px;
+		align-items: start;
+		padding: 16px 0;
+		border-bottom: 1px solid #F4E9E3;
+	}
+	.hti-step:last-child { border-bottom: none; }
+	.hti-step__num {
+		grid-row: 1 / span 2;
+		width: 30px;
+		height: 30px;
+		border-radius: 12px;
+		font-size: 14px;
+		margin-bottom: 0;
+	}
+	.hti-step__title { font-size: 16px; margin: 0; }
+	.hti-step__text { font-size: 14px; }
+
+	.hti-articles { padding-top: 32px; }
+	.hti-section-head { margin-bottom: 16px; }
+}
 
 /* ---------- Print ---------- */
 @media print {
