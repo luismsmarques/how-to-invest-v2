@@ -163,6 +163,68 @@ class Emails {
 		return '<tr><td style="padding:' . esc_attr( $pad ) . ';' . $align . '">' . $html . '</td></tr>';
 	}
 
+	/* ---------- newsletter / digest (templates 03 & 06) ---------- */
+
+	/**
+	 * Render a campaign email (weekly newsletter / daily digest) from a list of
+	 * articles, with a Brevo unsubscribe link in the body.
+	 *
+	 * @param string                                                     $locale 'en'|'pt'.
+	 * @param string                                                     $title  Big title.
+	 * @param string                                                     $intro  Lead text.
+	 * @param array<int,array{title:string,url:string,excerpt:string}>   $items  Articles.
+	 * @param string                                                     $cta_url "See all" URL.
+	 */
+	public static function campaign( string $locale, string $title, string $intro, array $items, string $cta_url ): string {
+		$pt = 'pt' === $locale;
+
+		$cards = '';
+		foreach ( $items as $item ) {
+			$url   = (string) ( $item['url'] ?? '' );
+			$cards .= '<tr><td style="padding:0 0 18px;">'
+				. '<a href="' . esc_url( $url ) . '" style="text-decoration:none;display:block;border:1px solid #EEEAF4;border-radius:14px;padding:18px 20px;">'
+				. '<div style="font:700 17px Poppins,Arial,sans-serif;color:#1E2147;line-height:1.3;">' . esc_html( (string) ( $item['title'] ?? '' ) ) . '</div>'
+				. ( '' !== (string) ( $item['excerpt'] ?? '' )
+					? '<div style="margin-top:6px;font:400 14px Arial,sans-serif;color:#5C5670;line-height:1.55;">' . esc_html( (string) $item['excerpt'] ) . '</div>'
+					: '' )
+				. '<div style="margin-top:10px;font:700 13px Arial,sans-serif;color:#FF6B5E;">' . esc_html( $pt ? 'Ler →' : 'Read →' ) . '</div>'
+				. '</a></td></tr>';
+		}
+		$list_html = '<table role="presentation" width="100%" style="border-collapse:collapse;"><tbody>' . $cards . '</tbody></table>';
+
+		$see_all = $pt ? 'Ver todas as notícias' : 'See all the news';
+		$unsub   = $pt ? 'Cancelar subscrição' : 'Unsubscribe';
+
+		$inner = self::row(
+			self::eyebrow( $pt ? 'HowToInvest' : 'HowToInvest', '#7C5CFC' )
+				. '<h1 style="margin:0;font:800 28px Poppins,Arial,sans-serif;line-height:1.12;letter-spacing:-.02em;color:#1E2147;">' . esc_html( $title ) . '</h1>'
+				. '<p style="margin:12px 0 0;font:400 15px Arial,sans-serif;color:#5C5670;line-height:1.6;">' . esc_html( $intro ) . '</p>',
+			'40px 44px 8px'
+		)
+			. self::row( $list_html, '20px 44px 0' )
+			. self::row( self::button( $see_all, $cta_url ), '14px 44px 8px', true )
+			// Brevo replaces {{ unsubscribe }} with the per-recipient link.
+			. self::row( '<a href="{{ unsubscribe }}" style="font:400 12px Arial,sans-serif;color:#9A93A8;">' . esc_html( $unsub ) . '</a>', '10px 44px 40px', true );
+
+		return self::layout( $locale, $inner, $intro );
+	}
+
+	/**
+	 * Render a simple "platform notice" campaign (template 04).
+	 *
+	 * @param string $locale    Locale.
+	 * @param string $title     Heading.
+	 * @param string $body_html Body HTML (sanitized by the caller).
+	 */
+	public static function notice( string $locale, string $title, string $body_html ): string {
+		$pt    = 'pt' === $locale;
+		$unsub = $pt ? 'Cancelar subscrição' : 'Unsubscribe';
+		$inner = self::row( self::h1( $title ), '44px 48px 6px', true )
+			. self::row( '<div style="font:400 15px Arial,sans-serif;color:#4C4660;line-height:1.7;">' . $body_html . '</div>', '6px 48px 8px' )
+			. self::row( '<a href="{{ unsubscribe }}" style="font:400 12px Arial,sans-serif;color:#9A93A8;">' . esc_html( $unsub ) . '</a>', '18px 48px 40px', true );
+		return self::layout( $locale, $inner, $title );
+	}
+
 	/* ---------- investor-profile email (template 07) ---------- */
 
 	/**

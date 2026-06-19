@@ -125,6 +125,35 @@ class REST {
 			)
 		);
 
+		// Newsletter double opt-in: request the confirmation email.
+		register_rest_route(
+			self::NAMESPACE,
+			'/subscribe',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( Subscribe::class, 'request_optin' ),
+				'permission_callback' => array( __CLASS__, 'check_nonce' ),
+				'args'                => array(
+					'email'   => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'consent' => array(
+						'type'     => 'boolean',
+						'required' => true,
+					),
+					'hti_hp'  => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+					'locale'  => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+				),
+			)
+		);
+
 		// Email a saved result to the visitor (the investor-profile email).
 		register_rest_route(
 			self::NAMESPACE,
