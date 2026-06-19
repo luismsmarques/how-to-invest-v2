@@ -77,7 +77,15 @@ class Subscribe {
 	/* ---------- assets + form ---------- */
 
 	private static function locale(): string {
-		return str_starts_with( strtolower( (string) get_locale() ), 'pt' ) ? 'pt' : 'en';
+		// Prefer Polylang's current language (reliable on CPT archives); the bare
+		// get_locale() can miss the page language, so the form would post 'en'.
+		if ( function_exists( 'pll_current_language' ) ) {
+			$slug = (string) pll_current_language( 'slug' );
+			if ( '' !== $slug ) {
+				return str_starts_with( strtolower( $slug ), 'pt' ) ? 'pt' : 'en';
+			}
+		}
+		return str_starts_with( strtolower( (string) determine_locale() ), 'pt' ) ? 'pt' : 'en';
 	}
 
 	/**
