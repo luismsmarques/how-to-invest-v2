@@ -1,11 +1,9 @@
 <?php
 /**
- * Builds and attaches the branded featured image for a generated `news` post.
- *
- * Flow: acquire a photo (AI first, feed image fallback, then a branded
- * gradient), render the square card with Social_Card, save it as an attachment
- * and set it as the post thumbnail. Best-effort everywhere — a failure here
- * must never block the article, which is already saved as pending review.
+ * Featured image for a generated `news` post: a plain AI photo about the
+ * article's topic (Imagen), saved as the post thumbnail. The same photo is
+ * later reused — without re-calling the AI — inside the social-media kit
+ * (see Social_Kit). Best-effort: a failure here never blocks the article.
  *
  * @package HTI_RSS_AI
  */
@@ -15,11 +13,11 @@ namespace HTI\RssAI;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Featured-image orchestration + the editor "Regenerate" control.
+ * AI featured-image orchestration + the editor "Regenerate" control.
  */
 class Featured_Image {
 
-	private const ACTION = 'rssai_regen_card';
+	private const ACTION = 'rssai_regen_image';
 
 	/**
 	 * Hook the meta box and the regenerate handler.
@@ -35,39 +33,22 @@ class Featured_Image {
 	 * @param int                 $post_id Post id.
 	 * @param array<string,mixed> $data    Validated article (for the image prompt).
 	 * @param object|null         $group   Group row (for the feed-image fallback).
-	 * @param string              $lang    Language slug.
+	 * @param string              $lang    Language slug (unused; kept for symmetry).
 	 * @return bool True when a featured image was set.
 	 */
-	public static function maybe_generate( int $post_id, array $data, ?object $group, string $lang ): bool {
+	public static function maybe_generate( int $post_id, array $data, ?object $group, string $lang = 'en' ): bool {
 		if ( empty( Settings::get( 'image_generate', 1 ) ) ) {
-			return false;
-		}
-		if ( ! Social_Card::available() ) {
-			Logger::log( 'image', 'GD unavailable; skipped featured image.' );
 			return false;
 		}
 
 		try {
-			[ $photo, $source ] = self::acquire_photo( $data, $group );
-
-			$png = Social_Card::render(
-				array(
-					'headline'   => (string) ( $data['headline'] ?? get_the_title( $post_id ) ),
-					'kicker'     => self::kicker( $post_id, $lang ),
-					'badge'      => 'pt' === $lang ? 'Notícias' : 'News',
-					'handle'     => 'howtoinvest',
-					'domain'     => 'howtoinvest.pt',
-					'disclaimer' => self::disclaimer( $lang ),
-					'photo'      => $photo,
-				)
-			);
-
-			if ( is_wp_error( $png ) ) {
-				Logger::log( 'image', 'Render failed: ' . $png->get_error_message() );
+			[ $photo, $source, $mime ] = self::acquire_photo( $data, $group );
+			if ( null === $photo ) {
+				Logger::log( 'image', sprintf( 'No featured image for #%d (no AI/feed image).', $post_id ) );
 				return false;
 			}
 
-			$attach_id = self::store( $post_id, $png );
+			$attach_id = self::store( $post_id, $photo, $mime );
 			if ( is_wp_error( $attach_id ) ) {
 				Logger::log( 'image', 'Attachment failed: ' . $attach_id->get_error_message() );
 				return false;
@@ -77,7 +58,7 @@ class Featured_Image {
 			set_post_thumbnail( $post_id, $attach_id );
 			update_post_meta( $post_id, 'rssai_card_attachment', $attach_id );
 			update_post_meta( $post_id, 'rssai_card_photo_source', $source );
-			Logger::log( 'image', sprintf( 'Featured image set for #%d (photo: %s).', $post_id, $source ) );
+			Logger::log( 'image', sprintf( 'Featured image set for #%d (source: %s).', $post_id, $source ) );
 			return true;
 		} catch ( \Throwable $e ) {
 			Logger::log( 'image', 'Exception: ' . $e->getMessage() );
@@ -90,13 +71,13 @@ class Featured_Image {
 	 *
 	 * @param array<string,mixed> $data  Article data.
 	 * @param object|null         $group Group row.
-	 * @return array{0:?string,1:string} [bytes|null, source]
+	 * @return array{0:?string,1:string,2:string} [bytes|null, source, mime]
 	 */
 	private static function acquire_photo( array $data, ?object $group ): array {
 		if ( Image_Client::available() ) {
 			$bytes = Image_Client::generate( Prompt::image_prompt( $data ), '16:9' );
 			if ( ! is_wp_error( $bytes ) && '' !== $bytes ) {
-				return array( $bytes, 'ai' );
+				return array( $bytes, 'ai', 'image/png' );
 			}
 			if ( is_wp_error( $bytes ) ) {
 				Logger::log( 'image', 'AI image failed, falling back: ' . $bytes->get_error_message() );
@@ -108,13 +89,14 @@ class Featured_Image {
 			$resp = wp_remote_get( $url, array( 'timeout' => 20 ) );
 			if ( ! is_wp_error( $resp ) && 200 === (int) wp_remote_retrieve_response_code( $resp ) ) {
 				$body = (string) wp_remote_retrieve_body( $resp );
+				$mime = (string) wp_remote_retrieve_header( $resp, 'content-type' );
 				if ( '' !== $body ) {
-					return array( $body, 'feed' );
+					return array( $body, 'feed', '' !== $mime ? $mime : 'image/jpeg' );
 				}
 			}
 		}
 
-		return array( null, 'none' );
+		return array( null, 'none', '' );
 	}
 
 	/**
@@ -136,48 +118,32 @@ class Featured_Image {
 	}
 
 	/**
-	 * Localized kicker: "Market update · 19 Jun".
+	 * Save image bytes as an attachment parented to the post.
 	 *
 	 * @param int    $post_id Post id.
-	 * @param string $lang    Language.
-	 */
-	private static function kicker( int $post_id, string $lang ): string {
-		$label = 'pt' === $lang ? 'Atualização de mercado' : 'Market update';
-		$date  = get_post_time( 'j M', false, $post_id, true );
-		return $label . ' · ' . ( $date ? $date : wp_date( 'j M' ) );
-	}
-
-	/**
-	 * Short card disclaimer.
-	 *
-	 * @param string $lang Language.
-	 */
-	private static function disclaimer( string $lang ): string {
-		return 'pt' === $lang
-			? 'Conteúdo educativo sobre literacia financeira. Não é aconselhamento financeiro, de investimento, fiscal ou jurídico. Investir envolve risco, incluindo a perda de capital. Exemplos ilustrativos e apenas por classe de ativos.'
-			: 'Educational financial-literacy content. Not financial, investment, tax or legal advice. Investing involves risk, including loss of capital. Illustrative examples, by asset class only.';
-	}
-
-	/**
-	 * Save PNG bytes as an attachment parented to the post.
-	 *
-	 * @param int    $post_id Post id.
-	 * @param string $png     PNG bytes.
+	 * @param string $bytes   Image bytes.
+	 * @param string $mime    MIME type hint.
 	 * @return int|\WP_Error Attachment id.
 	 */
-	private static function store( int $post_id, string $png ) {
-		$upload = wp_upload_bits( 'rssai-card-' . $post_id . '-' . time() . '.png', null, $png );
+	private static function store( int $post_id, string $bytes, string $mime ) {
+		$ext    = false !== strpos( $mime, 'jpeg' ) || false !== strpos( $mime, 'jpg' ) ? 'jpg' : ( false !== strpos( $mime, 'webp' ) ? 'webp' : 'png' );
+		$upload = wp_upload_bits( 'rssai-news-' . $post_id . '-' . time() . '.' . $ext, null, $bytes );
 		if ( ! empty( $upload['error'] ) ) {
 			return new \WP_Error( 'rssai_upload', (string) $upload['error'] );
 		}
 
-		$attachment = array(
-			'post_mime_type' => 'image/png',
-			'post_title'     => get_the_title( $post_id ),
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+		$filetype  = wp_check_filetype( $upload['file'] );
+		$attach_id = wp_insert_attachment(
+			array(
+				'post_mime_type' => $filetype['type'] ? $filetype['type'] : 'image/png',
+				'post_title'     => get_the_title( $post_id ),
+				'post_content'   => '',
+				'post_status'    => 'inherit',
+			),
+			$upload['file'],
+			$post_id,
+			true
 		);
-		$attach_id = wp_insert_attachment( $attachment, $upload['file'], $post_id, true );
 		if ( is_wp_error( $attach_id ) ) {
 			return $attach_id;
 		}
@@ -191,9 +157,9 @@ class Featured_Image {
 	}
 
 	/**
-	 * Delete the previous card attachment so we don't orphan uploads.
+	 * Delete the previous AI image so we don't orphan uploads.
 	 *
-	 * @param int $post_id    Post id.
+	 * @param int $post_id     Post id.
 	 * @param int $keep_attach New attachment id to keep.
 	 */
 	private static function cleanup_previous( int $post_id, int $keep_attach ): void {
@@ -212,8 +178,8 @@ class Featured_Image {
 	 */
 	public static function meta_box(): void {
 		add_meta_box(
-			'rssai_social_image',
-			__( 'Social image', 'hti-rss-ai' ),
+			'rssai_featured_image',
+			__( 'AI featured image', 'hti-rss-ai' ),
 			array( __CLASS__, 'render_meta_box' ),
 			'news',
 			'side',
@@ -227,7 +193,7 @@ class Featured_Image {
 	 * @param \WP_Post $post Post.
 	 */
 	public static function render_meta_box( \WP_Post $post ): void {
-		$thumb = get_the_post_thumbnail( $post->ID, array( 280, 280 ) );
+		$thumb  = get_the_post_thumbnail( $post->ID, array( 280, 280 ) );
 		$source = (string) get_post_meta( $post->ID, 'rssai_card_photo_source', true );
 		echo '<div style="text-align:center;">';
 		if ( $thumb ) {
@@ -238,7 +204,7 @@ class Featured_Image {
 					esc_html(
 						sprintf(
 							/* translators: %s: photo source (ai, feed or none). */
-							__( 'Photo source: %s', 'hti-rss-ai' ),
+							__( 'Source: %s', 'hti-rss-ai' ),
 							$source
 						)
 					)
@@ -255,9 +221,9 @@ class Featured_Image {
 		printf(
 			'<p><a href="%1$s" class="button">%2$s</a></p>',
 			esc_url( $url ),
-			esc_html__( 'Regenerate image', 'hti-rss-ai' )
+			esc_html__( 'Regenerate AI image', 'hti-rss-ai' )
 		);
-		echo '<p class="description">' . esc_html__( 'Renders the branded square card (1080×1080) with a fresh AI photo.', 'hti-rss-ai' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Generates a fresh AI photo about the article topic and sets it as the featured image.', 'hti-rss-ai' ) . '</p>';
 		echo '</div>';
 	}
 
@@ -271,8 +237,6 @@ class Featured_Image {
 		}
 		check_admin_referer( self::ACTION . '_' . $post_id );
 
-		$lang  = (string) get_post_meta( $post_id, 'rssai_lang', true );
-		$lang  = in_array( $lang, array( 'en', 'pt' ), true ) ? $lang : 'en';
 		$group = null;
 		$gid   = (int) get_post_meta( $post_id, 'rssai_group_id', true );
 		if ( $gid > 0 ) {
@@ -283,7 +247,7 @@ class Featured_Image {
 			'suggested_category' => '',
 		);
 
-		$ok = self::maybe_generate( $post_id, $data, $group, $lang );
+		$ok = self::maybe_generate( $post_id, $data, $group );
 
 		wp_safe_redirect(
 			add_query_arg(
