@@ -89,6 +89,26 @@ class Prompt {
 	}
 
 	/**
+	 * Prompt for the featured-image photo (Imagen).
+	 *
+	 * Conceptual editorial illustration only — no text, no logos, no real
+	 * people, no readable charts. Matches the dark navy + coral card it sits in.
+	 *
+	 * @param array<string,mixed> $data Validated article (headline/tags/category).
+	 */
+	public static function image_prompt( array $data ): string {
+		$headline = trim( (string) ( $data['headline'] ?? '' ) );
+		$topic    = trim( (string) ( $data['suggested_category'] ?? '' ) );
+		$subject  = '' !== $topic ? $topic . ' — ' . $headline : $headline;
+
+		return 'Editorial conceptual illustration for a financial-news article about: "' . $subject . '". '
+			. 'Modern, clean, professional finance and markets theme. Cinematic soft lighting, subtle depth. '
+			. 'Colour palette: deep navy blue (#1C2150) with warm coral (#FF6B5E) accents. '
+			. 'Absolutely NO text, NO words, NO letters, NO numbers, NO logos, NO watermarks, NO readable charts. '
+			. 'No real or recognizable people. Abstract or symbolic imagery is preferred. Wide 16:9 composition.';
+	}
+
+	/**
 	 * Current date in the site's timezone, formatted for the prompt.
 	 *
 	 * @return string e.g. "2026-06-19 (19 June 2026)".

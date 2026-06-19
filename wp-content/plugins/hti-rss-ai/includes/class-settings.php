@@ -44,6 +44,8 @@ class Settings {
 			'max_per_fetch'        => 50,
 			'max_generations_day'  => 10,
 			'default_lang'         => 'en',
+			'image_generate'       => 1,
+			'image_model'          => 'imagen-3.0-generate-002',
 		);
 	}
 
@@ -119,6 +121,8 @@ class Settings {
 			'max_per_fetch'        => max( 1, absint( $input['max_per_fetch'] ?? 50 ) ),
 			'max_generations_day'  => max( 1, absint( $input['max_generations_day'] ?? 10 ) ),
 			'default_lang'         => in_array( $input['default_lang'] ?? '', $langs, true ) ? $input['default_lang'] : 'en',
+			'image_generate'       => empty( $input['image_generate'] ) ? 0 : 1,
+			'image_model'          => isset( $input['image_model'] ) ? sanitize_text_field( $input['image_model'] ) : 'imagen-3.0-generate-002',
 		);
 	}
 
@@ -195,6 +199,22 @@ class Settings {
 								<option value="en"<?php selected( $s['default_lang'], 'en' ); ?>>English</option>
 								<option value="pt"<?php selected( $s['default_lang'], 'pt' ); ?>>Português</option>
 							</select>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Featured image', 'hti-rss-ai' ); ?></th>
+						<td>
+							<label>
+								<input name="<?php echo esc_attr( self::OPTION ); ?>[image_generate]" type="checkbox" value="1" <?php checked( ! empty( $s['image_generate'] ) ); ?> />
+								<?php echo esc_html__( 'Generate a branded featured image (square 1080×1080) on each article', 'hti-rss-ai' ); ?>
+							</label>
+							<p class="description"><?php echo esc_html__( 'The card layout is rendered locally for brand consistency; only the photo inside it is produced by AI. If image generation is unavailable, it falls back to the feed image, then a branded gradient.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_image_model"><?php echo esc_html__( 'Image model', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[image_model]" id="rssai_image_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['image_model'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Google image model (Imagen) used for the photo. Requires a billing-enabled key with image generation access.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
 				</table>
