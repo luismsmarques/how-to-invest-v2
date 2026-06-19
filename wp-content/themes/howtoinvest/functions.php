@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.5';
+const VERSION = '0.6.6';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -104,6 +104,7 @@ function strings(): array {
 		'cta_get_started'  => array( 'en' => 'Get started', 'pt' => 'Começar' ),
 		'cta_start_quiz'   => array( 'en' => 'Start the questionnaire', 'pt' => 'Começar o questionário' ),
 		'nav_learn'        => array( 'en' => 'Learn', 'pt' => 'Aprender' ),
+		'learn_intro'      => array( 'en' => 'Clear, jargon-free articles to build your investing confidence — organised by topic.', 'pt' => 'Artigos claros e sem jargão para ganhares confiança a investir — organizados por tema.' ),
 		'nav_types'        => array( 'en' => 'Investor types', 'pt' => 'Perfis' ),
 		'nav_classes'      => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
 		'nav_tools'        => array( 'en' => 'Tools', 'pt' => 'Ferramentas' ),
@@ -226,8 +227,85 @@ function register_dynamic_blocks(): void {
 			'render_callback' => __NAMESPACE__ . '\\render_about',
 		)
 	);
+	register_block_type(
+		'howtoinvest/learn-hub',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Learn hub', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_learn_hub',
+		)
+	);
 }
 add_action( 'init', __NAMESPACE__ . '\\register_dynamic_blocks' );
+
+/**
+ * Render the Learn hub: the educational articles grouped by category, in the
+ * current language. Polylang filters the query/terms by language when active.
+ */
+function render_learn_hub(): string {
+	if ( ! taxonomy_exists( 'learn_topic' ) || ! post_type_exists( 'learn' ) ) {
+		return '';
+	}
+	$pt    = 'pt' === current_lang();
+	$terms = get_terms(
+		array(
+			'taxonomy'   => 'learn_topic',
+			'hide_empty' => true,
+		)
+	);
+	if ( is_wp_error( $terms ) || empty( $terms ) ) {
+		return '';
+	}
+
+	$out = '<div class="hti-learn">';
+	$out .= '<p class="hti-learn__intro">' . esc_html( t( 'learn_intro' ) ) . '</p>';
+
+	foreach ( $terms as $term ) {
+		$name = $term->name;
+		if ( $pt ) {
+			$meta = get_term_meta( $term->term_id, 'hti_name_pt', true );
+			if ( is_string( $meta ) && '' !== $meta ) {
+				$name = $meta;
+			}
+		}
+
+		$q = new \WP_Query(
+			array(
+				'post_type'           => 'learn',
+				'posts_per_page'      => 20,
+				'ignore_sticky_posts' => true,
+				'no_found_rows'       => true,
+				'orderby'             => 'title',
+				'order'               => 'ASC',
+				'tax_query'           => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+					array(
+						'taxonomy' => 'learn_topic',
+						'terms'    => (int) $term->term_id,
+					),
+				),
+			)
+		);
+		if ( ! $q->have_posts() ) {
+			continue;
+		}
+
+		$out .= '<section class="hti-learn__cat"><h2 class="hti-learn__cat-title">' . esc_html( $name ) . '</h2><ul class="hti-learn__list">';
+		while ( $q->have_posts() ) {
+			$q->the_post();
+			$excerpt = get_the_excerpt();
+			$out    .= '<li class="hti-learn__item"><a href="' . esc_url( (string) get_permalink() ) . '">'
+				. esc_html( (string) get_the_title() ) . '</a>'
+				. ( '' !== $excerpt ? ' <span class="hti-learn__excerpt">— ' . esc_html( $excerpt ) . '</span>' : '' )
+				. '</li>';
+		}
+		$out .= '</ul></section>';
+		wp_reset_postdata();
+	}
+
+	$out .= '</div>';
+	return $out;
+}
 
 /**
  * Language-aware, designed About page (hero, why, founder card, goals,
@@ -582,7 +660,7 @@ function default_menu( string $location, string $extra ): string {
 		);
 	} else {
 		$items = array(
-			array( page_url( 'how-to-start-investing' ), t( 'nav_learn' ) ),
+			array( home_url( '/learn/' ), t( 'nav_learn' ) ),
 			array( page_url( 'investor-types' ), t( 'nav_types' ) ),
 			array( page_url( 'asset-classes' ), t( 'nav_classes' ) ),
 			array( page_url( 'tools' ), t( 'nav_tools' ) ),

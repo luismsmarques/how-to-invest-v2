@@ -84,14 +84,20 @@ class Seeder {
 			}
 		}
 
+		// Move any legacy seeded articles (old `post` type) to the `learn` CPT.
+		self::migrate_legacy_articles();
+
 		foreach ( self::articles() as $entry ) {
-			$id = self::insert( 'post', $entry );
+			$id = self::insert( 'learn', $entry );
 			if ( $id > 0 ) {
 				++$report['articles_created'];
 			} else {
 				++$report['skipped'];
 			}
 		}
+
+		// Group the seeded articles under their Learn categories.
+		self::assign_learn_topic();
 
 		// If Polylang is active, mirror every seeded entry into a linked
 		// Portuguese translation (built from the hti_*_pt variants).
@@ -123,7 +129,7 @@ class Seeder {
 		$groups = array(
 			'glossary' => self::glossary_terms(),
 			'page'     => self::pages(),
-			'post'     => self::articles(),
+			'learn'    => self::articles(),
 		);
 		foreach ( $groups as $type => $entries ) {
 			foreach ( $entries as $entry ) {
@@ -196,6 +202,7 @@ class Seeder {
 		// Translate the "Asset classes" glossary topic first, so the PT
 		// glossary posts can be filed under its PT term.
 		self::translate_glossary_topic( $en, $pt );
+		self::translate_learn_topic( $en, $pt );
 
 		$created = 0;
 		$groups  = array(
@@ -235,6 +242,13 @@ class Seeder {
 						$pt_term = get_term_by( 'slug', self::glossary_topic_of( (string) $entry['slug'] ) . '-' . $pt, 'glossary_topic' );
 						if ( $pt_term instanceof \WP_Term ) {
 							wp_set_object_terms( (int) $existing_pt, array( (int) $pt_term->term_id ), 'glossary_topic', false );
+						}
+					}
+					// Re-file existing PT articles under the correct PT category.
+					if ( 'learn' === $type ) {
+						$pt_term = get_term_by( 'slug', self::learn_category_of( (string) $entry['slug'] ) . '-' . $pt, 'learn_topic' );
+						if ( $pt_term instanceof \WP_Term ) {
+							wp_set_object_terms( (int) $existing_pt, array( (int) $pt_term->term_id ), 'learn_topic', false );
 						}
 					}
 					continue;
@@ -400,6 +414,14 @@ class Seeder {
 			}
 		}
 
+		// File PT articles under the PT Learn category matching the EN entry.
+		if ( 'learn' === $type ) {
+			$pt_term = get_term_by( 'slug', self::learn_category_of( (string) $entry['slug'] ) . '-' . $pt, 'learn_topic' );
+			if ( $pt_term instanceof \WP_Term ) {
+				wp_set_object_terms( $pt_id, array( (int) $pt_term->term_id ), 'learn_topic', false );
+			}
+		}
+
 		return $pt_id;
 	}
 
@@ -443,7 +465,7 @@ class Seeder {
 		// actually present. The final relocalize pass (run after every PT post
 		// exists) guarantees links resolve regardless of seed order.
 		foreach ( self::internal_link_slugs() as $slug ) {
-			$needle = home_url( '/' . $slug . '/' );
+			$needle = self::internal_url( $slug );
 			if ( false === strpos( $content, $needle ) ) {
 				continue;
 			}
@@ -498,6 +520,135 @@ class Seeder {
 				continue;
 			}
 
+			$pt_term_id = (int) $res['term_id'];
+			pll_set_term_language( $pt_term_id, $pt );
+			pll_save_term_translations( array( $en => (int) $en_term->term_id, $pt => $pt_term_id ) );
+		}
+	}
+
+	/* -------------------------------------------------------------------------
+	 * Learn (articles) categories — mirrors the glossary topic system.
+	 * ---------------------------------------------------------------------- */
+
+	/**
+	 * Learn category slugs → bilingual names.
+	 *
+	 * @return array<string,array{en:string,pt:string}>
+	 */
+	private static function learn_topics(): array {
+		return array(
+			'getting-started' => array( 'en' => 'Getting started', 'pt' => 'Começar' ),
+			'concepts'        => array( 'en' => 'Investing concepts', 'pt' => 'Conceitos de investimento' ),
+			'mindset'         => array( 'en' => 'Behaviour & mindset', 'pt' => 'Comportamento e mentalidade' ),
+			'planning'        => array( 'en' => 'Planning', 'pt' => 'Planeamento' ),
+		);
+	}
+
+	/**
+	 * Map each article slug to its Learn category (default "concepts").
+	 *
+	 * @param string $slug Article slug.
+	 */
+	private static function learn_category_of( string $slug ): string {
+		$map = array(
+			'what-is-an-investor-profile'       => 'getting-started',
+			'asset-classes-explained'           => 'concepts',
+			'why-your-time-horizon-matters'     => 'concepts',
+			'staying-calm-when-markets-fall'    => 'mindset',
+			'why-an-emergency-fund-comes-first' => 'planning',
+			'what-is-diversification'           => 'concepts',
+			'risk-and-reward-explained'         => 'concepts',
+			'what-is-esg-investing'             => 'concepts',
+		);
+		return $map[ $slug ] ?? 'concepts';
+	}
+
+	/**
+	 * Convert any legacy seeded article (old `post` type) to the `learn` CPT,
+	 * preserving the post (and its links/IDs). Idempotent.
+	 */
+	private static function migrate_legacy_articles(): void {
+		if ( ! function_exists( 'get_posts' ) ) {
+			return;
+		}
+		$legacy = get_posts(
+			array(
+				'post_type'   => 'post',
+				'post_status' => 'any',
+				'numberposts' => -1,
+				'fields'      => 'ids',
+				'meta_key'    => self::SEED_FLAG, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			)
+		);
+		foreach ( $legacy as $id ) {
+			set_post_type( (int) $id, 'learn' );
+		}
+	}
+
+	/**
+	 * Ensure the Learn categories exist and assign each seeded article to its
+	 * category. Idempotent; replaces (so a re-run corrects the category).
+	 */
+	private static function assign_learn_topic(): void {
+		if ( ! taxonomy_exists( 'learn_topic' ) ) {
+			return;
+		}
+
+		$term_id = array();
+		foreach ( self::learn_topics() as $slug => $names ) {
+			$existing = term_exists( $slug, 'learn_topic' );
+			if ( ! $existing ) {
+				$existing = wp_insert_term( $names['en'], 'learn_topic', array( 'slug' => $slug ) );
+			}
+			if ( is_wp_error( $existing ) ) {
+				continue;
+			}
+			$tid = (int) ( is_array( $existing ) ? $existing['term_id'] : $existing );
+			update_term_meta( $tid, 'hti_name_pt', $names['pt'] );
+			$term_id[ $slug ] = $tid;
+		}
+
+		foreach ( self::articles() as $entry ) {
+			$cat = self::learn_category_of( (string) $entry['slug'] );
+			if ( ! isset( $term_id[ $cat ] ) ) {
+				continue;
+			}
+			$post = get_page_by_path( $entry['slug'], OBJECT, 'learn' );
+			if ( $post instanceof \WP_Post ) {
+				wp_set_object_terms( $post->ID, array( $term_id[ $cat ] ), 'learn_topic', false );
+			}
+		}
+	}
+
+	/**
+	 * Create the PT translations of the Learn categories and link them.
+	 *
+	 * @param string $en EN language slug.
+	 * @param string $pt PT language slug.
+	 */
+	private static function translate_learn_topic( string $en, string $pt ): void {
+		if ( ! taxonomy_exists( 'learn_topic' )
+			|| ! function_exists( 'pll_set_term_language' )
+			|| ! function_exists( 'pll_get_term' )
+			|| ! function_exists( 'pll_save_term_translations' ) ) {
+			return;
+		}
+
+		foreach ( self::learn_topics() as $slug => $names ) {
+			$en_term = get_term_by( 'slug', $slug, 'learn_topic' );
+			if ( ! $en_term instanceof \WP_Term ) {
+				continue;
+			}
+			if ( ! pll_get_term_language( $en_term->term_id ) ) {
+				pll_set_term_language( (int) $en_term->term_id, $en );
+			}
+			if ( pll_get_term( (int) $en_term->term_id, $pt ) ) {
+				continue;
+			}
+			$res = wp_insert_term( $names['pt'], 'learn_topic', array( 'slug' => $slug . '-' . $pt ) );
+			if ( is_wp_error( $res ) ) {
+				continue;
+			}
 			$pt_term_id = (int) $res['term_id'];
 			pll_set_term_language( $pt_term_id, $pt );
 			pll_save_term_translations( array( $en => (int) $en_term->term_id, $pt => $pt_term_id ) );
@@ -814,7 +965,7 @@ class Seeder {
 			return null;
 		}
 		[ $target, $en, $pt ] = $map[ $slug ];
-		return array( home_url( '/' . $target . '/' ), 'pt' === $lang ? $pt : $en );
+		return array( self::internal_url( $target ), 'pt' === $lang ? $pt : $en );
 	}
 
 	/**
@@ -2007,10 +2158,43 @@ class Seeder {
 		if ( null === $slugs ) {
 			$slugs = array_merge(
 				array_column( self::pages(), 'slug' ),
-				array_column( self::articles(), 'slug' )
+				self::article_slugs()
 			);
 		}
 		return $slugs;
+	}
+
+	/**
+	 * The seed article slugs (without building their content — avoids recursion
+	 * with the cross-link helpers).
+	 *
+	 * @return array<int,string>
+	 */
+	private static function article_slugs(): array {
+		return array(
+			'what-is-an-investor-profile',
+			'asset-classes-explained',
+			'why-your-time-horizon-matters',
+			'staying-calm-when-markets-fall',
+			'why-an-emergency-fund-comes-first',
+			'what-is-diversification',
+			'risk-and-reward-explained',
+			'what-is-esg-investing',
+		);
+	}
+
+	/**
+	 * Root URL for an internal target: /learn/{slug}/ for articles, /{slug}/
+	 * for pages.
+	 *
+	 * @param string $slug Slug.
+	 */
+	private static function internal_url( string $slug ): string {
+		static $articles = null;
+		if ( null === $articles ) {
+			$articles = array_flip( self::article_slugs() );
+		}
+		return isset( $articles[ $slug ] ) ? home_url( '/learn/' . $slug . '/' ) : home_url( '/' . $slug . '/' );
 	}
 
 	/**
@@ -2024,7 +2208,7 @@ class Seeder {
 		if ( ! array_key_exists( $slug, $cache ) ) {
 			$post = get_page_by_path( $slug, OBJECT, 'page' );
 			if ( ! $post instanceof \WP_Post ) {
-				$post = get_page_by_path( $slug, OBJECT, 'post' );
+				$post = get_page_by_path( $slug, OBJECT, 'learn' );
 			}
 			$cache[ $slug ] = $post instanceof \WP_Post ? $post : null;
 		}
@@ -2239,18 +2423,54 @@ class Seeder {
 			'risk-and-reward-explained'         => array( 'volatility', 'yield', 'leverage' ),
 			'what-is-esg-investing'             => array( 'global-equities', 'asset' ),
 		);
+
+		// Titles + category index for the "Related articles" block.
+		$titles = array();
+		$by_cat = array();
+		foreach ( $articles as $e ) {
+			$titles[ $e['slug'] ] = array( 'en' => (string) $e['title'], 'pt' => (string) ( $e['pt']['title'] ?? $e['title'] ) );
+			$by_cat[ self::learn_category_of( (string) $e['slug'] ) ][] = (string) $e['slug'];
+		}
+
 		foreach ( $articles as &$entry ) {
-			$terms = $map[ $entry['slug'] ] ?? array();
-			if ( ! $terms ) {
-				continue;
+			$slug  = (string) $entry['slug'];
+			$terms = $map[ $slug ] ?? array();
+
+			$related = array();
+			foreach ( $by_cat[ self::learn_category_of( $slug ) ] as $other ) {
+				if ( $other === $slug ) {
+					continue;
+				}
+				$related[] = $other;
+				if ( count( $related ) >= 3 ) {
+					break;
+				}
 			}
-			$entry['content'] .= self::glossary_links_block( $terms, 'en' );
+
+			$entry['content'] .= self::glossary_links_block( $terms, 'en' )
+				. self::article_links_block( $related, $titles, 'en' );
 			if ( isset( $entry['pt']['content'] ) ) {
-				$entry['pt']['content'] .= self::glossary_links_block( $terms, 'pt' );
+				$entry['pt']['content'] .= self::glossary_links_block( $terms, 'pt' )
+					. self::article_links_block( $related, $titles, 'pt' );
 			}
 		}
 		unset( $entry );
 		return $articles;
+	}
+
+	/**
+	 * A "Related articles: a · b" block linking same-category articles.
+	 *
+	 * @param array<int,string>                        $slugs  Article slugs.
+	 * @param array<string,array{en:string,pt:string}> $titles Slug → titles.
+	 * @param string                                   $lang   'en' or 'pt'.
+	 */
+	private static function article_links_block( array $slugs, array $titles, string $lang ): string {
+		$items = array();
+		foreach ( $slugs as $slug ) {
+			$items[] = array( self::internal_url( $slug ), $titles[ $slug ][ $lang ] ?? ( $titles[ $slug ]['en'] ?? $slug ) );
+		}
+		return self::links_para( 'pt' === $lang ? 'Artigos relacionados' : 'Related articles', $items );
 	}
 
 	/**

@@ -42,7 +42,7 @@ class SEO {
 	 * Print the appropriate JSON-LD for the current singular view.
 	 */
 	public static function output_schema(): void {
-		if ( ! is_singular( array( 'glossary', 'news' ) ) ) {
+		if ( ! is_singular( array( 'glossary', 'news', 'learn' ) ) ) {
 			return;
 		}
 
