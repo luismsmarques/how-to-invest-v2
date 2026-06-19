@@ -45,7 +45,7 @@ class Settings {
 			'max_generations_day'  => 10,
 			'default_lang'         => 'en',
 			'image_generate'       => 1,
-			'image_model'          => 'imagen-3.0-generate-002',
+			'image_model'          => 'imagen-4.0-generate-001',
 		);
 	}
 
@@ -122,7 +122,7 @@ class Settings {
 			'max_generations_day'  => max( 1, absint( $input['max_generations_day'] ?? 10 ) ),
 			'default_lang'         => in_array( $input['default_lang'] ?? '', $langs, true ) ? $input['default_lang'] : 'en',
 			'image_generate'       => empty( $input['image_generate'] ) ? 0 : 1,
-			'image_model'          => isset( $input['image_model'] ) ? sanitize_text_field( $input['image_model'] ) : 'imagen-3.0-generate-002',
+			'image_model'          => isset( $input['image_model'] ) ? sanitize_text_field( $input['image_model'] ) : 'imagen-4.0-generate-001',
 		);
 	}
 
@@ -214,7 +214,7 @@ class Settings {
 					<tr>
 						<th scope="row"><label for="rssai_image_model"><?php echo esc_html__( 'Image model', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[image_model]" id="rssai_image_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['image_model'] ); ?>" />
-							<p class="description"><?php echo esc_html__( 'Google image model (Imagen) used for the photo. Requires a billing-enabled key with image generation access.', 'hti-rss-ai' ); ?></p>
+							<p class="description"><?php echo esc_html__( 'Image model your key can access. Imagen models (e.g. imagen-4.0-generate-001, imagen-4.0-fast-generate-001) use :predict; Gemini image models (e.g. gemini-2.5-flash-image) use :generateContent — both are handled automatically. Run ListModels to see exactly what your key supports.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
 				</table>

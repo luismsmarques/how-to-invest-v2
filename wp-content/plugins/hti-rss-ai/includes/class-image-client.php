@@ -40,17 +40,33 @@ class Image_Client {
 			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
 		}
 
-		$model = (string) Settings::get( 'image_model', 'imagen-3.0-generate-002' );
-		$url   = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode( $model ) . ':predict?key=' . rawurlencode( $key );
+		$model = (string) Settings::get( 'image_model', 'imagen-4.0-generate-001' );
+		$base  = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode( $model );
 
-		$body = array(
-			'instances'  => array( array( 'prompt' => $prompt ) ),
-			'parameters' => array(
-				'sampleCount'      => 1,
-				'aspectRatio'      => $aspect_ratio,
-				'personGeneration' => 'dont_allow',
-			),
-		);
+		// Imagen models use the :predict endpoint; Gemini image models (e.g.
+		// gemini-2.5-flash-image) use :generateContent with an IMAGE modality.
+		if ( false !== stripos( $model, 'imagen' ) ) {
+			$url  = $base . ':predict?key=' . rawurlencode( $key );
+			$body = array(
+				'instances'  => array( array( 'prompt' => $prompt ) ),
+				'parameters' => array(
+					'sampleCount'      => 1,
+					'aspectRatio'      => $aspect_ratio,
+					'personGeneration' => 'dont_allow',
+				),
+			);
+		} else {
+			$url  = $base . ':generateContent?key=' . rawurlencode( $key );
+			$body = array(
+				'contents'         => array(
+					array(
+						'role'  => 'user',
+						'parts' => array( array( 'text' => $prompt ) ),
+					),
+				),
+				'generationConfig' => array( 'responseModalities' => array( 'IMAGE' ) ),
+			);
+		}
 
 		$response = wp_remote_post(
 			$url,
