@@ -105,7 +105,7 @@ class REST {
 						'type'     => 'string',
 						'required' => true,
 					),
-					'company' => array(
+					'hti_hp'  => array(
 						'type'     => 'string',
 						'required' => false,
 					),
@@ -327,9 +327,9 @@ class REST {
 			return self::too_many();
 		}
 
-		// Honeypot: a filled "company" field means a bot — drop it but report
+		// Honeypot: a filled hidden field means a bot — drop it but report
 		// success so the bot gets no signal.
-		if ( '' !== trim( (string) $request->get_param( 'company' ) ) ) {
+		if ( '' !== trim( (string) $request->get_param( 'hti_hp' ) ) ) {
 			return new WP_REST_Response( array( 'sent' => true ), 200 );
 		}
 

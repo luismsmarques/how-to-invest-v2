@@ -178,10 +178,10 @@ class Contact {
 				<label class="hti-contact__label" for="hti-contact-message"><?php echo esc_html( $l['message'] ); ?></label>
 				<textarea class="hti-contact__input" id="hti-contact-message" name="message" rows="6" required></textarea>
 			</p>
-			<?php // Honeypot: hidden from humans; bots that fill it are dropped. ?>
+			<?php // Honeypot: a non-semantic name so browser autofill never fills it; bots that do are dropped. ?>
 			<p class="hti-contact__trap" aria-hidden="true">
-				<label for="hti-contact-company">Company</label>
-				<input type="text" id="hti-contact-company" name="company" tabindex="-1" autocomplete="off">
+				<label for="hti-contact-hp"><?php esc_html_e( 'Leave this field blank', 'hti-engine' ); ?></label>
+				<input type="text" id="hti-contact-hp" name="hti_hp" tabindex="-1" autocomplete="off">
 			</p>
 			<p class="hti-contact__actions">
 				<button class="hti-contact__submit" type="submit"><?php echo esc_html( $l['send'] ); ?></button>
