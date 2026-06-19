@@ -109,6 +109,25 @@ class Prompt {
 	}
 
 	/**
+	 * Prompt for image-to-image: reimagine the feed image into the branded
+	 * editorial illustration, keeping the general subject/scene.
+	 *
+	 * @param array<string,mixed> $data Validated article (headline/category).
+	 */
+	public static function image_edit_prompt( array $data ): string {
+		$headline = trim( (string) ( $data['headline'] ?? '' ) );
+		$topic    = trim( (string) ( $data['suggested_category'] ?? '' ) );
+		$subject  = '' !== $topic ? $topic . ' — ' . $headline : $headline;
+
+		return 'Using the attached photo as the base/reference, create a clean, modern editorial illustration '
+			. 'for a financial-news article about: "' . $subject . '". '
+			. 'Keep the general subject and scene of the photo, but restyle it: cinematic, professional, soft lighting. '
+			. 'Colour palette: deep navy blue (#1C2150) with warm coral (#FF6B5E) accents. '
+			. 'Absolutely NO text, NO words, NO letters, NO numbers, NO logos, NO watermarks, NO readable charts. '
+			. 'No recognizable real people. Wide 16:9 composition.';
+	}
+
+	/**
 	 * Current date in the site's timezone, formatted for the prompt.
 	 *
 	 * @return string e.g. "2026-06-19 (19 June 2026)".
