@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.6.7';
+const VERSION = '0.6.8';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -135,6 +135,9 @@ function strings(): array {
 		),
 		'footer_copy'      => array( 'en' => '© 2026 HowToInvest · Educational content, not an investment recommendation.', 'pt' => '© 2026 HowToInvest · Conteúdo educativo, não constitui recomendação de investimento.' ),
 		// Archives / back links.
+		'arch_learn'       => array( 'en' => 'Learn to invest', 'pt' => 'Aprender a investir' ),
+		'arch_glossary'    => array( 'en' => 'Investing glossary', 'pt' => 'Glossário de investimento' ),
+		'arch_news'        => array( 'en' => 'Financial news', 'pt' => 'Notícias financeiras' ),
 		'sub_glossary'     => array( 'en' => 'The essential terms, explained without jargon.', 'pt' => 'Os termos essenciais, explicados sem jargão.' ),
 		'sub_news'         => array( 'en' => "Calm reads on what's happening in the markets — and what it means for you.", 'pt' => 'Leituras calmas do que acontece nos mercados — e do que isso significa para ti.' ),
 		'back_learn'       => array( 'en' => '← Learn', 'pt' => '← Aprender' ),
@@ -689,6 +692,28 @@ function archive_url( string $post_type, string $fallback ): string {
 	$url = get_post_type_archive_link( $post_type );
 	return $url ? $url : home_url( $fallback );
 }
+
+/**
+ * Clean, localized H1 for our CPT archives. WordPress's
+ * get_the_archive_title() prepends "Archives:" / "Arquivo:" and uses the
+ * post-type label, which Polylang doesn't translate — so PT showed
+ * "Arquivo: Learn". Replace it with our bilingual title (no prefix).
+ *
+ * @param string $title Default archive title.
+ */
+function archive_title( string $title ): string {
+	if ( is_post_type_archive( 'learn' ) ) {
+		return t( 'arch_learn' );
+	}
+	if ( is_post_type_archive( 'glossary' ) ) {
+		return t( 'arch_glossary' );
+	}
+	if ( is_post_type_archive( 'news' ) ) {
+		return t( 'arch_news' );
+	}
+	return $title;
+}
+add_filter( 'get_the_archive_title', __NAMESPACE__ . '\\archive_title' );
 
 /**
  * Permalink of a page identified by its English slug, localized to the
