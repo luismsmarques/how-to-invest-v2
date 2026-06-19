@@ -22,6 +22,10 @@ class Account {
 	public const META_DELETE_AT      = 'hti_delete_at';
 	private const GRACE_DAYS         = 30;
 	public const DELETE_HOOK         = 'hti_account_deletions';
+	private const META_LAST_LOGIN    = 'hti_last_login';
+	private const META_REACTIVATED   = 'hti_reactivated_at';
+	private const INACTIVE_DAYS      = 90;
+	public const REACTIVATE_HOOK     = 'hti_reactivation';
 
 	/**
 	 * Hook the account-security emails, confirm links and the deletion cron.
@@ -34,25 +38,114 @@ class Account {
 		// Email-change + cancel-deletion confirmation links.
 		add_action( 'template_redirect', array( __CLASS__, 'handle_email_change' ) );
 		add_action( 'template_redirect', array( __CLASS__, 'handle_cancel_deletion' ) );
-		// Daily sweep that erases due accounts.
+		// Daily sweep that erases due accounts; weekly re-engagement sweep.
 		add_action( self::DELETE_HOOK, array( __CLASS__, 'run_due_deletions' ) );
+		add_action( self::REACTIVATE_HOOK, array( __CLASS__, 'run_reactivation' ) );
 		add_action( 'init', array( __CLASS__, 'schedule' ) );
+		// Track last login for the re-engagement sweep.
+		add_action( 'wp_login', array( __CLASS__, 'record_login' ), 10, 2 );
 	}
 
 	/**
-	 * Ensure the deletion-sweep cron exists.
+	 * Ensure the deletion-sweep and reactivation crons exist.
 	 */
 	public static function schedule(): void {
 		if ( ! wp_next_scheduled( self::DELETE_HOOK ) ) {
 			wp_schedule_event( strtotime( 'tomorrow 4:00' ), 'daily', self::DELETE_HOOK );
 		}
+		if ( ! wp_next_scheduled( self::REACTIVATE_HOOK ) ) {
+			wp_schedule_event( strtotime( 'next tuesday 10:00' ), 'weekly', self::REACTIVATE_HOOK );
+		}
 	}
 
 	/**
-	 * Clear the deletion-sweep cron (deactivation).
+	 * Clear our crons (deactivation).
 	 */
 	public static function unschedule(): void {
 		wp_clear_scheduled_hook( self::DELETE_HOOK );
+		wp_clear_scheduled_hook( self::REACTIVATE_HOOK );
+	}
+
+	/**
+	 * Record the last-login timestamp; clears any prior reactivation flag.
+	 *
+	 * @param string    $login User login.
+	 * @param \WP_User  $user  User.
+	 */
+	public static function record_login( $login, $user = null ): void {
+		if ( $user instanceof \WP_User ) {
+			update_user_meta( $user->ID, self::META_LAST_LOGIN, time() );
+			delete_user_meta( $user->ID, self::META_REACTIVATED );
+		}
+	}
+
+	/**
+	 * Cron: email lapsed users (inactive > 90 days, not yet re-pinged) once.
+	 */
+	public static function run_reactivation(): void {
+		$cutoff = time() - self::INACTIVE_DAYS * DAY_IN_SECONDS;
+		$users  = get_users(
+			array(
+				'number'       => 50,
+				'fields'       => array( 'ID' ),
+				'meta_query'   => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					'relation' => 'AND',
+					array(
+						'key'     => self::META_LAST_LOGIN,
+						'value'   => $cutoff,
+						'compare' => '<',
+						'type'    => 'NUMERIC',
+					),
+					array(
+						'key'     => self::META_REACTIVATED,
+						'compare' => 'NOT EXISTS',
+					),
+				),
+			)
+		);
+		foreach ( $users as $row ) {
+			$user = get_user_by( 'id', (int) $row->ID );
+			if ( ! $user instanceof \WP_User || Verification::is_unverified( $user->ID ) ) {
+				continue;
+			}
+			$locale = self::user_locale( $user->ID );
+			$html   = Emails::reactivation( $locale, self::latest_news( $locale, 3 ), home_url( 'pt' === $locale ? '/pt/' : '/' ) );
+			$subject = 'pt' === $locale ? 'Sentimos a tua falta — HowToInvest' : 'We’ve missed you — HowToInvest';
+			Mailer::send( $user->user_email, $subject, $html );
+			update_user_meta( $user->ID, self::META_REACTIVATED, time() );
+		}
+	}
+
+	/**
+	 * Latest published news for "what's new", in the user's language.
+	 *
+	 * @param string $locale Language.
+	 * @param int    $max    Max items.
+	 * @return array<int,array{title:string,url:string,excerpt:string}>
+	 */
+	private static function latest_news( string $locale, int $max ): array {
+		$args = array(
+			'post_type'      => 'news',
+			'post_status'    => 'publish',
+			'posts_per_page' => $max,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+			'no_found_rows'  => true,
+		);
+		if ( function_exists( 'pll_default_language' ) ) {
+			$args['lang'] = $locale;
+		}
+		$query = new \WP_Query( $args );
+		$items = array();
+		foreach ( $query->posts as $post ) {
+			$items[] = array(
+				'title'   => (string) get_the_title( $post ),
+				'url'     => (string) get_permalink( $post ),
+				'excerpt' => '',
+			);
+		}
+		wp_reset_postdata();
+		return $items;
 	}
 
 	/**
