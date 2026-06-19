@@ -289,7 +289,7 @@ class REST {
 			)
 		);
 
-		// RGPD: delete account + all profiles/results in cascade (erasure).
+		// RGPD: schedule account erasure (30-day grace, then a cron cascade-deletes).
 		register_rest_route(
 			self::NAMESPACE,
 			'/account',
@@ -303,6 +303,17 @@ class REST {
 						'required' => true,
 					),
 				),
+			)
+		);
+
+		// RGPD: cancel a scheduled deletion.
+		register_rest_route(
+			self::NAMESPACE,
+			'/cancel-deletion',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'cancel_deletion' ),
+				'permission_callback' => array( __CLASS__, 'check_auth' ),
 			)
 		);
 	}
@@ -800,21 +811,30 @@ class REST {
 			return new WP_Error( 'hti_unconfirmed', __( 'Deletion must be explicitly confirmed.', 'hti-engine' ), array( 'status' => 400 ) );
 		}
 
-		$user_id = get_current_user_id();
+		// Schedule erasure after a 30-day grace period (RGPD-compliant), with a
+		// cancel option; a daily cron performs the actual cascade delete.
+		$at     = Account::schedule_deletion( get_current_user_id() );
+		$locale = self::locale( (string) get_user_locale( get_current_user_id() ) );
 
-		// Cascade: remove every profile (and its meta) first.
-		foreach ( self::user_profile_ids( $user_id ) as $id ) {
-			wp_delete_post( $id, true );
-		}
+		return new WP_REST_Response(
+			array(
+				'scheduled' => true,
+				'delete_at' => gmdate( 'c', $at ),
+				'date'      => wp_date( 'pt' === $locale ? 'j \d\e F \d\e Y' : 'j F Y', $at ),
+			),
+			200
+		);
+	}
 
-		require_once ABSPATH . 'wp-admin/includes/user.php';
-		$deleted = wp_delete_user( $user_id );
-
-		if ( ! $deleted ) {
-			return new WP_Error( 'hti_delete_failed', __( 'Could not delete the account.', 'hti-engine' ), array( 'status' => 500 ) );
-		}
-
-		return new WP_REST_Response( array( 'deleted' => true ), 200 );
+	/**
+	 * POST /cancel-deletion — abort a scheduled account deletion.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function cancel_deletion( WP_REST_Request $request ) {
+		Account::cancel_deletion( get_current_user_id() );
+		return new WP_REST_Response( array( 'cancelled' => true ), 200 );
 	}
 
 	/**

@@ -135,6 +135,7 @@ class Frontend {
 			'nonce'      => wp_create_nonce( 'wp_rest' ),
 			'isLoggedIn' => is_user_logged_in(),
 			'email'      => is_user_logged_in() ? wp_get_current_user()->user_email : '',
+			'deleteAt'   => self::deletion_date( $locale ),
 			'locale'     => $locale,
 			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
 			'homeUrl'    => esc_url( home_url( '/' ) ),
@@ -146,6 +147,22 @@ class Frontend {
 			),
 			'strings'    => self::account_strings( 'pt' === $locale ),
 		);
+	}
+
+	/**
+	 * Human deletion date for the current user, or '' if none scheduled.
+	 *
+	 * @param string $locale Locale.
+	 */
+	private static function deletion_date( string $locale ): string {
+		if ( ! is_user_logged_in() ) {
+			return '';
+		}
+		$at = Account::deletion_at( get_current_user_id() );
+		if ( $at <= 0 ) {
+			return '';
+		}
+		return (string) wp_date( 'pt' === $locale ? 'j \d\e F \d\e Y' : 'j F Y', $at );
 	}
 
 	/**
@@ -190,6 +207,10 @@ class Frontend {
 				'email_error'    => 'Esse link de alteração é inválido ou expirou.',
 				'save'           => 'Guardar',
 				'cancel'         => 'Cancelar',
+				'delete_scheduled' => 'A tua conta está agendada para eliminação a %s.',
+				'cancel_deletion'  => 'Cancelar eliminação',
+				'deletion_set'     => 'Conta agendada para eliminação. Enviámos os detalhes por email.',
+				'deletion_off'     => 'Eliminação cancelada. A tua conta continua ativa.',
 			);
 		}
 		return array(
@@ -226,6 +247,10 @@ class Frontend {
 			'email_error'    => 'That change link is invalid or has expired.',
 			'save'           => 'Save',
 			'cancel'         => 'Cancel',
+			'delete_scheduled' => 'Your account is scheduled for deletion on %s.',
+			'cancel_deletion'  => 'Cancel deletion',
+			'deletion_set'     => 'Account scheduled for deletion. We’ve emailed you the details.',
+			'deletion_off'     => 'Deletion cancelled. Your account stays active.',
 		);
 	}
 

@@ -294,6 +294,44 @@ class Emails {
 		return self::layout( $locale, $inner, $heading );
 	}
 
+	/* ---------- account deletion scheduled (template 11) ---------- */
+
+	/**
+	 * Render the "your account is scheduled for deletion" message.
+	 *
+	 * @param string $locale       'en'|'pt'.
+	 * @param string $date         Human deletion date.
+	 * @param string $cancel_url   Cancel link.
+	 * @param string $download_url Where to download data (account page).
+	 */
+	public static function deletion_scheduled( string $locale, string $date, string $cancel_url, string $download_url ): string {
+		$pt = 'pt' === $locale;
+
+		$heading = $pt ? 'A tua conta vai ser eliminada' : 'Your account is scheduled for deletion';
+		$lead    = $pt
+			? 'Recebemos o teu pedido para eliminar a conta. Todos os teus dados serão apagados definitivamente em:'
+			: 'We received your request to delete your account. All your data will be permanently erased on:';
+		$cancel  = $pt ? 'Cancelar eliminação' : 'Cancel deletion';
+		$download = $pt ? 'Descarregar os meus dados' : 'Download my data';
+		$note    = $pt
+			? 'Se mudares de ideias, cancela a qualquer momento antes dessa data. Depois disso, a ação é irreversível.'
+			: 'If you change your mind, cancel any time before that date. After that, this cannot be undone.';
+
+		$datecard = '<div style="background:#FDECEA;border-radius:14px;padding:18px 22px;text-align:center;font:800 20px Poppins,Arial,sans-serif;color:#C0392B;">' . esc_html( $date ) . '</div>';
+
+		$inner = self::row(
+			self::icon_circle( '&#128465;', '#FDECEA', '#C0392B' ) . self::h1( $heading ) . self::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. self::row( $datecard, '22px 48px 0' )
+			. self::row( self::button( $cancel, $cancel_url ), '24px 48px 6px', true )
+			. self::row( '<a href="' . esc_url( $download_url ) . '" style="font:700 13.5px Arial,sans-serif;color:#7C5CFC;">' . esc_html( $download ) . '</a>', '6px 48px 6px', true )
+			. self::row( self::note( $note ), '14px 48px 44px', true );
+
+		return self::layout( $locale, $inner, $heading );
+	}
+
 	/* ---------- account email change (template 10) ---------- */
 
 	/**
