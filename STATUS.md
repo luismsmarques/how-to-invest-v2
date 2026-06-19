@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 19 jun 2026 (Tools hub + image-to-image; RSS AI v1.3). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 19 jun 2026 (Learn CPT + categorias + hub, internal linking, feeds sugeridos; RSS AI v1.4). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -40,15 +40,25 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
   - Frontend (JS vanilla): `questionnaire.js`, `result.js` (donut conic-gradient), `account.js`, `consent.js`, `analytics.js`.
   - Segurança/RGPD: rate limit (`class-rate-limit`), verificação email double opt-in via **Brevo** (`class-verification`+`class-mailer`), consentimento (`class-consent`), GA gated, cron de limpeza (`class-cron`), login Google (`class-google`).
   - Admin: `class-settings` (Definições → HowToInvest). PDF: `class-pdf` (Dompdf, fallback HTML).
-  - **Conteúdo SEO seedado** (`class-seeder`, bilingue EN+PT, idempotente): glossário, páginas, artigos +
-    **páginas de Arquétipos** (5, com tabela de alocação ilustrativa do `Config`) + **Classes de ativos** (5
-    "explained") + 2 hubs (Perfis / Classes de ativos), todos ligados e por classe de ativos.
+  - **Tipos de conteúdo (CPTs públicos):** `glossary` (`/investing-glossary/`, taxonomia `glossary_topic`),
+    `news` (`/financial-news/`, `news_category`), e **`learn`** (`/learn/`, taxonomia `learn_topic`) — os
+    **artigos educativos** são agora um CPT dedicado (não posts), com base própria e categorias.
+  - **Conteúdo SEO seedado** (`class-seeder`, bilingue EN+PT, idempotente):
+    - **Glossário**: 42 termos em **10 tópicos** (`glossary_topic_of`); SEO title/desc (RankMath+Yoast).
+    - **Learn**: 8 artigos em **4 categorias** (`learn_topic`: Começar / Conceitos / Comportamento / Planeamento);
+      o seeder **migra** artigos legados (`post` → `learn`), atribui categoria, e liga "Artigos relacionados".
+    - **Páginas de Arquétipos** (5, tabela de alocação ilustrativa do `Config`) + **Classes de ativos** (5
+      "explained") + hubs (Perfis / Classes de ativos / Tools).
+    - **Malha de internal linking bidirecional** (conteúdo ↔ glossário ↔ Learn), com localização PT robusta
+      (passo final `relocalize_pt` independente da ordem do seed).
   - **Hub de Ferramentas** (`class-tools`, shortcode `[hti_tool name=…]`): 4 calculadoras educativas
     (juro composto, inflação, meta de poupança, custo de esperar) — JS vanilla com motor partilhado
     (`tools-core.js`, testado com Node), gráficos SVG leves, indexáveis; hub `/tools/` + 4 páginas no menu.
-    Travas: taxas hipotéticas, ilustrativo, sem produtos, disclaimers.
+  - **Hub Aprender** (`/learn/`): bloco dinâmico `howtoinvest/learn-hub` (artigos por categoria, por idioma)
+    em `archive-learn.html`; menu **Aprender → /learn/**; homepage lista o CPT `learn`.
+  - **Menu principal:** Aprender · Perfis · Classes de ativos · Ferramentas · Glossário · Notícias.
 - Detalhe por ficheiro: `wp-content/plugins/hti-engine/README.md`.
-- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.3.0) — alimenta a área de
+- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.4.0) — alimenta a área de
   **notícias** (`news` CPT do hti-engine). Pipeline com **humano no meio (nunca auto-publica)**:
   **Feeds** (CRUD + *Test feed*) → **Fetch** (cron `rssai_fetch_cron` ou *Fetch now*) →
   **Drafts** (itens dedup por `sha1(guid|link)`, imagem extraída) → **Groups** (clustering Jaccard
@@ -59,6 +69,8 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
   - **3 tabelas** (`rssai_feeds`, `rssai_items`, `rssai_groups`); opções `rssai_settings`/`rssai_logs`.
   - **Reutiliza `HTI_GEMINI_API_KEY`** (nunca guarda a chave; filtro `rssai_gemini_api_key` opcional).
   - Modelo texto default `gemini-2.5-flash`; menu próprio *RSS AI Feed* (Settings/Feeds/Drafts/Groups/Logs).
+  - **Feeds:** botão *Add suggested feeds* semeia 11 fontes curadas (EN+PT: MarketWatch, CNBC, Investing.com,
+    BBC, Guardian, Fed, Economist, ECO, Observador, Jornal de Negócios) — idempotente; testar cada uma.
   - **Imagem de destaque (M7):** **foto AI** sobre o tema da notícia (16:9), guardada como thumbnail.
     Cliente **dual-endpoint**: modelos **Imagen** (`:predict`, default `imagen-4.0-generate-001`) e **Gemini-image**
     (`:generateContent`) escolhidos pelo nome. **Image-to-image:** se o draft tiver imagem de feed, ela é a **base**
@@ -87,6 +99,8 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 ## Multilíngue (Polylang)
 - **EN = língua default**, **PT (`pt_PT_ao90`) = adicional**. Garantir que o conteúdo
   EN existente tem idioma atribuído (*Languages → Settings → "Set the language for all content"*).
+- ⚠️ **Ativar tradução dos CPTs/taxonomias** em *Languages → Settings*: `glossary`/`glossary_topic`,
+  `news`/`news_category` e **`learn`/`learn_topic`** (novo). Sem isto, as traduções PT não ligam.
 - O **seeder cria o PT** de cada entrada (glossário/páginas/artigos) a partir das
   variantes `hti_*_pt`, define o idioma, partilha o slug EN e **liga EN↔PT**
   (`pll_save_post_translations`). Traduz/liga também o topic `glossary_topic`
