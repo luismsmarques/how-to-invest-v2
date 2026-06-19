@@ -336,6 +336,88 @@
 		return box;
 	}
 
+	/* ---------- onboarding ---------- */
+
+	function onboardingPanel( mount ) {
+		var box = el( 'div', { class: 'hti-onboarding' } );
+		box.appendChild( el( 'h2', { class: 'hti-onboarding__title' }, s.onb_title ) );
+		var form = el( 'form', { class: 'hti-onboarding__form' } );
+
+		// Language.
+		var langField = el( 'fieldset', { class: 'hti-onboarding__field' } );
+		langField.appendChild( el( 'legend', null, s.onb_lang ) );
+		var current = ( ctx.pageLocale === 'pt' ) ? 'pt' : 'en';
+		[ [ 'en', s.onb_en ], [ 'pt', s.onb_pt ] ].forEach( function ( o ) {
+			var lab = el( 'label', { class: 'hti-onboarding__radio' } );
+			var r = el( 'input', { type: 'radio', name: 'hti_lang', value: o[ 0 ] } );
+			if ( o[ 0 ] === current ) { r.checked = true; }
+			lab.appendChild( r );
+			lab.appendChild( el( 'span', null, ' ' + o[ 1 ] ) );
+			langField.appendChild( lab );
+		} );
+		form.appendChild( langField );
+
+		// Newsletter + frequency.
+		var nlLabel = el( 'label', { class: 'hti-onboarding__check' } );
+		var nl = el( 'input', { type: 'checkbox' } );
+		nl.checked = true;
+		nlLabel.appendChild( nl );
+		nlLabel.appendChild( el( 'span', null, ' ' + s.onb_nl ) );
+		form.appendChild( nlLabel );
+
+		var freqWrap = el( 'label', { class: 'hti-onboarding__field' }, s.pref_frequency + ' ' );
+		var freq = el( 'select', null );
+		[ [ 'weekly', s.pref_weekly ], [ 'daily', s.pref_daily ] ].forEach( function ( o ) {
+			freq.appendChild( el( 'option', { value: o[ 0 ] }, o[ 1 ] ) );
+		} );
+		freqWrap.appendChild( freq );
+		form.appendChild( freqWrap );
+
+		// Open question.
+		var qWrap = el( 'div', { class: 'hti-onboarding__field' } );
+		qWrap.appendChild( el( 'label', { for: 'hti-onb-q' }, s.onb_q_label ) );
+		var q = el( 'textarea', { id: 'hti-onb-q', rows: '3', placeholder: s.onb_q_ph } );
+		qWrap.appendChild( q );
+		form.appendChild( qWrap );
+
+		var save = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-primary' }, s.onb_finish );
+		form.appendChild( save );
+		var status = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
+		form.appendChild( status );
+
+		form.addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			save.disabled = true;
+			status.textContent = s.working;
+			var lang = ( form.querySelector( 'input[name="hti_lang"]:checked' ) || {} ).value || 'en';
+			request( '/onboarding', 'POST', {
+				language: lang,
+				newsletter: nl.checked,
+				frequency: freq.value,
+				question: q.value
+			} ).then( function ( res ) {
+				if ( res.ok ) {
+					ctx.onboarded = true;
+					var go = res.data && res.data.redirect;
+					if ( go && lang !== ctx.pageLocale ) {
+						window.location.href = go;
+					} else {
+						renderDashboard( mount );
+					}
+				} else {
+					status.textContent = s.error;
+					save.disabled = false;
+				}
+			} ).catch( function () {
+				status.textContent = s.error;
+				save.disabled = false;
+			} );
+		} );
+
+		box.appendChild( form );
+		return box;
+	}
+
 	/* ---------- dashboard ([hti_account]) ---------- */
 
 	function verifyBanner() {
@@ -368,6 +450,13 @@
 		var banner = verifyBanner();
 		if ( banner ) {
 			root.appendChild( banner );
+		}
+
+		// First-run onboarding (language + newsletter + open question).
+		if ( loggedIn && ctx.onboarded === false ) {
+			root.appendChild( onboardingPanel( mount ) );
+			mount.appendChild( root );
+			return;
 		}
 
 		root.appendChild( el( 'h2', null, s.my_profiles ) );

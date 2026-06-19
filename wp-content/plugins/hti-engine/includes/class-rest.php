@@ -125,6 +125,23 @@ class REST {
 			)
 		);
 
+		// Onboarding (auth): language + newsletter + the open investing question.
+		register_rest_route(
+			self::NAMESPACE,
+			'/onboarding',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( Account::class, 'rest_onboarding' ),
+				'permission_callback' => array( __CLASS__, 'check_auth' ),
+				'args'                => array(
+					'language'   => array( 'type' => 'string', 'required' => true ),
+					'newsletter' => array( 'type' => 'boolean', 'required' => false ),
+					'frequency'  => array( 'type' => 'string', 'required' => false ),
+					'question'   => array( 'type' => 'string', 'required' => false ),
+				),
+			)
+		);
+
 		// Email preferences (auth): get + save (syncs to Brevo, emails a summary).
 		register_rest_route(
 			self::NAMESPACE,

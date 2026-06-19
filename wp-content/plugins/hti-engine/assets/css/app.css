@@ -499,6 +499,36 @@
 	color: var( --hti-muted );
 }
 
+/* --- Account: first-run onboarding --- */
+.hti-onboarding {
+	border: 1px solid var( --hti-accent-border, #ffd9d2 );
+	border-radius: 16px;
+	background: #FFF8F3;
+	padding: clamp( 1.25rem, 4vw, 2rem );
+}
+.hti-onboarding__title { margin: 0 0 1.25rem; }
+.hti-onboarding__form { display: flex; flex-direction: column; gap: 1.1rem; align-items: flex-start; }
+.hti-onboarding__field { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; width: 100%; max-width: 32rem; }
+.hti-onboarding__field legend { font-weight: 600; padding: 0; margin-bottom: 0.25rem; }
+.hti-onboarding__radio, .hti-onboarding__check { display: inline-flex; align-items: center; gap: 0.4rem; margin-right: 1.25rem; }
+.hti-onboarding__radio input, .hti-onboarding__check input { accent-color: var( --hti-accent, #ff6b5e ); }
+.hti-onboarding__field select {
+	align-self: flex-start;
+	padding: 0.45rem 0.7rem;
+	border: 1px solid var( --hti-border );
+	border-radius: 8px;
+	font: inherit;
+}
+.hti-onboarding__field textarea {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0.7rem 0.85rem;
+	border: 1px solid var( --hti-border );
+	border-radius: 10px;
+	font: inherit;
+	resize: vertical;
+}
+
 /* --- Account: email preferences --- */
 .hti-account-prefs {
 	margin-top: 1.75rem;
