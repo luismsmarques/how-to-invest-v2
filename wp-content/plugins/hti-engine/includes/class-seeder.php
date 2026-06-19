@@ -100,7 +100,51 @@ class Seeder {
 		// Render the About page(s) with the designed template/block.
 		self::ensure_about_template();
 
+		// Final pass: re-localize internal links in every PT post now that all
+		// EN+PT posts exist (fixes cross-links whose target was seeded later).
+		self::relocalize_pt();
+
 		return $report;
+	}
+
+	/**
+	 * Re-run link localization on every seeded PT post. Idempotent: links that
+	 * are already Portuguese won't match the EN patterns. No-op without Polylang.
+	 */
+	private static function relocalize_pt(): void {
+		if ( ! self::polylang_active() ) {
+			return;
+		}
+		$pt = self::portuguese_slug( (string) pll_default_language( 'slug' ) );
+		if ( '' === $pt ) {
+			return;
+		}
+
+		$groups = array(
+			'glossary' => self::glossary_terms(),
+			'page'     => self::pages(),
+			'post'     => self::articles(),
+		);
+		foreach ( $groups as $type => $entries ) {
+			foreach ( $entries as $entry ) {
+				$en = get_page_by_path( $entry['slug'], OBJECT, $type );
+				if ( ! $en instanceof \WP_Post ) {
+					continue;
+				}
+				$pt_id = pll_get_post( (int) $en->ID, $pt );
+				if ( ! $pt_id ) {
+					continue;
+				}
+				$post = get_post( (int) $pt_id );
+				if ( ! $post instanceof \WP_Post ) {
+					continue;
+				}
+				$new = self::localize_links( (string) $post->post_content, $pt );
+				if ( $new !== $post->post_content ) {
+					wp_update_post( array( 'ID' => (int) $pt_id, 'post_content' => wp_slash( $new ) ) );
+				}
+			}
+		}
 	}
 
 	/**
@@ -394,21 +438,26 @@ class Seeder {
 			$content
 		);
 
-		// Hub → explainer-child links: swap the EN page URL for its PT permalink.
-		// The children are seeded before the hubs, so their PT posts already
-		// exist by the time a hub's PT content is localized.
-		foreach ( self::explainer_page_slugs() as $slug ) {
-			$en_page = get_page_by_path( $slug, OBJECT, 'page' );
-			if ( ! $en_page instanceof \WP_Post ) {
+		// Internal page/post links: swap the EN root URL for the PT permalink.
+		// Cheap strpos guard first; the DB lookup only runs when a link is
+		// actually present. The final relocalize pass (run after every PT post
+		// exists) guarantees links resolve regardless of seed order.
+		foreach ( self::internal_link_slugs() as $slug ) {
+			$needle = home_url( '/' . $slug . '/' );
+			if ( false === strpos( $content, $needle ) ) {
 				continue;
 			}
-			$pt_id = pll_get_post( (int) $en_page->ID, $pt );
+			$en = self::resolve_en_post( $slug );
+			if ( ! $en instanceof \WP_Post ) {
+				continue;
+			}
+			$pt_id = pll_get_post( (int) $en->ID, $pt );
 			if ( ! $pt_id ) {
 				continue;
 			}
 			$pt_url = get_permalink( (int) $pt_id );
 			if ( $pt_url ) {
-				$content = str_replace( home_url( '/' . $slug . '/' ), $pt_url, $content );
+				$content = str_replace( $needle, $pt_url, $content );
 			}
 		}
 
@@ -606,11 +655,22 @@ class Seeder {
 	}
 
 	/**
-	 * Glossary seed data — the curated asset-class notes (Textos Finais §2).
+	 * Glossary seed data with the cross-link blocks ("Related terms" /
+	 * "Learn more") appended to each term's content.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
 	public static function glossary_terms(): array {
+		return self::with_glossary_links( self::glossary_terms_raw() );
+	}
+
+	/**
+	 * Glossary seed data — the curated asset-class notes (Textos Finais §2)
+	 * plus the A–Z key terms. Raw definitions, before cross-link blocks.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function glossary_terms_raw(): array {
 		$terms = array(
 			array(
 				'slug'    => 'global-equities',
@@ -670,6 +730,170 @@ class Seeder {
 		);
 
 		return array_merge( $terms, self::glossary_key_terms() );
+	}
+
+	/**
+	 * Append the cross-link blocks to each glossary term's EN + PT content.
+	 *
+	 * @param array<int,array<string,mixed>> $terms Raw glossary entries.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function with_glossary_links( array $terms ): array {
+		foreach ( $terms as &$entry ) {
+			$slug             = (string) $entry['slug'];
+			$entry['content'] = (string) $entry['content'] . self::glossary_related( $slug, 'en' );
+			if ( isset( $entry['pt']['content'] ) ) {
+				$entry['pt']['content'] = (string) $entry['pt']['content'] . self::glossary_related( $slug, 'pt' );
+			}
+		}
+		unset( $entry );
+		return $terms;
+	}
+
+	/**
+	 * The "Related terms" (same-topic siblings) + "Learn more" (deep page)
+	 * block for one glossary term.
+	 *
+	 * @param string $slug Glossary slug.
+	 * @param string $lang 'en' or 'pt'.
+	 */
+	private static function glossary_related( string $slug, string $lang ): string {
+		$siblings = array();
+		foreach ( self::glossary_topic_members( self::glossary_topic_of( $slug ) ) as $other ) {
+			if ( $other === $slug ) {
+				continue;
+			}
+			$siblings[] = array( self::gloss_url( $other ), self::glossary_title( $other, $lang ) );
+			if ( count( $siblings ) >= 4 ) {
+				break;
+			}
+		}
+
+		$out = self::links_para(
+			'pt' === $lang ? 'Termos relacionados' : 'Related terms',
+			$siblings
+		);
+
+		$deep = self::glossary_deep_link( $slug, $lang );
+		if ( $deep ) {
+			$out .= self::links_para( 'pt' === $lang ? 'Saber mais' : 'Learn more', array( $deep ) );
+		}
+		return $out;
+	}
+
+	/**
+	 * Curated deep link from a glossary term to its best explainer/tool/article.
+	 *
+	 * @param string $slug Glossary slug.
+	 * @param string $lang 'en' or 'pt'.
+	 * @return array{0:string,1:string}|null [url, label]
+	 */
+	private static function glossary_deep_link( string $slug, string $lang ): ?array {
+		$map = array(
+			'global-equities'        => array( 'global-equities-explained', 'Global equities, explained', 'Ações globais, explicadas' ),
+			'bonds'                  => array( 'bonds-explained', 'Bonds, explained', 'Obrigações, explicadas' ),
+			'cash'                   => array( 'cash-explained', 'Cash & equivalents, explained', 'Liquidez e equivalentes, explicada' ),
+			'reits-and-alternatives' => array( 'reits-alternatives-explained', 'Real estate & alternatives, explained', 'Imobiliário e alternativos, explicados' ),
+			'crypto'                 => array( 'crypto-explained', 'Crypto, explained', 'Cripto, explicada' ),
+			'commodities'            => array( 'asset-classes', 'Asset classes', 'Classes de ativos' ),
+			'asset'                  => array( 'asset-classes', 'Asset classes', 'Classes de ativos' ),
+			'fixed-income'           => array( 'bonds-explained', 'Bonds, explained', 'Obrigações, explicadas' ),
+			'variable-income'        => array( 'global-equities-explained', 'Global equities, explained', 'Ações globais, explicadas' ),
+			'yield'                  => array( 'bonds-explained', 'Bonds, explained', 'Obrigações, explicadas' ),
+			'dividend'               => array( 'global-equities-explained', 'Global equities, explained', 'Ações globais, explicadas' ),
+			'compound-interest'      => array( 'compound-interest-calculator', 'Compound interest calculator', 'Calculadora de juro composto' ),
+			'inflation'              => array( 'inflation-calculator', 'Inflation calculator', 'Calculadora de inflação' ),
+			'diversification'        => array( 'what-is-diversification', 'What is diversification?', 'O que é diversificação?' ),
+			'portfolio'              => array( 'investor-types', 'Investor types', 'Perfis de investidor' ),
+			'volatility'             => array( 'staying-calm-when-markets-fall', 'Staying calm when markets fall', 'Manter a calma quando os mercados caem' ),
+			'bull-market'            => array( 'staying-calm-when-markets-fall', 'Staying calm when markets fall', 'Manter a calma quando os mercados caem' ),
+			'bear-market'            => array( 'staying-calm-when-markets-fall', 'Staying calm when markets fall', 'Manter a calma quando os mercados caem' ),
+			'value-investing'        => array( 'investor-types', 'Investor types', 'Perfis de investidor' ),
+		);
+		if ( ! isset( $map[ $slug ] ) ) {
+			return null;
+		}
+		[ $target, $en, $pt ] = $map[ $slug ];
+		return array( home_url( '/' . $target . '/' ), 'pt' === $lang ? $pt : $en );
+	}
+
+	/**
+	 * All glossary slugs in a topic (cached).
+	 *
+	 * @param string $topic Topic slug.
+	 * @return array<int,string>
+	 */
+	private static function glossary_topic_members( string $topic ): array {
+		static $by_topic = null;
+		if ( null === $by_topic ) {
+			$by_topic = array();
+			foreach ( self::glossary_terms_raw() as $entry ) {
+				$by_topic[ self::glossary_topic_of( (string) $entry['slug'] ) ][] = (string) $entry['slug'];
+			}
+		}
+		return $by_topic[ $topic ] ?? array();
+	}
+
+	/**
+	 * Glossary term title (cached), by language.
+	 *
+	 * @param string $slug Glossary slug.
+	 * @param string $lang 'en' or 'pt'.
+	 */
+	private static function glossary_title( string $slug, string $lang ): string {
+		static $titles = null;
+		if ( null === $titles ) {
+			$titles = array();
+			foreach ( self::glossary_terms_raw() as $entry ) {
+				$titles[ (string) $entry['slug'] ] = array(
+					'en' => (string) $entry['title'],
+					'pt' => (string) ( $entry['pt']['title'] ?? $entry['title'] ),
+				);
+			}
+		}
+		return $titles[ $slug ][ $lang ] ?? ( $titles[ $slug ]['en'] ?? $slug );
+	}
+
+	/**
+	 * Glossary term archive URL.
+	 *
+	 * @param string $slug Glossary slug.
+	 */
+	private static function gloss_url( string $slug ): string {
+		return home_url( '/investing-glossary/' . $slug . '/' );
+	}
+
+	/**
+	 * A small "Label: a · b · c" paragraph of links. Empty when no items.
+	 *
+	 * @param string                                $label Localized label.
+	 * @param array<int,array{0:string,1:string}>   $items [url, text] pairs.
+	 */
+	private static function links_para( string $label, array $items ): string {
+		if ( ! $items ) {
+			return '';
+		}
+		$parts = array();
+		foreach ( $items as $item ) {
+			$parts[] = '<a href="' . esc_url( $item[0] ) . '">' . esc_html( $item[1] ) . '</a>';
+		}
+		return '<!-- wp:paragraph {"fontSize":"small"} --><p class="has-small-font-size">'
+			. '<strong>' . esc_html( $label ) . ':</strong> ' . implode( ' · ', $parts )
+			. '</p><!-- /wp:paragraph -->' . "\n\n";
+	}
+
+	/**
+	 * A "Key terms: a · b · c" block linking glossary terms (for articles/pages).
+	 *
+	 * @param array<int,string> $slugs Glossary slugs.
+	 * @param string            $lang  'en' or 'pt'.
+	 */
+	private static function glossary_links_block( array $slugs, string $lang ): string {
+		$items = array();
+		foreach ( $slugs as $slug ) {
+			$items[] = array( self::gloss_url( $slug ), self::glossary_title( $slug, $lang ) );
+		}
+		return self::links_para( 'pt' === $lang ? 'Termos-chave' : 'Key terms', $items );
 	}
 
 	/**
@@ -1331,19 +1555,28 @@ class Seeder {
 		);
 
 		$pages = array();
+		$tool_terms = array(
+			'compound-interest-calculator' => array( 'compound-interest', 'yield' ),
+			'inflation-calculator'         => array( 'inflation', 'interest-rate' ),
+			'savings-goal-calculator'      => array( 'compound-interest' ),
+			'cost-of-waiting-calculator'   => array( 'compound-interest' ),
+		);
 		foreach ( $tools as $slug => $t ) {
+			$terms = $tool_terms[ $slug ] ?? array();
 			$pages[] = array(
 				'slug'    => $slug,
 				'title'   => $t['title_en'],
 				'excerpt' => $t['intro_en'],
 				'content' => self::paragraph( $t['intro_en'] )
 					. self::tool_shortcode( $t['name'] )
+					. self::glossary_links_block( $terms, 'en' )
 					. self::cta(),
 				'pt'      => array(
 					'title'   => $t['title_pt'],
 					'excerpt' => $t['intro_pt'],
 					'content' => self::paragraph( $t['intro_pt'] )
-						. self::tool_shortcode( $t['name'] ),
+						. self::tool_shortcode( $t['name'] )
+						. self::glossary_links_block( $terms, 'pt' ),
 				),
 			);
 		}
@@ -1434,7 +1667,15 @@ class Seeder {
 		}
 
 		// --- Asset-class deep-dive pages (children). -----------------------
+		$asset_terms = array(
+			'global-equities-explained'    => array( 'stock', 'dividend', 'volatility' ),
+			'bonds-explained'              => array( 'yield', 'fixed-income', 'interest-rate' ),
+			'cash-explained'               => array( 'inflation', 'interest-rate' ),
+			'reits-alternatives-explained' => array( 'commodities', 'asset' ),
+			'crypto-explained'             => array( 'volatility', 'asset' ),
+		);
 		foreach ( self::asset_meta() as $m ) {
+			$terms = $asset_terms[ $m['slug'] ] ?? array();
 			$pages[] = array(
 				'slug'    => $m['slug'],
 				'title'   => $m['title_en'],
@@ -1444,6 +1685,7 @@ class Seeder {
 					. self::paragraph( $m['role_en'] )
 					. self::heading( 'Which profiles lean into it' )
 					. self::paragraph( $m['profiles_en'] )
+					. self::glossary_links_block( $terms, 'en' )
 					. self::cta(),
 				'pt'      => array(
 					'title'   => $m['title_pt'],
@@ -1452,7 +1694,8 @@ class Seeder {
 						. self::heading( 'O seu papel numa carteira' )
 						. self::paragraph( $m['role_pt'] )
 						. self::heading( 'Que perfis se apoiam nela' )
-						. self::paragraph( $m['profiles_pt'] ),
+						. self::paragraph( $m['profiles_pt'] )
+						. self::glossary_links_block( $terms, 'pt' ),
 				),
 			);
 		}
@@ -1754,27 +1997,38 @@ class Seeder {
 	}
 
 	/**
-	 * Explainer child slugs that hubs link to (relinked to PT in localize_links).
+	 * All seeded page + article slugs (targets of internal links that must be
+	 * localized to PT). Cached for the request.
 	 *
 	 * @return array<int,string>
 	 */
-	private static function explainer_page_slugs(): array {
-		return array(
-			'preservation-investor',
-			'balanced-income-investor',
-			'balanced-investor',
-			'growth-investor',
-			'aggressive-growth-investor',
-			'global-equities-explained',
-			'bonds-explained',
-			'cash-explained',
-			'reits-alternatives-explained',
-			'crypto-explained',
-			'compound-interest-calculator',
-			'inflation-calculator',
-			'savings-goal-calculator',
-			'cost-of-waiting-calculator',
-		);
+	private static function internal_link_slugs(): array {
+		static $slugs = null;
+		if ( null === $slugs ) {
+			$slugs = array_merge(
+				array_column( self::pages(), 'slug' ),
+				array_column( self::articles(), 'slug' )
+			);
+		}
+		return $slugs;
+	}
+
+	/**
+	 * Resolve an EN seeded post by slug (page first, then post). Cached.
+	 *
+	 * @param string $slug Slug.
+	 * @return \WP_Post|null
+	 */
+	private static function resolve_en_post( string $slug ): ?\WP_Post {
+		static $cache = array();
+		if ( ! array_key_exists( $slug, $cache ) ) {
+			$post = get_page_by_path( $slug, OBJECT, 'page' );
+			if ( ! $post instanceof \WP_Post ) {
+				$post = get_page_by_path( $slug, OBJECT, 'post' );
+			}
+			$cache[ $slug ] = $post instanceof \WP_Post ? $post : null;
+		}
+		return $cache[ $slug ];
 	}
 
 	/**
@@ -1786,7 +2040,7 @@ class Seeder {
 	public static function articles(): array {
 		$g = static fn( string $slug ): string => home_url( '/investing-glossary/' . $slug . '/' );
 
-		return array(
+		$articles = array(
 			array(
 				'slug'    => 'what-is-an-investor-profile',
 				'title'   => 'What is an investor profile?',
@@ -1964,6 +2218,39 @@ class Seeder {
 				),
 			),
 		);
+
+		return self::with_article_key_terms( $articles );
+	}
+
+	/**
+	 * Append a "Key terms" glossary-link block to each seed article (EN + PT).
+	 *
+	 * @param array<int,array<string,mixed>> $articles Article entries.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function with_article_key_terms( array $articles ): array {
+		$map = array(
+			'what-is-an-investor-profile'       => array( 'portfolio', 'diversification', 'asset' ),
+			'asset-classes-explained'           => array( 'global-equities', 'bonds', 'cash', 'reits-and-alternatives', 'crypto', 'commodities' ),
+			'why-your-time-horizon-matters'     => array( 'compound-interest', 'volatility' ),
+			'staying-calm-when-markets-fall'    => array( 'volatility', 'bear-market', 'bull-market' ),
+			'why-an-emergency-fund-comes-first' => array( 'cash' ),
+			'what-is-diversification'           => array( 'diversification', 'portfolio', 'asset' ),
+			'risk-and-reward-explained'         => array( 'volatility', 'yield', 'leverage' ),
+			'what-is-esg-investing'             => array( 'global-equities', 'asset' ),
+		);
+		foreach ( $articles as &$entry ) {
+			$terms = $map[ $entry['slug'] ] ?? array();
+			if ( ! $terms ) {
+				continue;
+			}
+			$entry['content'] .= self::glossary_links_block( $terms, 'en' );
+			if ( isset( $entry['pt']['content'] ) ) {
+				$entry['pt']['content'] .= self::glossary_links_block( $terms, 'pt' );
+			}
+		}
+		unset( $entry );
+		return $articles;
 	}
 
 	/**
