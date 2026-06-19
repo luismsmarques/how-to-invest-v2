@@ -1,0 +1,141 @@
+/* HowToInvest — educational calculators (Tools hub). Coral/cream design. */
+
+.hti-tool {
+	--hti-coral: #ff6b5e;
+	--hti-accent: #7c5cfc;
+	--hti-ink: #2a2438;
+	--hti-muted: #6e6680;
+	--hti-surface: #fff6f1;
+	--hti-line: #f2e4dd;
+	display: grid;
+	gap: 1.5rem;
+	max-width: 720px;
+	margin: 1.5rem 0;
+	padding: 1.75rem;
+	background: #fff;
+	border: 1px solid var(--hti-line);
+	border-radius: 18px;
+	box-shadow: 0 2px 14px rgba(20, 23, 58, 0.06);
+}
+
+.hti-tool__fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem 1.25rem;
+}
+
+.hti-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	font: 600 0.9rem/1.3 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-ink);
+}
+
+.hti-field__label {
+	color: var(--hti-muted);
+}
+
+.hti-field input {
+	width: 100%;
+	padding: 0.7rem 0.85rem;
+	font: 600 1.05rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-ink);
+	background: var(--hti-surface);
+	border: 1.5px solid var(--hti-line);
+	border-radius: 10px;
+	box-sizing: border-box;
+}
+
+.hti-field input:focus-visible {
+	outline: none;
+	border-color: var(--hti-coral);
+	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.18);
+}
+
+.hti-tool__results {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.75rem;
+}
+
+.hti-out {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.9rem 1rem;
+	background: var(--hti-surface);
+	border-radius: 12px;
+}
+
+.hti-out--primary {
+	grid-column: 1 / -1;
+	background: linear-gradient(135deg, #fff1ee, #fbe9ff);
+	border: 1.5px solid rgba(255, 107, 94, 0.25);
+}
+
+.hti-out__label {
+	font: 600 0.78rem/1.3 'Plus Jakarta Sans', system-ui, sans-serif;
+	letter-spacing: 0.02em;
+	color: var(--hti-muted);
+}
+
+.hti-out__value {
+	font: 800 1.5rem/1.1 'Poppins', system-ui, sans-serif;
+	color: var(--hti-ink);
+}
+
+.hti-out--primary .hti-out__value {
+	font-size: 2.1rem;
+	color: var(--hti-coral);
+}
+
+.hti-tool__chart {
+	height: 150px;
+}
+
+.hti-tool__chart svg {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
+.hti-tool__legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.25rem;
+	margin-top: -0.5rem;
+}
+
+.hti-legend {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	font: 600 0.82rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-muted);
+}
+
+.hti-legend__dot {
+	width: 14px;
+	height: 6px;
+	border-radius: 3px;
+}
+
+.hti-tool__note {
+	margin: 0;
+	font: 400 0.82rem/1.5 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-muted);
+}
+
+@media (max-width: 560px) {
+	.hti-tool {
+		padding: 1.25rem;
+	}
+	.hti-tool__fields,
+	.hti-tool__results {
+		grid-template-columns: 1fr 1fr;
+	}
+	.hti-out--primary .hti-out__value {
+		font-size: 1.8rem;
+	}
+}
