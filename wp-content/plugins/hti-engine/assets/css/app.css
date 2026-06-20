@@ -95,7 +95,7 @@
 .hti-info-label {
 	display: block;
 	font-weight: 600;
-	color: var( --hti-primary );
+	color: var( --hti-accent );
 	margin-bottom: 0.25rem;
 }
 .hti-info p {
