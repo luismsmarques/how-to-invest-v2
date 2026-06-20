@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.4';
+const VERSION = '0.8.5';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -211,6 +211,8 @@ function strings(): array {
 		'back_glossary'    => array( 'en' => '← Glossary', 'pt' => '← Glossário' ),
 		'news_cta_q'       => array( 'en' => 'Where do you fit in all this?', 'pt' => 'Onde te encaixas nisto tudo?' ),
 		'news_cta_btn'     => array( 'en' => 'Discover my profile →', 'pt' => 'Descobrir o meu perfil →' ),
+		'related_read'     => array( 'en' => 'Keep reading', 'pt' => 'Continua a ler' ),
+		'related_terms'    => array( 'en' => 'Related terms', 'pt' => 'Termos relacionados' ),
 		// Glossary index.
 		'gloss_all'        => array( 'en' => 'All', 'pt' => 'Todos' ),
 		'gloss_filter'     => array( 'en' => 'Filter by letter', 'pt' => 'Filtrar por letra' ),
@@ -317,8 +319,131 @@ function register_dynamic_blocks(): void {
 			'render_callback' => __NAMESPACE__ . '\\render_learn_feed',
 		)
 	);
+	register_block_type(
+		'howtoinvest/related',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Related content', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_related',
+		)
+	);
 }
 add_action( 'init', __NAMESPACE__ . '\\register_dynamic_blocks' );
+
+/**
+ * Related posts sharing a taxonomy term with the given post, in the current
+ * language (Polylang filters the query by language when active).
+ *
+ * @param \WP_Post $post     The singular post.
+ * @param string   $taxonomy Taxonomy to match on.
+ * @param int      $limit    Max related posts.
+ * @return array<int,\WP_Post>
+ */
+function related_posts( \WP_Post $post, string $taxonomy, int $limit ): array {
+	if ( ! taxonomy_exists( $taxonomy ) ) {
+		return array();
+	}
+	$terms = wp_get_post_terms( $post->ID, $taxonomy, array( 'fields' => 'ids' ) );
+	if ( is_wp_error( $terms ) || empty( $terms ) ) {
+		return array();
+	}
+	$query = new \WP_Query(
+		array(
+			'post_type'           => $post->post_type,
+			'post__not_in'        => array( $post->ID ),
+			'posts_per_page'      => $limit,
+			'no_found_rows'       => true,
+			'ignore_sticky_posts' => true,
+			'post_status'         => 'publish',
+			'orderby'             => 'date',
+			'order'               => 'DESC',
+			'tax_query'           => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+				array(
+					'taxonomy' => $taxonomy,
+					'field'    => 'term_id',
+					'terms'    => $terms,
+				),
+			),
+		)
+	);
+	return $query->posts;
+}
+
+/**
+ * Render the "related content" block for the current singular view:
+ * - learn / news → "Keep reading" cards (shared topic/category)
+ * - glossary     → "Related terms" pills (shared glossary topic)
+ *
+ * Internal-linking SEO + the design's related blocks. Empty when off a
+ * single or when there are no siblings.
+ */
+function render_related(): string {
+	if ( ! is_singular( array( 'learn', 'news', 'glossary' ) ) ) {
+		return '';
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof \WP_Post ) {
+		return '';
+	}
+
+	$pt = 'pt' === current_lang();
+
+	// Glossary → related terms as pills.
+	if ( 'glossary' === $post->post_type ) {
+		$terms = related_posts( $post, 'glossary_topic', 6 );
+		if ( empty( $terms ) ) {
+			return '';
+		}
+		$pills = '';
+		foreach ( $terms as $t ) {
+			$pills .= '<a class="hti-related__pill" href="' . esc_url( (string) get_permalink( $t ) ) . '">'
+				. esc_html( (string) get_the_title( $t ) ) . '</a>';
+		}
+		return '<aside class="hti-related hti-related--pills"><h2 class="hti-related__title">'
+			. esc_html( t( 'related_terms' ) ) . '</h2><div class="hti-related__pills">' . $pills . '</div></aside>';
+	}
+
+	// learn / news → cards.
+	$taxonomy = ( 'news' === $post->post_type ) ? 'news_category' : 'learn_topic';
+	$posts    = related_posts( $post, $taxonomy, 3 );
+	if ( empty( $posts ) ) {
+		return '';
+	}
+
+	$cards = '';
+	foreach ( $posts as $p ) {
+		$permalink = (string) get_permalink( $p );
+		$eyebrow   = '';
+		$pterms    = get_the_terms( $p, $taxonomy );
+		if ( is_array( $pterms ) && ! empty( $pterms ) ) {
+			$name = $pterms[0]->name;
+			if ( $pt ) {
+				$meta = get_term_meta( $pterms[0]->term_id, 'hti_name_pt', true );
+				if ( is_string( $meta ) && '' !== $meta ) {
+					$name = $meta;
+				}
+			}
+			$eyebrow = '<div class="hti-article-card__eyebrow">' . esc_html( $name ) . '</div>';
+		}
+		$media = '';
+		if ( has_post_thumbnail( $p ) ) {
+			$media = '<a href="' . esc_url( $permalink ) . '" tabindex="-1" aria-hidden="true">'
+				. get_the_post_thumbnail( $p, 'medium', array( 'style' => 'width:100%;height:120px;object-fit:cover;display:block', 'loading' => 'lazy' ) )
+				. '</a>';
+		}
+		$cards .= '<div class="hti-article-card">'
+			. '<div class="hti-article-card__media">' . $media . '</div>'
+			. '<div class="hti-article-card__body">' . $eyebrow
+			. '<h3 class="wp-block-heading hti-article-card__title"><a href="' . esc_url( $permalink ) . '">' . esc_html( (string) get_the_title( $p ) ) . '</a></h3>'
+			. '</div></div>';
+	}
+
+	return '<aside class="hti-related"><h2 class="hti-related__title">'
+		. esc_html( t( 'related_read' ) ) . '</h2>'
+		. '<div class="hti-card-grid__inner" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">'
+		. $cards . '</div></aside>';
+}
 
 /**
  * Render the Learn hub: the educational articles grouped by category, in the
