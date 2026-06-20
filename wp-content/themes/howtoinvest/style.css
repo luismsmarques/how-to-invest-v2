@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.8.6
+Version: 0.8.7
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -637,6 +637,164 @@ a.hti-lang__item:hover {
 	background: var( --wp--preset--color--accent-soft );
 	color: var( --wp--preset--color--contrast );
 }
+
+/* ---------- Header search icon ---------- */
+.hti-header__search {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
+	color: #5A5270;
+	flex: none;
+}
+.hti-header__search:hover {
+	background: var( --wp--preset--color--accent-soft );
+	color: var( --wp--preset--color--contrast );
+}
+
+/* ---------- Search results page ---------- */
+.hti-search { max-width: 820px; margin: 0 auto; }
+.hti-search__title {
+	font-family: var( --wp--preset--font-family--heading );
+	font-weight: 700;
+	font-size: clamp( 28px, 4vw, 40px );
+	letter-spacing: -0.02em;
+	margin: 0 0 20px;
+}
+.hti-search__form { position: relative; margin-bottom: 28px; }
+.hti-search__icon {
+	position: absolute;
+	left: 18px;
+	top: 50%;
+	transform: translateY( -50% );
+	color: #B7AEC4;
+	display: flex;
+}
+.hti-search__input {
+	width: 100%;
+	background: var( --wp--preset--color--white );
+	border: 1.5px solid #F0E2DC;
+	border-radius: 14px;
+	padding: 16px 18px 16px 50px;
+	font: 400 17px var( --wp--preset--font-family--body );
+	color: var( --wp--preset--color--contrast );
+	outline: none;
+}
+.hti-search__input:focus { border-color: var( --wp--preset--color--primary ); }
+.hti-search__count { color: #A89FB5; font-size: 14px; margin: 0 0 16px; }
+.hti-search__count strong { color: #5A5270; }
+.hti-search__results { display: flex; flex-direction: column; gap: 12px; }
+.hti-search__result {
+	display: block;
+	background: var( --wp--preset--color--white );
+	border: 1px solid var( --wp--preset--color--border );
+	border-radius: 14px;
+	padding: 20px 22px;
+	text-decoration: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.hti-search__result:hover {
+	border-color: var( --wp--preset--color--accent-border );
+	box-shadow: 0 4px 16px rgba( 22, 38, 58, 0.06 );
+}
+.hti-search__kind {
+	font: 600 11px var( --wp--preset--font-family--body );
+	color: var( --wp--preset--color--accent );
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+.hti-search__result-title {
+	font-family: var( --wp--preset--font-family--heading );
+	font-weight: 700;
+	font-size: 20px;
+	margin: 5px 0 4px;
+	color: var( --wp--preset--color--contrast );
+	line-height: 1.2;
+}
+.hti-search__result-sum { margin: 0; color: var( --wp--preset--color--muted ); font-size: 15px; }
+.hti-search__eyebrow {
+	font: 600 13px var( --wp--preset--font-family--body );
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #A89FB5;
+}
+.hti-search__pills { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 14px; }
+.hti-search__pills--center { justify-content: center; }
+.hti-search__pill {
+	background: var( --wp--preset--color--white );
+	border: 1px solid var( --wp--preset--color--border );
+	border-radius: 999px;
+	padding: 9px 16px;
+	font: 500 14px var( --wp--preset--font-family--body );
+	color: #5A5270;
+	text-decoration: none;
+}
+.hti-search__pill:hover { border-color: var( --wp--preset--color--accent-border ); color: var( --wp--preset--color--contrast ); }
+.hti-search__pill--accent { color: var( --wp--preset--color--primary ); font-weight: 600; }
+.hti-search__pill--accent:hover { background: #FFF1ED; color: var( --wp--preset--color--primary ); }
+.hti-search__empty {
+	text-align: center;
+	padding: 48px 24px;
+	background: var( --wp--preset--color--white );
+	border: 1px dashed #E7D7CF;
+	border-radius: 18px;
+}
+.hti-search__empty-icon {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: var( --wp--preset--color--primary-soft );
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto 18px;
+	color: var( --wp--preset--color--primary );
+}
+.hti-search__empty-title {
+	font-family: var( --wp--preset--font-family--heading );
+	font-weight: 700;
+	font-size: 22px;
+	margin: 0 0 8px;
+}
+.hti-search__empty-text { margin: 0 0 22px; color: var( --wp--preset--color--muted ); font-size: 16px; }
+
+/* ---------- 404 page ---------- */
+.hti-404 { max-width: 620px; margin: 0 auto; text-align: center; padding-top: clamp( 32px, 9vw, 88px ); }
+.hti-404__num {
+	font-family: var( --wp--preset--font-family--heading );
+	font-weight: 800;
+	font-size: clamp( 80px, 16vw, 150px );
+	line-height: 1;
+	letter-spacing: -0.04em;
+	background: linear-gradient( 135deg, #FF6B5E, #7C5CFC );
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+.hti-404__title {
+	font-family: var( --wp--preset--font-family--heading );
+	font-weight: 700;
+	font-size: clamp( 26px, 4vw, 36px );
+	letter-spacing: -0.02em;
+	margin: 12px 0 0;
+}
+.hti-404__body { font-size: 18px; color: var( --wp--preset--color--muted ); margin: 14px 0 32px; line-height: 1.5; }
+.hti-404__actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hti-404__btn { border-radius: 14px; font: 600 16px var( --wp--preset--font-family--body ); text-decoration: none; }
+.hti-404__btn--primary { background: var( --wp--preset--color--primary ); color: #fff; padding: 14px 26px; }
+.hti-404__btn--primary:hover { background: var( --wp--preset--color--primary-hover ); color: #fff; }
+.hti-404__btn--secondary {
+	background: var( --wp--preset--color--white );
+	color: var( --wp--preset--color--primary );
+	border: 1.5px solid var( --wp--preset--color--accent-border );
+	padding: 13px 24px;
+}
+.hti-404__btn--secondary:hover { background: #FFF1ED; color: var( --wp--preset--color--primary ); }
+.hti-404__quicklinks { margin-top: 40px; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
+.hti-404__quick { color: var( --wp--preset--color--accent ); font: 600 15px var( --wp--preset--font-family--body ); text-decoration: none; }
+.hti-404__quick:hover { text-decoration: underline; color: var( --wp--preset--color--accent ); }
 
 /* ---------- News hub (single-column cards, E4 design) ---------- */
 .hti-news-card {
