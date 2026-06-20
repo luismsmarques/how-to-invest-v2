@@ -20,6 +20,38 @@
 
 	var buffer = [];
 
+	// First-party anonymous counter (self-hosted funnel panel). Fires for every
+	// event regardless of consent — it sends no cookies, no IP, no identifiers,
+	// only an event name + a couple of low-cardinality params, stored as
+	// aggregate daily counts. Independent of GA.
+	function beacon( name, params ) {
+		var cfg = window.HTI_TRACK;
+		if ( ! cfg || ! cfg.beacon ) {
+			return;
+		}
+		var body = { name: name };
+		if ( params ) {
+			if ( params.step_index != null ) {
+				body.step = params.step_index;
+			}
+			if ( params.archetype != null ) {
+				body.archetype = params.archetype;
+			}
+			if ( params.location != null ) {
+				body.location = params.location;
+			}
+		}
+		try {
+			window.fetch( cfg.beacon, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify( body ),
+				keepalive: true,
+				credentials: 'omit'
+			} ).catch( function () {} );
+		} catch ( e ) {}
+	}
+
 	function consentOk() {
 		try {
 			var c = window.HTIConsent && window.HTIConsent.get();
@@ -53,6 +85,9 @@
 		if ( ! name ) {
 			return;
 		}
+		// Anonymous first-party count (always), independent of GA consent.
+		beacon( name, params );
+
 		if ( consentOk() && ready() ) {
 			emit( name, params );
 			return;
