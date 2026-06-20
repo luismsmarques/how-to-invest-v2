@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.8';
+const VERSION = '0.8.9';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -259,6 +259,10 @@ function strings(): array {
 		'nf_body'              => array( 'en' => 'The link may be wrong or the page was moved. No worries — there’s always somewhere to keep going.', 'pt' => 'O link pode estar errado ou a página foi movida. Mas não há crise — há sempre por onde continuar.' ),
 		'nf_home'              => array( 'en' => 'Back to home', 'pt' => 'Voltar ao início' ),
 		'nf_search'            => array( 'en' => 'Search', 'pt' => 'Pesquisar' ),
+		// Mobile app-shell.
+		'tab_home'             => array( 'en' => 'Home', 'pt' => 'Início' ),
+		'tab_nav'              => array( 'en' => 'Sections', 'pt' => 'Secções' ),
+		'nav_account'          => array( 'en' => 'Account', 'pt' => 'Conta' ),
 		// Glossary index.
 		'gloss_all'        => array( 'en' => 'All', 'pt' => 'Todos' ),
 		'gloss_filter'     => array( 'en' => 'Filter by letter', 'pt' => 'Filtrar por letra' ),
@@ -345,6 +349,15 @@ function register_dynamic_blocks(): void {
 			'title'           => __( 'Header search icon', 'howtoinvest' ),
 			'category'        => 'theme',
 			'render_callback' => __NAMESPACE__ . '\\render_header_search',
+		)
+	);
+	register_block_type(
+		'howtoinvest/mobile-bar',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Mobile top-bar actions', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_mobile_bar',
 		)
 	);
 	register_block_type(
@@ -804,6 +817,66 @@ function render_header_cta(): string {
 		. '<a class="wp-block-button__link wp-element-button" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '" data-hti-track="cta_click" data-htip-location="header">'
 		. esc_html( t( 'cta_get_started' ) ) . '</a></div></div>';
 }
+
+/**
+ * Account page URL for the current language.
+ */
+function account_url(): string {
+	return page_url( 'my-account' );
+}
+
+/**
+ * Mobile top-bar actions (search + account) — shown only on phones via CSS.
+ */
+function render_mobile_bar(): string {
+	$search = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>';
+	$user   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
+	return '<div class="hti-mbar">'
+		. '<a class="hti-mbar__btn" href="' . esc_url( search_url() ) . '" aria-label="' . esc_attr( t( 'search_label' ) ) . '">' . $search . '</a>'
+		. '<a class="hti-mbar__btn hti-mbar__btn--account" href="' . esc_url( account_url() ) . '" aria-label="' . esc_attr( t( 'nav_account' ) ) . '">' . $user . '</a>'
+		. '</div>';
+}
+
+/**
+ * Bottom tab bar (mobile app-shell). Rendered in the footer; CSS shows it only
+ * on phones and pads the page so content clears it. Highlights the section in
+ * view.
+ */
+function render_tab_bar(): void {
+	if ( is_admin() ) {
+		return;
+	}
+	$pt   = 'pt' === current_lang();
+	$home = ( $pt && function_exists( 'pll_home_url' ) ) ? pll_home_url( 'pt' ) : home_url( '/' );
+
+	$icons = array(
+		'home'     => '<path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V21h14V9.5"></path>',
+		'learn'    => '<path d="M4 4h9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4z"></path><path d="M20 4h-4a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z"></path>',
+		'glossary' => '<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h10"></path>',
+		'news'     => '<path d="M4 5h13v14H5a1 1 0 0 1-1-1z"></path><path d="M17 8h3v9a2 2 0 0 1-2 2"></path><path d="M7 9h7M7 13h7M7 17h4"></path>',
+	);
+	$tabs = array(
+		array( $home, t( 'tab_home' ), is_front_page(), $icons['home'] ),
+		array( archive_url( 'learn', 'learn' ), t( 'nav_learn' ), ( is_post_type_archive( 'learn' ) || is_singular( 'learn' ) ), $icons['learn'] ),
+		array( archive_url( 'glossary', 'investing-glossary' ), t( 'nav_glossary' ), ( is_post_type_archive( 'glossary' ) || is_singular( 'glossary' ) ), $icons['glossary'] ),
+		array( archive_url( 'news', 'financial-news' ), t( 'nav_news' ), ( is_post_type_archive( 'news' ) || is_singular( 'news' ) ), $icons['news'] ),
+	);
+
+	echo '<nav class="hti-tabbar hti-noprint" aria-label="' . esc_attr( t( 'tab_nav' ) ) . '">';
+	foreach ( $tabs as $tb ) {
+		$active = (bool) $tb[2];
+		printf(
+			'<a class="hti-tabbar__item%1$s"%2$s href="%3$s"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">%4$s</svg><span class="hti-tabbar__label">%5$s</span></a>',
+			$active ? ' is-active' : '',
+			$active ? ' aria-current="page"' : '',
+			esc_url( (string) $tb[0] ),
+			$tb[3], // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG paths.
+			esc_html( (string) $tb[1] )
+		);
+	}
+	echo '</nav>';
+}
+add_action( 'wp_footer', __NAMESPACE__ . '\\render_tab_bar' );
 
 /**
  * Search URL for the current language ( /?s= or /pt/?s= ).
