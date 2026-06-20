@@ -42,7 +42,7 @@
 				},
 				{
 					"slug": "muted-light",
-					"color": "#A89FB5",
+					"color": "#767189",
 					"name": "Muted light"
 				},
 				{
@@ -54,6 +54,11 @@
 					"slug": "primary",
 					"color": "#FF6B5E",
 					"name": "Coral"
+				},
+				{
+					"slug": "primary-strong",
+					"color": "#C9362C",
+					"name": "Coral (AA text/buttons)"
 				},
 				{
 					"slug": "primary-hover",
@@ -338,7 +343,7 @@
 		"elements": {
 			"link": {
 				"color": {
-					"text": "var(--wp--preset--color--primary)"
+					"text": "var(--wp--preset--color--primary-strong)"
 				},
 				":hover": {
 					"color": {
@@ -379,7 +384,7 @@
 			},
 			"button": {
 				"color": {
-					"background": "var(--wp--preset--color--primary)",
+					"background": "var(--wp--preset--color--primary-strong)",
 					"text": "var(--wp--preset--color--white)"
 				},
 				"border": {
