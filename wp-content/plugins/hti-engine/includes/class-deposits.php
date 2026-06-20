@@ -32,6 +32,7 @@ class Deposits {
 	public static function init(): void {
 		add_shortcode( self::SHORTCODE, array( __CLASS__, 'render' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
+		add_action( 'wp_head', array( __CLASS__, 'schema' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
 		add_action( 'admin_post_hti_deposits_save', array( __CLASS__, 'handle_save' ) );
 	}
@@ -59,6 +60,7 @@ class Deposits {
 			'version' => 'Junho 2026 · versão 2',
 			'updated' => '',
 			'intro'   => 'Produtos com capital garantido (até 100 000€ por titular pelo Fundo de Garantia de Depósitos) que remuneram a uma taxa fixa durante um prazo. Sem reforços; por vezes permitem levantamentos antecipados (mobilização antecipada) com penalização de juros. A coluna IRS assinala os bancos estrangeiros, que requerem declaração da conta e dos juros recebidos.',
+			'footer'  => "Muitos destes bancos oferecem transferências online gratuitas (Banco CTT, BAI, Bankinter, Best, BIL, Bison, BPG, Carregosa, Easisave, Klarna, MeDirect, Openbank), sujeitas a um limite diário entre 5 000€ e 25 000€. Outros cobram 0,50€ (BluOr, Finantia), 1,00€ (BiG, EuroBic) ou 1,50€ (Atlántico, BNI, Haitong).\n\nProdutos como o Bankinter Conta Mais Ordenado, o capital não investido na Trade Republic ou a Poupança de Acesso Imediato da Revolut não são depósitos a prazo (permitem reforços e levantamentos sem penalização), pelo que não constam desta tabela.\n\nPara comparação, as novas subscrições de certificados de aforro têm taxa inicial de 2,215%.",
 			'rows'    => self::sample_rows(),
 		);
 	}
@@ -213,12 +215,63 @@ class Deposits {
 
 			<p class="hti-dep__empty" hidden>Sem ofertas para estes filtros. <button type="button" class="hti-dep__reset hti-dep__reset--link">Limpar filtros</button></p>
 
+			<?php if ( '' !== trim( (string) $data['footer'] ) ) : ?>
+				<div class="hti-dep__footer">
+					<?php
+					$paras = preg_split( '/\n\s*\n/', str_replace( "\r\n", "\n", (string) $data['footer'] ) );
+					foreach ( (array) $paras as $p ) {
+						$p = trim( $p );
+						if ( '' !== $p ) {
+							echo '<p>' . esc_html( $p ) . '</p>';
+						}
+					}
+					?>
+				</div>
+			<?php endif; ?>
+
 			<div class="hti-dep__disclaimer">
 				<p><strong>Informação meramente informativa</strong>, recolhida de fontes públicas e sujeita a alterações sem aviso. Não é uma recomendação nem aconselhamento financeiro — confirma sempre as condições, taxas e custos junto de cada banco antes de subscrever. Capital garantido pelo Fundo de Garantia de Depósitos até 100 000€ por titular e por instituição.</p>
 			</div>
 		</section>
 		<?php
 		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Emit Dataset JSON-LD for the comparator page (semantic SEO for a data
+	 * table). Only on the singular view that embeds the shortcode.
+	 */
+	public static function schema(): void {
+		if ( ! self::is_page() ) {
+			return;
+		}
+		$data = self::data();
+		$post = get_queried_object();
+		$url  = $post instanceof \WP_Post ? get_permalink( $post ) : home_url( '/' );
+
+		$node = array(
+			'@context'        => 'https://schema.org',
+			'@type'           => 'Dataset',
+			'name'            => wp_strip_all_tags( (string) $data['title'] ),
+			'description'     => wp_strip_all_tags( (string) $data['intro'] ),
+			'inLanguage'      => 'pt-PT',
+			'url'             => $url,
+			'isAccessibleForFree' => true,
+			'creator'         => array(
+				'@type' => 'Organization',
+				'name'  => get_bloginfo( 'name' ),
+				'url'   => home_url( '/' ),
+			),
+			'variableMeasured' => array( 'TANB', 'Prazo', 'Montante mínimo', 'Montante máximo' ),
+		);
+		if ( ! empty( $data['updated'] ) ) {
+			$node['dateModified'] = (string) $data['updated'];
+		}
+
+		printf(
+			'<script type="application/ld+json">%s</script>' . "\n",
+			wp_json_encode( $node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
+		);
 	}
 
 	/**
@@ -355,6 +408,11 @@ class Deposits {
 						<td><textarea name="intro" id="hti-dep-intro" rows="3" class="large-text"><?php echo esc_textarea( $data['intro'] ); ?></textarea></td>
 					</tr>
 					<tr>
+						<th scope="row"><label for="hti-dep-footer"><?php esc_html_e( 'Notas de rodapé', 'hti-engine' ); ?></label></th>
+						<td><textarea name="footer" id="hti-dep-footer" rows="6" class="large-text"><?php echo esc_textarea( $data['footer'] ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Texto de contexto mostrado abaixo da tabela (transferências, custos por banco, comparação com certificados de aforro…). Separa parágrafos com uma linha em branco.', 'hti-engine' ); ?></p></td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="hti-dep-rows"><?php esc_html_e( 'Dados (colar do Excel)', 'hti-engine' ); ?></label></th>
 						<td><textarea name="rows" id="hti-dep-rows" rows="18" class="large-text code" placeholder="TANB&#9;Prazo&#9;Banco&#9;Produto&#9;Mínimo&#9;Máximo&#9;Novos clientes&#9;Novos montantes&#9;Mobil antecip&#9;IRS&#9;Notas"><?php echo esc_textarea( self::rows_to_tsv( $data['rows'] ) ); ?></textarea>
 						<p class="description"><?php esc_html_e( 'Deixar em branco e guardar mantém os dados atuais. Para substituir, cola a tabela completa.', 'hti-engine' ); ?></p></td>
@@ -382,6 +440,7 @@ class Deposits {
 			'title'   => isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : $current['title'],
 			'version' => isset( $_POST['version'] ) ? sanitize_text_field( wp_unslash( $_POST['version'] ) ) : $current['version'],
 			'intro'   => isset( $_POST['intro'] ) ? sanitize_textarea_field( wp_unslash( $_POST['intro'] ) ) : $current['intro'],
+			'footer'  => isset( $_POST['footer'] ) ? sanitize_textarea_field( wp_unslash( $_POST['footer'] ) ) : ( $current['footer'] ?? '' ),
 			'updated' => gmdate( 'Y-m-d' ),
 			'rows'    => $rows,
 		);
