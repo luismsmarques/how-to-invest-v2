@@ -34,6 +34,10 @@
 		};
 		window.gtag( 'js', new Date() );
 		window.gtag( 'config', cfg.id, { anonymize_ip: true } );
+
+		// Let the tracking helper (track.js) flush any buffered events now that
+		// gtag exists.
+		document.dispatchEvent( new Event( 'hti-ga-ready' ) );
 	}
 
 	function analyticsAllowed() {

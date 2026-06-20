@@ -73,5 +73,20 @@ class Analytics {
 		);
 		wp_localize_script( 'hti-analytics', 'HTI_GA', array( 'id' => $id ) );
 		wp_enqueue_script( 'hti-analytics' );
+
+		// Consent-gated event helper (window.HTITrack). Loaded site-wide so the
+		// questionnaire, account, subscribe, contact and theme CTAs can all
+		// report events. No-op until analytics consent + gtag are present.
+		wp_register_script(
+			'hti-track',
+			HTI_ENGINE_URL . 'assets/js/track.js',
+			array( 'hti-consent' ),
+			VERSION,
+			array(
+				'in_footer' => true,
+				'strategy'  => 'defer',
+			)
+		);
+		wp_enqueue_script( 'hti-track' );
 	}
 }
