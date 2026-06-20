@@ -12,5 +12,8 @@
 		"platform": {
 			"php": "8.3"
 		}
+	},
+	"scripts": {
+		"test": "php tests/run.php"
 	}
 }
