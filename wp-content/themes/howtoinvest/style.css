@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.8.11
+Version: 0.8.14
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -1084,6 +1084,98 @@ a.hti-lang__item:hover {
 .hti-nav-overlay { display: none; }
 .hti-tabbar { display: none; }
 
+/* ---------- Rich mobile drawer (hamburger panel) ---------- */
+/* Hidden on desktop; the inline nav rail handles that breakpoint. The panel
+   slides in via the same #hti-nav-check checkbox (CSS-only, works without JS). */
+.hti-drawer { display: none; }
+.hti-drawer__panel {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background: var( --wp--preset--color--background, #FFF6F1 );
+	box-shadow: 8px 0 40px rgba( 28, 22, 40, 0.28 );
+}
+.hti-drawer__head {
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: calc( 12px + env( safe-area-inset-top ) ) 16px 14px;
+	border-bottom: 1px solid var( --wp--preset--color--border );
+}
+.hti-drawer__brand { display: flex; align-items: center; gap: 9px; font: 600 17px var( --wp--preset--font-family--body ); letter-spacing: -0.02em; color: var( --wp--preset--color--contrast ); }
+.hti-drawer__mark { width: 28px; height: 28px; display: flex; flex: none; }
+.hti-drawer__close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	color: var( --wp--preset--color--muted );
+	cursor: pointer;
+}
+.hti-drawer__close:hover,
+.hti-drawer__close:active { background: var( --wp--preset--color--primary-soft ); }
+.hti-drawer__body { flex: 1; overflow-y: auto; padding: 14px 12px; }
+.hti-drawer__eyebrow {
+	display: block;
+	font: 600 11px var( --wp--preset--font-family--body );
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var( --wp--preset--color--muted-light, #A89FB5 );
+	padding: 0 6px;
+}
+.hti-drawer__group { margin: 8px 0 4px; }
+.hti-drawer__item {
+	display: flex;
+	align-items: center;
+	gap: 13px;
+	width: 100%;
+	padding: 12px;
+	border-radius: 12px;
+	text-decoration: none;
+}
+.hti-drawer__item:hover,
+.hti-drawer__item:active { background: var( --wp--preset--color--primary-soft ); }
+.hti-drawer__tile {
+	flex: none;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.hti-drawer__tile--coral { background: #FFEDE9; color: #FF6B5E; }
+.hti-drawer__tile--purple { background: #EFE9FE; color: #7C5CFC; }
+.hti-drawer__tile--amber { background: #F6EEDD; color: #D69A1E; }
+.hti-drawer__tile--green { background: #E6F7EF; color: #1F8A5B; }
+.hti-drawer__label { font: 600 16px var( --wp--preset--font-family--body ); color: var( --wp--preset--color--contrast ); }
+.hti-drawer__label--muted { font-weight: 500; font-size: 15px; color: var( --wp--preset--color--muted ); }
+.hti-drawer__divider { height: 1px; background: var( --wp--preset--color--border ); margin: 12px 6px; }
+.hti-drawer__plainicon { flex: none; display: flex; color: var( --wp--preset--color--muted-light, #A89FB5 ); }
+.hti-drawer__item--plain { gap: 13px; }
+.hti-drawer__foot {
+	flex: none;
+	padding: 14px 16px calc( 14px + env( safe-area-inset-bottom ) );
+	border-top: 1px solid var( --wp--preset--color--border );
+}
+.hti-drawer__cta {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	background: var( --wp--preset--color--primary );
+	color: #fff;
+	border-radius: 14px;
+	padding: 14px;
+	text-align: center;
+	text-decoration: none;
+	font: 600 16px var( --wp--preset--font-family--body );
+	box-shadow: 0 2px 10px rgba( 28, 76, 124, 0.22 );
+}
+.hti-drawer__cta:hover { filter: brightness( 0.97 ); }
+
 @media ( max-width: 782px ) {
 	/* The header's backdrop-filter makes it a containing block for fixed
 	   descendants AND traps them in its z-40 stacking context (so the drawer
@@ -1101,28 +1193,23 @@ a.hti-lang__item:hover {
 	/* Search lives in the top bar on mobile, not inside the drawer. */
 	.hti-nav-wrap .hti-header__search { display: none; }
 
+	/* The inline desktop nav rail (links + search + CTA) is replaced on phones
+	   by the rich slide-in drawer below. */
+	.hti-header .hti-nav-wrap { display: none; }
+
 	/* Hamburger → left slide-in drawer (checkbox-driven, works without JS). */
-	.hti-header .hti-nav-wrap {
+	.hti-drawer {
+		display: block;
 		position: fixed;
 		top: 0;
 		left: 0;
 		bottom: 0;
-		right: auto;
 		z-index: 60;
 		width: min( 84vw, 330px );
-		flex-direction: column;
-		align-items: stretch;
-		gap: 4px;
-		padding: 16px 12px calc( 16px + env( safe-area-inset-bottom ) );
-		background: var( --wp--preset--color--background );
-		border: 0;
-		border-right: 1px solid var( --wp--preset--color--border );
-		box-shadow: 8px 0 40px rgba( 28, 22, 40, 0.28 );
-		overflow-y: auto;
 		transform: translateX( -100% );
 		transition: transform 0.25s ease;
 	}
-	.hti-nav-check:checked ~ .hti-nav-wrap { transform: none; }
+	.hti-nav-check:checked ~ .hti-drawer { transform: none; }
 
 	/* Dimmed overlay behind the drawer; clicking it closes (it's a label). */
 	.hti-nav-check:checked ~ .hti-nav-overlay {
@@ -1132,27 +1219,6 @@ a.hti-lang__item:hover {
 		z-index: 55;
 		background: rgba( 28, 22, 40, 0.45 );
 	}
-
-	/* Full-width rows inside the drawer. */
-	.hti-nav-wrap .hti-menu-nav { display: block; width: 100%; }
-	.hti-nav .hti-menu {
-		width: 100%;
-		flex-direction: column;
-		align-items: stretch;
-		gap: 2px;
-	}
-	.hti-nav .hti-menu li { width: 100%; }
-	.hti-nav .hti-menu a {
-		display: block;
-		width: 100%;
-		padding: 13px 12px;
-		font-size: 16px;
-		border-radius: 12px;
-	}
-	.hti-cta { width: 100%; margin-top: auto; }
-	.hti-cta .wp-block-button,
-	.hti-cta .wp-block-button__link { width: 100%; }
-	.hti-cta .wp-block-button__link { text-align: center; padding: 14px; font-size: 16px; }
 
 	/* Bottom tab bar. */
 	.hti-tabbar {
@@ -1241,3 +1307,124 @@ a.hti-lang__item:hover {
 .hti-learn__item a { font-weight: 600; text-decoration: none; }
 .hti-learn__item a:hover { text-decoration: underline; }
 .hti-learn__excerpt { color: var(--wp--preset--color--muted, #6e6680); font-weight: 400; }
+
+/* ============================ News hub ============================ */
+.hti-newshub {
+	--nh-text: var( --wp--preset--color--contrast, #2A2438 );
+	--nh-muted: var( --wp--preset--color--muted, #6E6680 );
+	--nh-faint: #A89FB5;
+	--nh-border: var( --wp--preset--color--border, #F2E4DD );
+	--nh-line: #F6ECE6;
+	--nh-white: var( --wp--preset--color--white, #fff );
+	--nh-primary: var( --wp--preset--color--primary, #FF6B5E );
+	--nh-accent: var( --wp--preset--color--accent, #7C5CFC );
+	--nh-soft: var( --wp--preset--color--primary-soft, #FFEDE9 );
+	--nh-accent-soft: var( --wp--preset--color--accent-soft, #EFE9FE );
+	--nh-ink: #1E2147;
+	--nh-head: var( --wp--preset--font-family--heading, 'Poppins', sans-serif );
+	--nh-body: var( --wp--preset--font-family--body, 'Plus Jakarta Sans', sans-serif );
+	color: var( --nh-text );
+}
+
+/* header */
+.hti-newshub__eyebrow {
+	display: inline-flex; align-items: center; gap: 8px;
+	background: var( --nh-soft ); color: var( --nh-primary );
+	font: 600 12px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.04em;
+	padding: 5px 12px; border-radius: 999px; margin-bottom: 12px;
+}
+.hti-newshub__eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: #7FE0B0; }
+.hti-newshub__title { font-family: var( --nh-head ); font-weight: 700; font-size: clamp( 1.85rem, 4.5vw, 2.75rem ); letter-spacing: -0.02em; line-height: 1.05; margin: 0; }
+.hti-newshub__sub { color: var( --nh-muted ); font-size: clamp( 1rem, 2vw, 1.125rem ); margin: 8px 0 0; max-width: 50ch; }
+
+/* tabs */
+.hti-newshub__tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 26px 0 28px; }
+.hti-newshub__tab {
+	background: var( --nh-white ); color: #5A5270; border: 1px solid var( --nh-border );
+	cursor: pointer; border-radius: 999px; padding: 9px 17px; font: 600 14px var( --nh-body );
+}
+.hti-newshub__tab:hover { border-color: #E7DCFB; color: var( --nh-text ); }
+.hti-newshub__tab.is-active { background: var( --nh-primary ); color: #fff; border-color: var( --nh-primary ); box-shadow: 0 1px 2px rgba( 255, 107, 94, 0.3 ); }
+
+/* layout */
+.hti-newshub__layout { display: grid; grid-template-columns: minmax( 0, 1fr ) 322px; gap: 36px; align-items: start; }
+.hti-newshub__main { min-width: 0; }
+
+/* featured */
+.hti-newshub__feature { display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; margin-bottom: 32px; }
+.hti-newshub__feature[hidden] { display: none; }
+.hti-newshub__hero, .hti-newshub__side, .hti-newshub__row { text-decoration: none; color: inherit; }
+.hti-newshub__hero {
+	display: flex; flex-direction: column; background: var( --nh-white );
+	border: 1px solid var( --nh-border ); border-radius: 20px; overflow: hidden;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.hti-newshub__hero:hover { border-color: #E7DCFB; box-shadow: 0 8px 26px rgba( 22, 38, 58, 0.09 ); transform: translateY( -2px ); }
+.hti-newshub__hero-media { height: 188px; display: flex; align-items: flex-start; padding: 16px; }
+.hti-newshub__hero-badge { background: rgba( 42, 36, 56, 0.82 ); color: #fff; font: 600 11px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 11px; border-radius: 999px; }
+.hti-newshub__hero-body { padding: 20px 24px 24px; }
+.hti-newshub__meta { display: flex; gap: 10px; align-items: center; margin-bottom: 9px; flex-wrap: wrap; }
+.hti-newshub__cat { font: 700 12px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.06em; }
+.hti-newshub__dot { color: #B7AEC4; font-size: 13px; }
+.hti-newshub__hero-title { display: block; font-family: var( --nh-head ); font-weight: 700; font-size: clamp( 1.375rem, 2.4vw, 1.6875rem ); margin: 0 0 8px; line-height: 1.14; color: var( --nh-text ); }
+.hti-newshub__hero-sum { display: block; color: var( --nh-muted ); font-size: 16px; line-height: 1.5; }
+.hti-newshub__feature-side { display: flex; flex-direction: column; gap: 18px; }
+.hti-newshub__side { flex: 1; display: flex; flex-direction: column; background: var( --nh-white ); border: 1px solid var( --nh-border ); border-radius: 16px; overflow: hidden; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.hti-newshub__side:hover { border-color: #E7DCFB; box-shadow: 0 6px 18px rgba( 22, 38, 58, 0.07 ); }
+.hti-newshub__side-media { height: 74px; }
+.hti-newshub__side-body { padding: 14px 16px 16px; }
+.hti-newshub__side-title { display: block; font-family: var( --nh-head ); font-weight: 700; font-size: 16px; margin: 6px 0 0; line-height: 1.2; color: var( --nh-text ); }
+
+/* latest list */
+.hti-newshub__listhead { font-family: var( --nh-head ); font-weight: 700; font-size: 18px; margin: 0 0 16px; color: var( --nh-text ); display: flex; align-items: center; gap: 9px; }
+.hti-newshub__bar { width: 4px; height: 18px; background: var( --nh-primary ); border-radius: 3px; }
+.hti-newshub__list { display: flex; flex-direction: column; gap: 14px; }
+.hti-newshub__row { display: flex; gap: 18px; align-items: center; background: var( --nh-white ); border: 1px solid var( --nh-border ); border-radius: 16px; padding: 20px 22px; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.hti-newshub__row[hidden] { display: none; }
+.hti-newshub__row:hover { border-color: #E7DCFB; box-shadow: 0 4px 16px rgba( 22, 38, 58, 0.06 ); }
+.hti-newshub__row-media { flex: none; width: 84px; height: 84px; border-radius: 13px; }
+.hti-newshub__row-body { flex: 1; min-width: 0; }
+.hti-newshub__row-title { display: block; font-family: var( --nh-head ); font-weight: 700; font-size: 20px; margin: 5px 0; line-height: 1.18; color: var( --nh-text ); }
+.hti-newshub__row-sum { display: block; color: var( --nh-muted ); font-size: 15px; line-height: 1.45; }
+.hti-newshub__empty { text-align: center; padding: 32px; color: var( --nh-muted ); }
+
+/* sidebar */
+.hti-newshub__aside { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 84px; }
+.hti-newshub__card { background: var( --nh-white ); border: 1px solid var( --nh-border ); border-radius: 18px; padding: 20px 20px 8px; }
+.hti-newshub__card-title { font-family: var( --nh-head ); font-weight: 700; font-size: 15px; margin: 0 0 4px; color: var( --nh-text ); display: flex; align-items: center; gap: 8px; }
+.hti-newshub__rank { display: flex; gap: 13px; align-items: flex-start; border-top: 1px solid var( --nh-line ); padding: 13px 0; text-decoration: none; }
+.hti-newshub__rank:hover { opacity: 0.72; }
+.hti-newshub__rank-n { flex: none; font-family: var( --nh-head ); font-weight: 700; font-size: 18px; color: #EAD9D1; line-height: 1; width: 18px; }
+.hti-newshub__rank-t { display: block; font: 600 14px var( --nh-body ); color: var( --nh-text ); line-height: 1.3; }
+.hti-newshub__rank-m { display: block; margin-top: 4px; font-size: 12px; color: var( --nh-faint ); }
+
+.hti-newshub__termday { background: var( --nh-accent-soft ); border-radius: 18px; padding: 20px; }
+.hti-newshub__termday-eyebrow { font: 700 11px var( --nh-body ); color: var( --nh-accent ); text-transform: uppercase; letter-spacing: 0.07em; }
+.hti-newshub__termday-t { font-family: var( --nh-head ); font-weight: 700; font-size: 19px; margin: 8px 0 6px; color: var( --nh-text ); }
+.hti-newshub__termday-d { margin: 0 0 14px; color: #5A5270; font-size: 14px; line-height: 1.5; }
+.hti-newshub__termday-cta { display: inline-block; background: #fff; color: var( --nh-accent ); border-radius: 10px; padding: 9px 15px; font: 600 13px var( --nh-body ); text-decoration: none; }
+.hti-newshub__termday-cta:hover { box-shadow: 0 2px 8px rgba( 124, 92, 252, 0.18 ); }
+
+.hti-newshub__event { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var( --nh-line ); }
+.hti-newshub__event:first-of-type { border-top: 0; }
+.hti-newshub__event-when { flex: none; width: 44px; text-align: center; }
+.hti-newshub__event-day { font: 700 11px var( --nh-body ); color: var( --nh-faint ); text-transform: uppercase; }
+.hti-newshub__event-date { font: 600 13px var( --nh-body ); color: var( --nh-text ); }
+.hti-newshub__event-body { flex: 1; min-width: 0; }
+.hti-newshub__event-label { font: 600 13.5px var( --nh-body ); color: var( --nh-text ); line-height: 1.3; }
+.hti-newshub__event-tag { font: 600 11px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* newsletter wrapper: let the subscribe shortcode fill the column */
+.hti-newshub__nl > * { margin: 0 !important; }
+
+@media ( max-width: 900px ) {
+	.hti-newshub__layout { grid-template-columns: 1fr; }
+	.hti-newshub__aside { position: static; flex-direction: column; }
+}
+@media ( max-width: 600px ) {
+	.hti-newshub__feature { grid-template-columns: 1fr; }
+	.hti-newshub__row { padding: 14px; gap: 14px; }
+	.hti-newshub__row-media { width: 66px; height: 66px; }
+	.hti-newshub__row-title { font-size: 16px; }
+	.hti-newshub__row-sum { display: none; }
+}

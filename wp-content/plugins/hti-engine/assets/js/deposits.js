@@ -1,9 +1,10 @@
 /**
- * Term-deposit comparator — client-side filter / sort / search.
+ * Term-deposit comparator — client-side calculator, filter, sort and search.
  *
  * Progressive enhancement: the full list is server-rendered (indexable, works
- * without JS); this filters and reorders the existing cards by their data
- * attributes. No network, no scoring — purely presentational.
+ * without JS). This recomputes the estimated interest for the chosen amount,
+ * filters/sorts the existing cards by their data attributes, and keeps the
+ * "★ Melhor taxa" / "acima do Aforro" markers in sync. No network, no scoring.
  *
  * @package HTI_Engine
  */
@@ -15,23 +16,68 @@
 		return;
 	}
 
-	var list  = root.querySelector( '.hti-dep__list' );
-	var cards = Array.prototype.slice.call( root.querySelectorAll( '.hti-dep__card' ) );
-	var count = root.querySelector( '.hti-dep__count' );
-	var empty = root.querySelector( '.hti-dep__empty' );
+	var amount0 = parseInt( root.getAttribute( 'data-amount' ), 10 ) || 10000;
+	var aforro  = parseFloat( root.getAttribute( 'data-aforro' ) ) || 2.215;
 
-	var q      = root.querySelector( '.hti-dep__q' );
-	var term   = root.querySelector( '.hti-dep__term' );
-	var bank   = root.querySelector( '.hti-dep__bank' );
+	var list   = root.querySelector( '.hti-dep__list' );
+	var cards  = Array.prototype.slice.call( root.querySelectorAll( '.hti-dep__card' ) );
+	var countN = root.querySelector( '.hti-dep__count-n' );
+	var beatsN = root.querySelector( '.hti-dep__beats-n' );
+	var empty  = root.querySelector( '.hti-dep__empty' );
+
 	var amount = root.querySelector( '.hti-dep__amount' );
+	var q      = root.querySelector( '.hti-dep__q' );
+	var tanb   = root.querySelector( '.hti-dep__tanb' );
+	var tanbV  = root.querySelector( '.hti-dep__tanb-val' );
+	var bank   = root.querySelector( '.hti-dep__bank' );
 	var sort   = root.querySelector( '.hti-dep__sort' );
 	var nc     = root.querySelector( '.hti-dep__nc' );
-	var mobil  = root.querySelector( '.hti-dep__mobil' );
-	var nat    = root.querySelector( '.hti-dep__nat' );
+	var early  = root.querySelector( '.hti-dep__early' );
+	var naores = root.querySelector( '.hti-dep__naores' );
+	var chips  = Array.prototype.slice.call( root.querySelectorAll( '.hti-dep__chip' ) );
+
+	var term = ''; // Active term chip value.
 
 	function num( v ) {
 		var n = parseFloat( v );
 		return isNaN( n ) ? null : n;
+	}
+
+	// Parse "10 000" / "10.000 €" → 10000.
+	function parseAmount( v ) {
+		var digits = ( v || '' ).replace( /[^\d]/g, '' );
+		return digits === '' ? 0 : parseInt( digits, 10 );
+	}
+
+	function group( n ) {
+		return String( Math.round( n ) ).replace( /\B(?=(\d{3})+(?!\d))/g, ' ' );
+	}
+
+	function eur( n ) {
+		return group( n ) + ' €';
+	}
+
+	function fmtPct( n ) {
+		return n.toFixed( 2 ).replace( '.', ',' ) + '%';
+	}
+
+	// Recompute the estimated interest on every card for the current amount.
+	function recalc() {
+		var A = parseAmount( amount.value );
+		cards.forEach( function ( card ) {
+			var rate = num( card.dataset.tanb ) || 0;
+			var t    = num( card.dataset.term ) || 0;
+			var gross = A * rate / 100 * t / 12;
+			var net   = gross * 0.72;
+			var netEl   = card.querySelector( '.hti-dep__est-net' );
+			var grossEl = card.querySelector( '.hti-dep__est-gross' );
+			if ( netEl ) {
+				netEl.textContent = '+' + eur( net );
+			}
+			if ( grossEl ) {
+				grossEl.textContent = 'bruto ' + eur( gross );
+			}
+		} );
 	}
 
 	function matches( card ) {
@@ -41,31 +87,35 @@
 		if ( query && d.text.indexOf( query ) === -1 ) {
 			return false;
 		}
-		if ( term.value && d.term !== term.value ) {
+		var minT = num( tanb.value );
+		if ( minT && num( d.tanb ) < minT ) {
+			return false;
+		}
+		if ( term && d.term !== term ) {
 			return false;
 		}
 		if ( bank.value && d.bank !== bank.value ) {
 			return false;
 		}
-		var amt = num( amount.value );
-		if ( amt !== null ) {
-			var min = num( d.min );
-			var max = num( d.max );
-			if ( min !== null && amt < min ) {
+		if ( nc.checked && d.novos !== '1' ) {
+			return false;
+		}
+		if ( early.checked && d.early !== '1' ) {
+			return false;
+		}
+		if ( naores.checked && d.naores !== '1' ) {
+			return false;
+		}
+		var amt = parseAmount( amount.value );
+		if ( amt > 0 ) {
+			var mn = num( d.min );
+			var mx = num( d.max );
+			if ( mn !== null && amt < mn ) {
 				return false;
 			}
-			if ( max !== null && amt > max ) {
+			if ( mx !== null && amt > mx ) {
 				return false;
 			}
-		}
-		if ( nc.checked && d.nc !== '1' ) {
-			return false;
-		}
-		if ( mobil.checked && d.mobil !== '1' ) {
-			return false;
-		}
-		if ( nat.checked && d.irs !== '0' ) {
-			return false;
 		}
 		return true;
 	}
@@ -74,63 +124,103 @@
 		var key = sort.value;
 		visible.sort( function ( a, b ) {
 			if ( 'term' === key ) {
-				return ( +a.dataset.term - +b.dataset.term ) || ( +b.dataset.rate - +a.dataset.rate );
+				return ( +a.dataset.term - +b.dataset.term ) || ( +b.dataset.tanb - +a.dataset.tanb );
 			}
 			if ( 'min' === key ) {
 				var am = num( a.dataset.min ),
 					bm = num( b.dataset.min );
-				if ( am === null ) {
-					am = Infinity;
-				}
-				if ( bm === null ) {
-					bm = Infinity;
-				}
-				return ( am - bm ) || ( +b.dataset.rate - +a.dataset.rate );
+				if ( am === null ) { am = Infinity; }
+				if ( bm === null ) { bm = Infinity; }
+				return ( am - bm ) || ( +b.dataset.tanb - +a.dataset.tanb );
 			}
-			// Default: rate desc, then term asc.
-			return ( +b.dataset.rate - +a.dataset.rate ) || ( +a.dataset.term - +b.dataset.term );
+			return ( +b.dataset.tanb - +a.dataset.tanb ) || ( +a.dataset.term - +b.dataset.term );
 		} );
 		return visible;
 	}
 
 	function apply() {
 		var visible = [];
+		var maxTanb = 0;
+		var beats   = 0;
+
 		cards.forEach( function ( card ) {
 			if ( matches( card ) ) {
 				visible.push( card );
 				card.hidden = false;
+				maxTanb = Math.max( maxTanb, num( card.dataset.tanb ) || 0 );
+				if ( ( num( card.dataset.tanb ) || 0 ) > aforro ) {
+					beats++;
+				}
 			} else {
 				card.hidden = true;
 			}
 		} );
 
 		sortCards( visible ).forEach( function ( card ) {
-			list.appendChild( card ); // Reorder in place (hidden ones stay too).
+			list.appendChild( card );
 		} );
 
-		count.textContent = visible.length + ( 1 === visible.length ? ' oferta' : ' ofertas' );
+		// Refresh the "★ Melhor taxa" badge to the visible leader.
+		cards.forEach( function ( card ) {
+			var topEl  = card.querySelector( '.hti-dep__top' );
+			var isTop  = ! card.hidden && ( num( card.dataset.tanb ) || 0 ) >= maxTanb && maxTanb > 0;
+			card.classList.toggle( 'is-top', isTop );
+			if ( topEl ) {
+				topEl.hidden = ! isTop;
+			}
+		} );
+
+		if ( countN ) {
+			countN.textContent = visible.length;
+		}
+		if ( beatsN ) {
+			beatsN.textContent = beats;
+		}
 		if ( empty ) {
 			empty.hidden = visible.length !== 0;
+			list.hidden = visible.length === 0;
 		}
 	}
 
-	function reset() {
-		q.value = '';
-		term.value = '';
-		bank.value = '';
-		amount.value = '';
-		sort.value = 'rate';
-		nc.checked = false;
-		mobil.checked = false;
-		nat.checked = false;
+	function onAmount() {
+		// Re-group thousands as the user types, keeping the caret at the end.
+		var n = parseAmount( amount.value );
+		amount.value = n > 0 ? group( n ) : '';
+		recalc();
 		apply();
 	}
 
-	[ q, amount ].forEach( function ( el ) {
-		el.addEventListener( 'input', apply );
+	function reset() {
+		amount.value = group( amount0 );
+		q.value = '';
+		tanb.value = 0;
+		tanbV.textContent = '0,00%';
+		bank.value = '';
+		sort.value = 'rate';
+		nc.checked = false;
+		early.checked = false;
+		naores.checked = false;
+		term = '';
+		chips.forEach( function ( c ) { c.classList.toggle( 'is-active', c.dataset.term === '' ); } );
+		recalc();
+		apply();
+	}
+
+	amount.addEventListener( 'input', onAmount );
+	q.addEventListener( 'input', apply );
+	tanb.addEventListener( 'input', function () {
+		tanbV.textContent = fmtPct( num( tanb.value ) || 0 );
+		apply();
 	} );
-	[ term, bank, sort, nc, mobil, nat ].forEach( function ( el ) {
+	[ bank, sort, nc, early, naores ].forEach( function ( el ) {
 		el.addEventListener( 'change', apply );
+	} );
+	chips.forEach( function ( chip ) {
+		chip.addEventListener( 'click', function () {
+			term = chip.dataset.term;
+			chips.forEach( function ( c ) { c.classList.toggle( 'is-active', c === chip ); } );
+			apply();
+		} );
 	} );
 	root.querySelectorAll( '.hti-dep__reset' ).forEach( function ( btn ) {
 		btn.addEventListener( 'click', reset );

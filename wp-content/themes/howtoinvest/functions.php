@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.11';
+const VERSION = '0.8.14';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -119,6 +119,15 @@ function enqueue_scripts(): void {
 		VERSION,
 		array( 'strategy' => 'defer', 'in_footer' => true )
 	);
+
+	// News hub category filter — enqueued on render of the news-hub block.
+	wp_register_script(
+		'howtoinvest-news-hub',
+		get_stylesheet_directory_uri() . '/assets/js/news-hub.js',
+		array(),
+		VERSION,
+		array( 'strategy' => 'defer', 'in_footer' => true )
+	);
 }
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
 
@@ -205,6 +214,7 @@ function strings(): array {
 		'nav_types'        => array( 'en' => 'Investor types', 'pt' => 'Perfis' ),
 		'nav_classes'      => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
 		'nav_tools'        => array( 'en' => 'Tools', 'pt' => 'Ferramentas' ),
+		'nav_deposits'     => array( 'en' => 'Term deposits', 'pt' => 'Depósitos a prazo' ),
 		'nav_glossary'     => array( 'en' => 'Glossary', 'pt' => 'Glossário' ),
 		'nav_news'         => array( 'en' => 'News', 'pt' => 'Notícias' ),
 		'foot_about'       => array( 'en' => 'About', 'pt' => 'Sobre' ),
@@ -235,6 +245,20 @@ function strings(): array {
 		'arch_learn'       => array( 'en' => 'Learn to invest', 'pt' => 'Aprender a investir' ),
 		'arch_glossary'    => array( 'en' => 'Investing glossary', 'pt' => 'Glossário de investimento' ),
 		'arch_news'        => array( 'en' => 'Financial news', 'pt' => 'Notícias financeiras' ),
+		// News hub.
+		'news_hub_title'   => array( 'en' => 'News Hub', 'pt' => 'Hub de Notícias' ),
+		'news_hub_sub'     => array( 'en' => 'Finance from every angle — markets, economy, savings and more — explained calmly and jargon-free.', 'pt' => 'As finanças de todos os ângulos — mercados, economia, poupança e mais — explicadas com calma e sem jargão.' ),
+		'news_updated'     => array( 'en' => 'Updated today', 'pt' => 'Atualizado hoje' ),
+		'news_featured'    => array( 'en' => 'Featured', 'pt' => 'Em destaque' ),
+		'news_latest'      => array( 'en' => 'Latest news', 'pt' => 'Últimas notícias' ),
+		'news_mostread'    => array( 'en' => 'Most read', 'pt' => 'Mais lidas' ),
+		'news_reads'       => array( 'en' => 'reads', 'pt' => 'leituras' ),
+		'news_termday'     => array( 'en' => 'Term of the day', 'pt' => 'Termo do dia' ),
+		'news_termday_cta' => array( 'en' => 'See in glossary →', 'pt' => 'Ver no glossário →' ),
+		'news_week'        => array( 'en' => 'This week', 'pt' => 'Esta semana' ),
+		'news_all'         => array( 'en' => 'All', 'pt' => 'Todas' ),
+		'news_min'         => array( 'en' => 'min', 'pt' => 'min' ),
+		'news_empty'       => array( 'en' => 'No news in this category yet.', 'pt' => 'Ainda não há notícias nesta categoria.' ),
 		'sub_glossary'     => array( 'en' => 'The essential terms, explained without jargon.', 'pt' => 'Os termos essenciais, explicados sem jargão.' ),
 		'sub_news'         => array( 'en' => "Calm reads on what's happening in the markets — and what it means for you.", 'pt' => 'Leituras calmas do que acontece nos mercados — e do que isso significa para ti.' ),
 		'back_learn'       => array( 'en' => '← Learn', 'pt' => '← Aprender' ),
@@ -263,6 +287,9 @@ function strings(): array {
 		'tab_home'             => array( 'en' => 'Home', 'pt' => 'Início' ),
 		'tab_nav'              => array( 'en' => 'Sections', 'pt' => 'Secções' ),
 		'nav_account'          => array( 'en' => 'Account', 'pt' => 'Conta' ),
+		'menu_explore'         => array( 'en' => 'Explore', 'pt' => 'Explorar' ),
+		'menu_more'            => array( 'en' => 'More', 'pt' => 'Mais' ),
+		'menu_privacy_terms'   => array( 'en' => 'Privacy & terms', 'pt' => 'Privacidade e termos' ),
 		// Glossary index.
 		'gloss_all'        => array( 'en' => 'All', 'pt' => 'Todos' ),
 		'gloss_filter'     => array( 'en' => 'Filter by letter', 'pt' => 'Filtrar por letra' ),
@@ -414,8 +441,114 @@ function register_dynamic_blocks(): void {
 			'render_callback' => __NAMESPACE__ . '\\render_related',
 		)
 	);
+	register_block_type(
+		'howtoinvest/drawer',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Mobile drawer menu', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_drawer',
+		)
+	);
+	register_block_type(
+		'howtoinvest/news-hub',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'News hub', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_news_hub',
+		)
+	);
 }
 add_action( 'init', __NAMESPACE__ . '\\register_dynamic_blocks' );
+
+/**
+ * The rich mobile hamburger drawer (matches the Claude Design handoff): a
+ * left slide-in panel with an "Explore" section of icon-tile links, a "More"
+ * section and a questionnaire CTA. Rendered inside the header as a sibling of
+ * the #hti-nav-check checkbox, so the CSS-only open/close still works without
+ * JS. Hidden on desktop (the inline nav rail handles that breakpoint).
+ *
+ * @return string Safe HTML.
+ */
+function render_drawer(): string {
+	$pt   = 'pt' === current_lang();
+	$home = ( $pt && function_exists( 'pll_home_url' ) ) ? pll_home_url( 'pt' ) : home_url( '/' );
+
+	// Icon paths (stroke). Keyed for reuse.
+	$ic = array(
+		'home'    => '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>',
+		'learn'   => '<path d="M4 4h9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4z"/><path d="M20 4h-4a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z"/>',
+		'gloss'   => '<path d="M4 6h16M4 12h16M4 18h10"/>',
+		'news'    => '<path d="M4 5h13v14H5a1 1 0 0 1-1-1z"/><path d="M17 8h3v9a2 2 0 0 1-2 2"/><path d="M7 9h7M7 13h7M7 17h4"/>',
+		'compare' => '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+		'search'  => '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>',
+		'about'   => '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
+		'account' => '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/>',
+		'privacy' => '<path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6z"/>',
+	);
+
+	// Primary "Explore" tiles: [url, label, icon key, tile-tint class].
+	$explore = array(
+		array( $home, t( 'tab_home' ), 'home', 'coral' ),
+		array( archive_url( 'learn', 'learn' ), t( 'nav_learn' ), 'learn', 'purple' ),
+		array( archive_url( 'glossary', 'investing-glossary' ), t( 'nav_glossary' ), 'gloss', 'amber' ),
+		array( archive_url( 'news', 'financial-news' ), t( 'nav_news' ), 'news', 'green' ),
+	);
+	$cmp = deposits_comparator_url();
+	if ( '' !== $cmp ) {
+		$explore[] = array( $cmp, t( 'nav_deposits' ), 'compare', 'coral' );
+	}
+
+	// Secondary "More" links: [url, label, icon key].
+	$more = array(
+		array( search_url(), t( 'search_label' ), 'search' ),
+		array( page_url( 'about' ), t( 'foot_about' ), 'about' ),
+		array( account_url(), t( 'nav_account' ), 'account' ),
+		array( page_url( 'privacy-policy' ), t( 'menu_privacy_terms' ), 'privacy' ),
+	);
+
+	$svg = static function ( string $path ): string {
+		return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
+	};
+
+	$out  = '<div class="hti-drawer hti-noprint">';
+	$out .= '<nav class="hti-drawer__panel" aria-label="' . esc_attr( t( 'tab_nav' ) ) . '">';
+
+	// Header: logo + close.
+	$out .= '<div class="hti-drawer__head">';
+	$out .= '<span class="hti-drawer__brand"><span class="hti-drawer__mark"><svg viewBox="0 0 64 64" width="28" height="28" fill="none" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#1E2147"/><path d="M32 12L50 17.5V32c0 10-7.5 16.6-18 20-10.5-3.4-18-10-18-20V17.5z" fill="#fff"/><g fill="#7C5CFC"><rect x="20.4" y="40" width="3.6" height="6" rx=".8"/><rect x="25.9" y="37.5" width="3.6" height="8.5" rx=".8"/><rect x="31.4" y="35" width="3.6" height="11" rx=".8"/><rect x="36.9" y="32.5" width="3.6" height="13.5" rx=".8"/></g></svg></span><span>HowToInvest</span></span>';
+	$out .= '<label class="hti-drawer__close" for="hti-nav-check" aria-label="' . esc_attr( $pt ? 'Fechar' : 'Close' ) . '"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></label>';
+	$out .= '</div>';
+
+	// Body.
+	$out .= '<div class="hti-drawer__body">';
+	$out .= '<span class="hti-drawer__eyebrow">' . esc_html( t( 'menu_explore' ) ) . '</span>';
+	$out .= '<div class="hti-drawer__group">';
+	foreach ( $explore as $it ) {
+		$out .= '<a class="hti-drawer__item" href="' . esc_url( (string) $it[0] ) . '">'
+			. '<span class="hti-drawer__tile hti-drawer__tile--' . esc_attr( $it[3] ) . '">' . $svg( $ic[ $it[2] ] ) . '</span>'
+			. '<span class="hti-drawer__label">' . esc_html( (string) $it[1] ) . '</span></a>';
+	}
+	$out .= '</div>';
+	$out .= '<div class="hti-drawer__divider"></div>';
+	$out .= '<span class="hti-drawer__eyebrow">' . esc_html( t( 'menu_more' ) ) . '</span>';
+	$out .= '<div class="hti-drawer__group">';
+	foreach ( $more as $it ) {
+		$out .= '<a class="hti-drawer__item hti-drawer__item--plain" href="' . esc_url( (string) $it[0] ) . '">'
+			. '<span class="hti-drawer__plainicon">' . $svg( $ic[ $it[2] ] ) . '</span>'
+			. '<span class="hti-drawer__label hti-drawer__label--muted">' . esc_html( (string) $it[1] ) . '</span></a>';
+	}
+	$out .= '</div></div>';
+
+	// Footer CTA.
+	$out .= '<div class="hti-drawer__foot">';
+	$out .= '<a class="hti-drawer__cta" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '">' . esc_html( t( 'cta_start_quiz' ) ) . '</a>';
+	$out .= '</div>';
+
+	$out .= '</nav></div>';
+	return $out;
+}
 
 /**
  * Related posts sharing a taxonomy term with the given post, in the current
@@ -682,6 +815,498 @@ function render_learn_feed(): string {
 			. '</div></div>';
 	}
 	$out .= '</div></div>';
+	return $out;
+}
+
+/* ============================ News hub ============================ */
+
+/**
+ * Stable accent colour + gradient for a news category, so each tag and
+ * thumbnail placeholder has a consistent look without per-term configuration.
+ *
+ * @param string $key Category slug (or '' for a neutral default).
+ * @return array{0:string,1:string} [color, gradient]
+ */
+function news_palette( string $key ): array {
+	$palette = array(
+		array( '#7C5CFC', 'linear-gradient(135deg,#EFE9FE,#DFD4FB)' ),
+		array( '#2D9C7A', 'linear-gradient(135deg,#E6F7EF,#D2E8DC)' ),
+		array( '#FF6B5E', 'linear-gradient(135deg,#FFEDE9,#FFD9D2)' ),
+		array( '#D69A1E', 'linear-gradient(135deg,#F6EEDD,#EFE2C5)' ),
+		array( '#3A8DDE', 'linear-gradient(135deg,#E4F0FB,#D2E4F4)' ),
+		array( '#A55FD0', 'linear-gradient(135deg,#F3E8FB,#E7D4F4)' ),
+		array( '#E07B54', 'linear-gradient(135deg,#FBEBE2,#F4DBC9)' ),
+		array( '#5A8C5A', 'linear-gradient(135deg,#EAF3E6,#D9E8D2)' ),
+	);
+	$i = '' === $key ? 0 : (int) ( crc32( $key ) % count( $palette ) );
+	return $palette[ $i ];
+}
+
+/**
+ * Localized name of a news category term (PT name from term meta when set).
+ *
+ * @param \WP_Term $term Term.
+ * @param bool     $pt   Whether the current language is PT.
+ */
+function news_cat_name( \WP_Term $term, bool $pt ): string {
+	if ( $pt ) {
+		$meta = get_term_meta( $term->term_id, 'hti_name_pt', true );
+		if ( is_string( $meta ) && '' !== $meta ) {
+			return $meta;
+		}
+	}
+	return $term->name;
+}
+
+/**
+ * Rough reading time in minutes for a post body.
+ *
+ * @param \WP_Post $post Post.
+ */
+function news_read_minutes( \WP_Post $post ): int {
+	$words = str_word_count( wp_strip_all_tags( strip_shortcodes( (string) $post->post_content ) ) );
+	return max( 1, (int) round( $words / 200 ) );
+}
+
+/**
+ * Decorate a news post for the hub cards (cat, colour, gradient, date, etc.).
+ *
+ * @param \WP_Post $post Post.
+ * @param bool     $pt   Current language is PT.
+ * @return array<string,mixed>
+ */
+function news_item_data( \WP_Post $post, bool $pt ): array {
+	$terms    = get_the_terms( $post, 'news_category' );
+	$cat_name = '';
+	$cat_slug = '';
+	if ( is_array( $terms ) && ! empty( $terms ) ) {
+		$cat_name = news_cat_name( $terms[0], $pt );
+		$cat_slug = $terms[0]->slug;
+	}
+	list( $color, $grad ) = news_palette( $cat_slug );
+
+	$sum = has_excerpt( $post ) ? get_the_excerpt( $post ) : wp_trim_words( wp_strip_all_tags( strip_shortcodes( (string) $post->post_content ) ), 26, '…' );
+	$thumb = has_post_thumbnail( $post ) ? get_the_post_thumbnail_url( $post, 'large' ) : '';
+
+	return array(
+		'url'   => (string) get_permalink( $post ),
+		'title' => (string) get_the_title( $post ),
+		'sum'   => (string) $sum,
+		'cat'   => $cat_name,
+		'slug'  => $cat_slug,
+		'color' => $color,
+		'grad'  => $grad,
+		'thumb' => $thumb,
+		'date'  => date_i18n( 'j M', (int) get_post_time( 'U', false, $post ) ),
+		'read'  => news_read_minutes( $post ),
+		'views' => (int) get_post_meta( $post->ID, 'hti_views', true ),
+	);
+}
+
+/**
+ * Latest published news posts (Polylang filters by current language).
+ *
+ * @param int $n How many.
+ * @return array<int,\WP_Post>
+ */
+function news_hub_posts( int $n ): array {
+	$q = new \WP_Query(
+		array(
+			'post_type'           => 'news',
+			'post_status'         => 'publish',
+			'posts_per_page'      => $n,
+			'orderby'             => 'date',
+			'order'               => 'DESC',
+			'no_found_rows'       => true,
+			'ignore_sticky_posts' => true,
+		)
+	);
+	$posts = $q->posts;
+	wp_reset_postdata();
+	return $posts;
+}
+
+/**
+ * Most-read news (by the hti_views counter), padded with the latest posts when
+ * there isn't enough view data yet so the widget is never short.
+ *
+ * @param int $n How many.
+ * @return array<int,\WP_Post>
+ */
+function news_most_read( int $n ): array {
+	$q = new \WP_Query(
+		array(
+			'post_type'           => 'news',
+			'post_status'         => 'publish',
+			'posts_per_page'      => $n,
+			'meta_key'            => 'hti_views', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'orderby'             => 'meta_value_num',
+			'order'               => 'DESC',
+			'no_found_rows'       => true,
+			'ignore_sticky_posts' => true,
+		)
+	);
+	$posts = $q->posts;
+	wp_reset_postdata();
+
+	if ( count( $posts ) < $n ) {
+		$have = array();
+		foreach ( $posts as $p ) {
+			$have[ $p->ID ] = true;
+		}
+		foreach ( news_hub_posts( $n * 2 ) as $p ) {
+			if ( count( $posts ) >= $n ) {
+				break;
+			}
+			if ( empty( $have[ $p->ID ] ) ) {
+				$posts[] = $p;
+			}
+		}
+	}
+	return $posts;
+}
+
+/**
+ * Increment a lightweight per-post view counter on single news views. Soft
+ * signal that powers the "Most read" widget; no personal data is stored.
+ */
+function track_news_view(): void {
+	if ( is_admin() || ! is_singular( 'news' ) ) {
+		return;
+	}
+	$id = get_queried_object_id();
+	if ( $id ) {
+		update_post_meta( $id, 'hti_views', (int) get_post_meta( $id, 'hti_views', true ) + 1 );
+	}
+}
+add_action( 'template_redirect', __NAMESPACE__ . '\\track_news_view' );
+
+/**
+ * The glossary "term of the day": a stable daily pick from the glossary,
+ * localized by Polylang. Null when no glossary exists.
+ *
+ * @return array{title:string,short:string,url:string}|null
+ */
+function news_term_of_day(): ?array {
+	if ( ! post_type_exists( 'glossary' ) ) {
+		return null;
+	}
+	$q = new \WP_Query(
+		array(
+			'post_type'           => 'glossary',
+			'post_status'         => 'publish',
+			'posts_per_page'      => 60,
+			'orderby'             => 'title',
+			'order'               => 'ASC',
+			'fields'              => 'ids',
+			'no_found_rows'       => true,
+			'ignore_sticky_posts' => true,
+		)
+	);
+	$ids = $q->posts;
+	wp_reset_postdata();
+	if ( empty( $ids ) ) {
+		return null;
+	}
+	$id    = (int) $ids[ (int) gmdate( 'z' ) % count( $ids ) ];
+	$short = get_the_excerpt( $id );
+	if ( '' === $short ) {
+		$short = wp_trim_words( wp_strip_all_tags( strip_shortcodes( (string) get_post_field( 'post_content', $id ) ) ), 18, '…' );
+	}
+	return array(
+		'title' => (string) get_the_title( $id ),
+		'short' => (string) $short,
+		'url'   => (string) get_permalink( $id ),
+	);
+}
+
+/**
+ * Parse the editor-managed weekly agenda (one event per line:
+ * "Day | Date | Label | Tag"). Empty/short lines are skipped.
+ *
+ * @return array<int,array{day:string,date:string,label:string,tag:string,color:string}>
+ */
+function news_events(): array {
+	$raw = (string) get_option( 'hti_news_events', '' );
+	$out = array();
+	foreach ( preg_split( '/\r\n|\r|\n/', $raw ) as $line ) {
+		$line = trim( (string) $line );
+		if ( '' === $line ) {
+			continue;
+		}
+		$parts = array_map( 'trim', explode( '|', $line ) );
+		if ( count( $parts ) < 3 ) {
+			continue;
+		}
+		$tag = $parts[3] ?? '';
+		list( $color ) = news_palette( strtolower( $tag ) );
+		$out[] = array(
+			'day'   => $parts[0],
+			'date'  => $parts[1],
+			'label' => $parts[2],
+			'tag'   => $tag,
+			'color' => $color,
+		);
+	}
+	return $out;
+}
+
+/**
+ * Register the weekly-agenda option and its editor screen (Settings → News
+ * agenda), so the "This week" sidebar can be maintained without code.
+ */
+function news_events_settings(): void {
+	register_setting(
+		'hti_news_group',
+		'hti_news_events',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_textarea_field',
+			'default'           => '',
+		)
+	);
+}
+add_action( 'admin_init', __NAMESPACE__ . '\\news_events_settings' );
+
+/**
+ * Add the News agenda editor under Settings.
+ */
+function news_events_menu(): void {
+	add_options_page(
+		__( 'Agenda de notícias', 'howtoinvest' ),
+		__( 'Notícias (agenda)', 'howtoinvest' ),
+		'manage_options',
+		'hti-news-events',
+		__NAMESPACE__ . '\\render_news_events_admin'
+	);
+}
+add_action( 'admin_menu', __NAMESPACE__ . '\\news_events_menu' );
+
+/**
+ * Render the News agenda editor page.
+ */
+function render_news_events_admin(): void {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	?>
+	<div class="wrap">
+		<h1><?php esc_html_e( 'Agenda “Esta semana” (Hub de Notícias)', 'howtoinvest' ); ?></h1>
+		<p><?php esc_html_e( 'Um evento por linha, campos separados por “|”:', 'howtoinvest' ); ?>
+			<code><?php esc_html_e( 'Dia | Data | Evento | Categoria', 'howtoinvest' ); ?></code>.
+			<?php esc_html_e( 'Exemplo:', 'howtoinvest' ); ?> <code>Ter | 15 Jul | Decisão de taxas do BCE | Mercados</code>.
+			<?php esc_html_e( 'Deixa vazio para esconder o widget.', 'howtoinvest' ); ?></p>
+		<form method="post" action="options.php">
+			<?php settings_fields( 'hti_news_group' ); ?>
+			<textarea name="hti_news_events" rows="10" class="large-text code" placeholder="Ter | 15 Jul | Decisão de taxas do BCE | Mercados"><?php echo esc_textarea( (string) get_option( 'hti_news_events', '' ) ); ?></textarea>
+			<?php submit_button( __( 'Guardar agenda', 'howtoinvest' ) ); ?>
+		</form>
+	</div>
+	<?php
+}
+
+/**
+ * News hub: a featured story + secondary picks, category tabs, a latest-news
+ * list and a sidebar (most read, term of the day, this week's agenda,
+ * newsletter). Replaces the plain Query Loop on the news archive.
+ *
+ * @return string Safe HTML.
+ */
+function render_news_hub(): string {
+	if ( ! post_type_exists( 'news' ) ) {
+		return '';
+	}
+	$pt    = 'pt' === current_lang();
+	$posts = news_hub_posts( 30 );
+	if ( empty( $posts ) ) {
+		return '';
+	}
+	wp_enqueue_script( 'howtoinvest-news-hub' );
+
+	$items = array();
+	foreach ( $posts as $p ) {
+		$items[] = news_item_data( $p, $pt );
+	}
+
+	// Category tabs from the news_category taxonomy (PT names when set).
+	$tabs  = array( array( '', t( 'news_all' ) ) );
+	$terms = get_terms( array( 'taxonomy' => 'news_category', 'hide_empty' => true ) );
+	if ( ! is_wp_error( $terms ) ) {
+		foreach ( $terms as $term ) {
+			$tabs[] = array( $term->slug, news_cat_name( $term, $pt ) );
+		}
+	}
+
+	$out  = '<section class="hti-newshub" data-cat="">';
+
+	// Header.
+	$out .= '<div class="hti-newshub__head">';
+	$out .= '<span class="hti-newshub__eyebrow"><span class="hti-newshub__eyebrow-dot"></span>' . esc_html( t( 'news_updated' ) ) . '</span>';
+	$out .= '<h1 class="hti-newshub__title">' . esc_html( t( 'news_hub_title' ) ) . '</h1>';
+	$out .= '<p class="hti-newshub__sub">' . esc_html( t( 'news_hub_sub' ) ) . '</p>';
+	$out .= '</div>';
+
+	// Category tabs.
+	$out .= '<div class="hti-newshub__tabs" role="tablist">';
+	foreach ( $tabs as $i => $tab ) {
+		$out .= '<button type="button" class="hti-newshub__tab' . ( 0 === $i ? ' is-active' : '' ) . '" data-cat="' . esc_attr( (string) $tab[0] ) . '">' . esc_html( (string) $tab[1] ) . '</button>';
+	}
+	$out .= '</div>';
+
+	$out .= '<div class="hti-newshub__layout">';
+	$out .= '<div class="hti-newshub__main">';
+
+	// Featured block (latest + two secondary). Hidden by JS when a category tab
+	// other than "All" is active.
+	$hero = $items[0];
+	$out .= '<div class="hti-newshub__feature">';
+	$out .= news_hub_hero_html( $hero, t( 'news_featured' ), t( 'news_min' ) );
+	if ( isset( $items[1] ) || isset( $items[2] ) ) {
+		$out .= '<div class="hti-newshub__feature-side">';
+		foreach ( array_slice( $items, 1, 2 ) as $it ) {
+			$out .= news_hub_side_html( $it );
+		}
+		$out .= '</div>';
+	}
+	$out .= '</div>';
+
+	// Latest list. Items 0..2 are duplicated here (hidden until a category
+	// filter reveals them) so filtering never loses the featured stories.
+	$out .= '<h2 class="hti-newshub__listhead"><span class="hti-newshub__bar"></span>' . esc_html( t( 'news_latest' ) ) . '</h2>';
+	$out .= '<div class="hti-newshub__list">';
+	foreach ( $items as $i => $it ) {
+		$out .= news_hub_list_html( $it, $i < 3, t( 'news_min' ) );
+	}
+	$out .= '</div>';
+	$out .= '<p class="hti-newshub__empty" hidden>' . esc_html( t( 'news_empty' ) ) . '</p>';
+
+	$out .= '</div>'; // main
+
+	// Sidebar.
+	$out .= '<aside class="hti-newshub__aside">';
+	$out .= news_hub_mostread_html( $pt );
+	$out .= news_hub_termday_html();
+	$out .= news_hub_week_html();
+	$out .= '<div class="hti-newshub__nl">' . do_shortcode( '[hti_subscribe variant="digest"]' ) . '</div>';
+	$out .= '</aside>';
+
+	$out .= '</div></section>';
+	return $out;
+}
+
+/**
+ * Featured (hero) card markup.
+ *
+ * @param array<string,mixed> $it      Item data.
+ * @param string              $badge   "Featured" label.
+ * @param string              $min     "min" label.
+ */
+function news_hub_hero_html( array $it, string $badge, string $min ): string {
+	$bg = '' !== $it['thumb']
+		? 'background-image:url(' . esc_url( (string) $it['thumb'] ) . ');background-size:cover;background-position:center;'
+		: 'background:' . esc_attr( (string) $it['grad'] ) . ';';
+	$out  = '<a class="hti-newshub__hero" href="' . esc_url( (string) $it['url'] ) . '" data-cat="' . esc_attr( (string) $it['slug'] ) . '">';
+	$out .= '<span class="hti-newshub__hero-media" style="' . $bg . '"><span class="hti-newshub__hero-badge">' . esc_html( $badge ) . '</span></span>';
+	$out .= '<span class="hti-newshub__hero-body">';
+	$out .= '<span class="hti-newshub__meta"><span class="hti-newshub__cat" style="color:' . esc_attr( (string) $it['color'] ) . '">' . esc_html( (string) $it['cat'] ) . '</span><span class="hti-newshub__dot">' . esc_html( (string) $it['date'] ) . ' · ' . esc_html( (string) $it['read'] ) . ' ' . esc_html( $min ) . '</span></span>';
+	$out .= '<span class="hti-newshub__hero-title">' . esc_html( (string) $it['title'] ) . '</span>';
+	$out .= '<span class="hti-newshub__hero-sum">' . esc_html( (string) $it['sum'] ) . '</span>';
+	$out .= '</span></a>';
+	return $out;
+}
+
+/**
+ * Small secondary featured card markup.
+ *
+ * @param array<string,mixed> $it Item data.
+ */
+function news_hub_side_html( array $it ): string {
+	$bg = '' !== $it['thumb']
+		? 'background-image:url(' . esc_url( (string) $it['thumb'] ) . ');background-size:cover;background-position:center;'
+		: 'background:' . esc_attr( (string) $it['grad'] ) . ';';
+	$out  = '<a class="hti-newshub__side" href="' . esc_url( (string) $it['url'] ) . '" data-cat="' . esc_attr( (string) $it['slug'] ) . '">';
+	$out .= '<span class="hti-newshub__side-media" style="' . $bg . '"></span>';
+	$out .= '<span class="hti-newshub__side-body"><span class="hti-newshub__cat" style="color:' . esc_attr( (string) $it['color'] ) . '">' . esc_html( (string) $it['cat'] ) . '</span><span class="hti-newshub__side-title">' . esc_html( (string) $it['title'] ) . '</span></span>';
+	$out .= '</a>';
+	return $out;
+}
+
+/**
+ * Latest-list row markup.
+ *
+ * @param array<string,mixed> $it  Item data.
+ * @param bool                $dup Whether this row duplicates a featured story.
+ * @param string              $min "min" label.
+ */
+function news_hub_list_html( array $it, bool $dup, string $min ): string {
+	$bg = '' !== $it['thumb']
+		? 'background-image:url(' . esc_url( (string) $it['thumb'] ) . ');background-size:cover;background-position:center;'
+		: 'background:' . esc_attr( (string) $it['grad'] ) . ';';
+	$cls = 'hti-newshub__row' . ( $dup ? ' is-dup' : '' );
+	$out  = '<a class="' . $cls . '"' . ( $dup ? ' hidden' : '' ) . ' href="' . esc_url( (string) $it['url'] ) . '" data-cat="' . esc_attr( (string) $it['slug'] ) . '">';
+	$out .= '<span class="hti-newshub__row-media" style="' . $bg . '"></span>';
+	$out .= '<span class="hti-newshub__row-body">';
+	$out .= '<span class="hti-newshub__meta"><span class="hti-newshub__cat" style="color:' . esc_attr( (string) $it['color'] ) . '">' . esc_html( (string) $it['cat'] ) . '</span><span class="hti-newshub__dot">' . esc_html( (string) $it['date'] ) . ' · ' . esc_html( (string) $it['read'] ) . ' ' . esc_html( $min ) . '</span></span>';
+	$out .= '<span class="hti-newshub__row-title">' . esc_html( (string) $it['title'] ) . '</span>';
+	$out .= '<span class="hti-newshub__row-sum">' . esc_html( (string) $it['sum'] ) . '</span>';
+	$out .= '</span></a>';
+	return $out;
+}
+
+/**
+ * "Most read" sidebar widget.
+ *
+ * @param bool $pt Current language is PT.
+ */
+function news_hub_mostread_html( bool $pt ): string {
+	$posts = news_most_read( 5 );
+	if ( empty( $posts ) ) {
+		return '';
+	}
+	$out  = '<div class="hti-newshub__card"><h3 class="hti-newshub__card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B5E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg>' . esc_html( t( 'news_mostread' ) ) . '</h3>';
+	$rank = 0;
+	foreach ( $posts as $p ) {
+		++$rank;
+		$it    = news_item_data( $p, $pt );
+		$views = (int) $it['views'];
+		$vf    = $views >= 1000 ? number_format_i18n( $views / 1000, 1 ) . 'k' : (string) $views;
+		$meta  = $views > 0 ? $vf . ' ' . t( 'news_reads' ) . ' · ' . $it['cat'] : (string) $it['cat'];
+		$out  .= '<a class="hti-newshub__rank" href="' . esc_url( (string) $it['url'] ) . '"><span class="hti-newshub__rank-n">' . esc_html( (string) $rank ) . '</span><span class="hti-newshub__rank-body"><span class="hti-newshub__rank-t">' . esc_html( (string) $it['title'] ) . '</span><span class="hti-newshub__rank-m">' . esc_html( $meta ) . '</span></span></a>';
+	}
+	$out .= '</div>';
+	return $out;
+}
+
+/**
+ * "Term of the day" sidebar widget.
+ */
+function news_hub_termday_html(): string {
+	$term = news_term_of_day();
+	if ( null === $term ) {
+		return '';
+	}
+	$out  = '<div class="hti-newshub__termday">';
+	$out .= '<span class="hti-newshub__termday-eyebrow">' . esc_html( t( 'news_termday' ) ) . '</span>';
+	$out .= '<h3 class="hti-newshub__termday-t">' . esc_html( $term['title'] ) . '</h3>';
+	$out .= '<p class="hti-newshub__termday-d">' . esc_html( $term['short'] ) . '</p>';
+	$out .= '<a class="hti-newshub__termday-cta" href="' . esc_url( $term['url'] ) . '">' . esc_html( t( 'news_termday_cta' ) ) . '</a>';
+	$out .= '</div>';
+	return $out;
+}
+
+/**
+ * "This week" agenda sidebar widget (editor-managed). Empty string if no events.
+ */
+function news_hub_week_html(): string {
+	$events = news_events();
+	if ( empty( $events ) ) {
+		return '';
+	}
+	$out  = '<div class="hti-newshub__card"><h3 class="hti-newshub__card-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' . esc_html( t( 'news_week' ) ) . '</h3>';
+	foreach ( $events as $e ) {
+		$out .= '<div class="hti-newshub__event"><div class="hti-newshub__event-when"><div class="hti-newshub__event-day">' . esc_html( $e['day'] ) . '</div><div class="hti-newshub__event-date">' . esc_html( $e['date'] ) . '</div></div><div class="hti-newshub__event-body"><div class="hti-newshub__event-label">' . esc_html( $e['label'] ) . '</div>' . ( '' !== $e['tag'] ? '<span class="hti-newshub__event-tag" style="color:' . esc_attr( $e['color'] ) . '">' . esc_html( $e['tag'] ) . '</span>' : '' ) . '</div></div>';
+	}
+	$out .= '</div>';
 	return $out;
 }
 
@@ -1242,6 +1867,10 @@ function default_menu( string $location, string $extra ): string {
 			array( archive_url( 'glossary', '/investing-glossary/' ), t( 'nav_glossary' ) ),
 			array( archive_url( 'news', '/financial-news/' ), t( 'nav_news' ) ),
 		);
+		// The term-deposit comparator is a PT-only tool: surface it in the PT nav.
+		if ( '' !== deposits_comparator_url() ) {
+			array_splice( $items, 4, 0, array( array( deposits_comparator_url(), t( 'nav_deposits' ) ) ) );
+		}
 	}
 
 	$list = '';
@@ -1251,6 +1880,46 @@ function default_menu( string $location, string $extra ): string {
 
 	return '<nav class="' . esc_attr( trim( 'hti-menu-nav ' . $extra ) ) . '"><ul class="hti-menu">' . $list . '</ul></nav>';
 }
+
+/**
+ * URL of the term-deposit comparator, but only in Portuguese — it's a PT-only
+ * tool, so it has no place in the English nav. Returns '' when not applicable.
+ *
+ * @return string Localized URL, or empty string.
+ */
+function deposits_comparator_url(): string {
+	if ( 'pt' !== current_lang() ) {
+		return '';
+	}
+	return home_url( '/pt/comparador-de-depositos/' );
+}
+
+/**
+ * When a WP-managed menu is assigned to the primary location, append the
+ * term-deposit comparator to it (PT only), so it shows in the desktop nav and
+ * the mobile drawer even though it isn't a managed menu item. The default_menu()
+ * fallback handles the case where no menu is assigned.
+ *
+ * @param string   $items HTML list of <li> menu items.
+ * @param \stdClass $args  wp_nav_menu() arguments.
+ * @return string Augmented menu HTML.
+ */
+function append_deposits_menu_item( string $items, $args ): string {
+	$location = isset( $args->theme_location ) ? (string) $args->theme_location : '';
+	if ( 'primary' !== $location ) {
+		return $items;
+	}
+	$url = deposits_comparator_url();
+	if ( '' === $url ) {
+		return $items;
+	}
+	// Don't duplicate it if the editor already added the page to the menu.
+	if ( false !== strpos( $items, 'comparador-de-depositos' ) ) {
+		return $items;
+	}
+	return $items . '<li class="menu-item hti-menu-deposits"><a href="' . esc_url( $url ) . '">' . esc_html( t( 'nav_deposits' ) ) . '</a></li>';
+}
+add_filter( 'wp_nav_menu_items', __NAMESPACE__ . '\\append_deposits_menu_item', 10, 2 );
 
 /**
  * Permalink of a custom post type archive (Learn, Glossary, News), localized
