@@ -13,8 +13,8 @@
 
 ?>
 <!-- wp:group {"className":"hti-term","layout":{"type":"constrained"}} -->
-<div class="wp-block-group hti-term"><!-- wp:paragraph {"className":"hti-eyebrow"} -->
-<p class="hti-eyebrow"><a href="<?php echo esc_url( get_post_type_archive_link( 'glossary' ) ); ?>"><?php echo esc_html__( '← Glossary', 'howtoinvest' ); ?></a></p>
+<div class="wp-block-group hti-term"><!-- wp:paragraph {"className":"hti-back-wrap"} -->
+<p class="hti-back-wrap"><a class="hti-back" href="<?php echo esc_url( get_post_type_archive_link( 'glossary' ) ); ?>"><?php echo esc_html( \HowToInvest\Theme\t( 'back_glossary' ) ); ?></a></p>
 <!-- /wp:paragraph -->
 
 <!-- wp:post-title {"level":1} /-->
