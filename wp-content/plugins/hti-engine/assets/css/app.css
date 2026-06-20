@@ -79,6 +79,11 @@
 	margin: 0 0 1.25rem;
 	text-wrap: balance;
 }
+/* The question is focused on each step for screen-reader announcement, not
+   keyboard interaction (tabindex=-1), so suppress the focus box. */
+.hti-question:focus {
+	outline: none;
+}
 .hti-info {
 	display: flex;
 	gap: 0.7rem;
