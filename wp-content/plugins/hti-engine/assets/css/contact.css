@@ -72,7 +72,7 @@ textarea.hti-contact__input {
 	padding: 0.75rem 1.5rem;
 	border: 0;
 	border-radius: 999px;
-	background: var(--wp--preset--color--accent, #ff6b5e);
+	background: var(--wp--preset--color--accent-strong, #6B46E0);
 	color: #fff;
 	font: inherit;
 	font-weight: 600;
