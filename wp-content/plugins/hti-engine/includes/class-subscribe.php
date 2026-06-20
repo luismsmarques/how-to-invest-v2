@@ -330,6 +330,19 @@ class Subscribe {
 			esc_attr( $bg ),
 			esc_html( $msg )
 		);
+
+		// Report the (no-JS) confirm / unsubscribe outcome to analytics, once the
+		// tracking helper has loaded (deferred scripts run before DOMContentLoaded).
+		$event = array(
+			'confirmed'    => 'newsletter_confirmed',
+			'unsubscribed' => 'newsletter_unsubscribe',
+		)[ $state ] ?? '';
+		if ( '' !== $event ) {
+			printf(
+				'<script>document.addEventListener("DOMContentLoaded",function(){if(window.HTITrack){window.HTITrack.event(%s);}});</script>',
+				wp_json_encode( $event )
+			);
+		}
 	}
 
 	/* ---------- emails ---------- */

@@ -15,6 +15,12 @@
 	var status = form.querySelector( '.hti-subscribe__status' );
 	var submit = form.querySelector( '.hti-subscribe__submit' );
 
+	function track( name, params ) {
+		if ( window.HTITrack ) {
+			window.HTITrack.event( name, params );
+		}
+	}
+
 	function setStatus( msg, state ) {
 		if ( status ) {
 			status.textContent = msg || '';
@@ -54,6 +60,10 @@
 				if ( r.ok ) {
 					form.reset();
 					setStatus( strings.sent, 'success' );
+					track( 'newsletter_subscribe_submit', {
+						variant: cfg.variant || 'inline',
+						locale: cfg.locale || 'en'
+					} );
 					return;
 				}
 				if ( r.status === 429 ) {

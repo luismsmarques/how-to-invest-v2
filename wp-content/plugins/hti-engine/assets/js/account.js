@@ -31,6 +31,12 @@
 		return node;
 	}
 
+	function track( name, params ) {
+		if ( window.HTITrack ) {
+			window.HTITrack.event( name, params );
+		}
+	}
+
 	function request( path, method, body ) {
 		return fetch( ctx.restBase + path, {
 			method: method,
@@ -123,6 +129,7 @@
 				}
 				request( '/register', 'POST', body ).then( function ( res ) {
 					if ( res.ok ) {
+						track( 'sign_up', { method: 'email' } );
 						// Double opt-in: no sign-in yet — the user confirms by email.
 						callbacks.onPending( ( res.data && res.data.message ) || s.check_email );
 					} else {
@@ -140,6 +147,7 @@
 				if ( res.ok && res.data && res.data.nonce ) {
 					nonce = res.data.nonce;
 					loggedIn = true;
+					track( 'login', { method: 'email' } );
 					callbacks.onLogin();
 				} else {
 					err.textContent = ( res.data && res.data.message ) || s.error;
@@ -159,6 +167,7 @@
 
 	function mountSave( container, sessionToken ) {
 		container.innerHTML = '';
+		track( 'save_profile_start', { logged_in: loggedIn ? 1 : 0 } );
 		var box = el( 'section', { class: 'hti-save' } );
 		box.appendChild( el( 'h3', null, s.save_profile ) );
 
@@ -168,6 +177,7 @@
 			request( '/claim-profile', 'POST', { session_token: sessionToken } ).then( function ( res ) {
 				box.innerHTML = '';
 				if ( res.ok ) {
+					track( 'save_profile', {} );
 					box.appendChild( el( 'p', { class: 'hti-save-done' }, s.saved ) );
 					box.appendChild( el( 'a', { class: 'hti-btn hti-btn-secondary', href: ctx.accountUrl }, s.view_profiles ) );
 				} else {
@@ -397,6 +407,10 @@
 				question: q.value
 			} ).then( function ( res ) {
 				if ( res.ok ) {
+					track( 'onboarding_complete', {
+						chosen_language: lang,
+						newsletter: nl.checked ? freq.value : 'none'
+					} );
 					ctx.onboarded = true;
 					var go = res.data && res.data.redirect;
 					if ( go && lang !== ctx.pageLocale ) {
@@ -567,6 +581,7 @@
 			}
 			request( '/account', 'DELETE', { confirm: true } ).then( function ( res ) {
 				if ( res.ok && res.data ) {
+					track( 'account_delete_request', {} );
 					deleteStatus.textContent = s.deletion_set;
 					renderDeletion( res.data.date || '' );
 				}

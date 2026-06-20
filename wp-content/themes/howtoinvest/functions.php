@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.3';
+const VERSION = '0.8.4';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -603,7 +603,7 @@ function render_lang_switcher(): string {
  */
 function render_header_cta(): string {
 	return '<div class="wp-block-buttons hti-cta"><div class="wp-block-button is-style-fill">'
-		. '<a class="wp-block-button__link wp-element-button" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '">'
+		. '<a class="wp-block-button__link wp-element-button" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '" data-hti-track="cta_click" data-htip-location="header">'
 		. esc_html( t( 'cta_get_started' ) ) . '</a></div></div>';
 }
 
@@ -618,8 +618,8 @@ function render_homepage_intro(): string {
 	$html .= '<h1 class="wp-block-heading has-text-align-center hti-hero__title has-huge-font-size">' . esc_html( t( 'hero_title' ) ) . '</h1>';
 	$html .= '<p class="has-text-align-center hti-hero__lead has-muted-color has-text-color has-large-font-size">' . esc_html( t( 'hero_lead' ) ) . '</p>';
 	$html .= '<div class="wp-block-buttons hti-hero__actions">';
-	$html .= '<div class="wp-block-button is-style-fill"><a class="wp-block-button__link wp-element-button" href="' . $quiz . '">' . esc_html( t( 'cta_start_quiz' ) ) . '</a></div>';
-	$html .= '<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#hti-articles">' . esc_html( t( 'hero_explore' ) ) . '</a></div>';
+	$html .= '<div class="wp-block-button is-style-fill"><a class="wp-block-button__link wp-element-button" href="' . $quiz . '" data-hti-track="cta_click" data-htip-location="hero_primary">' . esc_html( t( 'cta_start_quiz' ) ) . '</a></div>';
+	$html .= '<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#hti-articles" data-hti-track="cta_click" data-htip-location="hero_explore">' . esc_html( t( 'hero_explore' ) ) . '</a></div>';
 	$html .= '</div>';
 	$html .= '<p class="has-text-align-center hti-hero__fineprint has-small-font-size">' . esc_html( t( 'hero_fineprint' ) ) . '</p>';
 	$html .= '</div>';
@@ -658,6 +658,8 @@ function register_t_block(): void {
 				'tag'  => array( 'type' => 'string', 'default' => 'span' ),
 				'cls'  => array( 'type' => 'string', 'default' => '' ),
 				'href' => array( 'type' => 'string', 'default' => '' ),
+				'trk'  => array( 'type' => 'string', 'default' => '' ),
+				'loc'  => array( 'type' => 'string', 'default' => '' ),
 			),
 			'render_callback' => __NAMESPACE__ . '\\render_t_block',
 		)
@@ -686,6 +688,16 @@ function render_t_block( array $a ): string {
 		$href  = isset( $a['href'] ) ? (string) $a['href'] : '#';
 		$href  = str_starts_with( $href, '/' ) ? localize_internal_href( $href ) : $href;
 		$attr .= ' href="' . esc_url( $href ) . '"';
+	}
+
+	// Optional analytics tagging: trk = event name, loc = location param.
+	$trk = isset( $a['trk'] ) ? sanitize_key( (string) $a['trk'] ) : '';
+	if ( '' !== $trk ) {
+		$attr .= ' data-hti-track="' . esc_attr( $trk ) . '"';
+		$loc   = isset( $a['loc'] ) ? sanitize_key( (string) $a['loc'] ) : '';
+		if ( '' !== $loc ) {
+			$attr .= ' data-htip-location="' . esc_attr( $loc ) . '"';
+		}
 	}
 
 	return '<' . $tag . $attr . '>' . esc_html( $text ) . '</' . $tag . '>';

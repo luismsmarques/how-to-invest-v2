@@ -15,6 +15,12 @@
 	var status = form.querySelector( '.hti-contact__status' );
 	var submit = form.querySelector( '.hti-contact__submit' );
 
+	function track( name, params ) {
+		if ( window.HTITrack ) {
+			window.HTITrack.event( name, params );
+		}
+	}
+
 	function setStatus( message, state ) {
 		if ( ! status ) {
 			return;
@@ -66,6 +72,7 @@
 					return res.json().then( function () {
 						form.reset();
 						setStatus( strings.sent, 'success' );
+						track( 'contact_submit', { locale: cfg.locale || 'en' } );
 					} );
 				}
 				if ( res.status === 429 ) {
