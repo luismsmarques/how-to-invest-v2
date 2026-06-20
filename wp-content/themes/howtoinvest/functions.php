@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.11';
+const VERSION = '0.8.12';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -205,6 +205,7 @@ function strings(): array {
 		'nav_types'        => array( 'en' => 'Investor types', 'pt' => 'Perfis' ),
 		'nav_classes'      => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
 		'nav_tools'        => array( 'en' => 'Tools', 'pt' => 'Ferramentas' ),
+		'nav_deposits'     => array( 'en' => 'Term deposits', 'pt' => 'Depósitos a prazo' ),
 		'nav_glossary'     => array( 'en' => 'Glossary', 'pt' => 'Glossário' ),
 		'nav_news'         => array( 'en' => 'News', 'pt' => 'Notícias' ),
 		'foot_about'       => array( 'en' => 'About', 'pt' => 'Sobre' ),
@@ -1242,6 +1243,10 @@ function default_menu( string $location, string $extra ): string {
 			array( archive_url( 'glossary', '/investing-glossary/' ), t( 'nav_glossary' ) ),
 			array( archive_url( 'news', '/financial-news/' ), t( 'nav_news' ) ),
 		);
+		// The term-deposit comparator is a PT-only tool: surface it in the PT nav.
+		if ( '' !== deposits_comparator_url() ) {
+			array_splice( $items, 4, 0, array( array( deposits_comparator_url(), t( 'nav_deposits' ) ) ) );
+		}
 	}
 
 	$list = '';
@@ -1251,6 +1256,46 @@ function default_menu( string $location, string $extra ): string {
 
 	return '<nav class="' . esc_attr( trim( 'hti-menu-nav ' . $extra ) ) . '"><ul class="hti-menu">' . $list . '</ul></nav>';
 }
+
+/**
+ * URL of the term-deposit comparator, but only in Portuguese — it's a PT-only
+ * tool, so it has no place in the English nav. Returns '' when not applicable.
+ *
+ * @return string Localized URL, or empty string.
+ */
+function deposits_comparator_url(): string {
+	if ( 'pt' !== current_lang() ) {
+		return '';
+	}
+	return home_url( '/pt/comparador-de-depositos/' );
+}
+
+/**
+ * When a WP-managed menu is assigned to the primary location, append the
+ * term-deposit comparator to it (PT only), so it shows in the desktop nav and
+ * the mobile drawer even though it isn't a managed menu item. The default_menu()
+ * fallback handles the case where no menu is assigned.
+ *
+ * @param string   $items HTML list of <li> menu items.
+ * @param \stdClass $args  wp_nav_menu() arguments.
+ * @return string Augmented menu HTML.
+ */
+function append_deposits_menu_item( string $items, $args ): string {
+	$location = isset( $args->theme_location ) ? (string) $args->theme_location : '';
+	if ( 'primary' !== $location ) {
+		return $items;
+	}
+	$url = deposits_comparator_url();
+	if ( '' === $url ) {
+		return $items;
+	}
+	// Don't duplicate it if the editor already added the page to the menu.
+	if ( false !== strpos( $items, 'comparador-de-depositos' ) ) {
+		return $items;
+	}
+	return $items . '<li class="menu-item hti-menu-deposits"><a href="' . esc_url( $url ) . '">' . esc_html( t( 'nav_deposits' ) ) . '</a></li>';
+}
+add_filter( 'wp_nav_menu_items', __NAMESPACE__ . '\\append_deposits_menu_item', 10, 2 );
 
 /**
  * Permalink of a custom post type archive (Learn, Glossary, News), localized
