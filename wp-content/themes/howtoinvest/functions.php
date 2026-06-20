@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.21';
+const VERSION = '0.8.22';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -886,7 +886,7 @@ function news_item_data( \WP_Post $post, bool $pt ): array {
 	list( $color, $grad ) = news_palette( $cat_slug );
 
 	$sum = has_excerpt( $post ) ? get_the_excerpt( $post ) : wp_trim_words( wp_strip_all_tags( strip_shortcodes( (string) $post->post_content ) ), 26, '…' );
-	$thumb = has_post_thumbnail( $post ) ? get_the_post_thumbnail_url( $post, 'large' ) : '';
+	$thumb = has_post_thumbnail( $post ) ? get_the_post_thumbnail_url( $post, 'medium_large' ) : '';
 
 	return array(
 		'url'   => (string) get_permalink( $post ),
@@ -1266,7 +1266,7 @@ function render_news_hub(): string {
 	$out .= '</div>';
 
 	// Category tabs.
-	$out .= '<div class="hti-newshub__tabs" role="tablist">';
+	$out .= '<div class="hti-newshub__tabs" role="group" aria-label="' . esc_attr( $pt ? 'Filtrar por categoria' : 'Filter by category' ) . '">';
 	foreach ( $tabs as $i => $tab ) {
 		$out .= '<button type="button" class="hti-newshub__tab' . ( 0 === $i ? ' is-active' : '' ) . '" data-cat="' . esc_attr( (string) $tab[0] ) . '">' . esc_html( (string) $tab[1] ) . '</button>';
 	}
