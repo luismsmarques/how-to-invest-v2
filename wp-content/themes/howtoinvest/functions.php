@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.6';
+const VERSION = '0.8.7';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -244,6 +244,21 @@ function strings(): array {
 		'news_cta_btn'     => array( 'en' => 'Discover my profile →', 'pt' => 'Descobrir o meu perfil →' ),
 		'related_read'     => array( 'en' => 'Keep reading', 'pt' => 'Continua a ler' ),
 		'related_terms'    => array( 'en' => 'Related terms', 'pt' => 'Termos relacionados' ),
+		// Search.
+		'search_label'         => array( 'en' => 'Search', 'pt' => 'Pesquisar' ),
+		'search_title'         => array( 'en' => 'Search', 'pt' => 'Pesquisar' ),
+		'search_placeholder'   => array( 'en' => 'Try “diversification”, “emergency fund”…', 'pt' => 'Procura por «diversificação», «fundo de emergência»…' ),
+		'search_popular'       => array( 'en' => 'Popular searches', 'pt' => 'Pesquisas populares' ),
+		'search_count'         => array( 'en' => '%1$s results for “%2$s”', 'pt' => '%1$s resultados para «%2$s»' ),
+		'search_none'          => array( 'en' => 'No results for “%s”', 'pt' => 'Sem resultados para «%s»' ),
+		'search_try'           => array( 'en' => 'Try other words, or start here:', 'pt' => 'Experimenta outras palavras, ou começa por aqui:' ),
+		'search_all_articles'  => array( 'en' => 'See all articles', 'pt' => 'Ver todos os artigos' ),
+		'search_open_glossary' => array( 'en' => 'Open the glossary', 'pt' => 'Abrir o glossário' ),
+		// 404.
+		'nf_title'             => array( 'en' => 'This page doesn’t exist.', 'pt' => 'Esta página não existe.' ),
+		'nf_body'              => array( 'en' => 'The link may be wrong or the page was moved. No worries — there’s always somewhere to keep going.', 'pt' => 'O link pode estar errado ou a página foi movida. Mas não há crise — há sempre por onde continuar.' ),
+		'nf_home'              => array( 'en' => 'Back to home', 'pt' => 'Voltar ao início' ),
+		'nf_search'            => array( 'en' => 'Search', 'pt' => 'Pesquisar' ),
 		// Glossary index.
 		'gloss_all'        => array( 'en' => 'All', 'pt' => 'Todos' ),
 		'gloss_filter'     => array( 'en' => 'Filter by letter', 'pt' => 'Filtrar por letra' ),
@@ -321,6 +336,33 @@ function register_dynamic_blocks(): void {
 			'title'           => __( 'Language switcher', 'howtoinvest' ),
 			'category'        => 'theme',
 			'render_callback' => __NAMESPACE__ . '\\render_lang_switcher',
+		)
+	);
+	register_block_type(
+		'howtoinvest/header-search',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Header search icon', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_header_search',
+		)
+	);
+	register_block_type(
+		'howtoinvest/search',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Search results', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_search',
+		)
+	);
+	register_block_type(
+		'howtoinvest/notfound',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Not found (404)', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_notfound',
 		)
 	);
 	register_block_type(
@@ -761,6 +803,131 @@ function render_header_cta(): string {
 	return '<div class="wp-block-buttons hti-cta"><div class="wp-block-button is-style-fill">'
 		. '<a class="wp-block-button__link wp-element-button" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '" data-hti-track="cta_click" data-htip-location="header">'
 		. esc_html( t( 'cta_get_started' ) ) . '</a></div></div>';
+}
+
+/**
+ * Search URL for the current language ( /?s= or /pt/?s= ).
+ */
+function search_url(): string {
+	$base = ( 'pt' === current_lang() && function_exists( 'pll_home_url' ) ) ? pll_home_url( 'pt' ) : home_url( '/' );
+	return add_query_arg( 's', '', $base );
+}
+
+/**
+ * Header search icon (links to the language-aware search page).
+ */
+function render_header_search(): string {
+	$svg = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>';
+	return '<a class="hti-header__search" href="' . esc_url( search_url() ) . '" aria-label="' . esc_attr( t( 'search_label' ) ) . '">' . $svg . '</a>';
+}
+
+/**
+ * Search results page: a search box plus results across our content types
+ * (learn, news, glossary, pages), language-aware. Falls back to popular
+ * searches when empty and a friendly empty-state when nothing matches.
+ */
+function render_search(): string {
+	$pt    = 'pt' === current_lang();
+	$query = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['s'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public search.
+	$query = trim( $query );
+
+	$icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>';
+
+	$out  = '<section class="hti-search">';
+	$out .= '<h1 class="hti-search__title">' . esc_html( t( 'search_title' ) ) . '</h1>';
+	$out .= '<form class="hti-search__form" role="search" method="get" action="' . esc_url( $pt && function_exists( 'pll_home_url' ) ? pll_home_url( 'pt' ) : home_url( '/' ) ) . '">';
+	$out .= '<span class="hti-search__icon">' . $icon . '</span>';
+	$out .= '<input type="search" name="s" class="hti-search__input" value="' . esc_attr( $query ) . '" placeholder="' . esc_attr( t( 'search_placeholder' ) ) . '" aria-label="' . esc_attr( t( 'search_title' ) ) . '" autofocus>';
+	$out .= '</form>';
+
+	if ( '' === $query ) {
+		// Empty state: popular searches.
+		$popular = $pt
+			? array( 'diversificação', 'fundo de emergência', 'ações', 'obrigações' )
+			: array( 'diversification', 'emergency fund', 'stocks', 'bonds' );
+		$out    .= '<div class="hti-search__popular"><span class="hti-search__eyebrow">' . esc_html( t( 'search_popular' ) ) . '</span><div class="hti-search__pills">';
+		foreach ( $popular as $term ) {
+			$out .= '<a class="hti-search__pill" href="' . esc_url( add_query_arg( 's', rawurlencode( $term ), $pt && function_exists( 'pll_home_url' ) ? pll_home_url( 'pt' ) : home_url( '/' ) ) ) . '">' . esc_html( $term ) . '</a>';
+		}
+		$out .= '</div></div></section>';
+		return $out;
+	}
+
+	$results = new \WP_Query(
+		array(
+			's'                   => $query,
+			'post_type'           => array( 'learn', 'news', 'glossary', 'page' ),
+			'post_status'         => 'publish',
+			'posts_per_page'      => 20,
+			'no_found_rows'       => true,
+			'ignore_sticky_posts' => true,
+		)
+	);
+
+	$kinds = array(
+		'learn'    => array( 'en' => 'Article', 'pt' => 'Artigo' ),
+		'news'     => array( 'en' => 'News', 'pt' => 'Notícia' ),
+		'glossary' => array( 'en' => 'Term', 'pt' => 'Term' ),
+		'page'     => array( 'en' => 'Page', 'pt' => 'Página' ),
+	);
+	if ( $pt ) {
+		$kinds['glossary']['pt'] = 'Termo';
+	}
+
+	if ( ! $results->have_posts() ) {
+		$out .= '<div class="hti-search__empty">';
+		$out .= '<div class="hti-search__empty-icon">' . $icon . '</div>';
+		$out .= '<h2 class="hti-search__empty-title">' . esc_html( sprintf( t( 'search_none' ), $query ) ) . '</h2>';
+		$out .= '<p class="hti-search__empty-text">' . esc_html( t( 'search_try' ) ) . '</p>';
+		$out .= '<div class="hti-search__pills hti-search__pills--center">';
+		$out .= '<a class="hti-search__pill hti-search__pill--accent" href="' . esc_url( archive_url( 'learn', 'learn' ) ) . '">' . esc_html( t( 'search_all_articles' ) ) . '</a>';
+		$out .= '<a class="hti-search__pill hti-search__pill--accent" href="' . esc_url( archive_url( 'glossary', 'investing-glossary' ) ) . '">' . esc_html( t( 'search_open_glossary' ) ) . '</a>';
+		$out .= '</div></div></section>';
+		return $out;
+	}
+
+	$count = $results->post_count;
+	$out  .= '<p class="hti-search__count">' . esc_html( sprintf( t( 'search_count' ), number_format_i18n( $count ), $query ) ) . '</p>';
+	$out  .= '<div class="hti-search__results">';
+	foreach ( $results->posts as $p ) {
+		$kind = $kinds[ $p->post_type ][ $pt ? 'pt' : 'en' ] ?? '';
+		$sum  = has_excerpt( $p ) ? get_the_excerpt( $p ) : wp_trim_words( wp_strip_all_tags( strip_shortcodes( $p->post_content ) ), 24, '…' );
+		$out .= '<a class="hti-search__result" href="' . esc_url( (string) get_permalink( $p ) ) . '">';
+		$out .= '<span class="hti-search__kind">' . esc_html( $kind ) . '</span>';
+		$out .= '<h3 class="hti-search__result-title">' . esc_html( (string) get_the_title( $p ) ) . '</h3>';
+		$out .= '<p class="hti-search__result-sum">' . esc_html( (string) $sum ) . '</p>';
+		$out .= '</a>';
+	}
+	$out .= '</div></section>';
+	wp_reset_postdata();
+	return $out;
+}
+
+/**
+ * 404 page content (language-aware): gradient "404", message and quick links.
+ */
+function render_notfound(): string {
+	$home   = ( 'pt' === current_lang() && function_exists( 'pll_home_url' ) ) ? pll_home_url( 'pt' ) : home_url( '/' );
+	$links  = array(
+		array( t( 'nav_learn' ), archive_url( 'learn', 'learn' ) ),
+		array( t( 'nav_glossary' ), archive_url( 'glossary', 'investing-glossary' ) ),
+		array( t( 'nav_news' ), archive_url( 'news', 'financial-news' ) ),
+	);
+	$quick = '';
+	foreach ( $links as $l ) {
+		$quick .= '<a class="hti-404__quick" href="' . esc_url( (string) $l[1] ) . '">' . esc_html( (string) $l[0] ) . '</a>';
+	}
+
+	return '<section class="hti-404">'
+		. '<div class="hti-404__num" aria-hidden="true">404</div>'
+		. '<h1 class="hti-404__title">' . esc_html( t( 'nf_title' ) ) . '</h1>'
+		. '<p class="hti-404__body">' . esc_html( t( 'nf_body' ) ) . '</p>'
+		. '<div class="hti-404__actions">'
+		. '<a class="hti-404__btn hti-404__btn--primary" href="' . esc_url( $home ) . '">' . esc_html( t( 'nf_home' ) ) . '</a>'
+		. '<a class="hti-404__btn hti-404__btn--secondary" href="' . esc_url( search_url() ) . '">' . esc_html( t( 'nf_search' ) ) . '</a>'
+		. '</div>'
+		. '<div class="hti-404__quicklinks">' . $quick . '</div>'
+		. '</section>';
 }
 
 /**
