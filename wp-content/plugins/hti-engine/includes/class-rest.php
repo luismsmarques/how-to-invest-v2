@@ -211,6 +211,23 @@ class REST {
 			)
 		);
 
+		// Password recovery: trigger WordPress's themed reset email.
+		register_rest_route(
+			self::NAMESPACE,
+			'/recover',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'recover' ),
+				'permission_callback' => array( __CLASS__, 'check_nonce' ),
+				'args'                => array(
+					'email' => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+				),
+			)
+		);
+
 		// Email a saved result to the visitor (the investor-profile email).
 		register_rest_route(
 			self::NAMESPACE,
@@ -501,6 +518,31 @@ class REST {
 		Contact::auto_reply( $name, $email, $subject, $locale );
 
 		return new WP_REST_Response( array( 'sent' => true ), 200 );
+	}
+
+	/**
+	 * POST /recover — send the password-reset link via WordPress core (our
+	 * themed reset email). Always answers ok and never reveals whether an
+	 * account exists, to avoid account enumeration.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function recover( WP_REST_Request $request ) {
+		if ( RateLimit::exceeded( 'recover' ) ) {
+			return self::too_many();
+		}
+
+		$login = trim( (string) $request->get_param( 'email' ) );
+		if ( '' !== $login ) {
+			$user = is_email( $login ) ? get_user_by( 'email', $login ) : get_user_by( 'login', $login );
+			if ( $user instanceof \WP_User ) {
+				// WP core sends the reset link (themed via our notification filter).
+				retrieve_password( $user->user_login );
+			}
+		}
+
+		return new WP_REST_Response( array( 'ok' => true ), 200 );
 	}
 
 	/**
