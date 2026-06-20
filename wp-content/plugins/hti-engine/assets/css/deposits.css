@@ -23,16 +23,26 @@
 	--dep-body: var( --wp--preset--font-family--body, 'Plus Jakarta Sans', sans-serif );
 	font-family: var( --dep-body );
 	color: var( --dep-text );
-	/* The comparator needs the full ~1100px design width, but the page template
-	   constrains post-content to a narrower reading column. Break out of that
-	   column and centre on the viewport (capped, with side gutters). */
+}
+/* The comparator needs the full ~1100px design width, but the page template
+   constrains post-content to a narrow reading column (~680px). Break out of
+   that column on desktop and centre on the viewport. The `section.hti-dep`
+   selector outranks the constrained-layout max-width rule so the cap lifts. */
+section.hti-dep {
 	width: min( 1100px, 100vw - 48px );
+	max-width: none;
 	position: relative;
 	left: 50%;
 	transform: translateX( -50% );
 }
-@media ( max-width: 600px ) {
-	.hti-dep { width: min( 1100px, 100vw - 32px ); }
+/* On phones don't break out — flow normally inside the container so nothing
+   spills past its padding. */
+@media ( max-width: 782px ) {
+	section.hti-dep {
+		width: auto;
+		left: auto;
+		transform: none;
+	}
 }
 
 /* ---------- header ---------- */
