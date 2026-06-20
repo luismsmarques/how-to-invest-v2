@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.7.9';
+const VERSION = '0.8.0';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -193,6 +193,7 @@ function strings(): array {
 		'sub_news'         => array( 'en' => "Calm reads on what's happening in the markets — and what it means for you.", 'pt' => 'Leituras calmas do que acontece nos mercados — e do que isso significa para ti.' ),
 		'back_learn'       => array( 'en' => '← Learn', 'pt' => '← Aprender' ),
 		'back_news'        => array( 'en' => '← News', 'pt' => '← Notícias' ),
+		'back_glossary'    => array( 'en' => '← Glossary', 'pt' => '← Glossário' ),
 		'news_cta_q'       => array( 'en' => 'Where do you fit in all this?', 'pt' => 'Onde te encaixas nisto tudo?' ),
 		'news_cta_btn'     => array( 'en' => 'Discover my profile →', 'pt' => 'Descobrir o meu perfil →' ),
 		// Glossary index.
