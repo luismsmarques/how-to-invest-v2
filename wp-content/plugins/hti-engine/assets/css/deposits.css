@@ -157,6 +157,18 @@
 }
 .hti-dep__chip:hover { border-color: #E7DCFB; color: var( --dep-text ); }
 .hti-dep__chip.is-active { background: var( --dep-primary ); color: #fff; border-color: var( --dep-primary ); }
+/* On phones the term chips swipe horizontally instead of wrapping. */
+@media ( max-width: 600px ) {
+	.hti-dep__chips {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		scroll-snap-type: x proximity;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+	.hti-dep__chips::-webkit-scrollbar { display: none; }
+	.hti-dep__chip { flex: none; scroll-snap-align: start; }
+}
 .hti-dep__bank {
 	width: 100%;
 	box-sizing: border-box;
