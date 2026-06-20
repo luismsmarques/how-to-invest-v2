@@ -73,6 +73,12 @@ class Analytics {
 				'strategy'  => 'defer',
 			)
 		);
+		// First-party anonymous beacon endpoint for the self-hosted funnel panel.
+		wp_localize_script(
+			'hti-track',
+			'HTI_TRACK',
+			array( 'beacon' => esc_url_raw( rest_url( 'htinvest/v1/event' ) ) )
+		);
 		wp_enqueue_script( 'hti-track' );
 
 		$id = self::measurement_id();
