@@ -421,6 +421,10 @@ class REST {
 		$label      = $archetypes[ $result['archetype_id'] ]['label'][ $locale ]
 			?? $archetypes[ $result['archetype_id'] ]['label']['en']
 			?? '';
+		$descriptions = Config::descriptions();
+		$description   = $descriptions[ $result['archetype_id'] ][ $locale ]
+			?? $descriptions[ $result['archetype_id'] ]['en']
+			?? '';
 
 		// Explanation (LLM → validate → fallback; always succeeds).
 		$explained = Explainer::explain( $result, $answers, $locale, $label );
@@ -438,8 +442,9 @@ class REST {
 				'profile_id'    => $profile_id,
 				'session_token' => $session_token,
 				'archetype'     => array(
-					'id'    => $result['archetype_id'],
-					'label' => $label,
+					'id'          => $result['archetype_id'],
+					'label'       => $label,
+					'description' => $description,
 				),
 				'allocation'    => $result['allocation'],
 				'explanation'   => $explained['explanation'],

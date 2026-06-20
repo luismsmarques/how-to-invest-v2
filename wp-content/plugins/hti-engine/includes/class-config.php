@@ -183,4 +183,37 @@ class Config {
 			),
 		);
 	}
+
+	/**
+	 * Short, illustrative one-line descriptions per archetype (EN/PT).
+	 *
+	 * Conditional/illustrative language only — these describe the *type* of
+	 * profile, never an instruction. Used as the result-page subtitle.
+	 *
+	 * @return array<int,array{en:string,pt:string}>
+	 */
+	public static function descriptions(): array {
+		return array(
+			1 => array(
+				'en' => 'A profile like this usually values stability and protecting capital over chasing higher returns.',
+				'pt' => 'Um perfil como este costuma valorizar a estabilidade e a proteção do capital mais do que procurar retornos altos.',
+			),
+			2 => array(
+				'en' => 'A profile like this tends to balance steady income with a measured dose of growth.',
+				'pt' => 'Um perfil como este costuma equilibrar rendimento estável com uma dose moderada de crescimento.',
+			),
+			3 => array(
+				'en' => 'A profile like this usually blends growth and stability in roughly equal measure.',
+				'pt' => 'Um perfil como este costuma combinar crescimento e estabilidade em medida semelhante.',
+			),
+			4 => array(
+				'en' => 'A profile like this tends to lean into long-term growth, accepting more ups and downs along the way.',
+				'pt' => 'Um perfil como este costuma inclinar-se para o crescimento de longo prazo, aceitando mais oscilações pelo caminho.',
+			),
+			5 => array(
+				'en' => 'A profile like this usually pursues maximum long-term growth and is comfortable with large swings.',
+				'pt' => 'Um perfil como este costuma procurar o máximo crescimento de longo prazo e está à vontade com grandes oscilações.',
+			),
+		);
+	}
 }
