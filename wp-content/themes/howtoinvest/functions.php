@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.16';
+const VERSION = '0.8.17';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1003,6 +1003,36 @@ function hide_duplicate_page_title( string $block_content, array $block ): strin
 add_filter( 'render_block', __NAMESPACE__ . '\\hide_duplicate_page_title', 10, 2 );
 
 /**
+ * Supply a meta description for our dynamic/shortcode pages when the SEO plugin
+ * can't derive one (their content is rendered server-side, so the auto-excerpt
+ * is empty — Lighthouse then flags "no meta description"). Only fills when the
+ * incoming value is blank, so any description set manually in the SEO plugin
+ * always wins. Bilingual. No-op when no SEO plugin is active (filters never fire).
+ *
+ * @param string $desc Description provided by the SEO plugin (may be empty).
+ * @return string
+ */
+function dynamic_meta_description( $desc = '' ): string {
+	$desc = is_string( $desc ) ? $desc : '';
+	if ( '' !== trim( $desc ) || is_admin() || ! is_singular() ) {
+		return $desc;
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof \WP_Post ) {
+		return $desc;
+	}
+	$pt = 'pt' === current_lang();
+	if ( has_shortcode( (string) $post->post_content, 'hti_depositos' ) ) {
+		return $pt
+			? 'Compara a TANB, prazos e condições dos depósitos a prazo em Portugal. Define o teu montante e vê o juro líquido estimado, lado a lado. Ferramenta educativa — não é aconselhamento.'
+			: 'Compare term-deposit rates (TANB), terms and conditions in Portugal. Set your amount and see the estimated net interest side by side. An educational tool — not advice.';
+	}
+	return $desc;
+}
+add_filter( 'rank_math/frontend/description', __NAMESPACE__ . '\\dynamic_meta_description' );
+add_filter( 'wpseo_metadesc', __NAMESPACE__ . '\\dynamic_meta_description' );
+
+/**
  * The glossary "term of the day": a stable daily pick from the glossary,
  * localized by Polylang. Null when no glossary exists.
  *
@@ -1675,7 +1705,7 @@ function render_homepage_intro(): string {
 	foreach ( $steps as $step ) {
 		$html .= '<div class="wp-block-group hti-step">'
 			. '<span class="hti-step__num">' . esc_html( $step[0] ) . '</span>'
-			. '<h3 class="wp-block-heading hti-step__title">' . esc_html( t( $step[1] ) ) . '</h3>'
+			. '<h2 class="wp-block-heading hti-step__title">' . esc_html( t( $step[1] ) ) . '</h2>'
 			. '<p class="hti-step__text has-muted-color has-text-color">' . esc_html( t( $step[2] ) ) . '</p>'
 			. '</div>';
 	}
