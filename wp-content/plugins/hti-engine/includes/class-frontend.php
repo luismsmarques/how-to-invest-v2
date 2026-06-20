@@ -77,10 +77,12 @@ class Frontend {
 		wp_enqueue_style( 'hti-app', HTI_ENGINE_URL . 'assets/css/app.css', array(), VERSION );
 
 		// Account script + context: needed by the result save-flow and the dashboard.
+		// Depends on hti-track so window.HTITrack exists before any event fires
+		// (the whole app chain inherits this: account → result → questionnaire).
 		wp_register_script(
 			'hti-account',
 			HTI_ENGINE_URL . 'assets/js/account.js',
-			array(),
+			array( 'hti-track' ),
 			VERSION,
 			array(
 				'in_footer' => true,
