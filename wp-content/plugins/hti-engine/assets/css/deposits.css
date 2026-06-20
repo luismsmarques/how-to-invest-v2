@@ -149,6 +149,15 @@
 .hti-dep__empty { text-align: center; padding: 28px; color: var( --dep-muted ); }
 .hti-dep__reset--link { margin: 0; }
 
+.hti-dep__footer {
+	margin-top: 26px;
+	color: var( --dep-muted );
+	font-size: 0.9375rem;
+	line-height: 1.6;
+}
+.hti-dep__footer p { margin: 0 0 12px; }
+.hti-dep__footer p:last-child { margin-bottom: 0; }
+
 .hti-dep__disclaimer {
 	margin-top: 24px;
 	background: var( --wp--preset--color--dark, #2A2438 );
