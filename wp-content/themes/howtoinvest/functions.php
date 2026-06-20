@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.15';
+const VERSION = '0.8.16';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -980,6 +980,27 @@ function track_news_view(): void {
 	}
 }
 add_action( 'template_redirect', __NAMESPACE__ . '\\track_news_view' );
+
+/**
+ * Hide the template's page title on pages that embed a full-bleed tool which
+ * already renders its own H1 (e.g. the deposit comparator), so the heading
+ * isn't shown twice. Scoped to those shortcodes only.
+ *
+ * @param string              $block_content Rendered block HTML.
+ * @param array<string,mixed> $block         Parsed block.
+ * @return string
+ */
+function hide_duplicate_page_title( string $block_content, array $block ): string {
+	if ( ( $block['blockName'] ?? '' ) !== 'core/post-title' || ! is_singular() ) {
+		return $block_content;
+	}
+	$post = get_post();
+	if ( $post instanceof \WP_Post && has_shortcode( (string) $post->post_content, 'hti_depositos' ) ) {
+		return '';
+	}
+	return $block_content;
+}
+add_filter( 'render_block', __NAMESPACE__ . '\\hide_duplicate_page_title', 10, 2 );
 
 /**
  * The glossary "term of the day": a stable daily pick from the glossary,
