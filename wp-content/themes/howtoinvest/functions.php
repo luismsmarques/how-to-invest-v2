@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.22';
+const VERSION = '0.8.23';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1321,11 +1321,15 @@ function render_news_hub(): string {
  * @param string              $min     "min" label.
  */
 function news_hub_hero_html( array $it, string $badge, string $min ): string {
-	$bg = '' !== $it['thumb']
-		? 'background-image:url(' . esc_url( (string) $it['thumb'] ) . ');background-size:cover;background-position:center;'
-		: 'background:' . esc_attr( (string) $it['grad'] ) . ';';
+	// The hero image is the LCP element: render a real <img> with high fetch
+	// priority so it's discovered and loaded early (a CSS background loads late).
+	if ( '' !== $it['thumb'] ) {
+		$media = '<span class="hti-newshub__hero-media"><img class="hti-newshub__img" src="' . esc_url( (string) $it['thumb'] ) . '" alt="" width="768" height="376" fetchpriority="high" decoding="async"><span class="hti-newshub__hero-badge">' . esc_html( $badge ) . '</span></span>';
+	} else {
+		$media = '<span class="hti-newshub__hero-media" style="background:' . esc_attr( (string) $it['grad'] ) . ';"><span class="hti-newshub__hero-badge">' . esc_html( $badge ) . '</span></span>';
+	}
 	$out  = '<a class="hti-newshub__hero" href="' . esc_url( (string) $it['url'] ) . '" data-cat="' . esc_attr( (string) $it['slug'] ) . '">';
-	$out .= '<span class="hti-newshub__hero-media" style="' . $bg . '"><span class="hti-newshub__hero-badge">' . esc_html( $badge ) . '</span></span>';
+	$out .= $media;
 	$out .= '<span class="hti-newshub__hero-body">';
 	$out .= '<span class="hti-newshub__meta"><span class="hti-newshub__cat" style="color:' . esc_attr( (string) $it['color'] ) . '">' . esc_html( (string) $it['cat'] ) . '</span><span class="hti-newshub__dot">' . esc_html( (string) $it['date'] ) . ' · ' . esc_html( (string) $it['read'] ) . ' ' . esc_html( $min ) . '</span></span>';
 	$out .= '<span class="hti-newshub__hero-title">' . esc_html( (string) $it['title'] ) . '</span>';
@@ -1340,11 +1344,11 @@ function news_hub_hero_html( array $it, string $badge, string $min ): string {
  * @param array<string,mixed> $it Item data.
  */
 function news_hub_side_html( array $it ): string {
-	$bg = '' !== $it['thumb']
-		? 'background-image:url(' . esc_url( (string) $it['thumb'] ) . ');background-size:cover;background-position:center;'
-		: 'background:' . esc_attr( (string) $it['grad'] ) . ';';
+	$media = '' !== $it['thumb']
+		? '<span class="hti-newshub__side-media"><img class="hti-newshub__img" src="' . esc_url( (string) $it['thumb'] ) . '" alt="" width="380" height="148" loading="lazy" decoding="async"></span>'
+		: '<span class="hti-newshub__side-media" style="background:' . esc_attr( (string) $it['grad'] ) . ';"></span>';
 	$out  = '<a class="hti-newshub__side" href="' . esc_url( (string) $it['url'] ) . '" data-cat="' . esc_attr( (string) $it['slug'] ) . '">';
-	$out .= '<span class="hti-newshub__side-media" style="' . $bg . '"></span>';
+	$out .= $media;
 	$out .= '<span class="hti-newshub__side-body"><span class="hti-newshub__cat" style="color:' . esc_attr( (string) $it['color'] ) . '">' . esc_html( (string) $it['cat'] ) . '</span><span class="hti-newshub__side-title">' . esc_html( (string) $it['title'] ) . '</span></span>';
 	$out .= '</a>';
 	return $out;
@@ -1358,12 +1362,12 @@ function news_hub_side_html( array $it ): string {
  * @param string              $min "min" label.
  */
 function news_hub_list_html( array $it, bool $dup, string $min ): string {
-	$bg = '' !== $it['thumb']
-		? 'background-image:url(' . esc_url( (string) $it['thumb'] ) . ');background-size:cover;background-position:center;'
-		: 'background:' . esc_attr( (string) $it['grad'] ) . ';';
+	$media = '' !== $it['thumb']
+		? '<span class="hti-newshub__row-media"><img class="hti-newshub__img" src="' . esc_url( (string) $it['thumb'] ) . '" alt="" width="168" height="168" loading="lazy" decoding="async"></span>'
+		: '<span class="hti-newshub__row-media" style="background:' . esc_attr( (string) $it['grad'] ) . ';"></span>';
 	$cls = 'hti-newshub__row' . ( $dup ? ' is-dup' : '' );
 	$out  = '<a class="' . $cls . '"' . ( $dup ? ' hidden' : '' ) . ' href="' . esc_url( (string) $it['url'] ) . '" data-cat="' . esc_attr( (string) $it['slug'] ) . '">';
-	$out .= '<span class="hti-newshub__row-media" style="' . $bg . '"></span>';
+	$out .= $media;
 	$out .= '<span class="hti-newshub__row-body">';
 	$out .= '<span class="hti-newshub__meta"><span class="hti-newshub__cat" style="color:' . esc_attr( (string) $it['color'] ) . '">' . esc_html( (string) $it['cat'] ) . '</span><span class="hti-newshub__dot">' . esc_html( (string) $it['date'] ) . ' · ' . esc_html( (string) $it['read'] ) . ' ' . esc_html( $min ) . '</span></span>';
 	$out .= '<span class="hti-newshub__row-title">' . esc_html( (string) $it['title'] ) . '</span>';
