@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.7.9
+ * Version:           0.8.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.7.9';
+const VERSION = '0.8.0';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -66,6 +66,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-tools.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
 require_once HTI_ENGINE_PATH . 'includes/class-analytics.php';
+require_once HTI_ENGINE_PATH . 'includes/class-metrics.php';
 require_once HTI_ENGINE_PATH . 'includes/class-pdf.php';
 require_once HTI_ENGINE_PATH . 'includes/class-cron.php';
 
@@ -177,6 +178,11 @@ Consent::init();
  * Google Analytics — loaded only after analytics consent is granted.
  */
 Analytics::init();
+
+/**
+ * First-party anonymous funnel counters (HTI Funnel admin screen).
+ */
+Metrics::init();
 
 /**
  * PDF export of a saved result (admin-post handler).
