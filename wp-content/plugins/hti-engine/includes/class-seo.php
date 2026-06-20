@@ -61,6 +61,17 @@ class SEO {
 			$graph[] = self::article( $post );
 		}
 
+		/**
+		 * Emit a BreadcrumbList. On by default: FSE block themes rarely call
+		 * the SEO plugin's breadcrumb function, so this schema is usually
+		 * absent. Filter to false if the active SEO plugin already outputs it.
+		 *
+		 * @param bool $emit Whether to add BreadcrumbList schema.
+		 */
+		if ( apply_filters( 'hti_emit_breadcrumbs', true ) ) {
+			$graph[] = self::breadcrumbs( $post );
+		}
+
 		$graph = array_values( array_filter( $graph ) );
 		if ( empty( $graph ) ) {
 			return;
@@ -74,6 +85,58 @@ class SEO {
 		printf(
 			'<script type="application/ld+json">%s</script>' . "\n",
 			wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
+		);
+	}
+
+	/**
+	 * Build a BreadcrumbList node: Home → section archive → current page.
+	 *
+	 * Language-aware (PT under /pt/). The section archive link resolves to the
+	 * current language via Polylang when active.
+	 *
+	 * @param \WP_Post $post Singular post.
+	 * @return array<string,mixed>
+	 */
+	private static function breadcrumbs( \WP_Post $post ): array {
+		$pt = str_starts_with( strtolower( (string) get_locale() ), 'pt' );
+
+		$sections = array(
+			'learn'    => array( 'en' => 'Learn', 'pt' => 'Aprender' ),
+			'news'     => array( 'en' => 'News', 'pt' => 'Notícias' ),
+			'glossary' => array( 'en' => 'Glossary', 'pt' => 'Glossário' ),
+		);
+
+		$items    = array();
+		$position = 1;
+
+		$items[] = array(
+			'@type'    => 'ListItem',
+			'position' => $position++,
+			'name'     => $pt ? 'Início' : 'Home',
+			'item'     => home_url( '/' ),
+		);
+
+		$archive = get_post_type_archive_link( $post->post_type );
+		if ( $archive && isset( $sections[ $post->post_type ] ) ) {
+			$items[] = array(
+				'@type'    => 'ListItem',
+				'position' => $position++,
+				'name'     => $sections[ $post->post_type ][ $pt ? 'pt' : 'en' ],
+				'item'     => $archive,
+			);
+		}
+
+		$items[] = array(
+			'@type'    => 'ListItem',
+			'position' => $position++,
+			'name'     => wp_strip_all_tags( get_the_title( $post ) ),
+			'item'     => get_permalink( $post ),
+		);
+
+		return array(
+			'@type'           => 'BreadcrumbList',
+			'@id'             => get_permalink( $post ) . '#breadcrumb',
+			'itemListElement' => $items,
 		);
 	}
 
