@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.0';
+const VERSION = '0.8.1';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -38,6 +38,21 @@ function theme_supports(): void {
 	add_theme_support( 'editor-styles' );
 }
 add_action( 'after_setup_theme', __NAMESPACE__ . '\\theme_supports' );
+
+/**
+ * Guarantee a responsive viewport meta tag in <head>.
+ *
+ * Without it, phones render the page at a default ~980px desktop width
+ * (zoomed out, horizontally scrollable) and the responsive @media
+ * breakpoints never fire. WordPress normally emits this for block themes,
+ * but an SEO/head override on this install was suppressing it — so we emit
+ * it ourselves. Core's own callback is removed first to avoid a duplicate.
+ */
+function viewport_meta(): void {
+	remove_action( 'wp_head', '_block_template_viewport_meta_tag', 0 );
+	echo '<meta name="viewport" content="width=device-width, initial-scale=1">' . "\n";
+}
+add_action( 'wp_head', __NAMESPACE__ . '\\viewport_meta', 0 );
 
 /**
  * Enqueue the child theme stylesheet after the parent's styles.
