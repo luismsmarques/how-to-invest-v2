@@ -153,14 +153,18 @@
 		mount.innerHTML = '';
 		var root = el( 'div', { class: 'hti-result' } );
 
-		// Heading.
+		// Heading. Eyebrow + bare archetype name + short illustrative subtitle.
 		if ( trap && exp.safety_message ) {
-			root.appendChild( el( 'h2', { class: 'hti-result-pretitle' }, ui.before_portfolios ) );
+			root.appendChild( el( 'p', { class: 'hti-result-pretitle' }, ui.before_portfolios ) );
 			var safety = el( 'div', { class: 'hti-safety', role: 'note' } );
 			safety.appendChild( el( 'p', null, exp.safety_message ) );
 			root.appendChild( safety );
 		}
-		root.appendChild( el( 'h2', { class: 'hti-archetype' }, ui.result_heading + ': ' + res.archetype.label ) );
+		root.appendChild( el( 'p', { class: 'hti-result-eyebrow' }, ui.result_heading ) );
+		root.appendChild( el( 'h2', { class: 'hti-archetype' }, res.archetype.label ) );
+		if ( res.archetype.description ) {
+			root.appendChild( el( 'p', { class: 'hti-archetype-desc' }, res.archetype.description ) );
+		}
 
 		// Disclaimer — prominent, not dismissible.
 		var disc = el( 'div', { class: 'hti-disclaimer', role: 'note' } );
