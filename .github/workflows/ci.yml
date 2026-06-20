@@ -1,0 +1,38 @@
+name: CI
+
+# Repeatable test suite: lint all our PHP and run the engine matrix + unit
+# tests on every push and PR. Keeps the deterministic core (scoring,
+# archetypes, allocation, safety traps, fallback) green.
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Lint + test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: PHP lint (plugin + theme, excluding vendor)
+        run: |
+          find wp-content/plugins/hti-engine wp-content/themes/howtoinvest \
+            -path '*/vendor/*' -prune -o -name '*.php' -print0 \
+            | xargs -0 -n1 -P4 php -l
+
+      - name: Run the test suite
+        run: php wp-content/plugins/hti-engine/tests/run.php
