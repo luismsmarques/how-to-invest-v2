@@ -27,6 +27,7 @@
 	--hti-font-body: var( --wp--preset--font-family--body, 'Plus Jakarta Sans', sans-serif );
 
 	max-width: 780px;
+	min-height: 600px;
 	margin: 0 auto;
 	color: var( --hti-text );
 	font-family: var( --hti-font-body );
