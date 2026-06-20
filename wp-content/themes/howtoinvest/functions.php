@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.12';
+const VERSION = '0.8.13';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -264,6 +264,9 @@ function strings(): array {
 		'tab_home'             => array( 'en' => 'Home', 'pt' => 'Início' ),
 		'tab_nav'              => array( 'en' => 'Sections', 'pt' => 'Secções' ),
 		'nav_account'          => array( 'en' => 'Account', 'pt' => 'Conta' ),
+		'menu_explore'         => array( 'en' => 'Explore', 'pt' => 'Explorar' ),
+		'menu_more'            => array( 'en' => 'More', 'pt' => 'Mais' ),
+		'menu_privacy_terms'   => array( 'en' => 'Privacy & terms', 'pt' => 'Privacidade e termos' ),
 		// Glossary index.
 		'gloss_all'        => array( 'en' => 'All', 'pt' => 'Todos' ),
 		'gloss_filter'     => array( 'en' => 'Filter by letter', 'pt' => 'Filtrar por letra' ),
@@ -415,8 +418,114 @@ function register_dynamic_blocks(): void {
 			'render_callback' => __NAMESPACE__ . '\\render_related',
 		)
 	);
+	register_block_type(
+		'howtoinvest/drawer',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Mobile drawer menu', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_drawer',
+		)
+	);
+	register_block_type(
+		'howtoinvest/news-hub',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'News hub', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_news_hub',
+		)
+	);
 }
 add_action( 'init', __NAMESPACE__ . '\\register_dynamic_blocks' );
+
+/**
+ * The rich mobile hamburger drawer (matches the Claude Design handoff): a
+ * left slide-in panel with an "Explore" section of icon-tile links, a "More"
+ * section and a questionnaire CTA. Rendered inside the header as a sibling of
+ * the #hti-nav-check checkbox, so the CSS-only open/close still works without
+ * JS. Hidden on desktop (the inline nav rail handles that breakpoint).
+ *
+ * @return string Safe HTML.
+ */
+function render_drawer(): string {
+	$pt   = 'pt' === current_lang();
+	$home = ( $pt && function_exists( 'pll_home_url' ) ) ? pll_home_url( 'pt' ) : home_url( '/' );
+
+	// Icon paths (stroke). Keyed for reuse.
+	$ic = array(
+		'home'    => '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>',
+		'learn'   => '<path d="M4 4h9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4z"/><path d="M20 4h-4a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z"/>',
+		'gloss'   => '<path d="M4 6h16M4 12h16M4 18h10"/>',
+		'news'    => '<path d="M4 5h13v14H5a1 1 0 0 1-1-1z"/><path d="M17 8h3v9a2 2 0 0 1-2 2"/><path d="M7 9h7M7 13h7M7 17h4"/>',
+		'compare' => '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+		'search'  => '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>',
+		'about'   => '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
+		'account' => '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/>',
+		'privacy' => '<path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6z"/>',
+	);
+
+	// Primary "Explore" tiles: [url, label, icon key, tile-tint class].
+	$explore = array(
+		array( $home, t( 'tab_home' ), 'home', 'coral' ),
+		array( archive_url( 'learn', 'learn' ), t( 'nav_learn' ), 'learn', 'purple' ),
+		array( archive_url( 'glossary', 'investing-glossary' ), t( 'nav_glossary' ), 'gloss', 'amber' ),
+		array( archive_url( 'news', 'financial-news' ), t( 'nav_news' ), 'news', 'green' ),
+	);
+	$cmp = deposits_comparator_url();
+	if ( '' !== $cmp ) {
+		$explore[] = array( $cmp, t( 'nav_deposits' ), 'compare', 'coral' );
+	}
+
+	// Secondary "More" links: [url, label, icon key].
+	$more = array(
+		array( search_url(), t( 'search_label' ), 'search' ),
+		array( page_url( 'about' ), t( 'foot_about' ), 'about' ),
+		array( account_url(), t( 'nav_account' ), 'account' ),
+		array( page_url( 'privacy-policy' ), t( 'menu_privacy_terms' ), 'privacy' ),
+	);
+
+	$svg = static function ( string $path ): string {
+		return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
+	};
+
+	$out  = '<div class="hti-drawer hti-noprint">';
+	$out .= '<nav class="hti-drawer__panel" aria-label="' . esc_attr( t( 'tab_nav' ) ) . '">';
+
+	// Header: logo + close.
+	$out .= '<div class="hti-drawer__head">';
+	$out .= '<span class="hti-drawer__brand"><span class="hti-drawer__mark"><svg viewBox="0 0 64 64" width="28" height="28" fill="none" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#1E2147"/><path d="M32 12L50 17.5V32c0 10-7.5 16.6-18 20-10.5-3.4-18-10-18-20V17.5z" fill="#fff"/><g fill="#7C5CFC"><rect x="20.4" y="40" width="3.6" height="6" rx=".8"/><rect x="25.9" y="37.5" width="3.6" height="8.5" rx=".8"/><rect x="31.4" y="35" width="3.6" height="11" rx=".8"/><rect x="36.9" y="32.5" width="3.6" height="13.5" rx=".8"/></g></svg></span><span>HowToInvest</span></span>';
+	$out .= '<label class="hti-drawer__close" for="hti-nav-check" aria-label="' . esc_attr( $pt ? 'Fechar' : 'Close' ) . '"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></label>';
+	$out .= '</div>';
+
+	// Body.
+	$out .= '<div class="hti-drawer__body">';
+	$out .= '<span class="hti-drawer__eyebrow">' . esc_html( t( 'menu_explore' ) ) . '</span>';
+	$out .= '<div class="hti-drawer__group">';
+	foreach ( $explore as $it ) {
+		$out .= '<a class="hti-drawer__item" href="' . esc_url( (string) $it[0] ) . '">'
+			. '<span class="hti-drawer__tile hti-drawer__tile--' . esc_attr( $it[3] ) . '">' . $svg( $ic[ $it[2] ] ) . '</span>'
+			. '<span class="hti-drawer__label">' . esc_html( (string) $it[1] ) . '</span></a>';
+	}
+	$out .= '</div>';
+	$out .= '<div class="hti-drawer__divider"></div>';
+	$out .= '<span class="hti-drawer__eyebrow">' . esc_html( t( 'menu_more' ) ) . '</span>';
+	$out .= '<div class="hti-drawer__group">';
+	foreach ( $more as $it ) {
+		$out .= '<a class="hti-drawer__item hti-drawer__item--plain" href="' . esc_url( (string) $it[0] ) . '">'
+			. '<span class="hti-drawer__plainicon">' . $svg( $ic[ $it[2] ] ) . '</span>'
+			. '<span class="hti-drawer__label hti-drawer__label--muted">' . esc_html( (string) $it[1] ) . '</span></a>';
+	}
+	$out .= '</div></div>';
+
+	// Footer CTA.
+	$out .= '<div class="hti-drawer__foot">';
+	$out .= '<a class="hti-drawer__cta" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '">' . esc_html( t( 'cta_start_quiz' ) ) . '</a>';
+	$out .= '</div>';
+
+	$out .= '</nav></div>';
+	return $out;
+}
 
 /**
  * Related posts sharing a taxonomy term with the given post, in the current
