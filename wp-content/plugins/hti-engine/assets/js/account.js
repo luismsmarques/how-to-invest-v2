@@ -53,6 +53,63 @@
 		} );
 	}
 
+	/* ---------- password recovery (in-app) ---------- */
+
+	// Styled "recover access" panel: email → POST /recover → "check your email".
+	// Always shows the sent state (never reveals whether the account exists).
+	function recoverPanel( prefillEmail, onBack ) {
+		var panel = el( 'div', { class: 'hti-recover' } );
+		var back = el( 'button', { type: 'button', class: 'hti-linkbtn hti-recover__back' }, s.rec_back );
+		back.addEventListener( 'click', onBack );
+		panel.appendChild( back );
+		var inner = el( 'div', { class: 'hti-recover__inner' } );
+		panel.appendChild( inner );
+
+		function showSent( em ) {
+			inner.innerHTML = '';
+			var check = el( 'span', { class: 'hti-recover__check', 'aria-hidden': 'true' }, '✓' );
+			inner.appendChild( check );
+			inner.appendChild( el( 'h2', { class: 'hti-recover__title' }, s.rec_sent_title ) );
+			inner.appendChild( el( 'p', { class: 'hti-recover__body' }, ( s.rec_sent_body || '' ).replace( '%s', em ) ) );
+			var done = el( 'button', { type: 'button', class: 'hti-btn hti-btn-primary hti-recover__send' }, s.rec_back_login );
+			done.addEventListener( 'click', onBack );
+			inner.appendChild( done );
+		}
+
+		function showForm() {
+			inner.innerHTML = '';
+			inner.appendChild( el( 'h2', { class: 'hti-recover__title' }, s.rec_title ) );
+			inner.appendChild( el( 'p', { class: 'hti-recover__body' }, s.rec_body ) );
+			var input = el( 'input', { type: 'email', class: 'hti-recover__input', placeholder: s.rec_ph, 'aria-label': s.rec_email } );
+			if ( prefillEmail ) {
+				input.value = prefillEmail;
+			}
+			inner.appendChild( input );
+			var send = el( 'button', { type: 'button', class: 'hti-btn hti-btn-primary hti-recover__send' }, s.rec_send );
+			var status = el( 'p', { class: 'hti-recover__status', role: 'status', 'aria-live': 'polite' } );
+			inner.appendChild( send );
+			inner.appendChild( status );
+			send.addEventListener( 'click', function () {
+				var em = ( input.value || '' ).trim();
+				if ( ! em || em.indexOf( '@' ) < 1 ) {
+					status.textContent = s.rec_invalid;
+					return;
+				}
+				send.disabled = true;
+				status.textContent = s.working;
+				request( '/recover', 'POST', { email: em } ).then( function () {
+					showSent( em );
+				} ).catch( function () {
+					showSent( em );
+				} );
+			} );
+			input.focus();
+		}
+
+		showForm();
+		return panel;
+	}
+
 	/* ---------- shared auth form ---------- */
 
 	function googleButton( extraRegister ) {
@@ -103,9 +160,20 @@
 		actions.appendChild( signin );
 		form.appendChild( actions );
 
-		if ( ctx.lostUrl && s.forgot ) {
+		if ( s.forgot ) {
 			var forgot = el( 'p', { class: 'hti-auth-forgot' } );
-			forgot.appendChild( el( 'a', { href: ctx.lostUrl }, s.forgot ) );
+			var fbtn = el( 'button', { type: 'button', class: 'hti-linkbtn' }, s.forgot );
+			fbtn.addEventListener( 'click', function () {
+				form.style.display = 'none';
+				container.appendChild( recoverPanel( email.value, function () {
+					var p = container.querySelector( '.hti-recover' );
+					if ( p ) {
+						container.removeChild( p );
+					}
+					form.style.display = '';
+				} ) );
+			} );
+			forgot.appendChild( fbtn );
 			form.appendChild( forgot );
 		}
 
