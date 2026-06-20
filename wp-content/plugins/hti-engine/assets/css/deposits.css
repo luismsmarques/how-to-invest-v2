@@ -12,13 +12,13 @@
 	--dep-line: #F6ECE6;
 	--dep-white: var( --wp--preset--color--white, #fff );
 	--dep-cream: #FFF6F1;
-	--dep-accent: var( --wp--preset--color--accent, #7C5CFC );
+	--dep-accent: var( --wp--preset--color--accent-strong, #6B46E0 );
 	--dep-soft: var( --wp--preset--color--primary-soft, #FFEDE9 );
 	--dep-accent-soft: var( --wp--preset--color--accent-soft, #EFE9FE );
 	--dep-ink: #1E2147;
 	--dep-green: #1E7A5C;
-	--dep-amber: #D69A1E;
-	--dep-blue: #3A8DDE;
+	--dep-amber: #8A6310;
+	--dep-blue: #2D6CB3;
 	--dep-head: var( --wp--preset--font-family--heading, 'Poppins', sans-serif );
 	--dep-body: var( --wp--preset--font-family--body, 'Plus Jakarta Sans', sans-serif );
 	font-family: var( --dep-body );

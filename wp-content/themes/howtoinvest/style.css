@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.8.18
+Version: 0.8.19
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -286,7 +286,7 @@ body {
 	font-family: var( --wp--preset--font-family--body );
 	font-weight: 600;
 	font-size: 12px;
-	color: var( --wp--preset--color--accent );
+	color: var( --wp--preset--color--accent-strong );
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
 	text-decoration: none;
@@ -407,7 +407,7 @@ a.hti-lang__item:hover {
 	font-family: var( --wp--preset--font-family--body );
 	font-weight: 600;
 	font-size: 13px;
-	color: var( --wp--preset--color--accent );
+	color: var( --wp--preset--color--accent-strong );
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
 	text-decoration: none;
@@ -701,7 +701,7 @@ a.hti-lang__item:hover {
 }
 .hti-search__kind {
 	font: 600 11px var( --wp--preset--font-family--body );
-	color: var( --wp--preset--color--accent );
+	color: var( --wp--preset--color--accent-strong );
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
 }
@@ -793,8 +793,8 @@ a.hti-lang__item:hover {
 }
 .hti-404__btn--secondary:hover { background: #FFF1ED; color: var( --wp--preset--color--primary-strong ); }
 .hti-404__quicklinks { margin-top: 40px; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
-.hti-404__quick { color: var( --wp--preset--color--accent ); font: 600 15px var( --wp--preset--font-family--body ); text-decoration: none; }
-.hti-404__quick:hover { text-decoration: underline; color: var( --wp--preset--color--accent ); }
+.hti-404__quick { color: var( --wp--preset--color--accent-strong ); font: 600 15px var( --wp--preset--font-family--body ); text-decoration: none; }
+.hti-404__quick:hover { text-decoration: underline; color: var( --wp--preset--color--accent-strong ); }
 
 /* ---------- News hub (single-column cards, E4 design) ---------- */
 .hti-news-card {
@@ -921,7 +921,7 @@ a.hti-lang__item:hover {
 	font-size: 12px;
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
-	color: var( --wp--preset--color--accent );
+	color: var( --wp--preset--color--accent-strong );
 }
 .hti-about__name {
 	font-family: var( --wp--preset--font-family--heading );
@@ -1148,8 +1148,8 @@ a.hti-lang__item:hover {
 	justify-content: center;
 }
 .hti-drawer__tile--coral { background: #FFEDE9; color: #C9362C; }
-.hti-drawer__tile--purple { background: #EFE9FE; color: #7C5CFC; }
-.hti-drawer__tile--amber { background: #F6EEDD; color: #D69A1E; }
+.hti-drawer__tile--purple { background: #EFE9FE; color: #6B46E0; }
+.hti-drawer__tile--amber { background: #F6EEDD; color: #8A6310; }
 .hti-drawer__tile--green { background: #E6F7EF; color: #1F8A5B; }
 .hti-drawer__label { font: 600 16px var( --wp--preset--font-family--body ); color: var( --wp--preset--color--contrast ); }
 .hti-drawer__label--muted { font-weight: 500; font-size: 15px; color: var( --wp--preset--color--muted ); }
@@ -1317,7 +1317,7 @@ a.hti-lang__item:hover {
 	--nh-line: #F6ECE6;
 	--nh-white: var( --wp--preset--color--white, #fff );
 	--nh-primary: var( --wp--preset--color--primary-strong, #C9362C );
-	--nh-accent: var( --wp--preset--color--accent, #7C5CFC );
+	--nh-accent: var( --wp--preset--color--accent-strong, #6B46E0 );
 	--nh-soft: var( --wp--preset--color--primary-soft, #FFEDE9 );
 	--nh-accent-soft: var( --wp--preset--color--accent-soft, #EFE9FE );
 	--nh-ink: #1E2147;

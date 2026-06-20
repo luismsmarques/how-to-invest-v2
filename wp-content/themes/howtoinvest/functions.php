@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.18';
+const VERSION = '0.8.19';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -829,14 +829,14 @@ function render_learn_feed(): string {
  */
 function news_palette( string $key ): array {
 	$palette = array(
-		array( '#7C5CFC', 'linear-gradient(135deg,#EFE9FE,#DFD4FB)' ),
-		array( '#2D9C7A', 'linear-gradient(135deg,#E6F7EF,#D2E8DC)' ),
-		array( '#FF6B5E', 'linear-gradient(135deg,#FFEDE9,#FFD9D2)' ),
-		array( '#D69A1E', 'linear-gradient(135deg,#F6EEDD,#EFE2C5)' ),
-		array( '#3A8DDE', 'linear-gradient(135deg,#E4F0FB,#D2E4F4)' ),
-		array( '#A55FD0', 'linear-gradient(135deg,#F3E8FB,#E7D4F4)' ),
-		array( '#E07B54', 'linear-gradient(135deg,#FBEBE2,#F4DBC9)' ),
-		array( '#5A8C5A', 'linear-gradient(135deg,#EAF3E6,#D9E8D2)' ),
+		array( '#6B46E0', 'linear-gradient(135deg,#EFE9FE,#DFD4FB)' ),
+		array( '#1E7A5C', 'linear-gradient(135deg,#E6F7EF,#D2E8DC)' ),
+		array( '#C9362C', 'linear-gradient(135deg,#FFEDE9,#FFD9D2)' ),
+		array( '#8A6310', 'linear-gradient(135deg,#F6EEDD,#EFE2C5)' ),
+		array( '#2D6CB3', 'linear-gradient(135deg,#E4F0FB,#D2E4F4)' ),
+		array( '#8A45B5', 'linear-gradient(135deg,#F3E8FB,#E7D4F4)' ),
+		array( '#B85A33', 'linear-gradient(135deg,#FBEBE2,#F4DBC9)' ),
+		array( '#4F7A48', 'linear-gradient(135deg,#EAF3E6,#D9E8D2)' ),
 	);
 	$i = '' === $key ? 0 : (int) ( crc32( $key ) % count( $palette ) );
 	return $palette[ $i ];

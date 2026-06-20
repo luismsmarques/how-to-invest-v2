@@ -76,6 +76,11 @@
 					"name": "Purple"
 				},
 				{
+					"slug": "accent-strong",
+					"color": "#6B46E0",
+					"name": "Purple (AA text)"
+				},
+				{
 					"slug": "accent-soft",
 					"color": "#EFE9FE",
 					"name": "Purple soft"
@@ -89,6 +94,11 @@
 					"slug": "caution",
 					"color": "#D69A1E",
 					"name": "Caution"
+				},
+				{
+					"slug": "caution-strong",
+					"color": "#8A6310",
+					"name": "Caution (AA text)"
 				},
 				{
 					"slug": "caution-surface",
