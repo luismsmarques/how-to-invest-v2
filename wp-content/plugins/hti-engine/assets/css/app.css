@@ -6,7 +6,7 @@
  */
 
 .hti-app {
-	--hti-primary: var( --wp--preset--color--primary, #FF6B5E );
+	--hti-primary: var( --wp--preset--color--primary-strong, #C9362C );
 	--hti-primary-hover: var( --wp--preset--color--primary-hover, #FF5544 );
 	--hti-primary-soft: var( --wp--preset--color--primary-soft, #FFEDE9 );
 	--hti-text: var( --wp--preset--color--contrast, #2A2438 );
@@ -16,10 +16,10 @@
 	--hti-border: var( --wp--preset--color--border, #F2E4DD );
 	--hti-white: var( --wp--preset--color--white, #ffffff );
 	--hti-cream: var( --wp--preset--color--background, #FFF6F1 );
-	--hti-accent: var( --wp--preset--color--accent, #7C5CFC );
+	--hti-accent: var( --wp--preset--color--accent-strong, #6B46E0 );
 	--hti-accent-soft: var( --wp--preset--color--accent-soft, #EFE9FE );
 	--hti-accent-border: var( --wp--preset--color--accent-border, #E7DCFB );
-	--hti-caution: var( --wp--preset--color--caution, #D69A1E );
+	--hti-caution: var( --wp--preset--color--caution-strong, #8A6310 );
 	--hti-caution-surface: var( --wp--preset--color--caution-surface, #FFF3D6 );
 	--hti-caution-border: #F4DFA4;
 	--hti-dark: var( --wp--preset--color--dark, #2A2438 );

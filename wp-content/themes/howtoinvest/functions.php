@@ -1014,23 +1014,91 @@ add_filter( 'render_block', __NAMESPACE__ . '\\hide_duplicate_page_title', 10, 2
  */
 function dynamic_meta_description( $desc = '' ): string {
 	$desc = is_string( $desc ) ? $desc : '';
-	if ( '' !== trim( $desc ) || is_admin() || ! is_singular() ) {
-		return $desc;
-	}
-	$post = get_queried_object();
-	if ( ! $post instanceof \WP_Post ) {
+	if ( '' !== trim( $desc ) || is_admin() ) {
 		return $desc;
 	}
 	$pt = 'pt' === current_lang();
-	if ( has_shortcode( (string) $post->post_content, 'hti_depositos' ) ) {
-		return $pt
-			? 'Compara a TANB, prazos e condições dos depósitos a prazo em Portugal. Define o teu montante e vê o juro líquido estimado, lado a lado. Ferramenta educativa — não é aconselhamento.'
-			: 'Compare term-deposit rates (TANB), terms and conditions in Portugal. Set your amount and see the estimated net interest side by side. An educational tool — not advice.';
+
+	// Singular pages whose body is a server-rendered shortcode (empty excerpt).
+	if ( is_singular() ) {
+		$post = get_queried_object();
+		if ( ! $post instanceof \WP_Post ) {
+			return $desc;
+		}
+		$content = (string) $post->post_content;
+		if ( has_shortcode( $content, 'hti_depositos' ) ) {
+			return $pt
+				? 'Compara a TANB, prazos e condições dos depósitos a prazo em Portugal. Define o teu montante e vê o juro líquido estimado, lado a lado. Ferramenta educativa — não é aconselhamento.'
+				: 'Compare term-deposit rates (TANB), terms and conditions in Portugal. Set your amount and see the estimated net interest side by side. An educational tool — not advice.';
+		}
+		if ( has_shortcode( $content, 'hti_questionnaire' ) ) {
+			return $pt
+				? 'Responde a um questionário curto e descobre o teu arquétipo de investidor, com um exemplo ilustrativo de carteira por classes de ativos. Gratuito, sem registo — educativo, não é aconselhamento.'
+				: 'Answer a short questionnaire and discover your investor archetype, with an illustrative example portfolio by asset class. Free, no sign-up — educational, not advice.';
+		}
+		return $desc;
+	}
+
+	// Taxonomy archives (glossary topics, learn topics, news categories) have no
+	// auto description — synthesise one from the term (its own description wins).
+	if ( is_tax() || is_category() || is_tag() ) {
+		$term = get_queried_object();
+		if ( $term instanceof \WP_Term ) {
+			if ( '' !== trim( (string) $term->description ) ) {
+				return wp_strip_all_tags( $term->description );
+			}
+			$name = $term->name;
+			if ( $pt ) {
+				$meta = get_term_meta( $term->term_id, 'hti_name_pt', true );
+				if ( is_string( $meta ) && '' !== $meta ) {
+					$name = $meta;
+				}
+			}
+			switch ( $term->taxonomy ) {
+				case 'glossary_topic':
+					return $pt
+						? sprintf( 'Termos de investimento sobre %s, explicados sem jargão. Glossário educativo da HowToInvest.', $name )
+						: sprintf( 'Investing terms about %s, explained without jargon. The HowToInvest educational glossary.', $name );
+				case 'learn_topic':
+					return $pt
+						? sprintf( 'Artigos para aprender sobre %s — leituras curtas e claras para investires com mais confiança.', $name )
+						: sprintf( 'Articles to learn about %s — short, clear reads to invest with more confidence.', $name );
+				case 'news_category':
+					return $pt
+						? sprintf( 'Notícias e análises sobre %s, explicadas com calma e sem jargão.', $name )
+						: sprintf( 'News and analysis about %s, explained calmly and jargon-free.', $name );
+			}
+		}
 	}
 	return $desc;
 }
 add_filter( 'rank_math/frontend/description', __NAMESPACE__ . '\\dynamic_meta_description' );
 add_filter( 'wpseo_metadesc', __NAMESPACE__ . '\\dynamic_meta_description' );
+
+/**
+ * Account pages (the [hti_account] dashboard) are private utility views: keep
+ * them out of the index and the XML sitemap. RankMath/Yoast both drop noindex
+ * URLs from their sitemaps, so this also removes them from the sitemap.
+ *
+ * @param array<string,string>|string $robots Robots directives.
+ * @return array<string,string>|string
+ */
+function noindex_account_pages( $robots ) {
+	if ( is_admin() || ! is_singular() ) {
+		return $robots;
+	}
+	$post = get_queried_object();
+	if ( $post instanceof \WP_Post && has_shortcode( (string) $post->post_content, 'hti_account' ) ) {
+		if ( is_array( $robots ) ) {
+			$robots['index'] = 'noindex';
+			return $robots;
+		}
+		return 'noindex, follow';
+	}
+	return $robots;
+}
+add_filter( 'rank_math/frontend/robots', __NAMESPACE__ . '\\noindex_account_pages' );
+add_filter( 'wpseo_robots', __NAMESPACE__ . '\\noindex_account_pages' );
 
 /**
  * The glossary "term of the day": a stable daily pick from the glossary,
