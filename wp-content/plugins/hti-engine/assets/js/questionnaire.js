@@ -155,6 +155,7 @@
 				error.hidden = false;
 				return;
 			}
+			track( 'quiz_step_complete', { step_index: step + 1, step_total: total } );
 			if ( step === total - 1 ) {
 				submit();
 			} else {
@@ -193,6 +194,12 @@
 			return !! ( c && c.analytics );
 		} catch ( e ) {
 			return false;
+		}
+	}
+
+	function track( name, params ) {
+		if ( window.HTITrack ) {
+			window.HTITrack.event( name, params );
 		}
 	}
 
@@ -246,6 +253,7 @@
 
 	function submit() {
 		renderProcessing();
+		track( 'quiz_submit', { step_total: total } );
 
 		fetch( cfg.restUrl, {
 			method: 'POST',
@@ -315,6 +323,7 @@
 	if ( urlParams.get( 'profile' ) ) {
 		loadSaved( urlParams.get( 'profile' ), urlParams.get( 'token' ) || '' );
 	} else {
+		track( 'quiz_start', { locale: cfg.locale } );
 		renderStep();
 	}
 }() );

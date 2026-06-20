@@ -20,6 +20,12 @@
 		cash: '#B7AEC4'
 	};
 
+	function track( name, params ) {
+		if ( window.HTITrack ) {
+			window.HTITrack.event( name, params );
+		}
+	}
+
 	function el( tag, attrs, text ) {
 		var node = document.createElement( tag );
 		if ( attrs ) {
@@ -153,6 +159,12 @@
 		mount.innerHTML = '';
 		var root = el( 'div', { class: 'hti-result' } );
 
+		track( 'result_view', {
+			archetype: res.archetype && res.archetype.id,
+			archetype_label: res.archetype && res.archetype.label,
+			safety: trap ? 1 : 0
+		} );
+
 		// Heading. Eyebrow + bare archetype name + short illustrative subtitle.
 		if ( trap && exp.safety_message ) {
 			root.appendChild( el( 'p', { class: 'hti-result-pretitle' }, ui.before_portfolios ) );
@@ -213,6 +225,7 @@
 		if ( pdfCfg && res.profile_id ) {
 			var pdfBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-secondary' }, ui.export_pdf );
 			pdfBtn.addEventListener( 'click', function () {
+				track( 'result_pdf_export', { archetype: res.archetype && res.archetype.id } );
 				var form = el( 'form', { method: 'POST', action: pdfCfg.url, target: '_blank' } );
 				var fields = {
 					action: 'hti_pdf',
@@ -235,6 +248,7 @@
 		if ( emailCfg.emailUrl && res.profile_id ) {
 			var emailBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-secondary' }, ui.email_result );
 			emailBtn.addEventListener( 'click', function () {
+				track( 'result_email_request', { archetype: res.archetype && res.archetype.id } );
 				emailBtn.style.display = 'none';
 				root.appendChild( buildEmailForm( res, ui, emailCfg ) );
 			} );
@@ -244,6 +258,7 @@
 		var readMore = el( 'a', { class: 'hti-btn hti-btn-secondary', href: '/investing-glossary/' }, ui.read_more );
 		var retake = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost' }, ui.retake );
 		retake.addEventListener( 'click', function () {
+			track( 'result_retake', {} );
 			try {
 				window.sessionStorage.removeItem( 'hti_answers' );
 				window.sessionStorage.removeItem( 'hti_step' );
