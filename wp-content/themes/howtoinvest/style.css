@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.8.2
+Version: 0.8.3
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -22,19 +22,31 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
  * Visual system: coral/cream, Poppins (headings) + Plus Jakarta Sans (body).
  */
 
+/* ---------- Box-sizing baseline (root overflow fix) ----------
+ * WordPress core does not force border-box on the front end, so any element
+ * with an explicit `width: 100%` AND horizontal padding (e.g. the full-width
+ * hero CTA buttons on mobile) computed its width as 100% + padding and spilled
+ * past the right edge — the homepage's horizontal scroll / clipped buttons.
+ * A border-box baseline makes `width: 100%` include the padding, so padded,
+ * full-width elements fit exactly. Standard, safe baseline.
+ */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
 /* ---------- Horizontal-overflow guard ----------
- * Belt-and-braces: never allow the page to scroll sideways, whatever the
- * cause (a wide alignwide section on a viewport that misreports its width,
- * a stray full-bleed child, etc.). `clip` — unlike `hidden` — does not create
- * a scroll container, so the sticky header and the fixed consent banner keep
- * working. The page already fits at every width; this only prevents regressions
- * (and the homepage's wide hero/steps from ever forcing a sideways scroll).
+ * Belt-and-braces on top of the border-box baseline: never allow the page to
+ * scroll sideways, whatever the cause. `clip` — unlike `hidden` — does not
+ * create a scroll container, so the sticky header and the fixed consent banner
+ * keep working. With border-box in place nothing overflows, so this clips
+ * nothing in normal use; it only guards against regressions.
  */
 html {
 	overflow-x: clip;
 }
 body {
-	overflow-x: clip;
 	max-width: 100%;
 }
 
