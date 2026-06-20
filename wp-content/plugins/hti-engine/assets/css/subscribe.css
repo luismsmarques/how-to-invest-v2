@@ -148,7 +148,7 @@
 .hti-digest__intro {
 	margin: 10px 0 0;
 	max-width: 42ch;
-	color: #ffe7e2;
+	color: #c9dcee;
 	font-size: 16px;
 	line-height: 1.5;
 }
@@ -164,7 +164,7 @@
 	font-size: 16px;
 	color: var(--wp--preset--color--contrast, #2a2438);
 }
-.hti-digest__input:focus { outline: 0; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6); }
+.hti-digest__input:focus { outline: 0; box-shadow: 0 0 0 3px rgba(127, 176, 222, 0.5); }
 .hti-digest__submit {
 	width: 100%;
 	background: #fff;
@@ -186,10 +186,10 @@
 	margin: 0;
 	font-size: 12px;
 	line-height: 1.4;
-	color: #ffe7e2;
+	color: #c9dcee;
 }
 .hti-digest__consent input { margin-top: 0.15rem; flex: none; accent-color: #fff; }
 .hti-digest__consent a { color: #fff; font-weight: 600; text-decoration: underline; }
-.hti-digest__fine { margin: 0; font-size: 12.5px; line-height: 1.4; color: #ffd9d2; }
+.hti-digest__fine { margin: 0; font-size: 12.5px; line-height: 1.4; color: #9fbedb; }
 .hti-subscribe--digest .hti-subscribe__status { margin: 0; color: #fff; font-weight: 600; }
 .hti-subscribe--digest .hti-subscribe__status.is-success { color: #eafff4; }
