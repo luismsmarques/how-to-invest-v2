@@ -95,7 +95,7 @@ class Subscribe {
 	public static function register_assets(): void {
 		$locale = self::locale();
 		wp_register_style( 'hti-subscribe', HTI_ENGINE_URL . 'assets/css/subscribe.css', array(), VERSION );
-		wp_register_script( 'hti-subscribe', HTI_ENGINE_URL . 'assets/js/subscribe.js', array(), VERSION, array( 'in_footer' => true, 'strategy' => 'defer' ) );
+		wp_register_script( 'hti-subscribe', HTI_ENGINE_URL . 'assets/js/subscribe.js', array( 'hti-track' ), VERSION, array( 'in_footer' => true, 'strategy' => 'defer' ) );
 		wp_localize_script(
 			'hti-subscribe',
 			'HTI_SUBSCRIBE',

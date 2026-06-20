@@ -56,6 +56,25 @@ class Analytics {
 		if ( is_admin() ) {
 			return;
 		}
+
+		// Consent-gated event helper (window.HTITrack). Registered/enqueued
+		// FIRST and unconditionally on the front end, so every script that
+		// reports events (questionnaire, account, subscribe, contact) can list
+		// it as a dependency and rely on window.HTITrack existing. It is a no-op
+		// until analytics consent + gtag are present, so it is safe even when GA
+		// is not configured.
+		wp_register_script(
+			'hti-track',
+			HTI_ENGINE_URL . 'assets/js/track.js',
+			array( 'hti-consent' ),
+			VERSION,
+			array(
+				'in_footer' => true,
+				'strategy'  => 'defer',
+			)
+		);
+		wp_enqueue_script( 'hti-track' );
+
 		$id = self::measurement_id();
 		if ( '' === $id ) {
 			return;
@@ -73,20 +92,5 @@ class Analytics {
 		);
 		wp_localize_script( 'hti-analytics', 'HTI_GA', array( 'id' => $id ) );
 		wp_enqueue_script( 'hti-analytics' );
-
-		// Consent-gated event helper (window.HTITrack). Loaded site-wide so the
-		// questionnaire, account, subscribe, contact and theme CTAs can all
-		// report events. No-op until analytics consent + gtag are present.
-		wp_register_script(
-			'hti-track',
-			HTI_ENGINE_URL . 'assets/js/track.js',
-			array( 'hti-consent' ),
-			VERSION,
-			array(
-				'in_footer' => true,
-				'strategy'  => 'defer',
-			)
-		);
-		wp_enqueue_script( 'hti-track' );
 	}
 }
