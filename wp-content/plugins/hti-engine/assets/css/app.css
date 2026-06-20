@@ -621,6 +621,59 @@
 	margin: 0.5rem 0 0;
 	font-size: 0.875rem;
 }
+.hti-linkbtn {
+	background: none;
+	border: 0;
+	padding: 0;
+	cursor: pointer;
+	color: var( --hti-primary );
+	font: inherit;
+	text-decoration: underline;
+}
+.hti-linkbtn:hover { color: var( --hti-primary-hover ); }
+
+/* In-app password recovery */
+.hti-recover { display: flex; flex-direction: column; gap: 0; }
+.hti-recover__back {
+	align-self: flex-start;
+	color: var( --hti-muted-light );
+	text-decoration: none;
+	font-weight: 500;
+	margin-bottom: 1rem;
+}
+.hti-recover__back:hover { color: var( --hti-primary ); }
+.hti-recover__inner { display: flex; flex-direction: column; gap: 0.5rem; }
+.hti-recover__title {
+	font-family: var( --hti-font-head );
+	font-weight: 700;
+	font-size: clamp( 1.625rem, 4vw, 2.125rem );
+	letter-spacing: -0.02em;
+	margin: 0;
+}
+.hti-recover__body { color: var( --hti-muted ); font-size: 1.0625rem; line-height: 1.5; margin: 0.5rem 0 1rem; }
+.hti-recover__input {
+	padding: 0.85rem 0.95rem;
+	border: 1.5px solid var( --hti-border );
+	border-radius: 12px;
+	font: inherit;
+	background: var( --hti-white );
+}
+.hti-recover__input:focus { outline: none; border-color: var( --hti-primary ); }
+.hti-recover__send { margin-top: 0.75rem; width: 100%; text-align: center; }
+.hti-recover__status { margin: 0.6rem 0 0; font-weight: 600; color: var( --hti-muted ); }
+.hti-recover__check {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: #E6F7EF;
+	color: #1F8A5B;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 26px;
+	font-weight: 700;
+	margin-bottom: 0.5rem;
+}
 .hti-profile-link {
 	font-weight: 700;
 	color: var( --hti-primary );
