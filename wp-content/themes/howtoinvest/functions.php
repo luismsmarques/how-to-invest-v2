@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.5';
+const VERSION = '0.8.6';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -53,6 +53,37 @@ function viewport_meta(): void {
 	echo '<meta name="viewport" content="width=device-width, initial-scale=1">' . "\n";
 }
 add_action( 'wp_head', __NAMESPACE__ . '\\viewport_meta', 0 );
+
+/**
+ * Emit the x-default hreflang alternate.
+ *
+ * Polylang already outputs <link rel="alternate" hreflang="en|pt"> for the
+ * current page but not an x-default, which Google recommends as the fallback
+ * for users who match no specific language. We add only that one tag, pointing
+ * at the default-language (EN) URL of the *current* page — taken from the same
+ * per-page translation data Polylang uses — so it can never duplicate the
+ * existing alternates. No-op without Polylang.
+ */
+function hreflang_x_default(): void {
+	if ( is_admin() || ! function_exists( 'pll_the_languages' ) || ! function_exists( 'pll_default_language' ) ) {
+		return;
+	}
+	$default = (string) pll_default_language();
+	if ( '' === $default ) {
+		return;
+	}
+	$langs = pll_the_languages( array( 'raw' => 1, 'hide_if_no_translation' => 0 ) );
+	if ( ! is_array( $langs ) ) {
+		return;
+	}
+	foreach ( $langs as $lang ) {
+		if ( (string) ( $lang['slug'] ?? '' ) === $default && ! empty( $lang['url'] ) ) {
+			echo '<link rel="alternate" hreflang="x-default" href="' . esc_url( (string) $lang['url'] ) . '" />' . "\n";
+			return;
+		}
+	}
+}
+add_action( 'wp_head', __NAMESPACE__ . '\\hreflang_x_default', 2 );
 
 /**
  * Enqueue the child theme stylesheet after the parent's styles.
