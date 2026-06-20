@@ -36,14 +36,22 @@ section.hti-dep {
 	transform: translateX( -50% );
 }
 /* On phones don't break out — flow normally inside the container so nothing
-   spills past its padding. */
+   spills past its padding. overflow-x:clip is a guard so no inner element can
+   ever widen the page (the chip/tab rows keep their own horizontal scroll). */
 @media ( max-width: 782px ) {
 	section.hti-dep {
 		width: auto;
 		left: auto;
 		transform: none;
+		max-width: 100%;
+		overflow-x: clip;
 	}
 }
+/* Belt-and-braces: inner blocks never exceed the section on any screen. */
+.hti-dep * { min-width: 0; }
+.hti-dep img,
+.hti-dep input,
+.hti-dep select { max-width: 100%; }
 
 /* ---------- header ---------- */
 .hti-dep__eyebrow {
