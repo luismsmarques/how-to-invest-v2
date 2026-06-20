@@ -90,7 +90,7 @@ class Contact {
 		wp_register_script(
 			'hti-contact',
 			HTI_ENGINE_URL . 'assets/js/contact.js',
-			array(),
+			array( 'hti-track' ),
 			VERSION,
 			array(
 				'in_footer' => true,
