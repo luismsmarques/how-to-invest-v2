@@ -21,7 +21,7 @@ class Activator {
 	/**
 	 * Bump when a table schema changes.
 	 */
-	private const DB_VERSION = '1';
+	private const DB_VERSION = '2';
 
 	/**
 	 * Option storing the installed schema version.
@@ -97,6 +97,7 @@ class Activator {
 				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				name varchar(191) NOT NULL DEFAULT '',
 				url text NOT NULL,
+				kind varchar(20) NOT NULL DEFAULT 'rss',
 				default_category bigint(20) unsigned NOT NULL DEFAULT 0,
 				lang varchar(5) NOT NULL DEFAULT 'en',
 				status tinyint(1) NOT NULL DEFAULT 1,
@@ -115,6 +116,8 @@ class Activator {
 				guid_hash char(40) NOT NULL DEFAULT '',
 				title text NOT NULL,
 				description longtext NULL,
+				transcript longtext NULL,
+				video_id varchar(32) NOT NULL DEFAULT '',
 				image_url text NULL,
 				source varchar(191) NOT NULL DEFAULT '',
 				link text NULL,

@@ -47,7 +47,33 @@ class Settings {
 			'image_generate'       => 1,
 			'image_model'          => 'imagen-4.0-generate-001',
 			'image_base_model'     => 'gemini-2.5-flash-image',
+			'youtube_api_key'      => '',
+			'supadata_api_key'     => '',
 		);
+	}
+
+	/**
+	 * YouTube Data API key: HTI_YOUTUBE_API_KEY constant, else the stored
+	 * setting, then the rssai_youtube_api_key filter.
+	 */
+	public static function youtube_api_key(): string {
+		$key = defined( 'HTI_YOUTUBE_API_KEY' ) ? (string) constant( 'HTI_YOUTUBE_API_KEY' ) : '';
+		if ( '' === $key ) {
+			$key = (string) self::get( 'youtube_api_key', '' );
+		}
+		return trim( (string) apply_filters( 'rssai_youtube_api_key', $key ) );
+	}
+
+	/**
+	 * Supadata API key: HTI_SUPADATA_API_KEY constant, else the stored setting,
+	 * then the rssai_supadata_api_key filter.
+	 */
+	public static function supadata_api_key(): string {
+		$key = defined( 'HTI_SUPADATA_API_KEY' ) ? (string) constant( 'HTI_SUPADATA_API_KEY' ) : '';
+		if ( '' === $key ) {
+			$key = (string) self::get( 'supadata_api_key', '' );
+		}
+		return trim( (string) apply_filters( 'rssai_supadata_api_key', $key ) );
 	}
 
 	/**
@@ -115,7 +141,14 @@ class Settings {
 		$threshold = isset( $input['similarity_threshold'] ) ? (float) $input['similarity_threshold'] : 0.5;
 		$threshold = max( 0.0, min( 1.0, $threshold ) );
 
+		// Keep existing API keys when the field is submitted blank.
+		$existing  = (array) get_option( self::OPTION, array() );
+		$yt_key    = isset( $input['youtube_api_key'] ) ? trim( sanitize_text_field( $input['youtube_api_key'] ) ) : '';
+		$supa_key  = isset( $input['supadata_api_key'] ) ? trim( sanitize_text_field( $input['supadata_api_key'] ) ) : '';
+
 		return array(
+			'youtube_api_key'      => '' !== $yt_key ? $yt_key : (string) ( $existing['youtube_api_key'] ?? '' ),
+			'supadata_api_key'     => '' !== $supa_key ? $supa_key : (string) ( $existing['supadata_api_key'] ?? '' ),
 			'gemini_model'         => isset( $input['gemini_model'] ) ? sanitize_text_field( $input['gemini_model'] ) : 'gemini-2.5-flash',
 			'fetch_interval'       => in_array( $input['fetch_interval'] ?? '', $intervals, true ) ? $input['fetch_interval'] : 'hourly',
 			'similarity_threshold' => $threshold,
@@ -223,6 +256,18 @@ class Settings {
 						<th scope="row"><label for="rssai_image_base_model"><?php echo esc_html__( 'Image-to-image model', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[image_base_model]" id="rssai_image_base_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['image_base_model'] ); ?>" />
 							<p class="description"><?php echo esc_html__( 'When a draft has a feed image, it is used as the base and reimagined into the branded illustration with this model. Must be a Gemini image model (accepts an input image), e.g. gemini-2.5-flash-image. Leave blank to always use plain text-to-image.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_youtube_key"><?php echo esc_html__( 'YouTube Data API key', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[youtube_api_key]" id="rssai_youtube_key" type="password" autocomplete="off" class="regular-text" placeholder="<?php echo esc_attr( '' !== Settings::youtube_api_key() ? '•••••• (leave blank to keep)' : '' ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Used to discover a channel’s recent uploads. Prefer defining HTI_YOUTUBE_API_KEY in wp-config.php. Stored server-side, never sent to the browser.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_supadata_key"><?php echo esc_html__( 'Supadata API key', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[supadata_api_key]" id="rssai_supadata_key" type="password" autocomplete="off" class="regular-text" placeholder="<?php echo esc_attr( '' !== Settings::supadata_api_key() ? '•••••• (leave blank to keep)' : '' ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Used to fetch the transcript of a YouTube video (supadata.ai). Prefer defining HTI_SUPADATA_API_KEY in wp-config.php. Stored server-side.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
 				</table>
