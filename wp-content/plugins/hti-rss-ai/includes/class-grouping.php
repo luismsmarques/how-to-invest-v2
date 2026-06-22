@@ -2,10 +2,12 @@
 /**
  * Clustering of similar draft items into groups.
  *
- * V1: greedy single-pass clustering per language over the ungrouped ("new")
- * items, using Jaccard similarity on normalized title+description tokens, with
- * the threshold from Settings. Only clusters of 2+ items become groups; lone
- * items stay ungrouped. Cheap, deterministic, no external calls.
+ * Single-pass single-link clustering per language over the ungrouped ("new")
+ * items. Similarity is an IDF-weighted Jaccard on normalized title+description
+ * tokens (rare tokens — names, years — count more), and an item joins the
+ * cluster it is most similar to by its best member (not a drifting token
+ * union). Four-digit years are kept; the threshold comes from Settings. Only
+ * clusters of 2+ items become groups. Cheap, deterministic, no external calls.
  *
  * @package HTI_RSS_AI
  */
@@ -54,7 +56,12 @@ class Grouping {
 				$tokens[ (int) $item->id ] = self::tokenize( $item->title . ' ' . $item->description );
 			}
 
-			// Greedy single-link clustering against each cluster's token union.
+			// IDF weighting: rare tokens (a name, a number) carry more signal than
+			// common ones, so two stories sharing them count as more similar.
+			$idf = self::idf( $tokens );
+
+			// Single-link clustering: an item joins the cluster it is most similar
+			// to (best similarity to ANY member, not the diluted token union).
 			$clusters = array();
 			foreach ( $items as $item ) {
 				$id  = (int) $item->id;
@@ -65,21 +72,27 @@ class Grouping {
 				$best     = -1;
 				$best_sim = 0.0;
 				foreach ( $clusters as $index => $cluster ) {
-					$sim = self::jaccard( $set, $cluster['set'] );
+					$sim = 0.0;
+					foreach ( $cluster['members'] as $member ) {
+						$s = self::weighted_sim( $set, $member, $idf );
+						if ( $s > $sim ) {
+							$sim = $s;
+						}
+					}
 					if ( $sim > $best_sim ) {
 						$best_sim = $sim;
 						$best     = $index;
 					}
 				}
 				if ( $best >= 0 && $best_sim >= $threshold ) {
-					$clusters[ $best ]['ids'][]  = $id;
-					$clusters[ $best ]['set']    = $clusters[ $best ]['set'] + $set;
-					$clusters[ $best ]['sims'][] = $best_sim;
+					$clusters[ $best ]['ids'][]     = $id;
+					$clusters[ $best ]['members'][] = $set;
+					$clusters[ $best ]['sims'][]    = $best_sim;
 				} else {
 					$clusters[] = array(
-						'ids'  => array( $id ),
-						'set'  => $set,
-						'sims' => array(),
+						'ids'     => array( $id ),
+						'members' => array( $set ),
+						'sims'    => array(),
 					);
 				}
 			}
@@ -123,12 +136,69 @@ class Grouping {
 		$stop  = self::stopwords();
 		$set   = array();
 		foreach ( (array) $words as $word ) {
-			if ( strlen( $word ) < 3 || isset( $stop[ $word ] ) || ctype_digit( $word ) ) {
+			if ( isset( $stop[ $word ] ) ) {
+				continue;
+			}
+			if ( ctype_digit( $word ) ) {
+				// Keep 4-digit years (a strong story signal); drop other bare numbers.
+				if ( ! preg_match( '/^(19|20)\d\d$/', $word ) ) {
+					continue;
+				}
+			} elseif ( strlen( $word ) < 3 ) {
 				continue;
 			}
 			$set[ $word ] = true;
 		}
 		return $set;
+	}
+
+	/**
+	 * Inverse document frequency per token across the batch. Public for testing.
+	 *
+	 * @param array<int,array<string,bool>> $docs Token sets keyed by item id.
+	 * @return array<string,float>
+	 */
+	public static function idf( array $docs ): array {
+		$n  = max( 1, count( $docs ) );
+		$df = array();
+		foreach ( $docs as $set ) {
+			foreach ( $set as $token => $_ ) {
+				$df[ $token ] = ( $df[ $token ] ?? 0 ) + 1;
+			}
+		}
+		$idf = array();
+		foreach ( $df as $token => $count ) {
+			$idf[ $token ] = log( 1 + ( $n / $count ) );
+		}
+		return $idf;
+	}
+
+	/**
+	 * IDF-weighted Jaccard similarity of two token sets. Public for testing.
+	 *
+	 * @param array<string,bool>  $a   First set.
+	 * @param array<string,bool>  $b   Second set.
+	 * @param array<string,float> $idf Token weights.
+	 */
+	public static function weighted_sim( array $a, array $b, array $idf ): float {
+		if ( ! $a || ! $b ) {
+			return 0.0;
+		}
+		$inter = 0.0;
+		$union = 0.0;
+		foreach ( $a as $token => $_ ) {
+			$w      = $idf[ $token ] ?? 0.0;
+			$union += $w;
+			if ( isset( $b[ $token ] ) ) {
+				$inter += $w;
+			}
+		}
+		foreach ( $b as $token => $_ ) {
+			if ( ! isset( $a[ $token ] ) ) {
+				$union += $idf[ $token ] ?? 0.0;
+			}
+		}
+		return $union > 0 ? $inter / $union : 0.0;
 	}
 
 	/**
@@ -189,7 +259,7 @@ class Grouping {
 			// PT.
 			'que', 'com', 'para', 'uma', 'dos', 'das', 'por', 'mais', 'como', 'mas', 'foi', 'são', 'sao',
 			'pelo', 'pela', 'isso', 'este', 'esta', 'esse', 'essa', 'seu', 'sua', 'nos', 'nas', 'aos',
-			'sobre', 'entre', 'ser', 'ter', 'até', 'ate', 'também', 'tambem', 'sem', 'já', 'jan',
+			'sobre', 'entre', 'ser', 'ter', 'até', 'ate', 'também', 'tambem', 'sem', 'já',
 		);
 		$stop = array_fill_keys( $words, true );
 		return $stop;

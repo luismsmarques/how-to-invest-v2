@@ -40,7 +40,7 @@ class Settings {
 		return array(
 			'gemini_model'         => 'gemini-2.5-flash',
 			'fetch_interval'       => 'hourly',
-			'similarity_threshold' => 0.5,
+			'similarity_threshold' => 0.4,
 			'max_per_fetch'        => 50,
 			'max_generations_day'  => 10,
 			'default_lang'         => 'en',
