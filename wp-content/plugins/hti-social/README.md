@@ -29,6 +29,11 @@ fonts embedded as base64) and drawn to a canvas.
     fixed caption. Live-previewed via the playing video.
   - **End card (CTA):** a full-screen closing card (title + button + handle +
     disclaimer) faded in over the last ~3 seconds. Editable title/button.
+  - **MP4 export (experimental):** an optional toggle converts the recorded WebM
+    to Instagram-ready **MP4 (H.264/AAC)** in the browser via **ffmpeg.wasm**
+    (single-thread core — no COOP/COEP headers needed). Lazy-loaded (~30 MB) only
+    when used; falls back to WebM on failure. The CDN URLs are filterable via
+    `hti_social_ffmpeg_urls` so the site can self-host them.
 
 ## REST
 - `POST hti-social/v1/caption` — `{ brief, lang }` → `{ title, caption,

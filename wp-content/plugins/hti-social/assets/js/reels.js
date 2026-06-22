@@ -241,6 +241,79 @@
 		return '';
 	}
 
+	// ---- Optional MP4 conversion (ffmpeg.wasm, lazy-loaded) ---------------
+
+	function loadScript( src ) {
+		return new Promise( function ( res, rej ) {
+			var s = document.createElement( 'script' );
+			s.src = src;
+			s.onload = res;
+			s.onerror = function () {
+				rej( new Error( 'load ' + src ) );
+			};
+			document.head.appendChild( s );
+		} );
+	}
+
+	var ffmpegReady = null;
+
+	function getFfmpeg() {
+		if ( ffmpegReady ) {
+			return ffmpegReady;
+		}
+		var urls = CFG.ffmpeg || {};
+		ffmpegReady = loadScript( urls.ffmpeg )
+			.then( function () {
+				return loadScript( urls.util );
+			} )
+			.then( function () {
+				var FFmpeg = window.FFmpegWASM && window.FFmpegWASM.FFmpeg;
+				var util = window.FFmpegUtil;
+				if ( ! FFmpeg || ! util ) {
+					throw new Error( 'ffmpeg unavailable' );
+				}
+				var ff = new FFmpeg();
+				return Promise.all( [
+					util.toBlobURL( urls.core, 'text/javascript' ),
+					util.toBlobURL( urls.wasm, 'application/wasm' )
+				] ).then( function ( b ) {
+					return ff.load( { coreURL: b[ 0 ], wasmURL: b[ 1 ] } ).then( function () {
+						return { ff: ff, util: util };
+					} );
+				} );
+			} );
+		return ffmpegReady;
+	}
+
+	function convertToMp4( webmBlob, onProgress ) {
+		return getFfmpeg().then( function ( o ) {
+			var ff = o.ff,
+				util = o.util;
+			if ( onProgress && ff.on ) {
+				ff.on( 'progress', function ( e ) {
+					onProgress( e && e.progress );
+				} );
+			}
+			return util.fetchFile( webmBlob ).then( function ( data ) {
+				return ff.writeFile( 'in.webm', data );
+			} ).then( function () {
+				return ff.exec( [ '-i', 'in.webm', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'aac', '-b:a', '128k', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', 'out.mp4' ] );
+			} ).then( function () {
+				return ff.readFile( 'out.mp4' );
+			} ).then( function ( out ) {
+				return new Blob( [ out.buffer ], { type: 'video/mp4' } );
+			} );
+		} );
+	}
+
+	function downloadBlob( blob, name ) {
+		var a = el( 'a', { href: URL.createObjectURL( blob ), download: name } );
+		document.body.appendChild( a );
+		a.click();
+		document.body.removeChild( a );
+		URL.revokeObjectURL( a.href );
+	}
+
 	function captureStream( canvas, video ) {
 		var cs = canvas.captureStream( 30 );
 		var vcap = null;
@@ -271,6 +344,7 @@
 			aiBrief: '',
 			aiDesc: '',
 			animCaptions: false,
+			toMp4: false,
 			endCard: false,
 			endTitle: 'pt' === L ? 'Queres aprender mais?' : 'Want to learn more?',
 			endCta: 'pt' === L ? 'Faz o teste — link na bio' : 'Take the quiz — link in bio'
@@ -615,6 +689,19 @@
 
 			// Render.
 			var rWrap = el( 'div', { class: 'hti-social-section hti-reels-render' } );
+			var mp4Row = el( 'label', { class: 'hti-social-check' } );
+			var mp4Chk = el( 'input', { type: 'checkbox' } );
+			mp4Chk.checked = st.toMp4;
+			mp4Chk.addEventListener( 'change', function () {
+				st.toMp4 = mp4Chk.checked;
+				renderControls();
+			} );
+			mp4Row.appendChild( mp4Chk );
+			mp4Row.appendChild( el( 'span', null, I.mp4 ) );
+			rWrap.appendChild( mp4Row );
+			if ( st.toMp4 ) {
+				rWrap.appendChild( el( 'p', { class: 'hti-social-note' }, I.mp4_note ) );
+			}
 			var renderBtn = el( 'button', { type: 'button', class: 'button button-primary button-hero' }, I.render );
 			renderBtn.addEventListener( 'click', function () {
 				record( renderBtn );
@@ -730,12 +817,23 @@
 				};
 				rec.onstop = function () {
 					var blob = new Blob( chunks, { type: mime || 'video/webm' } );
-					var a = el( 'a', { href: URL.createObjectURL( blob ), download: 'reel-' + curTpl().id + '-1080x1920.webm' } );
-					document.body.appendChild( a );
-					a.click();
-					document.body.removeChild( a );
-					URL.revokeObjectURL( a.href );
-					stop();
+					var base = 'reel-' + curTpl().id + '-1080x1920';
+					if ( ! st.toMp4 ) {
+						downloadBlob( blob, base + '.webm' );
+						stop();
+						return;
+					}
+					renderLabel.textContent = I.mp4_loading;
+					convertToMp4( blob, function ( p ) {
+						renderLabel.textContent = I.mp4_doing + ' ' + Math.round( ( p || 0 ) * 100 ) + '%';
+					} ).then( function ( mp4 ) {
+						downloadBlob( mp4, base + '.mp4' );
+						stop();
+					} ).catch( function () {
+						downloadBlob( blob, base + '.webm' );
+						stop();
+						window.alert( I.mp4_fail );
+					} );
 				};
 
 				rendering = true;

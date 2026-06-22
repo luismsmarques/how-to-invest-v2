@@ -79,6 +79,25 @@ class Assets {
 	}
 
 	/**
+	 * CDN URLs for the optional ffmpeg.wasm MP4 converter (single-thread core,
+	 * so no cross-origin-isolation headers are required). Filterable so the site
+	 * can self-host instead of using unpkg.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function ffmpeg_urls(): array {
+		return (array) apply_filters(
+			'hti_social_ffmpeg_urls',
+			array(
+				'ffmpeg' => 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js',
+				'util'   => 'https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js',
+				'core'   => 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+				'wasm'   => 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+			)
+		);
+	}
+
+	/**
 	 * Config consumed by social.js.
 	 *
 	 * @return array<string,mixed>
@@ -90,6 +109,7 @@ class Assets {
 			'restCaption' => esc_url_raw( rest_url( 'hti-social/v1/caption' ) ),
 			'nonce'       => wp_create_nonce( 'wp_rest' ),
 			'aiEnabled'   => Gemini::is_configured(),
+			'ffmpeg'      => self::ffmpeg_urls(),
 			'logoSvg'     => Brand::logo_svg(),
 			'illoShip'    => Brand::ship_svg(),
 			'illoGold'    => Brand::gold_svg(),
@@ -136,6 +156,11 @@ class Assets {
 				'end_card'     => $pt ? 'Cartão final (CTA)' : 'End card (CTA)',
 				'end_title'    => $pt ? 'Título do cartão final' : 'End-card title',
 				'end_cta'      => $pt ? 'Botão do cartão final' : 'End-card button',
+				'mp4'          => $pt ? 'Exportar em MP4 (experimental)' : 'Export as MP4 (experimental)',
+				'mp4_note'     => $pt ? 'Converte para MP4 no browser (carrega ~30 MB na 1.ª vez, mais lento). Pronto para o Instagram.' : 'Converts to MP4 in the browser (loads ~30 MB the first time, slower). Instagram-ready.',
+				'mp4_loading'  => $pt ? 'A carregar o conversor…' : 'Loading the converter…',
+				'mp4_doing'    => $pt ? 'A converter para MP4…' : 'Converting to MP4…',
+				'mp4_fail'     => $pt ? 'A conversão para MP4 falhou — guardei o WebM.' : 'MP4 conversion failed — saved the WebM instead.',
 			),
 		);
 	}
