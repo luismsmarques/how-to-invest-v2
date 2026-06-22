@@ -249,11 +249,13 @@
 
 	// ---- Recording --------------------------------------------------------
 
-	function pickMime() {
-		var c = [ 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm' ];
-		for ( var i = 0; i < c.length; i++ ) {
-			if ( window.MediaRecorder && MediaRecorder.isTypeSupported( c[ i ] ) ) {
-				return c[ i ];
+	function pickMime( preferMp4 ) {
+		var mp4 = [ 'video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4;codecs=avc1', 'video/mp4' ];
+		var webm = [ 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm' ];
+		var list = preferMp4 ? mp4.concat( webm ) : webm;
+		for ( var i = 0; i < list.length; i++ ) {
+			if ( window.MediaRecorder && MediaRecorder.isTypeSupported( list[ i ] ) ) {
+				return list[ i ];
 			}
 		}
 		return '';
@@ -860,7 +862,9 @@
 				canvas.width = W;
 				canvas.height = H;
 				var ctx = canvas.getContext( '2d' );
-				var mime = pickMime();
+				var mime = pickMime( st.toMp4 );
+				var nativeMp4 = 0 === mime.indexOf( 'video/mp4' );
+				logEvent( 'info', 'recorder_mime', mime || '(default)', { native_mp4: nativeMp4, want_mp4: st.toMp4 } );
 				var stream;
 				try {
 					stream = captureStream( canvas, videoEl );
@@ -884,14 +888,22 @@
 				rec.onstop = function () {
 					var blob = new Blob( chunks, { type: mime || 'video/webm' } );
 					var base = 'reel-' + curTpl().id + '-1080x1920';
-					var webmMb = Math.round( ( blob.size / 1048576 ) * 10 ) / 10;
-					if ( ! st.toMp4 ) {
-						downloadBlob( blob, base + '.webm' );
-						logEvent( 'info', 'render_done', 'WebM saved', { size_mb: webmMb } );
+					var sizeMb = Math.round( ( blob.size / 1048576 ) * 10 ) / 10;
+					// Native MP4 recording (modern Chrome/Safari): done, no ffmpeg.
+					if ( nativeMp4 ) {
+						downloadBlob( blob, base + '.mp4' );
+						logEvent( 'info', 'render_done', 'MP4 saved (native recorder)', { size_mb: sizeMb } );
 						stop();
 						return;
 					}
-					logEvent( 'info', 'mp4_start', 'Converting to MP4', { webm_mb: webmMb } );
+					if ( ! st.toMp4 ) {
+						downloadBlob( blob, base + '.webm' );
+						logEvent( 'info', 'render_done', 'WebM saved', { size_mb: sizeMb } );
+						stop();
+						return;
+					}
+					// Wanted MP4 but the browser only records WebM → ffmpeg fallback.
+					logEvent( 'info', 'mp4_start', 'Converting to MP4 (ffmpeg fallback)', { webm_mb: sizeMb } );
 					renderLabel.textContent = I.mp4_loading;
 					convertToMp4( blob, function ( p ) {
 						renderLabel.textContent = I.mp4_doing + ' ' + Math.round( ( p || 0 ) * 100 ) + '%';
