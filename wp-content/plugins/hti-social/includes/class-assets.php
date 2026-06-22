@@ -113,6 +113,7 @@ class Assets {
 			'nonce'       => wp_create_nonce( 'wp_rest' ),
 			'aiEnabled'   => Gemini::is_configured(),
 			'ffmpeg'      => self::ffmpeg_urls(),
+			'restFfmpeg'  => esc_url_raw( rest_url( 'hti-social/v1/ffmpeg-assets' ) ),
 			'logoSvg'     => Brand::logo_svg(),
 			'illoShip'    => Brand::ship_svg(),
 			'illoGold'    => Brand::gold_svg(),

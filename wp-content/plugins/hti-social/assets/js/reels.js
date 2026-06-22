@@ -262,38 +262,42 @@
 			return ffmpegReady;
 		}
 		var urls = CFG.ffmpeg || {};
-		var p = loadScript( urls.ffmpeg )
-			.then( function () {
-				return loadScript( urls.util );
-			} )
-			.then( function () {
-				var FFmpeg = window.FFmpegWASM && window.FFmpegWASM.FFmpeg;
-				var util = window.FFmpegUtil;
-				if ( ! FFmpeg ) {
-					throw new Error( 'FFmpegWASM global not found after loading ' + urls.ffmpeg );
-				}
-				if ( ! util || ! util.toBlobURL || ! util.fetchFile ) {
-					throw new Error( 'FFmpegUtil global not found after loading ' + urls.util );
-				}
-				var ff = new FFmpeg();
-				// Cross-origin Worker construction is blocked, so the class
-				// worker is loaded as a same-origin blob too (classWorkerURL).
-				var tasks = [
-					util.toBlobURL( urls.core, 'text/javascript' ),
-					util.toBlobURL( urls.wasm, 'application/wasm' )
-				];
-				if ( urls.worker ) {
-					tasks.push( util.toBlobURL( urls.worker, 'text/javascript' ) );
-				}
-				return Promise.all( tasks ).then( function ( b ) {
-					var cfg = { coreURL: b[ 0 ], wasmURL: b[ 1 ] };
-					if ( b[ 2 ] ) {
-						cfg.classWorkerURL = b[ 2 ];
-					}
-					return ff.load( cfg ).then( function () {
-						return { ff: ff, util: util };
-					} );
+		// The worker, core and wasm must be same-origin (the browser blocks a
+		// cross-origin Worker and the worker's import of the core). Ask the
+		// server to mirror them into uploads/ and use those URLs.
+		var p = fetch( CFG.restFfmpeg, { method: 'POST', headers: { 'X-WP-Nonce': CFG.nonce } } )
+			.then( function ( r ) {
+				return r.json().then( function ( j ) {
+					return { ok: r.ok, body: j };
 				} );
+			} )
+			.then( function ( res ) {
+				if ( ! res.ok || ! res.body || ! res.body.core ) {
+					throw new Error( ( res.body && res.body.message ) || 'Could not prepare the local ffmpeg files.' );
+				}
+				var local = res.body; // { worker, core, wasm } same-origin URLs.
+				return loadScript( urls.ffmpeg )
+					.then( function () {
+						return loadScript( urls.util );
+					} )
+					.then( function () {
+						var FFmpeg = window.FFmpegWASM && window.FFmpegWASM.FFmpeg;
+						var util = window.FFmpegUtil;
+						if ( ! FFmpeg ) {
+							throw new Error( 'FFmpegWASM global not found after loading ' + urls.ffmpeg );
+						}
+						if ( ! util || ! util.fetchFile ) {
+							throw new Error( 'FFmpegUtil global not found after loading ' + urls.util );
+						}
+						var ff = new FFmpeg();
+						var cfg = { coreURL: local.core, wasmURL: local.wasm };
+						if ( local.worker ) {
+							cfg.classWorkerURL = local.worker;
+						}
+						return ff.load( cfg ).then( function () {
+							return { ff: ff, util: util };
+						} );
+					} );
 			} );
 		ffmpegReady = p;
 		// Allow a retry if loading failed (don't cache the rejection forever).

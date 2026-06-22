@@ -33,6 +33,18 @@ class Rest {
 	public static function routes(): void {
 		register_rest_route(
 			self::NS,
+			'/ffmpeg-assets',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'ffmpeg_assets' ),
+				'permission_callback' => static function () {
+					return current_user_can( 'edit_posts' );
+				},
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/caption',
 			array(
 				'methods'             => 'POST',
@@ -54,6 +66,19 @@ class Rest {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Mirror the ffmpeg.wasm files locally and return their same-origin URLs.
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public static function ffmpeg_assets() {
+		$res = Ffmpeg_Cache::ensure();
+		if ( is_wp_error( $res ) ) {
+			return new \WP_Error( 'hti_social_ffmpeg', $res->get_error_message(), array( 'status' => 502 ) );
+		}
+		return new \WP_REST_Response( $res, 200 );
 	}
 
 	/**
