@@ -276,11 +276,21 @@
 					throw new Error( 'FFmpegUtil global not found after loading ' + urls.util );
 				}
 				var ff = new FFmpeg();
-				return Promise.all( [
+				// Cross-origin Worker construction is blocked, so the class
+				// worker is loaded as a same-origin blob too (classWorkerURL).
+				var tasks = [
 					util.toBlobURL( urls.core, 'text/javascript' ),
 					util.toBlobURL( urls.wasm, 'application/wasm' )
-				] ).then( function ( b ) {
-					return ff.load( { coreURL: b[ 0 ], wasmURL: b[ 1 ] } ).then( function () {
+				];
+				if ( urls.worker ) {
+					tasks.push( util.toBlobURL( urls.worker, 'text/javascript' ) );
+				}
+				return Promise.all( tasks ).then( function ( b ) {
+					var cfg = { coreURL: b[ 0 ], wasmURL: b[ 1 ] };
+					if ( b[ 2 ] ) {
+						cfg.classWorkerURL = b[ 2 ];
+					}
+					return ff.load( cfg ).then( function () {
 						return { ff: ff, util: util };
 					} );
 				} );

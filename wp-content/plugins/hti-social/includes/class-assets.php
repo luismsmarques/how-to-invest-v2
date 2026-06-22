@@ -93,6 +93,9 @@ class Assets {
 				'util'   => 'https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js',
 				'core'   => 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
 				'wasm'   => 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+				// The FFmpeg class spawns this worker; cross-origin Worker
+				// construction is blocked, so we load it as a same-origin blob.
+				'worker' => 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/814.ffmpeg.js',
 			)
 		);
 	}
