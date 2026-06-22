@@ -21,6 +21,7 @@ class Plugin {
 		Assets::init();
 		Admin::init();
 		Metabox::init();
+		Reels::init();
 	}
 
 	/**

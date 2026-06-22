@@ -12,6 +12,11 @@ fonts embedded as base64) and drawn to a canvas.
 - **Per-post auto-fill:** a **Social cards** meta box on the **News** and
   **Glossary** editors, pre-filled from the post (title, dek/definition, featured
   image). (`data-mode="post"`.)
+- **Reels:** admin menu → **Social → Reels**. Upload a video, type a title +
+  caption, pick a branded overlay, and render a vertical **1080×1920** reel in
+  the browser (Canvas + MediaRecorder → **WebM**, with the video's audio). No
+  server, no FFmpeg. Instagram wants MP4, so a quick WebM→MP4 conversion may be
+  needed. Use only footage you own/are licensed to use.
 
 ## Invariants (educational platform)
 - The legal **disclaimer** and **by-asset-class** framing are part of the brand,

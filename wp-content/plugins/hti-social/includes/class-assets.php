@@ -107,6 +107,16 @@ class Assets {
 				'export'       => $pt ? 'Exportar PNG' : 'Export PNG',
 				'exporting'    => $pt ? 'A exportar…' : 'Exporting…',
 				'drop'         => $pt ? 'Arrasta uma imagem para aqui' : 'Drag an image here',
+				'video'        => $pt ? 'Vídeo' : 'Video',
+				'choose_video' => $pt ? 'Escolher vídeo…' : 'Choose video…',
+				'title'        => $pt ? 'Título' : 'Title',
+				'caption'      => $pt ? 'Legenda' : 'Caption',
+				'render'       => $pt ? 'Gerar reel (WebM)' : 'Render reel (WebM)',
+				'rendering'    => $pt ? 'A gravar…' : 'Recording…',
+				'render_hint'  => $pt ? 'A gravação corre em tempo real (a duração do vídeo) — mantém este separador à frente.' : 'Recording runs in real time (the video length) — keep this tab focused.',
+				'need_video'   => $pt ? 'Primeiro escolhe um vídeo.' : 'Choose a video first.',
+				'no_support'   => $pt ? 'O teu browser não suporta a gravação. Usa o Chrome ou o Firefox.' : 'Your browser cannot record. Use Chrome or Firefox.',
+				'webm_note'    => $pt ? 'O ficheiro sai em WebM. O Instagram pede MP4 — converte rapidamente num conversor WebM→MP4.' : 'Output is WebM. Instagram wants MP4 — convert quickly with a WebM→MP4 converter.',
 			),
 		);
 	}
