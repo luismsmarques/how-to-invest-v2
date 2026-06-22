@@ -262,15 +262,18 @@
 			return ffmpegReady;
 		}
 		var urls = CFG.ffmpeg || {};
-		ffmpegReady = loadScript( urls.ffmpeg )
+		var p = loadScript( urls.ffmpeg )
 			.then( function () {
 				return loadScript( urls.util );
 			} )
 			.then( function () {
 				var FFmpeg = window.FFmpegWASM && window.FFmpegWASM.FFmpeg;
 				var util = window.FFmpegUtil;
-				if ( ! FFmpeg || ! util ) {
-					throw new Error( 'ffmpeg unavailable' );
+				if ( ! FFmpeg ) {
+					throw new Error( 'FFmpegWASM global not found after loading ' + urls.ffmpeg );
+				}
+				if ( ! util || ! util.toBlobURL || ! util.fetchFile ) {
+					throw new Error( 'FFmpegUtil global not found after loading ' + urls.util );
 				}
 				var ff = new FFmpeg();
 				return Promise.all( [
@@ -282,7 +285,14 @@
 					} );
 				} );
 			} );
-		return ffmpegReady;
+		ffmpegReady = p;
+		// Allow a retry if loading failed (don't cache the rejection forever).
+		p.catch( function () {
+			if ( ffmpegReady === p ) {
+				ffmpegReady = null;
+			}
+		} );
+		return p;
 	}
 
 	function convertToMp4( webmBlob, onProgress ) {
@@ -301,7 +311,7 @@
 			} ).then( function () {
 				return ff.readFile( 'out.mp4' );
 			} ).then( function ( out ) {
-				return new Blob( [ out.buffer ], { type: 'video/mp4' } );
+				return new Blob( [ out ], { type: 'video/mp4' } );
 			} );
 		} );
 	}
@@ -829,10 +839,15 @@
 					} ).then( function ( mp4 ) {
 						downloadBlob( mp4, base + '.mp4' );
 						stop();
-					} ).catch( function () {
+					} ).catch( function ( err ) {
 						downloadBlob( blob, base + '.webm' );
 						stop();
-						window.alert( I.mp4_fail );
+						var msg = err && err.message ? err.message : String( err || '' );
+						if ( window.console ) {
+							window.console.error( 'hti-social: MP4 conversion failed', err );
+						}
+						renderLabel.textContent = I.mp4_fail;
+						window.alert( I.mp4_fail + ( msg ? '\n\n' + msg : '' ) );
 					} );
 				};
 
