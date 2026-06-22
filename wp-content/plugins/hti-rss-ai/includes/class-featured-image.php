@@ -215,7 +215,7 @@ class Featured_Image {
 			'rssai_featured_image',
 			__( 'AI featured image', 'hti-rss-ai' ),
 			array( __CLASS__, 'render_meta_box' ),
-			'news',
+			Settings::post_type(),
 			'side',
 			'default'
 		);

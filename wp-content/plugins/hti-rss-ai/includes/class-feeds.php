@@ -137,7 +137,7 @@ class Feeds {
 	 * @return array<string,mixed>
 	 */
 	private static function clean( array $data ): array {
-		$lang = in_array( $data['lang'] ?? 'en', array( 'en', 'pt' ), true ) ? $data['lang'] : 'en';
+		$lang = Settings::valid_lang( (string) ( $data['lang'] ?? '' ) );
 		$kind = in_array( $data['kind'] ?? 'rss', array( 'rss', 'youtube' ), true ) ? (string) $data['kind'] : 'rss';
 		// For a YouTube feed, "url" holds a channel id (UC…), not a real URL.
 		$raw = (string) ( $data['url'] ?? '' );

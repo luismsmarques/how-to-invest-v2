@@ -28,14 +28,15 @@ class Review {
 	 * Register the side meta box on news posts.
 	 */
 	public static function add_box(): void {
-		if ( ! post_type_exists( 'news' ) ) {
+		$post_type = Settings::post_type();
+		if ( ! post_type_exists( $post_type ) ) {
 			return;
 		}
 		add_meta_box(
 			'rssai_review',
 			__( 'RSS AI — review', 'hti-rss-ai' ),
 			array( __CLASS__, 'render' ),
-			'news',
+			$post_type,
 			'side',
 			'high'
 		);
@@ -160,17 +161,18 @@ class Review {
 	 */
 	private static function suggest_news( \WP_Post $post ): array {
 		$args = array(
-			'post_type'        => 'news',
+			'post_type'        => Settings::post_type(),
 			'post_status'      => 'publish',
 			'numberposts'      => 5,
 			'post__not_in'     => array( $post->ID ),
 			'suppress_filters' => true,
 		);
-		$cats = wp_get_object_terms( $post->ID, 'news_category', array( 'fields' => 'ids' ) );
+		$taxonomy = Settings::taxonomy();
+		$cats     = '' !== $taxonomy ? wp_get_object_terms( $post->ID, $taxonomy, array( 'fields' => 'ids' ) ) : array();
 		if ( $cats && ! is_wp_error( $cats ) ) {
 			$args['tax_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 				array(
-					'taxonomy' => 'news_category',
+					'taxonomy' => $taxonomy,
 					'field'    => 'term_id',
 					'terms'    => $cats,
 				),

@@ -45,6 +45,37 @@ if ( ! function_exists( 'remove_accents' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_option' ) ) {
+	function get_option( $key, $default = false ) {
+		return $default;
+	}
+}
+if ( ! function_exists( 'wp_parse_args' ) ) {
+	function wp_parse_args( $args, $defaults = array() ) {
+		return array_merge( (array) $defaults, (array) $args );
+	}
+}
+if ( ! function_exists( 'apply_filters' ) ) {
+	function apply_filters( $tag, $value ) {
+		return $value;
+	}
+}
+if ( ! function_exists( 'taxonomy_exists' ) ) {
+	function taxonomy_exists( $tax ) {
+		return false;
+	}
+}
+if ( ! function_exists( 'post_type_exists' ) ) {
+	function post_type_exists( $type ) {
+		return true;
+	}
+}
+if ( ! function_exists( 'get_locale' ) ) {
+	function get_locale() {
+		return 'en_US';
+	}
+}
+
 if ( ! class_exists( 'WP_Error' ) ) {
 	class WP_Error {
 		public $code;

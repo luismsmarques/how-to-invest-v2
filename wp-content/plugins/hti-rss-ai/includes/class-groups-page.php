@@ -169,7 +169,7 @@ class Groups_Page {
 		if ( 'generated' === $group->status ) {
 			$posts = get_posts(
 				array(
-					'post_type'        => 'news',
+					'post_type'        => Settings::post_type(),
 					'post_status'      => 'any',
 					'meta_key'         => 'rssai_group_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 					'meta_value'       => (int) $group->id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value

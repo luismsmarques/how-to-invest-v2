@@ -22,8 +22,8 @@ class Generator {
 	 * @return int|\WP_Error New post id, or error.
 	 */
 	public static function generate( int $group_id ) {
-		if ( ! post_type_exists( 'news' ) ) {
-			return new \WP_Error( 'rssai_no_news', __( 'The “news” content type is missing (activate HTI Engine).', 'hti-rss-ai' ) );
+		if ( ! post_type_exists( Settings::post_type() ) ) {
+			return new \WP_Error( 'rssai_no_type', __( 'The configured target post type does not exist — pick one in Settings.', 'hti-rss-ai' ) );
 		}
 		if ( ! Gemini_Client::available() ) {
 			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
@@ -40,7 +40,7 @@ class Generator {
 		if ( ! $items ) {
 			return new \WP_Error( 'rssai_no_items', __( 'Group has no items.', 'hti-rss-ai' ) );
 		}
-		$lang = in_array( $group->lang, array( 'en', 'pt' ), true ) ? $group->lang : 'en';
+		$lang = Settings::valid_lang( (string) $group->lang );
 
 		$result = Gemini_Client::generate_grounded( Prompt::system( $lang ), Prompt::user( $group, $items ) );
 		if ( is_wp_error( $result ) ) {
@@ -91,8 +91,8 @@ class Generator {
 		$post_id = wp_insert_post(
 			wp_slash(
 				array(
-					'post_type'    => 'news',
-					'post_status'  => 'pending',
+					'post_type'    => Settings::post_type(),
+					'post_status'  => Settings::post_status(),
 					'post_title'   => sanitize_text_field( (string) $data['headline'] ),
 					'post_name'    => sanitize_title( (string) ( $data['slug'] ?? $data['headline'] ) ),
 					'post_content' => $content,
@@ -113,10 +113,11 @@ class Generator {
 		update_post_meta( $post_id, 'rssai_generated_at', current_time( 'mysql' ) );
 		update_post_meta( $post_id, '_rssai_meta_description', sanitize_text_field( (string) ( $data['meta_description'] ?? '' ) ) );
 
-		if ( ! empty( $data['suggested_category'] ) && taxonomy_exists( 'news_category' ) ) {
-			$term = get_term_by( 'name', sanitize_text_field( (string) $data['suggested_category'] ), 'news_category' );
+		$taxonomy = Settings::taxonomy();
+		if ( ! empty( $data['suggested_category'] ) && '' !== $taxonomy ) {
+			$term = get_term_by( 'name', sanitize_text_field( (string) $data['suggested_category'] ), $taxonomy );
 			if ( $term instanceof \WP_Term ) {
-				wp_set_object_terms( $post_id, array( (int) $term->term_id ), 'news_category' );
+				wp_set_object_terms( $post_id, array( (int) $term->term_id ), $taxonomy );
 			}
 		}
 
@@ -185,9 +186,17 @@ class Generator {
 	 * @param string $lang Language.
 	 */
 	public static function disclaimer_html( string $lang ): string {
-		$text = 'pt' === $lang
-			? 'Conteúdo educativo e informativo. Não constitui aconselhamento financeiro, de investimento, fiscal ou jurídico, nem recomendação de compra ou venda de qualquer ativo.'
-			: 'Educational and informational content. Not financial, investment, tax or legal advice, nor a recommendation to buy or sell any asset.';
+		$raw = (string) Settings::get( 'disclaimer', '' );
+		if ( '' !== trim( $raw ) ) {
+			$text = trim( $raw ); // Custom disclaimer for any site.
+		} elseif ( '' !== $raw ) {
+			return ''; // Whitespace-only = explicitly no disclaimer.
+		} else {
+			// Built-in educational default (this site / finance).
+			$text = 'pt' === $lang
+				? 'Conteúdo educativo e informativo. Não constitui aconselhamento financeiro, de investimento, fiscal ou jurídico, nem recomendação de compra ou venda de qualquer ativo.'
+				: 'Educational and informational content. Not financial, investment, tax or legal advice, nor a recommendation to buy or sell any asset.';
+		}
 		return '<!-- wp:paragraph {"fontSize":"small"} --><p class="has-small-font-size"><em>' . esc_html( $text ) . '</em></p><!-- /wp:paragraph -->' . "\n";
 	}
 

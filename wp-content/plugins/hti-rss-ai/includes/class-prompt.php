@@ -20,34 +20,47 @@ class Prompt {
 	 * @param string $lang 'en' or 'pt'.
 	 */
 	public static function system( string $lang ): string {
-		$language = 'pt' === $lang ? 'European Portuguese (pt-PT)' : 'English';
+		$language = self::language_name( $lang );
 		$today    = self::today();
 		$year     = (int) substr( $today, 0, 4 );
 		$cats     = self::category_rule( $lang );
 
-		return implode(
-			"\n",
+		$lines = array(
+			self::identity_line(),
+			'Your job: from the related headlines/summaries provided, research the current facts on the web and write ONE original, neutral, well-structured news article.',
+			'',
+			"TODAY'S DATE IS {$today}. The article is published today and must read as current on that date.",
+			'',
+			'STRICT RULES:',
+			"- Write in {$language}.",
+			'- Use ONLY facts you can support from your web research. If a detail is uncertain, omit it. Never invent numbers, quotes, dates or names.',
+			'- TEMPORAL FRAMING (critical): write from the perspective of today.',
+			"  - Prefer the most recent data available (latest full-year results and {$year} estimates). Actively search for figures more recent than those in the source summaries — market-research summaries are often a year or two behind.",
+			'  - Never present a past year as the present. Do NOT write "currently", "this year" or "now" about a figure whose base year is in the past.',
+			'  - When a figure\'s base year is older than the current year, state that base year explicitly (e.g. "valued at X in 2024") instead of implying it is current.',
+			"  - For forecasts/CAGR, anchor the window to today and the future (e.g. {$year}–2034), not to a window that has already started in the past.",
+			'  - If you genuinely cannot find data at least as recent as the current year, say so plainly rather than dressing up old figures as current.',
+			'- Original synthesis. NEVER copy the source text verbatim; rewrite in your own words and attribute sources.',
+			'- Neutral and impartial.',
+		);
+		foreach ( self::guard_lines() as $g ) {
+			$lines[] = $g;
+		}
+		$lines = array_merge(
+			$lines,
 			array(
-				'You are a financial-news editor for an educational financial-literacy platform.',
-				'Your job: from the related headlines/summaries provided, research the current facts on the web and write ONE original, neutral, educational news article.',
-				'',
-				"TODAY'S DATE IS {$today}. The article is published today and must read as current on that date.",
-				'',
-				'STRICT RULES:',
-				"- Write in {$language}.",
-				'- Use ONLY facts you can support from your web research. If a detail is uncertain, omit it. Never invent numbers, quotes, dates or names.',
-				'- TEMPORAL FRAMING (critical): write from the perspective of today.',
-				"  - Prefer the most recent data available (latest full-year results and {$year} estimates). Actively search for figures more recent than those in the source summaries — market-research summaries are often a year or two behind.",
-				'  - Never present a past year as the present. Do NOT write "currently", "this year" or "now" about a figure whose base year is in the past.',
-				'  - When a figure\'s base year is older than the current year, state that base year explicitly (e.g. "valued at X in 2024") instead of implying it is current.',
-				"  - For forecasts/CAGR, anchor the window to today and the future (e.g. {$year}–2034), not to a window that has already started in the past.",
-				'  - If you genuinely cannot find data at least as recent as the current year, say so plainly rather than dressing up old figures as current.',
-				'- Original synthesis. NEVER copy the source text verbatim; rewrite in your own words and attribute sources.',
-				'- Educational and impartial. NO investment advice, NO recommendations, NO "buy/sell/should", NO price targets, NO specific tickers or product/fund names.',
 				'- SEO + Google News friendly: a clear, factual headline; a concise meta description (max 155 characters); a short lead (dek); a well-structured body with short paragraphs and the occasional subheading.',
 				'- Include the sources you actually used.',
 				$cats,
 				'',
+			)
+		);
+
+		return implode(
+			"\n",
+			array_merge(
+				$lines,
+				array(
 				'OUTPUT: respond with ONLY a JSON object (no markdown, no commentary) of this exact shape:',
 				'{',
 				'  "headline": string,',
@@ -60,8 +73,55 @@ class Prompt {
 				'  "sources": [ { "title": string, "url": string } ],',
 				'  "lang": "' . $lang . '"',
 				'}',
+				)
 			)
 		);
+	}
+
+	/**
+	 * Neutral identity line, with the optional house style appended.
+	 */
+	private static function identity_line(): string {
+		$house = trim( (string) Settings::get( 'house_style', '' ) );
+		$base  = '' !== $house ? $house : 'You are a professional news editor for an educational publication.';
+		return $base;
+	}
+
+	/**
+	 * Optional finance safety instructions, gated by the same toggles as the
+	 * Validator so a general-news site can drop them.
+	 *
+	 * @return array<int,string>
+	 */
+	private static function guard_lines(): array {
+		$out = array();
+		if ( (int) Settings::get( 'guard_advice', 1 ) ) {
+			$out[] = '- Educational and impartial: NO advice, NO recommendations, NO "buy/sell/should", NO price targets.';
+		}
+		if ( (int) Settings::get( 'guard_tickers', 1 ) ) {
+			$out[] = '- Do NOT name specific stock tickers or push specific products/funds.';
+		}
+		return $out;
+	}
+
+	/**
+	 * Human language name for a code (best-effort; falls back to the code).
+	 *
+	 * @param string $lang Language code.
+	 */
+	public static function language_name( string $lang ): string {
+		$map = array(
+			'en' => 'English',
+			'pt' => 'European Portuguese (pt-PT)',
+			'es' => 'Spanish',
+			'fr' => 'French',
+			'de' => 'German',
+			'it' => 'Italian',
+			'nl' => 'Dutch',
+			'pl' => 'Polish',
+			'br' => 'Brazilian Portuguese',
+		);
+		return $map[ strtolower( $lang ) ] ?? strtoupper( $lang );
 	}
 
 	/**
@@ -111,32 +171,37 @@ class Prompt {
 	 * @param string $type news|quote|tutorial|summary.
 	 */
 	public static function youtube_system( string $lang, string $type ): string {
-		$language = 'pt' === $lang ? 'European Portuguese (pt-PT)' : 'English';
+		$language = self::language_name( $lang );
 		$today    = self::today();
 		$cats     = self::category_rule( $lang );
 
 		$intent = array(
-			'news'     => 'Write ONE original, neutral, educational news-style article about the topic discussed in the video. Synthesise the key points; do not transcribe.',
-			'quote'    => 'Highlight the single most insightful idea from the speaker. Include a short faithful quote (a sentence or two) clearly attributed to the speaker/channel, then 2-4 short paragraphs of neutral educational context explaining the idea in plain language.',
-			'tutorial' => 'Write an educational explainer that teaches the CONCEPTS covered in the video, structured with clear subheadings and short steps/sections. Explain ideas; never give instructions to buy or sell anything.',
-			'summary'  => 'Write a concise summary followed by the key takeaways as short, scannable points (use heading + paragraph blocks). Neutral and educational.',
+			'news'     => 'Write ONE original, neutral news-style article about the topic discussed in the video. Synthesise the key points; do not transcribe.',
+			'quote'    => 'Highlight the single most insightful idea from the speaker. Include a short faithful quote (a sentence or two) clearly attributed to the speaker/channel, then 2-4 short paragraphs of neutral context explaining the idea in plain language.',
+			'tutorial' => 'Write an explainer that teaches the CONCEPTS covered in the video, structured with clear subheadings and short steps/sections. Explain ideas; never give instructions to buy or sell anything.',
+			'summary'  => 'Write a concise summary followed by the key takeaways as short, scannable points (use heading + paragraph blocks). Neutral and clear.',
 		);
 		$kind_line = $intent[ $type ] ?? $intent['news'];
 
-		return implode(
-			"\n",
+		$lines = array(
+			self::identity_line() . ' You are given the transcript of a YouTube video.',
+			$kind_line,
+			'',
+			"TODAY'S DATE IS {$today}.",
+			'',
+			'STRICT RULES:',
+			"- Write in {$language}.",
+			'- Base the content ONLY on the transcript provided. Do not invent facts, numbers, quotes, dates or names that are not supported by the transcript.',
+			'- Original wording. Except for a clearly-marked short quote (quote type only), never copy the transcript verbatim — rewrite in your own words.',
+			'- Always attribute the source: name the channel and reference the video.',
+			'- Neutral and impartial.',
+		);
+		foreach ( self::guard_lines() as $g ) {
+			$lines[] = $g;
+		}
+		$lines = array_merge(
+			$lines,
 			array(
-				'You are an editor for an educational financial-literacy platform. You are given the transcript of a YouTube video.',
-				$kind_line,
-				'',
-				"TODAY'S DATE IS {$today}.",
-				'',
-				'STRICT RULES:',
-				"- Write in {$language}.",
-				'- Base the content ONLY on the transcript provided. Do not invent facts, numbers, quotes, dates or names that are not supported by the transcript.',
-				'- Original wording. Except for a clearly-marked short quote (quote type only), never copy the transcript verbatim — rewrite in your own words.',
-				'- Always attribute the source: name the channel and reference the video.',
-				'- Educational and impartial. NO investment advice, NO recommendations, NO "buy/sell/should", NO price targets, NO specific tickers, and do NOT present any specific company/stock/fund as something to buy.',
 				'- SEO friendly: a clear factual headline; a concise meta description (max 155 characters); a short lead (dek); well-structured short paragraphs with the occasional subheading.',
 				'- The provided video MUST appear in "sources".',
 				$cats,
@@ -155,6 +220,8 @@ class Prompt {
 				'}',
 			)
 		);
+
+		return implode( "\n", $lines );
 	}
 
 	/**
@@ -229,12 +296,13 @@ class Prompt {
 	 * @param string $lang 'en' or 'pt'.
 	 */
 	private static function category_rule( string $lang ): string {
-		if ( ! function_exists( 'get_terms' ) || ! taxonomy_exists( 'news_category' ) ) {
+		$taxonomy = Settings::taxonomy();
+		if ( ! function_exists( 'get_terms' ) || '' === $taxonomy ) {
 			return '';
 		}
 		$terms = get_terms(
 			array(
-				'taxonomy'   => 'news_category',
+				'taxonomy'   => $taxonomy,
 				'hide_empty' => false,
 			)
 		);

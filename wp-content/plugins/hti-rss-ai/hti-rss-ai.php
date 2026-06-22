@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
- * Description:       Ingests RSS feeds into drafts, clusters similar items, and (on demand) researches facts with Gemini grounding to generate SEO/Google-News articles for review. Feeds the hti-engine "news" content type.
- * Version:           1.8.1
+ * Description:       Turns RSS feeds and YouTube channels into AI-drafted articles for review (Gemini). Works with any post type, taxonomy and theme — configure the target in Settings.
+ * Version:           1.9.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '1.8.1';
+const VERSION = '1.9.0';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );
@@ -97,12 +97,12 @@ Cleanup::init();
  * generated articles target that content type.
  */
 function dependency_notice(): void {
-	if ( ! current_user_can( 'manage_options' ) || post_type_exists( 'news' ) ) {
+	if ( ! current_user_can( 'manage_options' ) || post_type_exists( Settings::post_type() ) ) {
 		return;
 	}
 	printf(
 		'<div class="notice notice-warning"><p>%s</p></div>',
-		esc_html__( 'HTI RSS AI Feed: the “news” content type was not found. Activate the HTI Engine plugin so generated articles have somewhere to go.', 'hti-rss-ai' )
+		esc_html__( 'HTI RSS AI Feed: the configured target post type was not found. Pick an existing post type in RSS AI Feed → Settings.', 'hti-rss-ai' )
 	);
 }
 add_action( 'admin_notices', __NAMESPACE__ . '\\dependency_notice' );

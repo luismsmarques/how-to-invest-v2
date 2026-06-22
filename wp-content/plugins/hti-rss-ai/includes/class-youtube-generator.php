@@ -27,8 +27,8 @@ class YouTube_Generator {
 	public static function generate( int $item_id, string $type ) {
 		$type = array_key_exists( $type, Prompt::youtube_types() ) ? $type : 'news';
 
-		if ( ! post_type_exists( 'news' ) ) {
-			return new \WP_Error( 'rssai_no_news', __( 'The “news” content type is missing (activate HTI Engine).', 'hti-rss-ai' ) );
+		if ( ! post_type_exists( Settings::post_type() ) ) {
+			return new \WP_Error( 'rssai_no_type', __( 'The configured target post type does not exist — pick one in Settings.', 'hti-rss-ai' ) );
 		}
 		if ( ! Gemini_Client::available() ) {
 			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
@@ -55,7 +55,7 @@ class YouTube_Generator {
 			Items::update( $item_id, array( 'transcript' => $transcript ) );
 		}
 
-		$lang = in_array( $item->lang, array( 'en', 'pt' ), true ) ? $item->lang : 'en';
+		$lang = Settings::valid_lang( (string) $item->lang );
 
 		$result = Gemini_Client::generate(
 			Prompt::youtube_system( $lang, $type ),
@@ -114,8 +114,8 @@ class YouTube_Generator {
 		$post_id = wp_insert_post(
 			wp_slash(
 				array(
-					'post_type'    => 'news',
-					'post_status'  => 'pending',
+					'post_type'    => Settings::post_type(),
+					'post_status'  => Settings::post_status(),
 					'post_title'   => sanitize_text_field( (string) $data['headline'] ),
 					'post_name'    => sanitize_title( (string) ( $data['slug'] ?? $data['headline'] ) ),
 					'post_content' => $content,
@@ -138,10 +138,11 @@ class YouTube_Generator {
 		update_post_meta( $post_id, 'rssai_generated_at', current_time( 'mysql' ) );
 		update_post_meta( $post_id, '_rssai_meta_description', sanitize_text_field( (string) ( $data['meta_description'] ?? '' ) ) );
 
-		if ( ! empty( $data['suggested_category'] ) && taxonomy_exists( 'news_category' ) ) {
-			$term = get_term_by( 'name', sanitize_text_field( (string) $data['suggested_category'] ), 'news_category' );
+		$taxonomy = Settings::taxonomy();
+		if ( ! empty( $data['suggested_category'] ) && '' !== $taxonomy ) {
+			$term = get_term_by( 'name', sanitize_text_field( (string) $data['suggested_category'] ), $taxonomy );
 			if ( $term instanceof \WP_Term ) {
-				wp_set_object_terms( $post_id, array( (int) $term->term_id ), 'news_category' );
+				wp_set_object_terms( $post_id, array( (int) $term->term_id ), $taxonomy );
 			}
 		}
 

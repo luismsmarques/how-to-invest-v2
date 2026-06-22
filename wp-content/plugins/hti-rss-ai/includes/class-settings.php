@@ -50,7 +50,82 @@ class Settings {
 			'youtube_api_key'      => '',
 			'supadata_api_key'     => '',
 			'cleanup_days'         => 30,
+			'target_post_type'     => '',
+			'target_taxonomy'      => '',
+			'post_status'          => 'pending',
+			'languages'            => '',
+			'house_style'          => '',
+			'disclaimer'           => '',
+			'guard_advice'         => 1,
+			'guard_tickers'        => 1,
 		);
+	}
+
+	/**
+	 * The post type generated articles are created as (default "post").
+	 */
+	public static function post_type(): string {
+		$pt = (string) self::get( 'target_post_type', '' );
+		if ( '' === $pt ) {
+			// Back-compat: prefer an existing "news" CPT, else the default post.
+			$pt = post_type_exists( 'news' ) ? 'news' : 'post';
+		}
+		return post_type_exists( $pt ) ? $pt : 'post';
+	}
+
+	/**
+	 * The taxonomy used for the suggested category ('' if none/disabled).
+	 */
+	public static function taxonomy(): string {
+		$tax = (string) self::get( 'target_taxonomy', '' );
+		if ( '' === $tax ) {
+			$tax = taxonomy_exists( 'news_category' ) ? 'news_category' : 'category';
+		}
+		if ( 'none' === $tax ) {
+			return '';
+		}
+		return taxonomy_exists( $tax ) ? $tax : '';
+	}
+
+	/**
+	 * The status new articles are created with.
+	 */
+	public static function post_status(): string {
+		$status = (string) self::get( 'post_status', 'pending' );
+		return in_array( $status, array( 'pending', 'draft', 'publish' ), true ) ? $status : 'pending';
+	}
+
+	/**
+	 * Configured content languages (lowercased codes). Falls back to the site
+	 * locale's 2-letter code, then 'en'.
+	 *
+	 * @return array<int,string>
+	 */
+	public static function languages(): array {
+		$raw = trim( (string) self::get( 'languages', '' ) );
+		if ( '' === $raw ) {
+			$raw = substr( (string) get_locale(), 0, 2 );
+		}
+		$codes = array();
+		foreach ( preg_split( '/[\s,]+/', strtolower( $raw ) ) as $code ) {
+			$code = preg_replace( '/[^a-z]/', '', (string) $code );
+			if ( '' !== $code ) {
+				$codes[ $code ] = true;
+			}
+		}
+		$codes = array_keys( $codes );
+		return $codes ? $codes : array( 'en' );
+	}
+
+	/**
+	 * Whether a language code is one of the configured languages.
+	 *
+	 * @param string $lang Candidate code.
+	 */
+	public static function valid_lang( string $lang ): string {
+		$langs = self::languages();
+		$lang  = strtolower( substr( $lang, 0, 5 ) );
+		return in_array( $lang, $langs, true ) ? $lang : $langs[0];
 	}
 
 	/**
@@ -137,7 +212,6 @@ class Settings {
 	public static function sanitize( $input ): array {
 		$input     = is_array( $input ) ? $input : array();
 		$intervals = array( 'hourly', 'twicedaily', 'daily' );
-		$langs     = array( 'en', 'pt' );
 
 		$threshold = isset( $input['similarity_threshold'] ) ? (float) $input['similarity_threshold'] : 0.5;
 		$threshold = max( 0.0, min( 1.0, $threshold ) );
@@ -156,10 +230,18 @@ class Settings {
 			'similarity_threshold' => $threshold,
 			'max_per_fetch'        => max( 1, absint( $input['max_per_fetch'] ?? 50 ) ),
 			'max_generations_day'  => max( 1, absint( $input['max_generations_day'] ?? 10 ) ),
-			'default_lang'         => in_array( $input['default_lang'] ?? '', $langs, true ) ? $input['default_lang'] : 'en',
+			'default_lang'         => isset( $input['default_lang'] ) ? preg_replace( '/[^a-z]/', '', strtolower( (string) $input['default_lang'] ) ) : 'en',
 			'image_generate'       => empty( $input['image_generate'] ) ? 0 : 1,
 			'image_model'          => isset( $input['image_model'] ) ? sanitize_text_field( $input['image_model'] ) : 'imagen-4.0-generate-001',
 			'image_base_model'     => isset( $input['image_base_model'] ) ? sanitize_text_field( $input['image_base_model'] ) : 'gemini-2.5-flash-image',
+			'target_post_type'     => isset( $input['target_post_type'] ) ? sanitize_key( $input['target_post_type'] ) : '',
+			'target_taxonomy'      => isset( $input['target_taxonomy'] ) ? sanitize_key( $input['target_taxonomy'] ) : '',
+			'post_status'          => in_array( $input['post_status'] ?? '', array( 'pending', 'draft', 'publish' ), true ) ? $input['post_status'] : 'pending',
+			'languages'            => isset( $input['languages'] ) ? sanitize_text_field( $input['languages'] ) : '',
+			'house_style'          => isset( $input['house_style'] ) ? sanitize_textarea_field( $input['house_style'] ) : '',
+			'disclaimer'           => isset( $input['disclaimer'] ) ? sanitize_textarea_field( $input['disclaimer'] ) : '',
+			'guard_advice'         => empty( $input['guard_advice'] ) ? 0 : 1,
+			'guard_tickers'        => empty( $input['guard_tickers'] ) ? 0 : 1,
 		);
 	}
 
@@ -204,7 +286,74 @@ class Settings {
 
 			<form method="post" action="options.php">
 				<?php settings_fields( self::GROUP ); ?>
+				<h2 class="title"><?php echo esc_html__( 'Publishing target', 'hti-rss-ai' ); ?></h2>
+				<p class="description"><?php echo esc_html__( 'Where generated articles go. Works with any post type, taxonomy and theme — no dependency on a specific plugin.', 'hti-rss-ai' ); ?></p>
 				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="rssai_post_type"><?php echo esc_html__( 'Post type', 'hti-rss-ai' ); ?></label></th>
+						<td>
+							<?php $cur_pt = self::post_type(); ?>
+							<select name="<?php echo esc_attr( self::OPTION ); ?>[target_post_type]" id="rssai_post_type">
+								<?php
+								foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $pt_obj ) {
+									printf( '<option value="%1$s"%2$s>%3$s</option>', esc_attr( $pt_obj->name ), selected( $cur_pt, $pt_obj->name, false ), esc_html( $pt_obj->labels->singular_name . ' (' . $pt_obj->name . ')' ) );
+								}
+								?>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_taxonomy"><?php echo esc_html__( 'Category taxonomy', 'hti-rss-ai' ); ?></label></th>
+						<td>
+							<?php $cur_tax = self::taxonomy(); ?>
+							<select name="<?php echo esc_attr( self::OPTION ); ?>[target_taxonomy]" id="rssai_taxonomy">
+								<option value="none"<?php selected( '' === $cur_tax ); ?>><?php echo esc_html__( '— none —', 'hti-rss-ai' ); ?></option>
+								<?php
+								foreach ( get_taxonomies( array( 'public' => true ), 'objects' ) as $tx ) {
+									printf( '<option value="%1$s"%2$s>%3$s</option>', esc_attr( $tx->name ), selected( $cur_tax, $tx->name, false ), esc_html( $tx->labels->singular_name . ' (' . $tx->name . ')' ) );
+								}
+								?>
+							</select>
+							<p class="description"><?php echo esc_html__( 'The model suggests a term from this taxonomy. Choose “none” to skip categorisation.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_post_status"><?php echo esc_html__( 'Create as', 'hti-rss-ai' ); ?></label></th>
+						<td>
+							<select name="<?php echo esc_attr( self::OPTION ); ?>[post_status]" id="rssai_post_status">
+								<?php foreach ( array( 'pending' => __( 'Pending review', 'hti-rss-ai' ), 'draft' => __( 'Draft', 'hti-rss-ai' ), 'publish' => __( 'Published', 'hti-rss-ai' ) ) as $val => $lbl ) : ?>
+									<option value="<?php echo esc_attr( $val ); ?>"<?php selected( $s['post_status'], $val ); ?>><?php echo esc_html( $lbl ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description"><?php echo esc_html__( 'Keep “Pending review” to always have a human approve before it goes live.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_languages"><?php echo esc_html__( 'Languages', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[languages]" id="rssai_languages" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['languages'] ); ?>" placeholder="<?php echo esc_attr( implode( ', ', self::languages() ) ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Comma-separated language codes you publish in (e.g. en, pt). Leave blank to use the site language. Grouping and generation run per language.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_house_style"><?php echo esc_html__( 'House style (voice)', 'hti-rss-ai' ); ?></label></th>
+						<td><textarea name="<?php echo esc_attr( self::OPTION ); ?>[house_style]" id="rssai_house_style" rows="3" class="large-text"><?php echo esc_textarea( (string) $s['house_style'] ); ?></textarea>
+							<p class="description"><?php echo esc_html__( 'Optional extra instructions appended to the writing prompt (tone, audience, do/don’t). Leave blank for the default neutral, educational voice.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_disclaimer"><?php echo esc_html__( 'Disclaimer', 'hti-rss-ai' ); ?></label></th>
+						<td><textarea name="<?php echo esc_attr( self::OPTION ); ?>[disclaimer]" id="rssai_disclaimer" rows="2" class="large-text"><?php echo esc_textarea( (string) $s['disclaimer'] ); ?></textarea>
+							<p class="description"><?php echo esc_html__( 'Appended to every article. Leave blank to use the built-in educational disclaimer (or for no disclaimer on a non-finance site, type a single space).', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Safety guards', 'hti-rss-ai' ); ?></th>
+						<td>
+							<label><input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[guard_advice]" value="1" <?php checked( (int) $s['guard_advice'], 1 ); ?> /> <?php echo esc_html__( 'Reject articles that read like investment advice', 'hti-rss-ai' ); ?></label><br />
+							<label><input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[guard_tickers]" value="1" <?php checked( (int) $s['guard_tickers'], 1 ); ?> /> <?php echo esc_html__( 'Reject articles that name stock ticker symbols', 'hti-rss-ai' ); ?></label>
+							<p class="description"><?php echo esc_html__( 'Finance-specific. Turn off on a general-news site.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
 					<tr>
 						<th scope="row"><label for="rssai_model"><?php echo esc_html__( 'Gemini model', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[gemini_model]" id="rssai_model" type="text" class="regular-text" value="<?php echo esc_attr( $s['gemini_model'] ); ?>" /></td>
@@ -249,8 +398,9 @@ class Settings {
 						<th scope="row"><label for="rssai_lang"><?php echo esc_html__( 'Default language', 'hti-rss-ai' ); ?></label></th>
 						<td>
 							<select name="<?php echo esc_attr( self::OPTION ); ?>[default_lang]" id="rssai_lang">
-								<option value="en"<?php selected( $s['default_lang'], 'en' ); ?>>English</option>
-								<option value="pt"<?php selected( $s['default_lang'], 'pt' ); ?>>Português</option>
+								<?php foreach ( self::languages() as $code ) : ?>
+									<option value="<?php echo esc_attr( $code ); ?>"<?php selected( $s['default_lang'], $code ); ?>><?php echo esc_html( strtoupper( $code ) ); ?></option>
+								<?php endforeach; ?>
 							</select>
 						</td>
 					</tr>

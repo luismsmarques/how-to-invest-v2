@@ -48,18 +48,20 @@ class Validator {
 			)
 		);
 
-		$banned = array(
-			'you should buy', 'you should sell', 'buy now', 'sell now', 'price target',
-			'we recommend', 'should invest', 'deves comprar', 'deves vender', 'recomendamos',
-			'preço-alvo', 'preco-alvo', 'compre já', 'compre ja', 'venda já', 'venda ja',
-		);
-		foreach ( $banned as $phrase ) {
-			if ( false !== strpos( $text, $phrase ) ) {
-				return new \WP_Error( 'rssai_advice', __( 'Generated article reads like investment advice — rejected.', 'hti-rss-ai' ) );
+		if ( (int) Settings::get( 'guard_advice', 1 ) ) {
+			$banned = array(
+				'you should buy', 'you should sell', 'buy now', 'sell now', 'price target',
+				'we recommend', 'should invest', 'deves comprar', 'deves vender', 'recomendamos',
+				'preço-alvo', 'preco-alvo', 'compre já', 'compre ja', 'venda já', 'venda ja',
+			);
+			foreach ( $banned as $phrase ) {
+				if ( false !== strpos( $text, $phrase ) ) {
+					return new \WP_Error( 'rssai_advice', __( 'Generated article reads like investment advice — rejected.', 'hti-rss-ai' ) );
+				}
 			}
 		}
 
-		if ( preg_match( '/\$[A-Z]{2,5}\b/', (string) $data['headline'] . ' ' . $text ) ) {
+		if ( (int) Settings::get( 'guard_tickers', 1 ) && preg_match( '/\$[A-Z]{2,5}\b/', (string) $data['headline'] . ' ' . $text ) ) {
 			return new \WP_Error( 'rssai_ticker', __( 'Generated article names a ticker symbol — rejected.', 'hti-rss-ai' ) );
 		}
 

@@ -36,7 +36,7 @@ class Grouping {
 			'items'  => 0,
 		);
 
-		foreach ( array( 'en', 'pt' ) as $lang ) {
+		foreach ( Settings::languages() as $lang ) {
 			$items = Items::query(
 				array(
 					'status'   => 'new',

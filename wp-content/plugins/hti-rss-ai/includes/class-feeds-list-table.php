@@ -73,7 +73,7 @@ class Feeds_List_Table extends \WP_List_Table {
 			case 'lang':
 				return esc_html( strtoupper( (string) $item->lang ) );
 			case 'category':
-				$term = (int) $item->default_category ? get_term( (int) $item->default_category, 'news_category' ) : null;
+				$term = (int) $item->default_category ? get_term( (int) $item->default_category, Settings::taxonomy() ) : null;
 				return $term && ! is_wp_error( $term ) ? esc_html( $term->name ) : '—';
 			case 'status':
 				return (int) $item->status

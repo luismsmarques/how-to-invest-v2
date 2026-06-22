@@ -6,6 +6,7 @@
  */
 
 require __DIR__ . '/bootstrap.php';
+require dirname( __DIR__ ) . '/includes/class-settings.php';
 require dirname( __DIR__ ) . '/includes/class-validator.php';
 
 use HTI\RssAI\Validator;

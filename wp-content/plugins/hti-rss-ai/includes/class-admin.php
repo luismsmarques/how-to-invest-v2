@@ -164,8 +164,9 @@ class Admin {
 						<th scope="row"><label for="rssai_lang"><?php echo esc_html__( 'Language', 'hti-rss-ai' ); ?></label></th>
 						<td>
 							<select name="lang" id="rssai_lang">
-								<option value="en"<?php selected( $lang, 'en' ); ?>>English</option>
-								<option value="pt"<?php selected( $lang, 'pt' ); ?>>Português</option>
+								<?php foreach ( Settings::languages() as $code ) : ?>
+									<option value="<?php echo esc_attr( $code ); ?>"<?php selected( $lang, $code ); ?>><?php echo esc_html( strtoupper( $code ) ); ?></option>
+								<?php endforeach; ?>
 							</select>
 						</td>
 					</tr>
@@ -173,10 +174,11 @@ class Admin {
 						<th scope="row"><label for="rssai_cat"><?php echo esc_html__( 'Default category', 'hti-rss-ai' ); ?></label></th>
 						<td>
 							<?php
-							if ( taxonomy_exists( 'news_category' ) ) {
+							$tax = Settings::taxonomy();
+							if ( '' !== $tax ) {
 								wp_dropdown_categories(
 									array(
-										'taxonomy'         => 'news_category',
+										'taxonomy'         => $tax,
 										'name'             => 'default_category',
 										'id'               => 'rssai_cat',
 										'selected'         => $cat,
@@ -187,7 +189,7 @@ class Admin {
 									)
 								);
 							} else {
-								echo '<em>' . esc_html__( 'news_category taxonomy not available (activate HTI Engine).', 'hti-rss-ai' ) . '</em>';
+								echo '<em>' . esc_html__( 'No category taxonomy selected in Settings.', 'hti-rss-ai' ) . '</em>';
 							}
 							?>
 							<p class="description"><?php echo esc_html__( 'Suggested category for items from this feed.', 'hti-rss-ai' ); ?></p>
