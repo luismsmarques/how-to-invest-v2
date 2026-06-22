@@ -181,17 +181,77 @@ class Drafts {
 		} elseif ( isset( $_REQUEST['action2'] ) && '-1' !== $_REQUEST['action2'] ) {
 			$action = sanitize_key( wp_unslash( $_REQUEST['action2'] ) );
 		}
-		if ( 'ignore' !== $action || empty( $_REQUEST['item'] ) ) {
+		if ( ! in_array( $action, array( 'ignore', 'group' ), true ) || empty( $_REQUEST['item'] ) ) {
 			return;
 		}
 		check_admin_referer( 'bulk-items' );
 
-		$ids     = array_map( 'absint', (array) wp_unslash( $_REQUEST['item'] ) );
-		$updated = Items::update_status( $ids, 'ignored' );
+		$ids = array_map( 'absint', (array) wp_unslash( $_REQUEST['item'] ) );
+		$ids = array_values( array_filter( $ids ) );
 
+		if ( 'group' === $action ) {
+			self::create_group_from( $ids );
+			return;
+		}
+
+		$updated = Items::update_status( $ids, 'ignored' );
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 			esc_html( sprintf( /* translators: %d: number of items. */ _n( '%d item ignored.', '%d items ignored.', $updated, 'hti-rss-ai' ), $updated ) )
 		);
+	}
+
+	/**
+	 * Build a manual group from the selected item ids and send the editor to it.
+	 *
+	 * @param array<int,int> $ids Item ids.
+	 */
+	private static function create_group_from( array $ids ): void {
+		if ( ! $ids ) {
+			return;
+		}
+		$label = '';
+		$langs = array();
+		foreach ( $ids as $id ) {
+			$item = Items::get( (int) $id );
+			if ( ! $item ) {
+				continue;
+			}
+			$langs[] = (string) $item->lang;
+			if ( mb_strlen( (string) $item->title ) > mb_strlen( $label ) ) {
+				$label = (string) $item->title;
+			}
+		}
+		if ( '' === $label ) {
+			return;
+		}
+		$lang = $langs ? ( array_keys( array_count_values( $langs ) )[0] ) : Settings::valid_lang( '' );
+
+		$gid = Groups::insert(
+			array(
+				'label'  => $label,
+				'lang'   => Settings::valid_lang( $lang ),
+				'status' => 'open',
+				'score'  => 1.0,
+				'size'   => count( $ids ),
+			)
+		);
+		if ( ! $gid ) {
+			return;
+		}
+		Items::set_group( $ids, $gid );
+		Logger::log( 'group', sprintf( 'Manual group %d from %d items', $gid, count( $ids ) ) );
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'   => Groups_Page::PAGE,
+					'action' => 'view',
+					'id'     => $gid,
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		exit;
 	}
 }

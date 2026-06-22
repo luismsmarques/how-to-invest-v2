@@ -64,7 +64,10 @@ class Items_List_Table extends \WP_List_Table {
 	 * @return array<string,string>
 	 */
 	public function get_bulk_actions(): array {
-		return array( 'ignore' => __( 'Ignore', 'hti-rss-ai' ) );
+		return array(
+			'group'  => __( 'Create group from selected', 'hti-rss-ai' ),
+			'ignore' => __( 'Ignore', 'hti-rss-ai' ),
+		);
 	}
 
 	/**

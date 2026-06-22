@@ -3,7 +3,7 @@
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Turns RSS feeds and YouTube channels into AI-drafted articles for review (Gemini). Works with any post type, taxonomy and theme — configure the target in Settings.
- * Version:           1.9.0
+ * Version:           1.10.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '1.9.0';
+const VERSION = '1.10.0';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );

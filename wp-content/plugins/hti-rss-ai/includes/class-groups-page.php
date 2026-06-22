@@ -24,6 +24,35 @@ class Groups_Page {
 		add_action( 'admin_post_rssai_group_now', array( __CLASS__, 'handle_group_now' ) );
 		add_action( 'admin_post_rssai_dismiss_group', array( __CLASS__, 'handle_dismiss' ) );
 		add_action( 'admin_post_rssai_generate', array( __CLASS__, 'handle_generate' ) );
+		add_action( 'admin_post_rssai_remove_item', array( __CLASS__, 'handle_remove_item' ) );
+	}
+
+	/**
+	 * Remove one item from a group (it returns to the Drafts pool). If the group
+	 * is left empty it is dismissed.
+	 */
+	public static function handle_remove_item(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Not allowed.', 'hti-rss-ai' ) );
+		}
+		$gid  = isset( $_GET['id'] ) ? absint( wp_unslash( $_GET['id'] ) ) : 0;
+		$item = isset( $_GET['item'] ) ? absint( wp_unslash( $_GET['item'] ) ) : 0;
+		check_admin_referer( 'rssai_remove_item_' . $item );
+
+		if ( $item ) {
+			Items::update( $item, array( 'status' => 'new', 'group_id' => 0 ) );
+		}
+
+		$remaining = $gid ? Groups::items( $gid ) : array();
+		$args      = array( 'page' => self::PAGE );
+		if ( $gid && ! $remaining ) {
+			Groups::dismiss( $gid );
+		} else {
+			$args['action'] = 'view';
+			$args['id']     = $gid;
+		}
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+		exit;
 	}
 
 	/**
@@ -149,6 +178,11 @@ class Groups_Page {
 								<div style="color:#646970;font-size:12px"><?php echo esc_html( $item->source ); ?> · <?php echo esc_html( (string) $item->published_at ); ?></div>
 								<?php if ( $item->description ) : ?>
 									<div style="color:#50575e;margin-top:4px"><?php echo esc_html( wp_trim_words( $item->description, 40 ) ); ?></div>
+								<?php endif; ?>
+								<?php if ( 'generated' !== $group->status ) : ?>
+									<div style="margin-top:6px">
+										<a class="submitdelete" style="color:#b32d2e;text-decoration:none;font-size:12px" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=rssai_remove_item&id=' . (int) $group->id . '&item=' . (int) $item->id ), 'rssai_remove_item_' . (int) $item->id ) ); ?>"><?php echo esc_html__( 'Remove from group', 'hti-rss-ai' ); ?></a>
+									</div>
 								<?php endif; ?>
 							</td>
 						</tr>
