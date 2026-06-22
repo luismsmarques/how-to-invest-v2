@@ -44,6 +44,16 @@
 .hti-art__by { font: 600 15px var( --art-bodyf ); color: var( --art-text ); }
 .hti-art__meta { font: 500 13px var( --art-bodyf ); color: var( --art-faint ); margin-top: 1px; }
 
+/* video format (YouTube-sourced) */
+.hti-art__pill--video { background: #FDECEA; color: var( --art-primary ); }
+.hti-art__playdot { font-size: 10px; line-height: 1; }
+.hti-art__video { margin: 26px 0 4px; }
+.hti-art__video-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; background: #0b0d24; box-shadow: 0 10px 34px rgba( 20, 23, 58, 0.16 ); }
+.hti-art__video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+.hti-art__video-cap { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 12px; font: 500 14px var( --art-bodyf ); color: var( --art-faint ); }
+.hti-art__video-link { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var( --art-primary ); text-decoration: none; }
+.hti-art__video-link:hover { text-decoration: underline; }
+
 /* featured image / illustration */
 .hti-art__figure { margin: 26px 0 4px; }
 .hti-art__img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 18px; }

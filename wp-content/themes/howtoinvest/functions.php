@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.24';
+const VERSION = '0.8.25';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -53,6 +53,23 @@ function viewport_meta(): void {
 	echo '<meta name="viewport" content="width=device-width, initial-scale=1">' . "\n";
 }
 add_action( 'wp_head', __NAMESPACE__ . '\\viewport_meta', 0 );
+
+/**
+ * Favicon / app-icon link tags. Files live at the site root
+ * (apple-touch-icon.png, favicon-32x32.png, favicon-16x16.png, site.webmanifest).
+ */
+function favicon_tags(): void {
+	$icons = array(
+		'<link rel="apple-touch-icon" sizes="180x180" href="%s">' => '/apple-touch-icon.png',
+		'<link rel="icon" type="image/png" sizes="32x32" href="%s">' => '/favicon-32x32.png',
+		'<link rel="icon" type="image/png" sizes="16x16" href="%s">' => '/favicon-16x16.png',
+		'<link rel="manifest" href="%s">' => '/site.webmanifest',
+	);
+	foreach ( $icons as $tag => $path ) {
+		printf( $tag . "\n", esc_url( home_url( $path ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+}
+add_action( 'wp_head', __NAMESPACE__ . '\\favicon_tags', 2 );
 
 /**
  * Emit the x-default hreflang alternate.
@@ -273,6 +290,9 @@ function strings(): array {
 		'art_byline'       => array( 'en' => 'HowToInvest Editorial', 'pt' => 'Redação HowToInvest' ),
 		'art_min_read'     => array( 'en' => 'min read', 'pt' => 'min de leitura' ),
 		'art_illustration' => array( 'en' => 'Editorial illustration', 'pt' => 'Ilustração editorial' ),
+		'art_video'        => array( 'en' => 'Video', 'pt' => 'Vídeo' ),
+		'art_watch'        => array( 'en' => 'Watch on YouTube', 'pt' => 'Ver no YouTube' ),
+		'art_video_intro'  => array( 'en' => 'Watch the video, then read the summary below.', 'pt' => 'Vê o vídeo e lê o resumo em baixo.' ),
 		'art_share'        => array( 'en' => 'Share', 'pt' => 'Partilhar' ),
 		'art_copy'         => array( 'en' => 'Copy link', 'pt' => 'Copiar link' ),
 		'art_copied'       => array( 'en' => 'Copied!', 'pt' => 'Copiado!' ),
@@ -1593,7 +1613,12 @@ function render_news_article(): string {
 		$meta .= ' · ' . $vf . ' ' . t( 'news_reads' );
 	}
 
-	$out  = '<article class="hti-art">';
+	// Video format: YouTube-sourced articles (set by hti-rss-ai) lead with the
+	// embedded video and read like a watch-and-read summary.
+	$video_id = (string) get_post_meta( $post->ID, 'rssai_youtube_video_id', true );
+	$is_video = '' !== $video_id && preg_match( '~^[A-Za-z0-9_-]{6,20}$~', $video_id );
+
+	$out  = '<article class="hti-art' . ( $is_video ? ' hti-art--video' : '' ) . '">';
 	$out .= '<div class="hti-art__progress hti-noprint" aria-hidden="true"><span class="hti-art__bar"></span></div>';
 
 	// Breadcrumb.
@@ -1603,8 +1628,10 @@ function render_news_article(): string {
 	}
 	$out .= '</nav>';
 
-	// Category pill.
-	if ( '' !== $it['cat'] ) {
+	// Category pill (+ a video badge for video-format articles).
+	if ( $is_video ) {
+		$out .= '<span class="hti-art__pill hti-art__pill--video"><span class="hti-art__playdot" aria-hidden="true">▶</span>' . esc_html( t( 'art_video' ) ) . '</span>';
+	} elseif ( '' !== $it['cat'] ) {
 		$out .= '<span class="hti-art__pill" style="color:' . esc_attr( (string) $it['color'] ) . '">' . esc_html( (string) $it['cat'] ) . '</span>';
 	}
 
@@ -1618,8 +1645,16 @@ function render_news_article(): string {
 	// Byline.
 	$out .= '<div class="hti-art__byline"><span class="hti-art__avatar">' . $logo . '</span><div><div class="hti-art__by">' . esc_html( t( 'art_byline' ) ) . '</div><div class="hti-art__meta">' . esc_html( $meta ) . '</div></div></div>';
 
-	// Featured image or gradient illustration.
-	if ( has_post_thumbnail( $post ) ) {
+	// Hero: the embedded video (video format), else featured image, else gradient.
+	if ( $is_video ) {
+		$embed = 'https://www.youtube-nocookie.com/embed/' . rawurlencode( $video_id );
+		$watch = 'https://www.youtube.com/watch?v=' . rawurlencode( $video_id );
+		$out  .= '<figure class="hti-art__video">'
+			. '<div class="hti-art__video-frame"><iframe src="' . esc_url( $embed ) . '" title="' . esc_attr( $title ) . '" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>'
+			. '<figcaption class="hti-art__video-cap"><span>' . esc_html( t( 'art_video_intro' ) ) . '</span>'
+			. '<a class="hti-art__video-link" href="' . esc_url( $watch ) . '" target="_blank" rel="noopener noreferrer nofollow">' . esc_html( t( 'art_watch' ) ) . ' ↗</a>'
+			. '</figcaption></figure>';
+	} elseif ( has_post_thumbnail( $post ) ) {
 		$out .= '<figure class="hti-art__figure">' . get_the_post_thumbnail( $post, 'large', array( 'class' => 'hti-art__img', 'alt' => $title, 'fetchpriority' => 'high', 'decoding' => 'async' ) ) . '</figure>';
 	} else {
 		$out .= '<div class="hti-art__illus" style="background:' . esc_attr( (string) $it['grad'] ) . ';"><span class="hti-art__illus-bubble" aria-hidden="true"></span><span class="hti-art__illus-label">' . esc_html( t( 'art_illustration' ) ) . '</span></div>';
