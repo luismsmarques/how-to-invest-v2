@@ -24,6 +24,11 @@ fonts embedded as base64) and drawn to a canvas.
     and hidden if no key is configured.
   - **Show caption** toggle: turn the overlay caption off for clips that already
     have burned-in subtitles.
+  - **Animated captions** (word by word): spreads the caption's words across the
+    clip (prev dim · current coral · next dim), drawn on the canvas; replaces the
+    fixed caption. Live-previewed via the playing video.
+  - **End card (CTA):** a full-screen closing card (title + button + handle +
+    disclaimer) faded in over the last ~3 seconds. Editable title/button.
 
 ## REST
 - `POST hti-social/v1/caption` — `{ brief, lang }` → `{ title, caption,

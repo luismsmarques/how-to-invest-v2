@@ -71,6 +71,40 @@
 	pointer-events: none;
 }
 
+.hti-reels-cap {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 62%;
+	display: none;
+	padding: 0 80px;
+	text-align: center;
+	line-height: 1.1;
+	pointer-events: none;
+}
+.hti-reels-cap span {
+	vertical-align: middle;
+}
+.hti-reels-cap .cur {
+	font: 800 86px Poppins, sans-serif;
+	color: #ff6b5e;
+	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.hti-reels-cap .dim {
+	font: 700 64px 'Plus Jakarta Sans', sans-serif;
+	color: rgba(255, 255, 255, 0.5);
+}
+
+.hti-reels-endcard {
+	position: absolute;
+	inset: 0;
+	width: 1080px;
+	height: 1920px;
+	opacity: 0;
+	transition: opacity 0.12s linear;
+	pointer-events: none;
+}
+
 .hti-reels-renderlabel {
 	min-height: 20px;
 	font: 600 13px 'Plus Jakarta Sans', system-ui, sans-serif;

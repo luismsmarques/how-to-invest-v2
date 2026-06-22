@@ -131,6 +131,11 @@ class Assets {
 				'ai_off_note'  => $pt ? 'Chave Gemini não configurada no servidor — escreve o texto manualmente.' : 'Gemini key not configured on the server — write the text manually.',
 				'ai_error'     => $pt ? 'Não foi possível gerar. Tenta de novo.' : 'Could not generate. Try again.',
 				'show_caption' => $pt ? 'Mostrar legenda no overlay' : 'Show caption on the overlay',
+				'anim_caps'    => $pt ? 'Legendas animadas (palavra a palavra)' : 'Animated captions (word by word)',
+				'anim_hint'    => $pt ? 'Distribui as palavras da legenda ao longo do vídeo. Substitui a legenda fixa.' : 'Spreads the caption words across the video. Replaces the fixed caption.',
+				'end_card'     => $pt ? 'Cartão final (CTA)' : 'End card (CTA)',
+				'end_title'    => $pt ? 'Título do cartão final' : 'End-card title',
+				'end_cta'      => $pt ? 'Botão do cartão final' : 'End-card button',
 			),
 		);
 	}

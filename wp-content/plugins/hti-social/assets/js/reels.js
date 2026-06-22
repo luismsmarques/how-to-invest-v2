@@ -53,7 +53,9 @@
 
 	function renderOverlayHtml( tpl, st ) {
 		var html = tpl.html.replace( /\{\{#legal\}\}([\s\S]*?)\{\{\/legal\}\}/g, st.showLegal ? '$1' : '' );
-		html = html.replace( /\{\{#cap\}\}([\s\S]*?)\{\{\/cap\}\}/g, st.showCaption ? '$1' : '' );
+		// Animated captions replace the fixed overlay caption.
+		var effCaption = st.showCaption && ! st.animCaptions;
+		html = html.replace( /\{\{#cap\}\}([\s\S]*?)\{\{\/cap\}\}/g, effCaption ? '$1' : '' );
 		var values = {};
 		Object.keys( st.fields ).forEach( function ( k ) {
 			values[ k ] = st.fields[ k ];
@@ -148,6 +150,85 @@
 		ctx.fillRect( 0, y, Math.max( 0, Math.min( 1, p ) ) * W, 14 );
 	}
 
+	// Full-screen closing CTA card.
+	var END_HTML =
+		'<div style="width:1080px;height:1920px;background:linear-gradient(160deg,#FF7A6B,#F2503F);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 90px;font-family:\'Plus Jakarta Sans\',sans-serif;color:#fff;box-sizing:border-box;">' +
+			'<span style="width:120px;height:120px;display:flex;margin-bottom:40px;">{{logo}}</span>' +
+			'<h2 style="margin:0;font:800 92px Poppins,sans-serif;line-height:1.05;letter-spacing:-.02em;color:#fff;">{{endTitle}}</h2>' +
+			'<div style="margin-top:50px;background:#fff;color:#F2503F;font:700 44px Poppins,sans-serif;padding:30px 56px;border-radius:24px;">{{endCta}}</div>' +
+			'<div style="margin-top:46px;font:700 36px \'Plus Jakarta Sans\',sans-serif;color:#fff;">@{{handle}}</div>' +
+			'{{#legal}}<p style="margin:40px 0 0;font:400 22px \'Plus Jakarta Sans\',sans-serif;color:#FFCFC7;line-height:1.4;">{{disclaimer}}</p>{{/legal}}' +
+		'</div>';
+
+	var END_SECONDS = 3;
+
+	// Force the canvas fonts to load so ctx.fillText uses Poppins/Jakarta.
+	function ensureCanvasFonts() {
+		if ( ! document.fonts || ! document.fonts.load ) {
+			return Promise.resolve();
+		}
+		return Promise.all( [
+			document.fonts.load( "800 84px Poppins" ),
+			document.fonts.load( "700 72px 'Plus Jakarta Sans'" )
+		] ).catch( function () {} );
+	}
+
+	function captionWords( text ) {
+		return ( text || '' ).trim().split( /\s+/ ).filter( Boolean );
+	}
+
+	function captionWindow( words, t, dur ) {
+		if ( ! words.length || ! dur ) {
+			return null;
+		}
+		var per = dur / words.length;
+		var idx = Math.min( words.length - 1, Math.max( 0, Math.floor( t / per ) ) );
+		return { prev: words[ idx - 1 ] || '', cur: words[ idx ] || '', next: words[ idx + 1 ] || '' };
+	}
+
+	// Draw the word-by-word caption (prev dim · current coral · next dim).
+	function drawCaptions( ctx, words, t, dur ) {
+		var win = captionWindow( words, t, dur );
+		if ( ! win || ! win.cur ) {
+			return;
+		}
+		var y = H * 0.7;
+		var sideFont = "700 64px 'Plus Jakarta Sans', sans-serif";
+		var curFont = '800 86px Poppins, sans-serif';
+		var gap = 28;
+		ctx.textAlign = 'left';
+		ctx.textBaseline = 'middle';
+
+		ctx.font = sideFont;
+		var wPrev = win.prev ? ctx.measureText( win.prev ).width : 0;
+		var wNext = win.next ? ctx.measureText( win.next ).width : 0;
+		ctx.font = curFont;
+		var wCur = ctx.measureText( win.cur ).width;
+
+		var total = ( wPrev ? wPrev + gap : 0 ) + wCur + ( wNext ? gap + wNext : 0 );
+		var x = ( W - total ) / 2;
+
+		if ( win.prev ) {
+			ctx.font = sideFont;
+			ctx.fillStyle = 'rgba(255,255,255,.5)';
+			ctx.fillText( win.prev, x, y );
+			x += wPrev + gap;
+		}
+		ctx.font = curFont;
+		ctx.lineWidth = 10;
+		ctx.strokeStyle = 'rgba(0,0,0,.5)';
+		ctx.strokeText( win.cur, x, y );
+		ctx.fillStyle = '#FF6B5E';
+		ctx.fillText( win.cur, x, y );
+		x += wCur + gap;
+		if ( win.next ) {
+			ctx.font = sideFont;
+			ctx.fillStyle = 'rgba(255,255,255,.5)';
+			ctx.fillText( win.next, x, y );
+		}
+		ctx.textAlign = 'left';
+	}
+
 	// ---- Recording --------------------------------------------------------
 
 	function pickMime() {
@@ -188,7 +269,11 @@
 			lang: L,
 			aiOn: false,
 			aiBrief: '',
-			aiDesc: ''
+			aiDesc: '',
+			animCaptions: false,
+			endCard: false,
+			endTitle: 'pt' === L ? 'Queres aprender mais?' : 'Want to learn more?',
+			endCta: 'pt' === L ? 'Faz o teste — link na bio' : 'Take the quiz — link in bio'
 		};
 		var videoEl = null;
 		var videoReady = false;
@@ -227,12 +312,64 @@
 		videoEl = el( 'video', { playsinline: '', controls: '', class: 'hti-reels-video' } );
 		videoEl.muted = true; // muted so the preview autoplays quietly; unmuted at render.
 		var overlayImg = el( 'img', { class: 'hti-reels-overlay', alt: '' } );
+		var capPreview = el( 'div', { class: 'hti-reels-cap' } );
+		var endPreview = el( 'img', { class: 'hti-reels-endcard', alt: '' } );
 		stage.appendChild( videoEl );
 		stage.appendChild( overlayImg );
+		stage.appendChild( capPreview );
+		stage.appendChild( endPreview );
 		stageBox.appendChild( stage );
 		previewWrap.appendChild( stageBox );
 		var renderLabel = el( 'div', { class: 'hti-reels-renderlabel' } );
 		previewWrap.appendChild( renderLabel );
+
+		// Live preview of the time-based layers (captions + end card).
+		videoEl.addEventListener( 'timeupdate', function () {
+			var dur = videoEl.duration || 0;
+			var t = videoEl.currentTime || 0;
+			if ( st.animCaptions ) {
+				var win = captionWindow( captionWords( st.fields.caption ), t, dur );
+				if ( win && win.cur ) {
+					capPreview.innerHTML =
+						( win.prev ? '<span class="dim">' + escapeHtml( win.prev ) + '</span> ' : '' ) +
+						'<span class="cur">' + escapeHtml( win.cur ) + '</span>' +
+						( win.next ? ' <span class="dim">' + escapeHtml( win.next ) + '</span>' : '' );
+					capPreview.style.display = 'block';
+				} else {
+					capPreview.style.display = 'none';
+				}
+			} else {
+				capPreview.style.display = 'none';
+			}
+			if ( st.endCard && dur ) {
+				var left = dur - t;
+				endPreview.style.opacity = left < END_SECONDS ? String( Math.min( 1, ( END_SECONDS - left ) / 0.5 ) ) : '0';
+			} else {
+				endPreview.style.opacity = '0';
+			}
+		} );
+
+		function buildEndImage() {
+			var tmp = {
+				fields: { endTitle: st.endTitle, endCta: st.endCta },
+				handle: st.handle,
+				showLegal: st.showLegal,
+				showCaption: true,
+				animCaptions: false,
+				lang: st.lang
+			};
+			return buildOverlayImage( { html: END_HTML }, tmp );
+		}
+
+		function refreshEndPreview() {
+			if ( ! st.endCard ) {
+				endPreview.removeAttribute( 'src' );
+				return;
+			}
+			buildEndImage().then( function ( img ) {
+				endPreview.src = img.src;
+			} ).catch( function () {} );
+		}
 
 		function sizeStage() {
 			var avail = previewWrap.clientWidth || 360;
@@ -420,6 +557,60 @@
 			capRow.appendChild( capChk );
 			capRow.appendChild( el( 'span', null, I.show_caption ) );
 			bWrap.appendChild( capRow );
+
+			// Animated captions.
+			var animRow = el( 'label', { class: 'hti-social-check' } );
+			var animChk = el( 'input', { type: 'checkbox' } );
+			animChk.checked = st.animCaptions;
+			animChk.addEventListener( 'change', function () {
+				st.animCaptions = animChk.checked;
+				renderControls();
+				refreshOverlay();
+			} );
+			animRow.appendChild( animChk );
+			animRow.appendChild( el( 'span', null, I.anim_caps ) );
+			bWrap.appendChild( animRow );
+			if ( st.animCaptions ) {
+				bWrap.appendChild( el( 'p', { class: 'hti-social-note' }, I.anim_hint ) );
+			}
+
+			// End card.
+			var endRow = el( 'label', { class: 'hti-social-check' } );
+			var endChk = el( 'input', { type: 'checkbox' } );
+			endChk.checked = st.endCard;
+			endChk.addEventListener( 'change', function () {
+				st.endCard = endChk.checked;
+				renderControls();
+				refreshEndPreview();
+			} );
+			endRow.appendChild( endChk );
+			endRow.appendChild( el( 'span', null, I.end_card ) );
+			bWrap.appendChild( endRow );
+
+			if ( st.endCard ) {
+				var etRow = el( 'label', { class: 'hti-social-field' } );
+				etRow.appendChild( el( 'span', null, I.end_title ) );
+				var etInput = el( 'input', { type: 'text' } );
+				etInput.value = st.endTitle;
+				etInput.addEventListener( 'input', function () {
+					st.endTitle = etInput.value;
+					refreshEndPreview();
+				} );
+				etRow.appendChild( etInput );
+				bWrap.appendChild( etRow );
+
+				var ecRow = el( 'label', { class: 'hti-social-field' } );
+				ecRow.appendChild( el( 'span', null, I.end_cta ) );
+				var ecInput = el( 'input', { type: 'text' } );
+				ecInput.value = st.endCta;
+				ecInput.addEventListener( 'input', function () {
+					st.endCta = ecInput.value;
+					refreshEndPreview();
+				} );
+				ecRow.appendChild( ecInput );
+				bWrap.appendChild( ecRow );
+			}
+
 			controls.appendChild( bWrap );
 
 			// Render.
@@ -504,7 +695,14 @@
 				window.alert( I.no_support );
 				return;
 			}
-			buildOverlayImage( curTpl(), st ).then( function ( overlay ) {
+			Promise.all( [
+				buildOverlayImage( curTpl(), st ),
+				ensureCanvasFonts(),
+				st.endCard ? buildEndImage() : Promise.resolve( null )
+			] ).then( function ( parts ) {
+				var overlay = parts[ 0 ];
+				var endImg = parts[ 2 ];
+				var capWords = captionWords( st.fields.caption );
 				var canvas = document.createElement( 'canvas' );
 				canvas.width = W;
 				canvas.height = H;
@@ -555,9 +753,22 @@
 				};
 
 				function loop() {
+					var dur = videoEl.duration || 0;
+					var t = videoEl.currentTime || 0;
 					drawCover( ctx, videoEl );
 					ctx.drawImage( overlay, 0, 0, W, H );
-					var p = videoEl.duration ? videoEl.currentTime / videoEl.duration : 0;
+					if ( st.animCaptions ) {
+						drawCaptions( ctx, capWords, t, dur );
+					}
+					if ( endImg && dur ) {
+						var left = dur - t;
+						if ( left < END_SECONDS ) {
+							ctx.globalAlpha = Math.min( 1, ( END_SECONDS - left ) / 0.5 );
+							ctx.drawImage( endImg, 0, 0, W, H );
+							ctx.globalAlpha = 1;
+						}
+					}
+					var p = dur ? t / dur : 0;
 					drawProgress( ctx, p );
 					renderLabel.textContent = I.rendering + ' ' + Math.round( p * 100 ) + '%';
 					if ( ! videoEl.ended ) {
