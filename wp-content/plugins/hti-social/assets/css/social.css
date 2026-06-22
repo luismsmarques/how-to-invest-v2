@@ -1,0 +1,143 @@
+/* HowToInvest — social generator (admin editor chrome). */
+
+.hti-social-intro {
+	max-width: 70ch;
+	color: #50575e;
+}
+
+.hti-social-editor {
+	display: grid;
+	grid-template-columns: 200px minmax(0, 1fr) 300px;
+	gap: 20px;
+	align-items: start;
+	margin-top: 16px;
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 10px;
+	padding: 18px;
+}
+
+/* Inside the narrow meta box, stack vertically. */
+.hti-social-editor--post {
+	grid-template-columns: 1fr;
+	padding: 4px 0 0;
+	border: 0;
+}
+
+/* Gallery */
+.hti-social-gallery {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.hti-social-editor--post .hti-social-gallery {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+.hti-social-thumb {
+	text-align: left;
+	cursor: pointer;
+	padding: 10px 12px;
+	border: 1.5px solid #e2e4e7;
+	border-radius: 8px;
+	background: #f6f7f7;
+	font: 600 12.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #2a2438;
+}
+.hti-social-thumb:hover {
+	border-color: #c9b8d0;
+}
+.hti-social-thumb.is-active {
+	border-color: #ff6b5e;
+	background: #fff1ee;
+	color: #c9362c;
+}
+
+/* Stage */
+.hti-social-stagewrap {
+	display: flex;
+	justify-content: center;
+	padding: 14px;
+	background: #f0eef2;
+	border-radius: 10px;
+	min-height: 200px;
+}
+.hti-social-stagewrap.is-drop {
+	outline: 3px dashed #ff6b5e;
+	outline-offset: -6px;
+}
+.hti-social-stagebox {
+	position: relative;
+	overflow: hidden;
+	border-radius: 4px;
+	box-shadow: 0 4px 18px rgba(20, 23, 58, 0.18);
+}
+.hti-social-stage {
+	transform-origin: top left;
+}
+
+/* Controls */
+.hti-social-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+.hti-social-section {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid #eee;
+}
+.hti-social-section h3 {
+	margin: 0;
+	font: 700 11px 'Plus Jakarta Sans', system-ui, sans-serif;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #8a8676;
+}
+.hti-social-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	font: 600 12px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #50575e;
+}
+.hti-social-field input[type='text'],
+.hti-social-field textarea,
+.hti-social-field select {
+	width: 100%;
+	box-sizing: border-box;
+	font: 500 13px 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.hti-social-field textarea {
+	resize: vertical;
+	min-height: 48px;
+}
+.hti-social-check {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font: 600 12.5px 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #50575e;
+}
+.hti-social-imgrow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+.hti-social-file {
+	font-size: 12px;
+}
+.hti-social-export {
+	width: 100%;
+	justify-content: center;
+	text-align: center;
+}
+
+@media ( max-width: 1100px ) {
+	.hti-social-editor {
+		grid-template-columns: 1fr;
+	}
+}
