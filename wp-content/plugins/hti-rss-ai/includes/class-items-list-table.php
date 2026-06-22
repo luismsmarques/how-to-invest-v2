@@ -138,6 +138,17 @@ class Items_List_Table extends \WP_List_Table {
 				if ( $item->source ) {
 					$title .= '<div style="color:#646970;font-size:12px">' . esc_html( $item->source ) . '</div>';
 				}
+				if ( ! empty( $item->video_id ) ) {
+					$actions = array();
+					foreach ( Prompt::youtube_types() as $key => $label ) {
+						$url = wp_nonce_url(
+							admin_url( 'admin-post.php?action=rssai_gen_video&item=' . (int) $item->id . '&type=' . rawurlencode( (string) $key ) ),
+							'rssai_gen_video_' . (int) $item->id
+						);
+						$actions[ 'gen_' . $key ] = '<a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a>';
+					}
+					$title .= '<div style="margin-top:4px;font-size:12px;color:#2271b1;"><span style="color:#646970">' . esc_html__( 'Generate:', 'hti-rss-ai' ) . '</span> ' . $this->row_actions( $actions, true ) . '</div>';
+				}
 				return $title;
 			case 'feed':
 				return esc_html( $this->feed_names[ (int) $item->feed_id ] ?? ( '#' . (int) $item->feed_id ) );

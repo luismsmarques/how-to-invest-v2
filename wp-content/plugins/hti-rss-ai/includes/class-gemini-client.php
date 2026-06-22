@@ -121,6 +121,63 @@ class Gemini_Client {
 	}
 
 	/**
+	 * Plain (non-grounded) generation — used when the source is supplied in the
+	 * prompt (e.g. a YouTube transcript), so no web search is needed.
+	 *
+	 * @param string $system System instruction.
+	 * @param string $user   User prompt.
+	 * @return array{text:string}|\WP_Error
+	 */
+	public static function generate( string $system, string $user ) {
+		$key = self::api_key();
+		if ( '' === $key ) {
+			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
+		}
+		$model = (string) Settings::get( 'gemini_model', 'gemini-2.5-flash' );
+		$url   = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode( $model ) . ':generateContent?key=' . rawurlencode( $key );
+
+		$body = array(
+			'systemInstruction' => array( 'parts' => array( array( 'text' => $system ) ) ),
+			'contents'          => array(
+				array(
+					'role'  => 'user',
+					'parts' => array( array( 'text' => $user ) ),
+				),
+			),
+			'generationConfig'  => array(
+				'temperature'      => 0.4,
+				'responseMimeType' => 'application/json',
+			),
+		);
+
+		$response = wp_remote_post(
+			$url,
+			array(
+				'timeout' => 60,
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => wp_json_encode( $body ),
+			)
+		);
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$json = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		if ( $code < 200 || $code >= 300 ) {
+			$message = is_array( $json ) && isset( $json['error']['message'] ) ? $json['error']['message'] : 'HTTP ' . $code;
+			return new \WP_Error( 'rssai_api', $message );
+		}
+		$text = '';
+		foreach ( (array) ( $json['candidates'][0]['content']['parts'] ?? array() ) as $part ) {
+			$text .= (string) ( $part['text'] ?? '' );
+		}
+		if ( '' === $text ) {
+			return new \WP_Error( 'rssai_empty', __( 'Empty response from Gemini.', 'hti-rss-ai' ) );
+		}
+		return array( 'text' => $text );
+	}
+
+	/**
 	 * Extract the first JSON object from a text blob (tolerant of code fences).
 	 *
 	 * @param string $text Model text.

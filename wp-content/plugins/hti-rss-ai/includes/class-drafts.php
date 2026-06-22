@@ -22,6 +22,7 @@ class Drafts {
 	public static function init(): void {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 12 );
 		add_action( 'admin_post_rssai_fetch_now', array( __CLASS__, 'handle_fetch_now' ) );
+		add_action( 'admin_post_rssai_gen_video', array( __CLASS__, 'handle_gen_video' ) );
 	}
 
 	/**
@@ -48,6 +49,7 @@ class Drafts {
 		require_once RSSAI_PATH . 'includes/class-items-list-table.php';
 
 		self::maybe_fetch_notice();
+		self::maybe_gen_notice();
 		self::maybe_bulk();
 
 		$table = new Items_List_Table();
@@ -65,6 +67,54 @@ class Drafts {
 			</form>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Generate an article from one YouTube video item (a chosen type).
+	 */
+	public static function handle_gen_video(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Not allowed.', 'hti-rss-ai' ) );
+		}
+		$item = isset( $_GET['item'] ) ? absint( wp_unslash( $_GET['item'] ) ) : 0;
+		$type = isset( $_GET['type'] ) ? sanitize_key( wp_unslash( $_GET['type'] ) ) : 'news';
+		check_admin_referer( 'rssai_gen_video_' . $item );
+
+		$result = YouTube_Generator::generate( $item, $type );
+
+		$args = array( 'page' => self::PAGE );
+		if ( is_wp_error( $result ) ) {
+			$args['rssai_gen'] = 'err';
+			$args['rssai_msg'] = rawurlencode( $result->get_error_message() );
+		} else {
+			$args['rssai_gen']  = 'ok';
+			$args['rssai_post'] = (int) $result;
+		}
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	/**
+	 * Notice after a per-video generation.
+	 */
+	private static function maybe_gen_notice(): void {
+		$gen = isset( $_GET['rssai_gen'] ) ? sanitize_key( wp_unslash( $_GET['rssai_gen'] ) ) : '';
+		if ( 'ok' === $gen ) {
+			$post = isset( $_GET['rssai_post'] ) ? absint( wp_unslash( $_GET['rssai_post'] ) ) : 0;
+			$edit = $post ? get_edit_post_link( $post, '' ) : '';
+			printf(
+				'<div class="notice notice-success is-dismissible"><p>%s %s</p></div>',
+				esc_html__( 'Article generated and saved as pending review.', 'hti-rss-ai' ),
+				$edit ? '<a href="' . esc_url( $edit ) . '">' . esc_html__( 'Edit it →', 'hti-rss-ai' ) . '</a>' : ''
+			);
+		} elseif ( 'err' === $gen ) {
+			$msg = isset( $_GET['rssai_msg'] ) ? sanitize_text_field( wp_unslash( $_GET['rssai_msg'] ) ) : '';
+			printf(
+				'<div class="notice notice-error is-dismissible"><p>%s %s</p></div>',
+				esc_html__( 'Could not generate:', 'hti-rss-ai' ),
+				esc_html( $msg )
+			);
+		}
 	}
 
 	/**

@@ -34,6 +34,44 @@ class Items {
 	}
 
 	/**
+	 * Fetch a single item row by id.
+	 *
+	 * @param int $id Item id.
+	 */
+	public static function get( int $id ): ?object {
+		global $wpdb;
+		$table = self::table();
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `$table` WHERE id = %d", $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $row ?: null;
+	}
+
+	/**
+	 * Update writable fields on an item (transcript/status/group_id).
+	 *
+	 * @param int                  $id   Item id.
+	 * @param array<string,mixed>  $data Column => value (whitelisted).
+	 */
+	public static function update( int $id, array $data ): void {
+		global $wpdb;
+		$allowed = array(
+			'transcript' => '%s',
+			'status'     => '%s',
+			'group_id'   => '%d',
+		);
+		$set     = array();
+		$formats = array();
+		foreach ( $allowed as $col => $fmt ) {
+			if ( array_key_exists( $col, $data ) ) {
+				$set[ $col ]  = '%d' === $fmt ? (int) $data[ $col ] : (string) $data[ $col ];
+				$formats[]    = $fmt;
+			}
+		}
+		if ( $set ) {
+			$wpdb->update( self::table(), $set, array( 'id' => $id ), $formats, array( '%d' ) );
+		}
+	}
+
+	/**
 	 * Insert a draft item.
 	 *
 	 * @param array<string,mixed> $data Already-sanitized values.

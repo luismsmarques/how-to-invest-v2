@@ -91,6 +91,98 @@ class Prompt {
 	}
 
 	/**
+	 * Supported YouTube → article types.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function youtube_types(): array {
+		return array(
+			'news'     => 'News',
+			'quote'    => 'Quote',
+			'tutorial' => 'Tutorial',
+			'summary'  => 'Summary',
+		);
+	}
+
+	/**
+	 * System prompt for generating an article from a YouTube transcript.
+	 *
+	 * @param string $lang Language slug.
+	 * @param string $type news|quote|tutorial|summary.
+	 */
+	public static function youtube_system( string $lang, string $type ): string {
+		$language = 'pt' === $lang ? 'European Portuguese (pt-PT)' : 'English';
+		$today    = self::today();
+		$cats     = self::category_rule( $lang );
+
+		$intent = array(
+			'news'     => 'Write ONE original, neutral, educational news-style article about the topic discussed in the video. Synthesise the key points; do not transcribe.',
+			'quote'    => 'Highlight the single most insightful idea from the speaker. Include a short faithful quote (a sentence or two) clearly attributed to the speaker/channel, then 2-4 short paragraphs of neutral educational context explaining the idea in plain language.',
+			'tutorial' => 'Write an educational explainer that teaches the CONCEPTS covered in the video, structured with clear subheadings and short steps/sections. Explain ideas; never give instructions to buy or sell anything.',
+			'summary'  => 'Write a concise summary followed by the key takeaways as short, scannable points (use heading + paragraph blocks). Neutral and educational.',
+		);
+		$kind_line = $intent[ $type ] ?? $intent['news'];
+
+		return implode(
+			"\n",
+			array(
+				'You are an editor for an educational financial-literacy platform. You are given the transcript of a YouTube video.',
+				$kind_line,
+				'',
+				"TODAY'S DATE IS {$today}.",
+				'',
+				'STRICT RULES:',
+				"- Write in {$language}.",
+				'- Base the content ONLY on the transcript provided. Do not invent facts, numbers, quotes, dates or names that are not supported by the transcript.',
+				'- Original wording. Except for a clearly-marked short quote (quote type only), never copy the transcript verbatim — rewrite in your own words.',
+				'- Always attribute the source: name the channel and reference the video.',
+				'- Educational and impartial. NO investment advice, NO recommendations, NO "buy/sell/should", NO price targets, NO specific tickers, and do NOT present any specific company/stock/fund as something to buy.',
+				'- SEO friendly: a clear factual headline; a concise meta description (max 155 characters); a short lead (dek); well-structured short paragraphs with the occasional subheading.',
+				'- The provided video MUST appear in "sources".',
+				$cats,
+				'',
+				'OUTPUT: respond with ONLY a JSON object (no markdown, no commentary) of this exact shape:',
+				'{',
+				'  "headline": string,',
+				'  "slug": string (kebab-case, no accents),',
+				'  "meta_description": string (<=155 chars),',
+				'  "dek": string (1-2 sentence lead),',
+				'  "body_blocks": [ { "type": "paragraph" | "heading", "text": string } ],',
+				'  "suggested_category": string,',
+				'  "tags": [string],',
+				'  "sources": [ { "title": string, "url": string } ],',
+				'  "lang": "' . $lang . '"',
+				'}',
+			)
+		);
+	}
+
+	/**
+	 * User prompt: the video metadata + transcript.
+	 *
+	 * @param object $item       Item row (title, source, link).
+	 * @param string $transcript Transcript text.
+	 * @param string $type       Content type.
+	 */
+	public static function youtube_user( object $item, string $transcript, string $type ): string {
+		// Cap the transcript to keep the request within a sane size.
+		$transcript = trim( $transcript );
+		if ( strlen( $transcript ) > 24000 ) {
+			$transcript = substr( $transcript, 0, 24000 ) . ' […]';
+		}
+		$channel = (string) ( $item->source ?? '' );
+		$title   = (string) ( $item->title ?? '' );
+		$link    = (string) ( $item->link ?? '' );
+
+		return "Content type: {$type}\n"
+			. "Video title: {$title}\n"
+			. "Channel: {$channel}\n"
+			. "Video URL: {$link}\n\n"
+			. "Transcript:\n\"\"\"\n{$transcript}\n\"\"\"\n\n"
+			. 'Write the article exactly as specified in the system instruction, and include this video in "sources".';
+	}
+
+	/**
 	 * Prompt for the featured-image photo (Imagen).
 	 *
 	 * Conceptual editorial illustration only — no text, no logos, no real

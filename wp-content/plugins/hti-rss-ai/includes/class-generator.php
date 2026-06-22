@@ -132,7 +132,7 @@ class Generator {
 	 *
 	 * @param array<int,mixed> $blocks Body blocks.
 	 */
-	private static function blocks_to_html( array $blocks ): string {
+	public static function blocks_to_html( array $blocks ): string {
 		$html = '';
 		foreach ( $blocks as $block ) {
 			if ( ! is_array( $block ) ) {
@@ -157,7 +157,7 @@ class Generator {
 	 * @param array<int,mixed> $sources Sources.
 	 * @param string           $lang    Language.
 	 */
-	private static function sources_html( array $sources, string $lang ): string {
+	public static function sources_html( array $sources, string $lang ): string {
 		$clean = array();
 		foreach ( $sources as $source ) {
 			if ( is_array( $source ) && ! empty( $source['url'] ) ) {
@@ -184,7 +184,7 @@ class Generator {
 	 *
 	 * @param string $lang Language.
 	 */
-	private static function disclaimer_html( string $lang ): string {
+	public static function disclaimer_html( string $lang ): string {
 		$text = 'pt' === $lang
 			? 'Conteúdo educativo e informativo. Não constitui aconselhamento financeiro, de investimento, fiscal ou jurídico, nem recomendação de compra ou venda de qualquer ativo.'
 			: 'Educational and informational content. Not financial, investment, tax or legal advice, nor a recommendation to buy or sell any asset.';
@@ -194,7 +194,7 @@ class Generator {
 	/**
 	 * Whether today's generation limit is reached.
 	 */
-	private static function over_daily_limit(): bool {
+	public static function over_daily_limit(): bool {
 		$max = (int) Settings::get( 'max_generations_day', 10 );
 		return (int) get_option( 'rssai_gen_' . gmdate( 'Ymd' ), 0 ) >= $max;
 	}
@@ -202,7 +202,7 @@ class Generator {
 	/**
 	 * Increment today's generation counter.
 	 */
-	private static function bump_daily(): void {
+	public static function bump_daily(): void {
 		$key = 'rssai_gen_' . gmdate( 'Ymd' );
 		update_option( $key, (int) get_option( $key, 0 ) + 1, false );
 	}
