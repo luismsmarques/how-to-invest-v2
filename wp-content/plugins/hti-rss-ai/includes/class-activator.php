@@ -64,9 +64,11 @@ class Activator {
 	 * Deactivation: clear scheduled events (tables are kept).
 	 */
 	public static function deactivate(): void {
-		$timestamp = wp_next_scheduled( CRON_HOOK );
-		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, CRON_HOOK );
+		foreach ( array( CRON_HOOK, CLEANUP_HOOK ) as $hook ) {
+			$timestamp = wp_next_scheduled( $hook );
+			if ( $timestamp ) {
+				wp_unschedule_event( $timestamp, $hook );
+			}
 		}
 	}
 

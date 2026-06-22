@@ -49,6 +49,7 @@ class Settings {
 			'image_base_model'     => 'gemini-2.5-flash-image',
 			'youtube_api_key'      => '',
 			'supadata_api_key'     => '',
+			'cleanup_days'         => 30,
 		);
 	}
 
@@ -149,6 +150,7 @@ class Settings {
 		return array(
 			'youtube_api_key'      => '' !== $yt_key ? $yt_key : (string) ( $existing['youtube_api_key'] ?? '' ),
 			'supadata_api_key'     => '' !== $supa_key ? $supa_key : (string) ( $existing['supadata_api_key'] ?? '' ),
+			'cleanup_days'         => max( 1, min( 365, absint( $input['cleanup_days'] ?? 30 ) ) ),
 			'gemini_model'         => isset( $input['gemini_model'] ) ? sanitize_text_field( $input['gemini_model'] ) : 'gemini-2.5-flash',
 			'fetch_interval'       => in_array( $input['fetch_interval'] ?? '', $intervals, true ) ? $input['fetch_interval'] : 'hourly',
 			'similarity_threshold' => $threshold,
@@ -173,6 +175,22 @@ class Settings {
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'RSS AI Feed — Settings', 'hti-rss-ai' ); ?></h1>
+			<?php
+			if ( isset( $_GET['rssai_cleaned'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				printf(
+					'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+					esc_html(
+						sprintf(
+							/* translators: 1: items, 2: groups, 3: logs removed. */
+							__( 'Cleanup done — removed %1$d drafts, %2$d groups and %3$d log entries.', 'hti-rss-ai' ),
+							isset( $_GET['ci'] ) ? absint( wp_unslash( $_GET['ci'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+							isset( $_GET['cg'] ) ? absint( wp_unslash( $_GET['cg'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+							isset( $_GET['cl'] ) ? absint( wp_unslash( $_GET['cl'] ) ) : 0 // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+						)
+					)
+				);
+			}
+			?>
 
 			<p>
 				<?php echo esc_html__( 'Gemini API key:', 'hti-rss-ai' ); ?>
@@ -270,8 +288,22 @@ class Settings {
 							<p class="description"><?php echo esc_html__( 'Used to fetch the transcript of a YouTube video (supadata.ai). Prefer defining HTI_SUPADATA_API_KEY in wp-config.php. Stored server-side.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_cleanup_days"><?php echo esc_html__( 'Cleanup after (days)', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[cleanup_days]" id="rssai_cleanup_days" type="number" min="1" max="365" class="small-text" value="<?php echo esc_attr( (string) $s['cleanup_days'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'A daily routine deletes draft items and log entries older than this. Generated news posts are never touched.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
 				</table>
 				<?php submit_button(); ?>
+			</form>
+			<hr />
+			<h2><?php echo esc_html__( 'Maintenance', 'hti-rss-ai' ); ?></h2>
+			<p class="description"><?php echo esc_html__( 'Drafts and logs are cleaned automatically once a day. You can also run it now.', 'hti-rss-ai' ); ?></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="rssai_cleanup_now" />
+				<?php wp_nonce_field( 'rssai_cleanup_now' ); ?>
+				<?php submit_button( __( 'Run cleanup now', 'hti-rss-ai' ), 'secondary', 'submit', false ); ?>
 			</form>
 		</div>
 		<?php

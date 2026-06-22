@@ -55,4 +55,29 @@ class Logger {
 	public static function clear(): void {
 		delete_option( self::OPTION );
 	}
+
+	/**
+	 * Drop log entries older than N days. Returns how many were removed.
+	 *
+	 * @param int $days Retention window in days.
+	 */
+	public static function prune( int $days ): int {
+		$logs = (array) get_option( self::OPTION, array() );
+		if ( ! $logs ) {
+			return 0;
+		}
+		$cutoff = time() - ( max( 1, $days ) * DAY_IN_SECONDS );
+		$kept   = array();
+		foreach ( $logs as $entry ) {
+			$ts = isset( $entry['t'] ) ? strtotime( (string) $entry['t'] ) : false;
+			if ( false === $ts || $ts >= $cutoff ) {
+				$kept[] = $entry;
+			}
+		}
+		$removed = count( $logs ) - count( $kept );
+		if ( $removed > 0 ) {
+			update_option( self::OPTION, $kept, false );
+		}
+		return $removed;
+	}
 }

@@ -3,7 +3,7 @@
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Ingests RSS feeds into drafts, clusters similar items, and (on demand) researches facts with Gemini grounding to generate SEO/Google-News articles for review. Feeds the hti-engine "news" content type.
- * Version:           1.8.0
+ * Version:           1.8.1
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '1.8.0';
+const VERSION = '1.8.1';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );
@@ -34,9 +34,15 @@ define( 'RSSAI_URL', plugin_dir_url( __FILE__ ) );
  */
 const CRON_HOOK = 'rssai_fetch_cron';
 
+/**
+ * Cron hook for the daily cleanup of old drafts + logs.
+ */
+const CLEANUP_HOOK = 'rssai_cleanup_cron';
+
 require_once RSSAI_PATH . 'includes/class-activator.php';
 require_once RSSAI_PATH . 'includes/class-logger.php';
 require_once RSSAI_PATH . 'includes/class-settings.php';
+require_once RSSAI_PATH . 'includes/class-cleanup.php';
 require_once RSSAI_PATH . 'includes/class-feeds.php';
 require_once RSSAI_PATH . 'includes/class-items.php';
 require_once RSSAI_PATH . 'includes/class-groups.php';
@@ -84,6 +90,7 @@ Review::init();
 Logs_Page::init();
 Fetcher::init();
 Featured_Image::init();
+Cleanup::init();
 
 /**
  * Warn (without breaking) when hti-engine's "news" type is missing — the
