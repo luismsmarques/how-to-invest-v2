@@ -28,10 +28,21 @@ class Gemini {
 	}
 
 	/**
-	 * The API key, or '' if not configured.
+	 * The API key, or '' if not configured. Resolved like hti-engine: the
+	 * wp-config constant first, then the shared `htinvest_settings` option
+	 * (Settings → HowToInvest), then the filter override.
 	 */
 	public static function api_key(): string {
-		$key = defined( 'HTI_GEMINI_API_KEY' ) ? (string) HTI_GEMINI_API_KEY : '';
+		$key = '';
+		if ( defined( 'HTI_GEMINI_API_KEY' ) && is_string( HTI_GEMINI_API_KEY ) ) {
+			$key = trim( (string) HTI_GEMINI_API_KEY );
+		}
+		if ( '' === $key && function_exists( 'get_option' ) ) {
+			$settings = get_option( 'htinvest_settings' );
+			if ( is_array( $settings ) && ! empty( $settings['gemini_api_key'] ) ) {
+				$key = trim( (string) $settings['gemini_api_key'] );
+			}
+		}
 		return (string) apply_filters( 'hti_social_gemini_api_key', $key );
 	}
 
