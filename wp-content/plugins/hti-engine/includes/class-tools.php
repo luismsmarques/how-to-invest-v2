@@ -74,6 +74,12 @@ class Tools {
 	 */
 	public static function render( $atts ): string {
 		$atts = shortcode_atts( array( 'name' => 'compound' ), is_array( $atts ) ? $atts : array(), self::SHORTCODE );
+
+		// The allocation visualiser is a selector (not a numeric form).
+		if ( 'allocation' === $atts['name'] ) {
+			return self::render_allocation();
+		}
+
 		$cfg  = self::config();
 		$name = isset( $cfg[ $atts['name'] ] ) ? (string) $atts['name'] : 'compound';
 		$tool = $cfg[ $name ];
@@ -100,8 +106,9 @@ class Tools {
 		$out .= '<div class="hti-tool__results" aria-live="polite">';
 		foreach ( $tool['outputs'] as $key => $o ) {
 			$cls  = 'hti-out' . ( ! empty( $o['primary'] ) ? ' hti-out--primary' : '' );
+			$fmt  = isset( $o['format'] ) ? ' data-format="' . esc_attr( (string) $o['format'] ) . '"' : '';
 			$out .= '<div class="' . $cls . '"><span class="hti-out__label">' . esc_html( $o[ $l ] ) . '</span>'
-				. '<span class="hti-out__value" data-out="' . esc_attr( $key ) . '">—</span></div>';
+				. '<span class="hti-out__value" data-out="' . esc_attr( $key ) . '"' . $fmt . '>—</span></div>';
 		}
 		$out .= '</div>';
 
@@ -198,6 +205,123 @@ class Tools {
 					array( 'color' => '#7C5CFC', 'en' => 'Wait', 'pt' => 'Esperar' ),
 				),
 			),
+			'emergency_fund'  => array(
+				'fields'  => array(
+					'expenses' => array( 'en' => 'Essential monthly expenses', 'pt' => 'Despesas essenciais por mês', 'default' => 1500, 'min' => 0, 'step' => 50, 'unit' => '€' ),
+					'months'   => array( 'en' => 'Months to cover', 'pt' => 'Meses a cobrir', 'default' => 6, 'min' => 1, 'max' => 24, 'step' => 1, 'unit' => '' ),
+					'saved'    => array( 'en' => 'Already saved', 'pt' => 'Já poupado', 'default' => 2000, 'min' => 0, 'step' => 100, 'unit' => '€' ),
+					'monthly'  => array( 'en' => 'Save per month', 'pt' => 'Poupar por mês', 'default' => 200, 'min' => 0, 'step' => 10, 'unit' => '€' ),
+				),
+				'outputs' => array(
+					'target' => array( 'en' => 'Emergency fund target', 'pt' => 'Objetivo do fundo de emergência', 'primary' => true ),
+					'gap'    => array( 'en' => 'Still to save', 'pt' => 'Ainda por poupar' ),
+					'time'   => array( 'en' => 'Time to reach it', 'pt' => 'Tempo até lá chegar', 'format' => 'months' ),
+				),
+			),
+			'rule_of_72'      => array(
+				'fields'  => array(
+					'rate'  => array( 'en' => 'Annual return (hypothetical)', 'pt' => 'Retorno anual (hipotético)', 'default' => 6, 'min' => 0.5, 'max' => 30, 'step' => 0.5, 'unit' => '%' ),
+					'years' => array( 'en' => 'Years to project', 'pt' => 'Anos a projetar', 'default' => 24, 'min' => 1, 'max' => 60, 'step' => 1, 'unit' => '' ),
+				),
+				'outputs' => array(
+					'double'    => array( 'en' => 'Years to double', 'pt' => 'Anos para duplicar', 'primary' => true, 'format' => 'years' ),
+					'doublings' => array( 'en' => 'Times it doubles', 'pt' => 'Vezes que duplica', 'format' => 'times' ),
+					'multiple'  => array( 'en' => 'Final multiple', 'pt' => 'Múltiplo final', 'format' => 'multiple' ),
+				),
+			),
+			'fee_impact'      => array(
+				'fields'  => array(
+					'initial' => array( 'en' => 'Initial amount', 'pt' => 'Valor inicial', 'default' => 10000, 'min' => 0, 'step' => 100, 'unit' => '€' ),
+					'monthly' => array( 'en' => 'Monthly contribution', 'pt' => 'Contribuição mensal', 'default' => 200, 'min' => 0, 'step' => 10, 'unit' => '€' ),
+					'rate'    => array( 'en' => 'Gross annual return (hypothetical)', 'pt' => 'Retorno anual bruto (hipotético)', 'default' => 6, 'min' => 0, 'max' => 15, 'step' => 0.5, 'unit' => '%' ),
+					'fee'     => array( 'en' => 'Annual fee', 'pt' => 'Comissão anual', 'default' => 1, 'min' => 0, 'max' => 3, 'step' => 0.1, 'unit' => '%' ),
+					'years'   => array( 'en' => 'Years', 'pt' => 'Anos', 'default' => 25, 'min' => 1, 'max' => 50, 'step' => 1, 'unit' => '' ),
+				),
+				'outputs' => array(
+					'net'   => array( 'en' => 'Value after fees', 'pt' => 'Valor após comissões', 'primary' => true ),
+					'gross' => array( 'en' => 'Value without fees', 'pt' => 'Valor sem comissões' ),
+					'lost'  => array( 'en' => 'Lost to fees', 'pt' => 'Perdido em comissões' ),
+				),
+				'chart'   => true,
+				'legend'  => array(
+					array( 'color' => '#FF6B5E', 'en' => 'After fees', 'pt' => 'Após comissões' ),
+					array( 'color' => '#7C5CFC', 'en' => 'Without fees', 'pt' => 'Sem comissões' ),
+				),
+			),
 		);
+	}
+
+	/**
+	 * Allocation visualiser: pick an investor archetype and see its illustrative
+	 * allocation by asset class as a donut. Numbers come straight from the
+	 * deterministic engine (Config + Engine::allocate) — never the LLM, never
+	 * named instruments. Illustrative only.
+	 */
+	private static function render_allocation(): string {
+		$pt        = 'pt' === self::locale();
+		$l         = $pt ? 'pt' : 'en';
+		$archetypes = Config::archetypes();
+
+		$labels = array(
+			'global_equity' => array( 'en' => 'Global equities', 'pt' => 'Ações globais', 'color' => '#FF6B5E' ),
+			'bonds'         => array( 'en' => 'Bonds', 'pt' => 'Obrigações', 'color' => '#7C5CFC' ),
+			'reits_alt'     => array( 'en' => 'REITs & alternatives', 'pt' => 'Imobiliário e alternativos', 'color' => '#D69A1E' ),
+			'cash'          => array( 'en' => 'Cash', 'pt' => 'Liquidez', 'color' => '#B7AEC4' ),
+			'crypto'        => array( 'en' => 'Crypto', 'pt' => 'Cripto', 'color' => '#22C3A6' ),
+		);
+
+		// Build each archetype's illustrative allocation, server-side.
+		$data = array();
+		foreach ( $archetypes as $id => $arch ) {
+			try {
+				$slices = Engine::allocate( $arch['ranges'], false );
+			} catch ( \Throwable $e ) {
+				continue;
+			}
+			$out_slices = array();
+			foreach ( $slices as $slice ) {
+				$cls = $slice['class'];
+				$out_slices[] = array(
+					'class' => $cls,
+					'pct'   => (int) $slice['pct'],
+					'label' => $labels[ $cls ][ $l ] ?? $cls,
+					'color' => $labels[ $cls ]['color'] ?? '#B7AEC4',
+				);
+			}
+			$data[] = array(
+				'id'    => (int) $id,
+				'label' => is_array( $arch['label'] ) ? ( $arch['label'][ $l ] ?? $arch['label']['en'] ) : (string) $arch['label'],
+				'slices' => $out_slices,
+			);
+		}
+
+		$json = wp_json_encode( $data );
+
+		$tabs = '';
+		foreach ( $data as $i => $arch ) {
+			$tabs .= '<button type="button" class="hti-alloc__tab" role="tab" data-arch="' . esc_attr( (string) $arch['id'] )
+				. '" aria-selected="' . ( 0 === $i ? 'true' : 'false' ) . '">' . esc_html( $arch['label'] ) . '</button>';
+		}
+
+		$center = $pt ? 'Exemplo' : 'Example';
+		$sub    = $pt ? 'por classes' : 'by class';
+
+		$out  = '<div class="hti-alloc" data-allocations="' . esc_attr( (string) $json ) . '" data-center="' . esc_attr( $center ) . '" data-sub="' . esc_attr( $sub ) . '">';
+		$out .= '<div class="hti-alloc__tabs" role="tablist" aria-label="' . esc_attr( $pt ? 'Perfis de investidor' : 'Investor profiles' ) . '">' . $tabs . '</div>';
+		$out .= '<div class="hti-alloc__view">';
+		$out .= '<div class="hti-alloc__donut" data-donut aria-hidden="true"></div>';
+		$out .= '<ul class="hti-alloc__list" data-list aria-live="polite"></ul>';
+		$out .= '</div>';
+
+		$note = $pt
+			? 'Exemplo ilustrativo por classes de ativos, não recomendação. Não nomeia instrumentos. Investir envolve risco, incluindo a perda de capital.'
+			: 'Illustrative example by asset class, not a recommendation. No named instruments. Investing involves risk, including loss of capital.';
+		$out .= '<p class="hti-tool__note">' . esc_html( $note ) . '</p>';
+
+		$nojs = $pt ? 'Ativa o JavaScript para explorar os perfis.' : 'Enable JavaScript to explore the profiles.';
+		$out .= '<noscript><p class="hti-tool__note">' . esc_html( $nojs ) . '</p></noscript>';
+		$out .= '</div>';
+
+		return $out;
 	}
 }

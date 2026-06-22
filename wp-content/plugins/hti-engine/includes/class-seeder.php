@@ -362,6 +362,10 @@ class Seeder {
 			'inflation-calculator'             => 'calculadora-de-inflacao',
 			'savings-goal-calculator'          => 'calculadora-de-meta-de-poupanca',
 			'cost-of-waiting-calculator'       => 'calculadora-do-custo-de-esperar',
+			'emergency-fund-calculator'        => 'calculadora-de-fundo-de-emergencia',
+			'rule-of-72-calculator'            => 'calculadora-da-regra-dos-72',
+			'fee-impact-calculator'            => 'calculadora-do-impacto-das-comissoes',
+			'allocation-visualizer'            => 'visualizador-de-alocacao',
 		);
 		return $map[ $en_slug ] ?? sanitize_title( $pt_title );
 	}
@@ -1848,6 +1852,34 @@ class Seeder {
 				'intro_en' => 'Starting earlier gives your contributions more time to compound. This compares starting now with waiting a few years — same monthly amount — so you can see what the delay might cost. Illustrative, with a hypothetical rate.',
 				'intro_pt' => 'Começar mais cedo dá às tuas contribuições mais tempo para compor. Isto compara começar já com esperar alguns anos — o mesmo valor mensal — para veres o que o atraso pode custar. Ilustrativo, com uma taxa hipotética.',
 			),
+			'emergency-fund-calculator'    => array(
+				'name'     => 'emergency_fund',
+				'title_en' => 'Emergency fund calculator',
+				'title_pt' => 'Calculadora de fundo de emergência',
+				'intro_en' => 'An emergency fund usually comes before any investing — money kept somewhere safe so a surprise never forces you to sell at a bad time. See a target based on your essential expenses, and roughly how long it might take to get there. Illustrative only.',
+				'intro_pt' => 'Um fundo de emergência costuma vir antes de qualquer investimento — dinheiro guardado em segurança para que um imprevisto nunca te obrigue a vender num mau momento. Vê um objetivo com base nas tuas despesas essenciais e, aproximadamente, quanto tempo pode demorar a lá chegar. Apenas ilustrativo.',
+			),
+			'rule-of-72-calculator'        => array(
+				'name'     => 'rule_of_72',
+				'title_en' => 'Rule of 72 calculator',
+				'title_pt' => 'Calculadora da regra dos 72',
+				'intro_en' => 'The rule of 72 is a quick mental shortcut: divide 72 by an annual return to estimate how many years money might take to double. See the estimate, how many times it could double over a period, and the resulting multiple. Illustrative, with a hypothetical rate.',
+				'intro_pt' => 'A regra dos 72 é um atalho mental rápido: divide 72 por um retorno anual para estimar em quantos anos o dinheiro pode duplicar. Vê a estimativa, quantas vezes pode duplicar num período e o múltiplo resultante. Ilustrativo, com uma taxa hipotética.',
+			),
+			'fee-impact-calculator'        => array(
+				'name'     => 'fee_impact',
+				'title_en' => 'Fee impact calculator',
+				'title_pt' => 'Calculadora do impacto das comissões',
+				'intro_en' => 'Small annual fees can quietly add up over decades. This compares the same illustrative portfolio with and without a yearly fee, so you can see how much the fee might cost over time. Illustrative, with a hypothetical rate — not advice.',
+				'intro_pt' => 'Pequenas comissões anuais podem somar silenciosamente ao longo de décadas. Isto compara a mesma carteira ilustrativa com e sem uma comissão anual, para veres quanto a comissão pode custar ao longo do tempo. Ilustrativo, com uma taxa hipotética — não é aconselhamento.',
+			),
+			'allocation-visualizer'        => array(
+				'name'     => 'allocation',
+				'title_en' => 'Allocation visualizer',
+				'title_pt' => 'Visualizador de alocação',
+				'intro_en' => 'Pick one of the five educational investor profiles and see its illustrative allocation by asset class as a donut. The numbers come from our curated profiles — always by asset class, never named instruments, and never advice.',
+				'intro_pt' => 'Escolhe um dos cinco perfis educativos de investidor e vê a sua alocação ilustrativa por classes de ativos num gráfico. Os números vêm dos nossos perfis curados — sempre por classes de ativos, nunca instrumentos nomeados, e nunca aconselhamento.',
+			),
 		);
 
 		$pages = array();
@@ -1856,6 +1888,10 @@ class Seeder {
 			'inflation-calculator'         => array( 'inflation', 'interest-rate' ),
 			'savings-goal-calculator'      => array( 'compound-interest' ),
 			'cost-of-waiting-calculator'   => array( 'compound-interest' ),
+			'emergency-fund-calculator'    => array( 'inflation', 'diversification' ),
+			'rule-of-72-calculator'        => array( 'compound-interest', 'yield' ),
+			'fee-impact-calculator'        => array( 'compound-interest', 'investment-fund' ),
+			'allocation-visualizer'        => array( 'diversification', 'portfolio' ),
 		);
 		foreach ( $tools as $slug => $t ) {
 			$terms = $tool_terms[ $slug ] ?? array();
@@ -1889,6 +1925,10 @@ class Seeder {
 						array( home_url( '/inflation-calculator/' ), 'Inflation', 'how much buying power your money may lose.' ),
 						array( home_url( '/savings-goal-calculator/' ), 'Savings goal', 'how much to set aside monthly to reach a goal.' ),
 						array( home_url( '/cost-of-waiting-calculator/' ), 'The cost of waiting', 'what delaying a few years might cost.' ),
+						array( home_url( '/emergency-fund-calculator/' ), 'Emergency fund', 'a safety cushion to build before investing.' ),
+						array( home_url( '/rule-of-72-calculator/' ), 'Rule of 72', 'a quick estimate of how long money takes to double.' ),
+						array( home_url( '/fee-impact-calculator/' ), 'Fee impact', 'how much yearly fees might cost over time.' ),
+						array( home_url( '/allocation-visualizer/' ), 'Allocation visualizer', 'see each investor profile by asset class.' ),
 					)
 				)
 				. self::cta(),
@@ -1902,6 +1942,10 @@ class Seeder {
 							array( home_url( '/inflation-calculator/' ), 'Inflação', 'quanto poder de compra o teu dinheiro pode perder.' ),
 							array( home_url( '/savings-goal-calculator/' ), 'Meta de poupança', 'quanto pôr de lado por mês para atingir um objetivo.' ),
 							array( home_url( '/cost-of-waiting-calculator/' ), 'O custo de esperar', 'o que adiar alguns anos pode custar.' ),
+							array( home_url( '/emergency-fund-calculator/' ), 'Fundo de emergência', 'a almofada de segurança a construir antes de investir.' ),
+							array( home_url( '/rule-of-72-calculator/' ), 'Regra dos 72', 'uma estimativa rápida do tempo para o dinheiro duplicar.' ),
+							array( home_url( '/fee-impact-calculator/' ), 'Impacto das comissões', 'quanto as comissões anuais podem custar ao longo do tempo.' ),
+							array( home_url( '/allocation-visualizer/' ), 'Visualizador de alocação', 'vê cada perfil de investidor por classes de ativos.' ),
 						)
 					),
 			),

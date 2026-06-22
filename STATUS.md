@@ -154,7 +154,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 **Código (produto):** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
 
 **Código — adiado de propósito (opcional, não bloqueia):**
-- [ ] **Hub de Ferramentas — 2ª leva:** Fundo de emergência, Visualizador de alocação por arquétipo (reusa `result.js`+`Config`), Regra dos 72, Impacto das comissões. (1ª leva — juro composto/inflação/meta/custo de esperar — **feita**.)
+- [x] **Hub de Ferramentas — 2ª leva (feita):** Fundo de emergência, Visualizador de alocação por arquétipo (donut via `Config`+`Engine::allocate`, por classes), Regra dos 72, Impacto das comissões. (1ª leva — juro composto/inflação/meta/custo de esperar — também feita.) Páginas seedadas EN+PT + ligadas no hub `/tools/`; `tools-core` com 27 testes verdes.
 - [ ] Kit social: template **Editorial 4:5** (img3) e **X/Twitter 1600×900**.
 - [ ] Outros templates do design (Facto curioso, Glossário cards, CTA, Infográfico, Resumo diário) — "kit de conteúdo" futuro.
 - [ ] **Base dos slugs dos CPTs em PT** (`/news/`, `/glossary/`) — exige Polylang Pro ou rewrite custom (deixada em EN).
