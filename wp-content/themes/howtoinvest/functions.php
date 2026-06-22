@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.23';
+const VERSION = '0.8.24';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -124,6 +124,16 @@ function enqueue_scripts(): void {
 	wp_register_script(
 		'howtoinvest-news-hub',
 		get_stylesheet_directory_uri() . '/assets/js/news-hub.js',
+		array(),
+		VERSION,
+		array( 'strategy' => 'defer', 'in_footer' => true )
+	);
+
+	// Single-news article: reading-progress bar + copy-link.
+	wp_register_style( 'howtoinvest-news-article', get_stylesheet_directory_uri() . '/assets/css/news-article.css', array(), VERSION );
+	wp_register_script(
+		'howtoinvest-news-article',
+		get_stylesheet_directory_uri() . '/assets/js/news-article.js',
 		array(),
 		VERSION,
 		array( 'strategy' => 'defer', 'in_footer' => true )
@@ -259,6 +269,14 @@ function strings(): array {
 		'news_all'         => array( 'en' => 'All', 'pt' => 'Todas' ),
 		'news_min'         => array( 'en' => 'min', 'pt' => 'min' ),
 		'news_empty'       => array( 'en' => 'No news in this category yet.', 'pt' => 'Ainda não há notícias nesta categoria.' ),
+		// Single news article.
+		'art_byline'       => array( 'en' => 'HowToInvest Editorial', 'pt' => 'Redação HowToInvest' ),
+		'art_min_read'     => array( 'en' => 'min read', 'pt' => 'min de leitura' ),
+		'art_illustration' => array( 'en' => 'Editorial illustration', 'pt' => 'Ilustração editorial' ),
+		'art_share'        => array( 'en' => 'Share', 'pt' => 'Partilhar' ),
+		'art_copy'         => array( 'en' => 'Copy link', 'pt' => 'Copiar link' ),
+		'art_copied'       => array( 'en' => 'Copied!', 'pt' => 'Copiado!' ),
+		'art_author_bio'   => array( 'en' => 'We write educational content about personal finance — jargon-free, with nothing to sell, reviewed by the team. Everything here is illustrative and never advice.', 'pt' => 'Escrevemos conteúdo educativo sobre finanças pessoais — sem jargão, sem vender nada e revisto pela equipa. Tudo o que lês é ilustrativo e nunca aconselhamento.' ),
 		'sub_glossary'     => array( 'en' => 'The essential terms, explained without jargon.', 'pt' => 'Os termos essenciais, explicados sem jargão.' ),
 		'sub_news'         => array( 'en' => "Calm reads on what's happening in the markets — and what it means for you.", 'pt' => 'Leituras calmas do que acontece nos mercados — e do que isso significa para ti.' ),
 		'back_learn'       => array( 'en' => '← Learn', 'pt' => '← Aprender' ),
@@ -457,6 +475,15 @@ function register_dynamic_blocks(): void {
 			'title'           => __( 'News hub', 'howtoinvest' ),
 			'category'        => 'theme',
 			'render_callback' => __NAMESPACE__ . '\\render_news_hub',
+		)
+	);
+	register_block_type(
+		'howtoinvest/news-article',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'News article', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_news_article',
 		)
 	);
 }
@@ -1430,6 +1457,203 @@ function news_hub_week_html(): string {
 		$out .= '<div class="hti-newshub__event"><div class="hti-newshub__event-when"><div class="hti-newshub__event-day">' . esc_html( $e['day'] ) . '</div><div class="hti-newshub__event-date">' . esc_html( $e['date'] ) . '</div></div><div class="hti-newshub__event-body"><div class="hti-newshub__event-label">' . esc_html( $e['label'] ) . '</div>' . ( '' !== $e['tag'] ? '<span class="hti-newshub__event-tag" style="color:' . esc_attr( $e['color'] ) . '">' . esc_html( $e['tag'] ) . '</span>' : '' ) . '</div></div>';
 	}
 	$out .= '</div>';
+	return $out;
+}
+
+/**
+ * The HowToInvest editorial mark (used in the byline + author box avatars).
+ */
+function news_brand_mark(): string {
+	return '<svg viewBox="0 0 64 64" width="26" height="26" fill="none" aria-hidden="true"><path d="M32 12L50 17.5V32c0 10-7.5 16.6-18 20-10.5-3.4-18-10-18-20V17.5z" fill="#fff"/><g fill="#7C5CFC"><rect x="22" y="24" width="3.4" height="6" rx="1"/><rect x="28" y="21" width="3.4" height="9" rx="1"/><rect x="34" y="18" width="3.4" height="12" rx="1"/><rect x="22" y="38" width="3.4" height="6" rx=".8"/><rect x="28" y="35" width="3.4" height="9" rx=".8"/><rect x="34" y="32" width="3.4" height="12" rx=".8"/></g></svg>';
+}
+
+/**
+ * Social-share row for a news article (share-intent links + copy button).
+ *
+ * @param string $url   Article permalink.
+ * @param string $title Article title.
+ * @param bool   $pt    Current language is PT.
+ */
+function news_article_share( string $url, string $title, bool $pt ): string {
+	$u = rawurlencode( $url );
+	$t = rawurlencode( $title );
+	$ic = array(
+		'wa'  => '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-.207zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>',
+		'li'  => '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>',
+		'x'   => '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+		'fb'  => '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.41 0 12.07c0 6.02 4.39 11.01 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.08 24 18.09 24 12.07z"/></svg>',
+		'em'  => '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
+	);
+	$share_icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
+	$copy_icon  = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>';
+
+	$btn = static function ( string $href, string $net, string $label, string $svg ): string {
+		return '<a class="hti-art__sh hti-art__sh--' . $net . '" href="' . esc_url( $href ) . '" target="_blank" rel="noopener noreferrer nofollow" aria-label="' . esc_attr( $label ) . '">' . $svg . '</a>';
+	};
+
+	$out  = '<div class="hti-art__share">';
+	$out .= '<span class="hti-art__share-label">' . $share_icon . esc_html( t( 'art_share' ) ) . '</span>';
+	$out .= '<div class="hti-art__share-row">';
+	$out .= $btn( 'https://wa.me/?text=' . $t . '%20' . $u, 'wa', 'WhatsApp', $ic['wa'] );
+	$out .= $btn( 'https://www.linkedin.com/sharing/share-offsite/?url=' . $u, 'li', 'LinkedIn', $ic['li'] );
+	$out .= $btn( 'https://twitter.com/intent/tweet?text=' . $t . '&url=' . $u, 'x', 'X', $ic['x'] );
+	$out .= $btn( 'https://www.facebook.com/sharer/sharer.php?u=' . $u, 'fb', 'Facebook', $ic['fb'] );
+	$out .= $btn( 'mailto:?subject=' . $t . '&body=' . $u, 'em', 'Email', $ic['em'] );
+	$out .= '<span class="hti-art__share-div"></span>';
+	$out .= '<button type="button" class="hti-art__copy" data-url="' . esc_url( $url ) . '" data-copied="' . esc_attr( t( 'art_copied' ) ) . '">' . $copy_icon . '<span class="hti-art__copy-label">' . esc_html( t( 'art_copy' ) ) . '</span></button>';
+	$out .= '</div></div>';
+	return $out;
+}
+
+/**
+ * "Keep reading" related-news cards (same category, latest), padded with the
+ * latest news when a category is thin.
+ *
+ * @param \WP_Post $post Current article.
+ * @param bool     $pt   Current language is PT.
+ */
+function news_article_related( \WP_Post $post, bool $pt ): string {
+	$cats = wp_get_post_terms( $post->ID, 'news_category', array( 'fields' => 'ids' ) );
+	$args = array(
+		'post_type'           => 'news',
+		'post_status'         => 'publish',
+		'posts_per_page'      => 3,
+		'post__not_in'        => array( $post->ID ),
+		'orderby'             => 'date',
+		'order'               => 'DESC',
+		'no_found_rows'       => true,
+		'ignore_sticky_posts' => true,
+	);
+	if ( ! is_wp_error( $cats ) && ! empty( $cats ) ) {
+		$args['tax_query'] = array( array( 'taxonomy' => 'news_category', 'terms' => $cats ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+	}
+	$q     = new \WP_Query( $args );
+	$posts = $q->posts;
+	wp_reset_postdata();
+
+	if ( count( $posts ) < 3 ) {
+		$have = array( $post->ID => true );
+		foreach ( $posts as $p ) {
+			$have[ $p->ID ] = true;
+		}
+		foreach ( news_hub_posts( 6 ) as $p ) {
+			if ( count( $posts ) >= 3 ) {
+				break;
+			}
+			if ( empty( $have[ $p->ID ] ) ) {
+				$posts[]        = $p;
+				$have[ $p->ID ] = true;
+			}
+		}
+	}
+	if ( empty( $posts ) ) {
+		return '';
+	}
+
+	$out = '<section class="hti-art__related"><h2 class="hti-art__related-h"><span class="hti-art__related-bar"></span>' . esc_html( t( 'related_read' ) ) . '</h2><div class="hti-art__related-grid">';
+	foreach ( $posts as $p ) {
+		$d     = news_item_data( $p, $pt );
+		$media = '' !== $d['thumb']
+			? '<span class="hti-art__rcard-media"><img class="hti-art__rcard-img" src="' . esc_url( (string) $d['thumb'] ) . '" alt="" loading="lazy" decoding="async"></span>'
+			: '<span class="hti-art__rcard-media" style="background:' . esc_attr( (string) $d['grad'] ) . ';"></span>';
+		$out  .= '<a class="hti-art__rcard" href="' . esc_url( (string) $d['url'] ) . '">' . $media . '<span class="hti-art__rcard-body"><span class="hti-art__rcard-cat" style="color:' . esc_attr( (string) $d['color'] ) . '">' . esc_html( (string) $d['cat'] ) . '</span><span class="hti-art__rcard-title">' . esc_html( (string) $d['title'] ) . '</span></span></a>';
+	}
+	$out .= '</div></section>';
+	return $out;
+}
+
+/**
+ * Single-news article (designed): reading-progress bar, breadcrumb, category
+ * pill, lead, editorial byline, featured image (or gradient illustration),
+ * prose body, tags, social share, author box, CTA and "keep reading" cards.
+ *
+ * @return string Safe HTML.
+ */
+function render_news_article(): string {
+	if ( ! is_singular( 'news' ) ) {
+		return '';
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof \WP_Post ) {
+		return '';
+	}
+	wp_enqueue_style( 'howtoinvest-news-article' );
+	wp_enqueue_script( 'howtoinvest-news-article' );
+
+	$pt    = 'pt' === current_lang();
+	$it    = news_item_data( $post, $pt );
+	$url   = (string) get_permalink( $post );
+	$title = (string) get_the_title( $post );
+	$logo  = news_brand_mark();
+
+	$views = (int) $it['views'];
+	$vf    = $views >= 1000 ? number_format_i18n( $views / 1000, 1 ) . 'k' : (string) $views;
+	$meta  = $it['date'] . ' · ' . $it['read'] . ' ' . t( 'art_min_read' );
+	if ( $views > 0 ) {
+		$meta .= ' · ' . $vf . ' ' . t( 'news_reads' );
+	}
+
+	$out  = '<article class="hti-art">';
+	$out .= '<div class="hti-art__progress hti-noprint" aria-hidden="true"><span class="hti-art__bar"></span></div>';
+
+	// Breadcrumb.
+	$out .= '<nav class="hti-art__crumb" aria-label="breadcrumb"><a href="' . esc_url( archive_url( 'news', 'financial-news' ) ) . '">' . esc_html( t( 'nav_news' ) ) . '</a>';
+	if ( '' !== $it['cat'] ) {
+		$out .= '<span class="hti-art__crumb-sep" aria-hidden="true">›</span><span class="hti-art__crumb-cat" style="color:' . esc_attr( (string) $it['color'] ) . '">' . esc_html( (string) $it['cat'] ) . '</span>';
+	}
+	$out .= '</nav>';
+
+	// Category pill.
+	if ( '' !== $it['cat'] ) {
+		$out .= '<span class="hti-art__pill" style="color:' . esc_attr( (string) $it['color'] ) . '">' . esc_html( (string) $it['cat'] ) . '</span>';
+	}
+
+	// Title + lead.
+	$out .= '<h1 class="hti-art__title">' . esc_html( $title ) . '</h1>';
+	$lead = has_excerpt( $post ) ? trim( (string) get_the_excerpt( $post ) ) : '';
+	if ( '' !== $lead ) {
+		$out .= '<p class="hti-art__lead">' . esc_html( $lead ) . '</p>';
+	}
+
+	// Byline.
+	$out .= '<div class="hti-art__byline"><span class="hti-art__avatar">' . $logo . '</span><div><div class="hti-art__by">' . esc_html( t( 'art_byline' ) ) . '</div><div class="hti-art__meta">' . esc_html( $meta ) . '</div></div></div>';
+
+	// Featured image or gradient illustration.
+	if ( has_post_thumbnail( $post ) ) {
+		$out .= '<figure class="hti-art__figure">' . get_the_post_thumbnail( $post, 'large', array( 'class' => 'hti-art__img', 'alt' => $title, 'fetchpriority' => 'high', 'decoding' => 'async' ) ) . '</figure>';
+	} else {
+		$out .= '<div class="hti-art__illus" style="background:' . esc_attr( (string) $it['grad'] ) . ';"><span class="hti-art__illus-bubble" aria-hidden="true"></span><span class="hti-art__illus-label">' . esc_html( t( 'art_illustration' ) ) . '</span></div>';
+	}
+
+	// Body (prose).
+	$out .= '<div class="hti-art__prose">' . apply_filters( 'the_content', get_the_content( null, false, $post ) ) . '</div>';
+
+	// Tags (news categories).
+	$terms = get_the_terms( $post, 'news_category' );
+	if ( is_array( $terms ) && ! empty( $terms ) ) {
+		$out .= '<div class="hti-art__tags">';
+		foreach ( $terms as $term ) {
+			$link = get_term_link( $term );
+			if ( ! is_wp_error( $link ) ) {
+				$out .= '<a class="hti-art__tag" href="' . esc_url( (string) $link ) . '">#' . esc_html( news_cat_name( $term, $pt ) ) . '</a>';
+			}
+		}
+		$out .= '</div>';
+	}
+
+	// Social share.
+	$out .= news_article_share( $url, $title, $pt );
+
+	// Author box.
+	$out .= '<div class="hti-art__author"><span class="hti-art__avatar hti-art__avatar--lg">' . $logo . '</span><div><div class="hti-art__by">' . esc_html( t( 'art_byline' ) ) . '</div><p class="hti-art__author-bio">' . esc_html( t( 'art_author_bio' ) ) . '</p></div></div>';
+
+	// CTA.
+	$out .= '<div class="hti-art__cta"><span class="hti-art__cta-q">' . esc_html( t( 'news_cta_q' ) ) . '</span><a class="hti-art__cta-btn" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '" data-hti-track="cta_click" data-htip-location="news_article">' . esc_html( t( 'news_cta_btn' ) ) . '</a></div>';
+
+	// Related.
+	$out .= news_article_related( $post, $pt );
+
+	$out .= '</article>';
 	return $out;
 }
 
