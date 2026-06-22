@@ -63,3 +63,67 @@ renderizar/screenshot e até correr o **mcp-adapter localmente** (MCP por stdio 
 - Tema `howtoinvest` (v0.8.24) + plugin `hti-engine` (v0.8.20) + `hti-rss-ai`.
 - Branch de desenvolvimento desta linha de trabalho: `claude/sharp-brahmagupta-n6yyzo`
   (ff-merge para `main`, deploy por cPanel). Bump de VERSION ao mexer em CSS/JS.
+
+---
+
+# Caminho escolhido: Claude Code LOCAL a controlar produção
+
+Decisão do utilizador: controlar o site de produção **diretamente** pelo Claude Code,
+a correr **na máquina dele** (desktop/CLI) — não na versão web. Vantagem: a máquina
+local já alcança o site (sem o proxy de egress da web), o utilizador segura as
+credenciais, e o WAF tende a deixar passar pedidos da sua rede.
+
+**Nota-chave:** não é preciso o mcp-adapter para criar/editar conteúdo — o **WordPress
+core já tem REST API de escrita**. Com uma *Application Password*, dá para
+`POST /wp-json/wp/v2/posts`, editar, media, termos, etc. O mcp-adapter é um upgrade
+opcional (tools MCP estruturadas).
+
+## 1. Instalar o Claude Code na máquina
+- CLI: `npm i -g @anthropic-ai/claude-code`, depois `claude` dentro da pasta do repo.
+  (ou usar a app desktop.)
+- Clonar o repo para o Claude local ter o `CLAUDE.md` + código:
+  `git clone https://github.com/luismsmarques/how-to-invest-v2.git`
+
+## 2. Criar credencial de escrita (Application Password)
+- Idealmente, criar um **utilizador dedicado** (papel **Editor** para conteúdo; Admin só
+  se precisar de mais). Princípio do menor privilégio.
+- WP Admin → **Utilizadores → (utilizador) → Application Passwords** → nome "Claude Code"
+  → **Add** → copiar a password gerada (com espaços). Requer HTTPS (já há). Revogável a
+  qualquer momento.
+- Guardar em **variável de ambiente local, NUNCA no repo**:
+  ```bash
+  export HTI_WP_USER="o-utilizador"
+  export HTI_WP_APP_PASS="xxxx xxxx xxxx xxxx xxxx xxxx"
+  ```
+
+## 3. Testar a REST API (ler → escrever)
+```bash
+# Ler (confirma auth + WAF):
+curl -u "$HTI_WP_USER:$HTI_WP_APP_PASS" \
+  "https://howtoinvest.pro/wp-json/wp/v2/posts?per_page=1"
+
+# Criar um rascunho:
+curl -u "$HTI_WP_USER:$HTI_WP_APP_PASS" -X POST \
+  "https://howtoinvest.pro/wp-json/wp/v2/posts" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Teste Claude","status":"draft","content":"<p>olá</p>"}'
+```
+- CPTs do projeto: `news` → `/wp-json/wp/v2/news`, `learn` → `/wp-json/wp/v2/learn`,
+  `glossary` → `/wp-json/wp/v2/glossary` (confirmar `show_in_rest` + `rest_base`).
+- Se o WAF devolver **403**: *whitelist* do IP da máquina no cPanel/Cloudflare, ou
+  exceção para `/wp-json/`.
+
+## 4. (Opcional) mcp-adapter para tools MCP
+- Instalar o plugin no site (ou via Composer em `mu-plugins`). Requer Abilities API
+  (WP 6.8+).
+- No Claude Code local, registar o servidor MCP em `.mcp.json` apontando ao endpoint MCP
+  do site, com `Authorization: Basic <base64(user:app_pass)>` **via env var** (não
+  hardcoded, não commitado).
+
+## Guardrails (recordar sempre)
+- **Estrutura / conteúdo educativo = seeder** (código versionado). Escrita direta via
+  REST/MCP = **operações de conteúdo** (notícias, edições pontuais, páginas avulsas).
+- Respeitar invariantes: disclaimer presente, **sem instrumentos nomeados**, sempre por
+  classes de ativos, linguagem condicional.
+- App password = capacidades do utilizador → papel mínimo necessário; **revogar** se
+  vazar. Nunca em ficheiro/commit.
