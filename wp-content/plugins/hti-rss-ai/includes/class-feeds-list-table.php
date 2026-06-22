@@ -39,6 +39,7 @@ class Feeds_List_Table extends \WP_List_Table {
 	public function get_columns(): array {
 		return array(
 			'name'         => __( 'Name', 'hti-rss-ai' ),
+			'kind'         => __( 'Type', 'hti-rss-ai' ),
 			'url'          => __( 'URL', 'hti-rss-ai' ),
 			'lang'         => __( 'Lang', 'hti-rss-ai' ),
 			'category'     => __( 'Category', 'hti-rss-ai' ),
@@ -63,6 +64,10 @@ class Feeds_List_Table extends \WP_List_Table {
 	 */
 	public function column_default( $item, $column_name ): string {
 		switch ( $column_name ) {
+			case 'kind':
+				return 'youtube' === ( $item->kind ?? 'rss' )
+					? '<span style="color:#b32d2e">▶ ' . esc_html__( 'YouTube', 'hti-rss-ai' ) . '</span>'
+					: '<span style="color:#646970">' . esc_html__( 'RSS', 'hti-rss-ai' ) . '</span>';
 			case 'url':
 				return '<span style="color:#646970">' . esc_html( $item->url ) . '</span>';
 			case 'lang':

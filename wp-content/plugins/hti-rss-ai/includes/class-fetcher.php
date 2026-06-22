@@ -79,6 +79,9 @@ class Fetcher {
 	 * @return array{items:int,dupes:int}|null Null on read error.
 	 */
 	public static function fetch_one( object $feed ): ?array {
+		if ( 'youtube' === ( $feed->kind ?? 'rss' ) ) {
+			return self::fetch_youtube( $feed );
+		}
 		include_once ABSPATH . WPINC . '/feed.php';
 		$rss = fetch_feed( $feed->url );
 
@@ -126,6 +129,70 @@ class Fetcher {
 				++$created;
 			} else {
 				++$dupes; // Unique-key race or empty.
+			}
+		}
+
+		self::record_fetched( (int) $feed->id );
+		return array(
+			'items' => $created,
+			'dupes' => $dupes,
+		);
+	}
+
+	/**
+	 * Fetch a YouTube channel's recent uploads as items (no transcript yet —
+	 * that is fetched on demand when generating).
+	 *
+	 * @param object $feed Feed row (url = channel id).
+	 * @return array{items:int,dupes:int}|null
+	 */
+	private static function fetch_youtube( object $feed ): ?array {
+		if ( ! YouTube::is_configured() ) {
+			Logger::log( 'youtube', 'Skipped "' . $feed->name . '": YouTube API key not configured.' );
+			self::record_error( (int) $feed->id );
+			return null;
+		}
+
+		$videos = YouTube::recent_uploads( (string) $feed->url, (int) Settings::get( 'max_per_fetch', 50 ) );
+		if ( is_wp_error( $videos ) ) {
+			self::record_error( (int) $feed->id );
+			return null;
+		}
+
+		$created = 0;
+		$dupes   = 0;
+		foreach ( $videos as $v ) {
+			$hash = sha1( 'yt:' . $v['video_id'] );
+			if ( Items::exists( $hash ) ) {
+				++$dupes;
+				continue;
+			}
+			$title = sanitize_text_field( (string) $v['title'] );
+			if ( '' === $title ) {
+				continue;
+			}
+			$ts  = '' !== $v['published_at'] ? strtotime( (string) $v['published_at'] ) : false;
+			$pub = $ts ? gmdate( 'Y-m-d H:i:s', $ts ) : current_time( 'mysql' );
+
+			$id = Items::insert(
+				array(
+					'feed_id'      => (int) $feed->id,
+					'guid_hash'    => $hash,
+					'title'        => $title,
+					'description'  => self::clean_text( (string) $v['description'] ),
+					'video_id'     => sanitize_text_field( (string) $v['video_id'] ),
+					'image_url'    => esc_url_raw( (string) $v['thumbnail'] ),
+					'source'       => sanitize_text_field( '' !== $v['channel'] ? (string) $v['channel'] : (string) $feed->name ),
+					'link'         => esc_url_raw( (string) $v['url'] ),
+					'published_at' => $pub,
+					'lang'         => $feed->lang,
+					'status'       => 'new',
+				)
+			);
+			if ( $id ) {
+				++$created;
+			} else {
+				++$dupes;
 			}
 		}
 

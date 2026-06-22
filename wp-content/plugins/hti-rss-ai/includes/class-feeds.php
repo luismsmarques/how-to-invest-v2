@@ -138,9 +138,14 @@ class Feeds {
 	 */
 	private static function clean( array $data ): array {
 		$lang = in_array( $data['lang'] ?? 'en', array( 'en', 'pt' ), true ) ? $data['lang'] : 'en';
+		$kind = in_array( $data['kind'] ?? 'rss', array( 'rss', 'youtube' ), true ) ? (string) $data['kind'] : 'rss';
+		// For a YouTube feed, "url" holds a channel id (UC…), not a real URL.
+		$raw = (string) ( $data['url'] ?? '' );
+		$url = 'youtube' === $kind ? sanitize_text_field( $raw ) : esc_url_raw( $raw );
 		return array(
 			'name'             => sanitize_text_field( (string) ( $data['name'] ?? '' ) ),
-			'url'              => esc_url_raw( (string) ( $data['url'] ?? '' ) ),
+			'url'              => $url,
+			'kind'             => $kind,
 			'default_category' => absint( $data['default_category'] ?? 0 ),
 			'lang'             => $lang,
 			'status'           => empty( $data['status'] ) ? 0 : 1,
@@ -153,6 +158,6 @@ class Feeds {
 	 * @return array<int,string>
 	 */
 	private static function formats(): array {
-		return array( '%s', '%s', '%d', '%s', '%d' );
+		return array( '%s', '%s', '%s', '%d', '%s', '%d' );
 	}
 }

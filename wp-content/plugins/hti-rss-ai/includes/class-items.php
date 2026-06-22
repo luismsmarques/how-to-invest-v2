@@ -48,6 +48,8 @@ class Items {
 				'guid_hash'    => (string) ( $data['guid_hash'] ?? '' ),
 				'title'        => (string) ( $data['title'] ?? '' ),
 				'description'  => (string) ( $data['description'] ?? '' ),
+				'transcript'   => (string) ( $data['transcript'] ?? '' ),
+				'video_id'     => (string) ( $data['video_id'] ?? '' ),
 				'image_url'    => (string) ( $data['image_url'] ?? '' ),
 				'source'       => (string) ( $data['source'] ?? '' ),
 				'link'         => (string) ( $data['link'] ?? '' ),
@@ -55,7 +57,7 @@ class Items {
 				'lang'         => (string) ( $data['lang'] ?? 'en' ),
 				'status'       => (string) ( $data['status'] ?? 'new' ),
 			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		return $ok ? (int) $wpdb->insert_id : 0;
 	}
