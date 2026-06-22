@@ -182,3 +182,4 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 3. Verificar 301s + HTTPS.
 4. Enviar textos legais ao jurista (L-D).
 5. Ativar o **HTI RSS AI Feed**, adicionar feeds e validar 1 geração ponta a ponta antes de a usar em produção.
+6. **MCP WordPress** (criar/editar conteúdo por comandos): plano e estado em `docs/MCP_WordPress.md` — bloqueado por egress (precisa de ambiente novo) + WAF.
