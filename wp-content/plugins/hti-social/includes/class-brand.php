@@ -55,6 +55,33 @@ class Brand {
 	}
 
 	/**
+	 * "Fun fact · green" illustration (a ship), ported from the design.
+	 */
+	public static function ship_svg(): string {
+		return '<svg viewBox="0 0 120 120" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">'
+			. '<path d="M60 18v54" stroke="#fff" stroke-width="3" stroke-linecap="round"/>'
+			. '<path d="M62 24c18 6 26 20 28 38H62z" fill="#7FE0B0"/>'
+			. '<path d="M58 30c-12 5-18 16-19 30h19z" fill="#fff" fill-opacity=".85"/>'
+			. '<path d="M28 74h64l-11 18H39z" fill="#FFD79E"/>'
+			. '<path d="M22 98c7 6 14 6 21 0s14-6 21 0 14 6 21 0" stroke="#7FE0B0" stroke-width="3.5" fill="none" stroke-linecap="round"/>'
+			. '</svg>';
+	}
+
+	/**
+	 * "Fun fact · purple" illustration (gold coins), ported from the design.
+	 */
+	public static function gold_svg(): string {
+		return '<svg viewBox="0 0 120 120" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">'
+			. '<rect x="30" y="80" width="60" height="16" rx="3" fill="#E8B84B"/>'
+			. '<rect x="38" y="62" width="44" height="16" rx="3" fill="#F2CD6B"/>'
+			. '<path d="M50 44h20l8 16H42z" fill="#FFE08A"/>'
+			. '<path d="M54 47l-5 11" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".6"/>'
+			. '<circle cx="34" cy="36" r="9" fill="#F2CD6B"/>'
+			. '<circle cx="88" cy="30" r="7" fill="#E8B84B"/>'
+			. '</svg>';
+	}
+
+	/**
 	 * Bilingual legal disclaimer (matches the design's renderVals()).
 	 *
 	 * @return array{en:string,pt:string}

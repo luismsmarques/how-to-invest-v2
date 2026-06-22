@@ -88,6 +88,8 @@ class Assets {
 		return array(
 			'locale'      => Plugin::locale(),
 			'logoSvg'     => Brand::logo_svg(),
+			'illoShip'    => Brand::ship_svg(),
+			'illoGold'    => Brand::gold_svg(),
 			'brand'       => Brand::defaults(),
 			'disclaimers' => Brand::disclaimers(),
 			'fontFaces'   => Brand::font_faces(),

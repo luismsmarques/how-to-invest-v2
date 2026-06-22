@@ -32,11 +32,14 @@ Tokens: `{{logo}}`, `{{disclaimer}}`, `{{#legal}}…{{/legal}}`, `{{img:slotId}}
 and any `{{field}}` declared in a template's `fields`.
 
 ## Status
-- **Done:** engine + editor + export; **News** family (Square 1080×1080, Story
-  1080×1920, X 1600×900); **Glossary** family (Facebook 1080×1080, Feed
-  1080×1350, Story 1080×1920); both placements.
-- **Next:** Fun fact + Quiz CTA, og:image + Editorial (incl. the data
+- **Done:** engine + editor + export; **News** (Square/Story/X), **Glossary**
+  (Facebook/Feed/Story), **Fun fact** (green/purple square + green story) and
+  **Quiz CTA** (Square/Story/X); both placements. 12 templates.
+- **Next:** og:image (full-photo / split) + Editorial 4:5 (incl. the data
   infographic).
+
+Fun fact uses the ported `{{illoShip}}` / `{{illoGold}}` brand illustrations
+(raw SVG tokens, alongside `{{logo}}`).
 
 Engine tokens also include `{{initial}}` (first letter of the term, used as the
 big decorative glyph), `{{#has:KEY}}…{{/has:KEY}}` (keep a block only when a

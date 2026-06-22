@@ -274,5 +274,207 @@ window.HTI_SOCIAL_TEMPLATES = ( function () {
 			'</div>'
 	};
 
-	return [ newsSquare, newsStory, newsX, glossaryFb, glossaryFeed, glossaryStory ];
+	// --- Fun fact · Square (green) 1080×1080 -------------------------------
+	var factGreen = {
+		id: 'fact-green',
+		category: 'fact',
+		label: { en: 'Fun fact · Green', pt: 'Facto curioso · Verde' },
+		w: 1080,
+		h: 1080,
+		fields: [
+			{ key: 'badge', label: { en: 'Badge', pt: 'Etiqueta' }, type: 'text', default: 'Sabias que?' },
+			{ key: 'headline', label: { en: 'Fact', pt: 'Facto' }, type: 'textarea', default: 'A primeira Bolsa de Valores do mundo nasceu em 1602.' },
+			{ key: 'body', label: { en: 'Detail', pt: 'Detalhe' }, type: 'textarea', default: 'Em Amesterdão, para financiar viagens comerciais por todo o mundo.' }
+		],
+		html:
+			'<div style="width:1080px;height:1080px;background:radial-gradient(120% 100% at 50% 0%,#147A57,#0B4D37 70%);display:flex;flex-direction:column;align-items:center;padding:72px;color:#fff;text-align:center;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<span style="font:700 20px ' + JAKARTA + ';letter-spacing:.2em;text-transform:uppercase;color:#0B4D37;background:#7FE0B0;padding:13px 30px;border-radius:999px;">{{badge}}</span>' +
+				'<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;">' +
+					'<h2 style="margin:0;font:800 62px ' + POPPINS + ';line-height:1.1;letter-spacing:-.02em;color:#fff;max-width:16ch;">{{headline}}</h2>' +
+					'<div style="width:230px;height:230px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;"><span style="width:150px;height:150px;display:flex;">{{illoShip}}</span></div>' +
+					'<p style="margin:0;font:500 26px ' + JAKARTA + ';color:#BFEFD7;line-height:1.45;max-width:30ch;">{{body}}</p>' +
+				'</div>' +
+				'<div style="width:100%;display:flex;align-items:center;justify-content:center;gap:16px;">' +
+					'<span style="width:50px;height:50px;display:flex;flex:none;">{{logo}}</span>' +
+					'<span style="font:700 26px ' + POPPINS + ';color:#fff;">HowToInvest</span>' +
+					'<span style="font:500 22px ' + JAKARTA + ';color:#7FE0B0;">· @{{handle}}</span>' +
+				'</div>' +
+				'{{#legal}}<p style="margin:18px 0 0;font:400 13.5px ' + JAKARTA + ';color:rgba(191,239,215,.7);line-height:1.4;max-width:64ch;">{{disclaimer}}</p>{{/legal}}' +
+			'</div>'
+	};
+
+	// --- Fun fact · Square (purple) 1080×1080 ------------------------------
+	var factPurple = {
+		id: 'fact-purple',
+		category: 'fact',
+		label: { en: 'Fun fact · Purple', pt: 'Facto curioso · Roxo' },
+		w: 1080,
+		h: 1080,
+		fields: [
+			{ key: 'badge', label: { en: 'Badge', pt: 'Etiqueta' }, type: 'text', default: 'Facto curioso' },
+			{ key: 'headline', label: { en: 'Fact', pt: 'Facto' }, type: 'textarea', default: 'Juntar 5€ por dia dá mais de 1800€ ao fim de um ano.' },
+			{ key: 'body', label: { en: 'Detail', pt: 'Detalhe' }, type: 'textarea', default: 'O hábito constante pesa mais do que o valor de cada contribuição.' }
+		],
+		html:
+			'<div style="width:1080px;height:1080px;background:radial-gradient(120% 100% at 50% 0%,#3A2280,#1C1046 70%);display:flex;flex-direction:column;align-items:center;padding:72px;color:#fff;text-align:center;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<span style="font:700 20px ' + JAKARTA + ';letter-spacing:.2em;text-transform:uppercase;color:#fff;background:#7C5CFC;padding:13px 30px;border-radius:999px;">{{badge}}</span>' +
+				'<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;">' +
+					'<h2 style="margin:0;font:800 62px ' + POPPINS + ';line-height:1.1;letter-spacing:-.02em;color:#fff;max-width:16ch;">{{headline}}</h2>' +
+					'<div style="width:230px;height:230px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;"><span style="width:150px;height:150px;display:flex;">{{illoGold}}</span></div>' +
+					'<p style="margin:0;font:500 26px ' + JAKARTA + ';color:#C9BCF7;line-height:1.45;max-width:30ch;">{{body}}</p>' +
+				'</div>' +
+				'<div style="width:100%;display:flex;align-items:center;justify-content:center;gap:16px;">' +
+					'<span style="width:50px;height:50px;display:flex;flex:none;">{{logo}}</span>' +
+					'<span style="font:700 26px ' + POPPINS + ';color:#fff;">HowToInvest</span>' +
+					'<span style="font:500 22px ' + JAKARTA + ';color:#C9BCF7;">· @{{handle}}</span>' +
+				'</div>' +
+				'{{#legal}}<p style="margin:18px 0 0;font:400 13.5px ' + JAKARTA + ';color:rgba(201,188,247,.65);line-height:1.4;max-width:64ch;">{{disclaimer}}</p>{{/legal}}' +
+			'</div>'
+	};
+
+	// --- Fun fact · Story (green) 1080×1920 --------------------------------
+	var factStory = {
+		id: 'fact-story',
+		category: 'fact',
+		label: { en: 'Fun fact · Story', pt: 'Facto curioso · Story' },
+		w: 1080,
+		h: 1920,
+		fields: [
+			{ key: 'badge', label: { en: 'Badge', pt: 'Etiqueta' }, type: 'text', default: 'Sabias que?' },
+			{ key: 'headline', label: { en: 'Fact', pt: 'Facto' }, type: 'textarea', default: 'A primeira Bolsa de Valores nasceu em 1602.' },
+			{ key: 'body', label: { en: 'Detail', pt: 'Detalhe' }, type: 'textarea', default: 'Em Amesterdão, para financiar viagens comerciais por todo o mundo.' }
+		],
+		html:
+			'<div style="width:1080px;height:1920px;background:radial-gradient(110% 80% at 50% 12%,#147A57,#0B4D37 72%);display:flex;flex-direction:column;align-items:center;padding:130px 80px;color:#fff;text-align:center;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<span style="font:700 24px ' + JAKARTA + ';letter-spacing:.2em;text-transform:uppercase;color:#0B4D37;background:#7FE0B0;padding:16px 36px;border-radius:999px;">{{badge}}</span>' +
+				'<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:60px;">' +
+					'<div style="width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;"><span style="width:210px;height:210px;display:flex;">{{illoShip}}</span></div>' +
+					'<h2 style="margin:0;font:800 80px ' + POPPINS + ';line-height:1.08;letter-spacing:-.02em;color:#fff;max-width:14ch;">{{headline}}</h2>' +
+					'<p style="margin:0;font:500 34px ' + JAKARTA + ';color:#BFEFD7;line-height:1.45;max-width:26ch;">{{body}}</p>' +
+				'</div>' +
+				'<div style="display:flex;align-items:center;justify-content:center;gap:18px;">' +
+					'<span style="width:56px;height:56px;display:flex;flex:none;">{{logo}}</span>' +
+					'<span style="font:700 30px ' + POPPINS + ';color:#fff;">HowToInvest</span>' +
+					'<span style="font:500 26px ' + JAKARTA + ';color:#7FE0B0;">· @{{handle}}</span>' +
+				'</div>' +
+				'{{#legal}}<p style="margin:22px 0 0;font:400 16px ' + JAKARTA + ';color:rgba(191,239,215,.7);line-height:1.4;max-width:66ch;">{{disclaimer}}</p>{{/legal}}' +
+			'</div>'
+	};
+
+	// --- Quiz CTA · Square 1080×1080 ---------------------------------------
+	var ctaSquare = {
+		id: 'cta-square',
+		category: 'cta',
+		label: { en: 'Quiz CTA · Square', pt: 'CTA Questionário · Quadrado' },
+		w: 1080,
+		h: 1080,
+		fields: [
+			{ key: 'headline', label: { en: 'Headline', pt: 'Título' }, type: 'textarea', default: 'Que tipo de investidor és?' },
+			{ key: 'body', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'textarea', default: 'Descobre o teu perfil em 6 perguntas — grátis, sem jargão e sem registo.' },
+			{ key: 'step1', label: { en: 'Step 1', pt: 'Passo 1' }, type: 'text', default: '1 · Respondes' },
+			{ key: 'step2', label: { en: 'Step 2', pt: 'Passo 2' }, type: 'text', default: '2 · Vês o perfil' },
+			{ key: 'step3', label: { en: 'Step 3', pt: 'Passo 3' }, type: 'text', default: '3 · Aprendes' },
+			{ key: 'button', label: { en: 'Button', pt: 'Botão' }, type: 'text', default: 'Fazer o questionário →' }
+		],
+		html:
+			'<div style="width:1080px;height:1080px;background:linear-gradient(160deg,#FF7A6B,#F2503F);display:flex;flex-direction:column;padding:72px;color:#fff;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<div style="display:flex;align-items:center;gap:16px;">' +
+					'<span style="width:58px;height:58px;display:flex;flex:none;">{{logo}}</span>' +
+					'<span style="font:700 29px ' + POPPINS + ';color:#fff;letter-spacing:-.01em;">HowToInvest</span>' +
+				'</div>' +
+				'<div style="flex:1;display:flex;flex-direction:column;justify-content:center;">' +
+					'<h2 style="margin:0;font:800 78px ' + POPPINS + ';line-height:1.02;letter-spacing:-.02em;color:#fff;">{{headline}}</h2>' +
+					'<p style="margin:26px 0 0;font:500 31px ' + JAKARTA + ';color:#FFE2DC;line-height:1.4;max-width:26ch;">{{body}}</p>' +
+					'<div style="display:flex;gap:14px;margin-top:40px;flex-wrap:wrap;">' +
+						'<span style="font:600 22px ' + JAKARTA + ';color:#fff;background:rgba(255,255,255,.18);padding:14px 26px;border-radius:999px;">{{step1}}</span>' +
+						'<span style="font:600 22px ' + JAKARTA + ';color:#fff;background:rgba(255,255,255,.18);padding:14px 26px;border-radius:999px;">{{step2}}</span>' +
+						'<span style="font:600 22px ' + JAKARTA + ';color:#fff;background:rgba(255,255,255,.18);padding:14px 26px;border-radius:999px;">{{step3}}</span>' +
+					'</div>' +
+					'<div style="margin-top:44px;align-self:flex-start;background:#fff;color:#F2503F;font:700 30px ' + POPPINS + ';padding:24px 44px;border-radius:18px;">{{button}}</div>' +
+				'</div>' +
+				'<div style="border-top:1px solid rgba(255,255,255,.22);padding-top:22px;display:flex;align-items:center;justify-content:space-between;gap:24px;">' +
+					'<span style="font:600 21px ' + JAKARTA + ';color:#FFE2DC;">@{{handle}}</span>' +
+					'<span style="font:600 19px ' + JAKARTA + ';color:#FFCFC7;">{{domain}}</span>' +
+				'</div>' +
+				'{{#legal}}<p style="margin:14px 0 0;font:400 14.5px ' + JAKARTA + ';color:#FFCFC7;line-height:1.45;">{{disclaimer}}</p>{{/legal}}' +
+			'</div>'
+	};
+
+	// --- Quiz CTA · Story 1080×1920 ----------------------------------------
+	var ctaStory = {
+		id: 'cta-story',
+		category: 'cta',
+		label: { en: 'Quiz CTA · Story', pt: 'CTA Questionário · Story' },
+		w: 1080,
+		h: 1920,
+		fields: [
+			{ key: 'headline', label: { en: 'Headline', pt: 'Título' }, type: 'textarea', default: 'Que tipo de investidor és?' },
+			{ key: 'body', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'textarea', default: 'Descobre o teu perfil em 6 perguntas — grátis e sem registo.' },
+			{ key: 'step1', label: { en: 'Step 1', pt: 'Passo 1' }, type: 'text', default: '1 · Respondes a 6 perguntas curtas' },
+			{ key: 'step2', label: { en: 'Step 2', pt: 'Passo 2' }, type: 'text', default: '2 · Vês o teu perfil de investidor' },
+			{ key: 'step3', label: { en: 'Step 3', pt: 'Passo 3' }, type: 'text', default: '3 · Aprendes o que estudar a seguir' },
+			{ key: 'button', label: { en: 'Button', pt: 'Botão' }, type: 'text', default: 'Fazer o questionário →' }
+		],
+		html:
+			'<div style="width:1080px;height:1920px;background:linear-gradient(165deg,#FF7A6B,#F2503F);display:flex;flex-direction:column;padding:130px 80px;color:#fff;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<div style="display:flex;align-items:center;gap:18px;">' +
+					'<span style="width:64px;height:64px;display:flex;flex:none;">{{logo}}</span>' +
+					'<span style="font:700 34px ' + POPPINS + ';color:#fff;">HowToInvest</span>' +
+				'</div>' +
+				'<div style="flex:1;display:flex;flex-direction:column;justify-content:center;">' +
+					'<h2 style="margin:0;font:800 96px ' + POPPINS + ';line-height:1.0;letter-spacing:-.02em;color:#fff;">{{headline}}</h2>' +
+					'<p style="margin:34px 0 0;font:500 38px ' + JAKARTA + ';color:#FFE2DC;line-height:1.4;max-width:22ch;">{{body}}</p>' +
+					'<div style="display:flex;flex-direction:column;gap:20px;margin-top:54px;">' +
+						'<span style="font:600 30px ' + JAKARTA + ';color:#fff;background:rgba(255,255,255,.18);padding:22px 32px;border-radius:18px;">{{step1}}</span>' +
+						'<span style="font:600 30px ' + JAKARTA + ';color:#fff;background:rgba(255,255,255,.18);padding:22px 32px;border-radius:18px;">{{step2}}</span>' +
+						'<span style="font:600 30px ' + JAKARTA + ';color:#fff;background:rgba(255,255,255,.18);padding:22px 32px;border-radius:18px;">{{step3}}</span>' +
+					'</div>' +
+					'<div style="margin-top:60px;align-self:flex-start;background:#fff;color:#F2503F;font:700 38px ' + POPPINS + ';padding:30px 54px;border-radius:22px;">{{button}}</div>' +
+				'</div>' +
+				'<div style="border-top:1px solid rgba(255,255,255,.22);padding-top:28px;display:flex;align-items:center;justify-content:space-between;gap:24px;">' +
+					'<span style="font:600 26px ' + JAKARTA + ';color:#FFE2DC;">@{{handle}}</span>' +
+					'<span style="font:600 24px ' + JAKARTA + ';color:#FFCFC7;">{{domain}}</span>' +
+				'</div>' +
+				'{{#legal}}<p style="margin:18px 0 0;font:400 17px ' + JAKARTA + ';color:#FFCFC7;line-height:1.45;">{{disclaimer}}</p>{{/legal}}' +
+			'</div>'
+	};
+
+	// --- Quiz CTA · X 1600×900 ---------------------------------------------
+	var ctaX = {
+		id: 'cta-x',
+		category: 'cta',
+		label: { en: 'Quiz CTA · X', pt: 'CTA Questionário · X' },
+		w: 1600,
+		h: 900,
+		fields: [
+			{ key: 'headline', label: { en: 'Headline', pt: 'Título' }, type: 'textarea', default: 'Que tipo de investidor és?' },
+			{ key: 'body', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'textarea', default: '6 perguntas, grátis e sem registo. Descobre o teu perfil.' },
+			{ key: 'button', label: { en: 'Button', pt: 'Botão' }, type: 'text', default: 'Fazer o questionário →' }
+		],
+		html:
+			'<div style="width:1600px;height:900px;background:linear-gradient(125deg,#FF7A6B,#F2503F);display:flex;flex-direction:column;padding:80px;color:#fff;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<div style="display:flex;align-items:center;gap:16px;">' +
+					'<span style="width:58px;height:58px;display:flex;flex:none;">{{logo}}</span>' +
+					'<span style="font:700 30px ' + POPPINS + ';color:#fff;">HowToInvest</span>' +
+				'</div>' +
+				'<div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:48px;">' +
+					'<div style="flex:1;">' +
+						'<h2 style="margin:0;font:800 74px ' + POPPINS + ';line-height:1.0;letter-spacing:-.02em;color:#fff;max-width:14ch;">{{headline}}</h2>' +
+						'<p style="margin:24px 0 0;font:500 30px ' + JAKARTA + ';color:#FFE2DC;line-height:1.4;max-width:28ch;">{{body}}</p>' +
+					'</div>' +
+					'<div style="flex:none;background:#fff;color:#F2503F;font:700 34px ' + POPPINS + ';padding:30px 50px;border-radius:20px;white-space:nowrap;">{{button}}</div>' +
+				'</div>' +
+				'<div style="border-top:1px solid rgba(255,255,255,.22);padding-top:22px;display:flex;align-items:center;justify-content:space-between;gap:24px;">' +
+					'<span style="font:600 22px ' + JAKARTA + ';color:#FFE2DC;">@{{handleTw}} · {{domain}}</span>' +
+					'{{#legal}}<p style="margin:0;font:400 14px ' + JAKARTA + ';color:#FFCFC7;line-height:1.4;max-width:58ch;text-align:right;">{{disclaimer}}</p>{{/legal}}' +
+				'</div>' +
+			'</div>'
+	};
+
+	return [
+		newsSquare, newsStory, newsX,
+		glossaryFb, glossaryFeed, glossaryStory,
+		factGreen, factPurple, factStory,
+		ctaSquare, ctaStory, ctaX
+	];
 }() );

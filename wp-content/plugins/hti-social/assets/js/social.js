@@ -95,9 +95,11 @@
 		values.disclaimer = CFG.disclaimers[ st.lang ] || CFG.disclaimers.en;
 		// Decorative big initial = first letter of the term.
 		values.initial = ( st.fields.term || '' ).trim().charAt( 0 ).toUpperCase();
+		// Raw inline SVG tokens (never escaped).
+		var raw = { logo: CFG.logoSvg, illoShip: CFG.illoShip || '', illoGold: CFG.illoGold || '' };
 		html = html.replace( /\{\{(\w+)\}\}/g, function ( m, k ) {
-			if ( 'logo' === k ) {
-				return CFG.logoSvg;
+			if ( k in raw ) {
+				return raw[ k ];
 			}
 			var v = values[ k ];
 			if ( null == v ) {
