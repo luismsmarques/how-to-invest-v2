@@ -53,6 +53,7 @@
 
 	function renderOverlayHtml( tpl, st ) {
 		var html = tpl.html.replace( /\{\{#legal\}\}([\s\S]*?)\{\{\/legal\}\}/g, st.showLegal ? '$1' : '' );
+		html = html.replace( /\{\{#cap\}\}([\s\S]*?)\{\{\/cap\}\}/g, st.showCaption ? '$1' : '' );
 		var values = {};
 		Object.keys( st.fields ).forEach( function ( k ) {
 			values[ k ] = st.fields[ k ];
@@ -183,7 +184,11 @@
 			perTpl: {},
 			handle: CFG.brand.handle,
 			showLegal: true,
-			lang: L
+			showCaption: true,
+			lang: L,
+			aiOn: false,
+			aiBrief: '',
+			aiDesc: ''
 		};
 		var videoEl = null;
 		var videoReady = false;
@@ -305,6 +310,65 @@
 			} );
 			controls.appendChild( fWrap );
 
+			// AI assistant (optional; server-side Gemini).
+			var aiWrap = el( 'div', { class: 'hti-social-section' } );
+			aiWrap.appendChild( el( 'h3', null, I.ai ) );
+			var aiRow = el( 'label', { class: 'hti-social-check' } );
+			var aiToggle = el( 'input', { type: 'checkbox' } );
+			aiToggle.checked = st.aiOn;
+			if ( ! CFG.aiEnabled ) {
+				aiToggle.disabled = true;
+			}
+			aiToggle.addEventListener( 'change', function () {
+				st.aiOn = aiToggle.checked;
+				renderControls();
+			} );
+			aiRow.appendChild( aiToggle );
+			aiRow.appendChild( el( 'span', null, I.ai_on ) );
+			aiWrap.appendChild( aiRow );
+
+			if ( ! CFG.aiEnabled ) {
+				aiWrap.appendChild( el( 'p', { class: 'hti-social-note' }, I.ai_off_note ) );
+			} else if ( st.aiOn ) {
+				var brief = el( 'textarea', { rows: '2', placeholder: I.ai_brief } );
+				brief.value = st.aiBrief;
+				brief.addEventListener( 'input', function () {
+					st.aiBrief = brief.value;
+				} );
+				aiWrap.appendChild( brief );
+
+				var status = el( 'span', { class: 'hti-social-note' } );
+				var descLabel = el( 'label', { class: 'hti-social-field' } );
+				descLabel.appendChild( el( 'span', null, I.ai_desc ) );
+				var descBox = el( 'textarea', { rows: '4' } );
+				descBox.value = st.aiDesc;
+				descBox.addEventListener( 'input', function () {
+					st.aiDesc = descBox.value;
+				} );
+				descLabel.appendChild( descBox );
+
+				var goBtn = el( 'button', { type: 'button', class: 'button' }, I.ai_go );
+				goBtn.addEventListener( 'click', function () {
+					runAi( goBtn, status, descBox );
+				} );
+				aiWrap.appendChild( goBtn );
+				aiWrap.appendChild( status );
+				aiWrap.appendChild( descLabel );
+
+				var copyBtn = el( 'button', { type: 'button', class: 'button' }, I.ai_copy );
+				copyBtn.addEventListener( 'click', function () {
+					if ( navigator.clipboard ) {
+						navigator.clipboard.writeText( descBox.value );
+					}
+					copyBtn.textContent = I.ai_copied;
+					setTimeout( function () {
+						copyBtn.textContent = I.ai_copy;
+					}, 1500 );
+				} );
+				aiWrap.appendChild( copyBtn );
+			}
+			controls.appendChild( aiWrap );
+
 			// Brand + legal.
 			var bWrap = el( 'div', { class: 'hti-social-section' } );
 			var hRow = el( 'label', { class: 'hti-social-field' } );
@@ -345,6 +409,17 @@
 			legalRow.appendChild( legal );
 			legalRow.appendChild( el( 'span', null, I.legal ) );
 			bWrap.appendChild( legalRow );
+
+			var capRow = el( 'label', { class: 'hti-social-check' } );
+			var capChk = el( 'input', { type: 'checkbox' } );
+			capChk.checked = st.showCaption;
+			capChk.addEventListener( 'change', function () {
+				st.showCaption = capChk.checked;
+				refreshOverlaySoon();
+			} );
+			capRow.appendChild( capChk );
+			capRow.appendChild( el( 'span', null, I.show_caption ) );
+			bWrap.appendChild( capRow );
 			controls.appendChild( bWrap );
 
 			// Render.
@@ -367,6 +442,53 @@
 				sizeStage();
 			};
 			videoEl.load();
+		}
+
+		// ---- AI caption generation (server-side Gemini) ----
+		function runAi( button, status, descBox ) {
+			var brief = ( st.aiBrief || '' ).trim();
+			if ( ! brief ) {
+				return;
+			}
+			var orig = button.textContent;
+			button.disabled = true;
+			button.textContent = I.ai_working;
+			status.textContent = '';
+			fetch( CFG.restCaption, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': CFG.nonce },
+				body: JSON.stringify( { brief: brief, lang: st.lang } )
+			} ).then( function ( r ) {
+				return r.json().then( function ( j ) {
+					return { ok: r.ok, body: j };
+				} );
+			} ).then( function ( res ) {
+				button.disabled = false;
+				button.textContent = orig;
+				if ( ! res.ok ) {
+					status.textContent = ( res.body && res.body.message ) || I.ai_error;
+					return;
+				}
+				var d = res.body || {};
+				if ( d.title ) {
+					st.fields.title = d.title;
+				}
+				if ( d.caption ) {
+					st.fields.caption = d.caption;
+				}
+				var desc = d.description || '';
+				if ( d.hashtags && d.hashtags.length ) {
+					desc += ( desc ? '\n\n' : '' ) + d.hashtags.join( ' ' );
+				}
+				st.aiDesc = desc;
+				descBox.value = desc;
+				renderControls();
+				refreshOverlay();
+			} ).catch( function () {
+				button.disabled = false;
+				button.textContent = orig;
+				status.textContent = I.ai_error;
+			} );
 		}
 
 		// ---- Record ----

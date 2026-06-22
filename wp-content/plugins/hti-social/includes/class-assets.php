@@ -87,6 +87,9 @@ class Assets {
 		$pt = 'pt' === Plugin::locale();
 		return array(
 			'locale'      => Plugin::locale(),
+			'restCaption' => esc_url_raw( rest_url( 'hti-social/v1/caption' ) ),
+			'nonce'       => wp_create_nonce( 'wp_rest' ),
+			'aiEnabled'   => Gemini::is_configured(),
 			'logoSvg'     => Brand::logo_svg(),
 			'illoShip'    => Brand::ship_svg(),
 			'illoGold'    => Brand::gold_svg(),
@@ -117,6 +120,17 @@ class Assets {
 				'need_video'   => $pt ? 'Primeiro escolhe um vídeo.' : 'Choose a video first.',
 				'no_support'   => $pt ? 'O teu browser não suporta a gravação. Usa o Chrome ou o Firefox.' : 'Your browser cannot record. Use Chrome or Firefox.',
 				'webm_note'    => $pt ? 'O ficheiro sai em WebM. O Instagram pede MP4 — converte rapidamente num conversor WebM→MP4.' : 'Output is WebM. Instagram wants MP4 — convert quickly with a WebM→MP4 converter.',
+				'ai'           => $pt ? 'Assistente IA' : 'AI assistant',
+				'ai_on'        => $pt ? 'Gerar texto com IA' : 'Generate text with AI',
+				'ai_brief'     => $pt ? 'Tema do vídeo (ex.: Warren Buffett sobre juro composto)' : 'Video topic (e.g. Warren Buffett on compound interest)',
+				'ai_go'        => $pt ? 'Gerar com IA' : 'Generate with AI',
+				'ai_working'   => $pt ? 'A gerar…' : 'Generating…',
+				'ai_desc'      => $pt ? 'Descrição para a publicação' : 'Post description',
+				'ai_copy'      => $pt ? 'Copiar' : 'Copy',
+				'ai_copied'    => $pt ? 'Copiado ✓' : 'Copied ✓',
+				'ai_off_note'  => $pt ? 'Chave Gemini não configurada no servidor — escreve o texto manualmente.' : 'Gemini key not configured on the server — write the text manually.',
+				'ai_error'     => $pt ? 'Não foi possível gerar. Tenta de novo.' : 'Could not generate. Try again.',
+				'show_caption' => $pt ? 'Mostrar legenda no overlay' : 'Show caption on the overlay',
 			),
 		);
 	}

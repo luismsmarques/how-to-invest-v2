@@ -19,6 +19,7 @@ class Plugin {
 	 */
 	public static function init(): void {
 		Assets::init();
+		Rest::init();
 		Admin::init();
 		Metabox::init();
 		Reels::init();

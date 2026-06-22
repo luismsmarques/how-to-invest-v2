@@ -36,7 +36,7 @@ window.HTI_REEL_TEMPLATES = ( function () {
 				'</div>' +
 				'<div style="position:absolute;left:0;right:0;bottom:0;height:820px;background:linear-gradient(180deg,rgba(6,8,26,0),rgba(6,8,26,.86) 58%,#06081A);"></div>' +
 				'<div style="position:absolute;left:0;right:0;bottom:0;padding:0 70px 150px;">' +
-					'<p style="margin:0;font:600 42px ' + JAKARTA + ';color:#fff;line-height:1.4;text-shadow:0 2px 10px rgba(0,0,0,.5);">{{caption}}</p>' +
+					'{{#cap}}<p style="margin:0;font:600 42px ' + JAKARTA + ';color:#fff;line-height:1.4;text-shadow:0 2px 10px rgba(0,0,0,.5);">{{caption}}</p>{{/cap}}' +
 					'<div style="margin-top:34px;"><span style="font:700 30px ' + JAKARTA + ';color:#FF9A8F;">@{{handle}}</span></div>' +
 					'{{#legal}}<p style="margin:20px 0 0;font:400 21px ' + JAKARTA + ';color:rgba(255,255,255,.62);line-height:1.4;">{{disclaimer}}</p>{{/legal}}' +
 				'</div>' +
@@ -68,7 +68,7 @@ window.HTI_REEL_TEMPLATES = ( function () {
 						'<span style="width:46px;height:4px;background:#FF6B5E;border-radius:2px;"></span>' +
 						'<span style="font:700 34px ' + JAKARTA + ';color:#FF9A8F;">{{author}}</span>' +
 					'</div>' +
-					'<p style="margin:26px 0 0;font:600 36px ' + JAKARTA + ';color:#fff;line-height:1.4;text-shadow:0 2px 10px rgba(0,0,0,.5);">{{caption}}</p>' +
+					'{{#cap}}<p style="margin:26px 0 0;font:600 36px ' + JAKARTA + ';color:#fff;line-height:1.4;text-shadow:0 2px 10px rgba(0,0,0,.5);">{{caption}}</p>{{/cap}}' +
 					'{{#legal}}<p style="margin:20px 0 0;font:400 21px ' + JAKARTA + ';color:rgba(255,255,255,.62);line-height:1.4;">{{disclaimer}}</p>{{/legal}}' +
 				'</div>' +
 			'</div>'

@@ -17,6 +17,17 @@ fonts embedded as base64) and drawn to a canvas.
   the browser (Canvas + MediaRecorder → **WebM**, with the video's audio). No
   server, no FFmpeg. Instagram wants MP4, so a quick WebM→MP4 conversion may be
   needed. Use only footage you own/are licensed to use.
+  - **AI assistant (optional):** toggle it on to generate a title + caption +
+    post description (with hashtags) from a short brief, via server-side Gemini
+    (`HTI_GEMINI_API_KEY`; key never reaches the browser). Guard-railed:
+    educational, conditional, no advice, no named instruments. Off by default,
+    and hidden if no key is configured.
+  - **Show caption** toggle: turn the overlay caption off for clips that already
+    have burned-in subtitles.
+
+## REST
+- `POST hti-social/v1/caption` — `{ brief, lang }` → `{ title, caption,
+  description, hashtags[] }`. Capability `edit_posts` + `wp_rest` nonce.
 
 ## Invariants (educational platform)
 - The legal **disclaimer** and **by-asset-class** framing are part of the brand,
