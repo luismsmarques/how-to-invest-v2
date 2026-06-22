@@ -145,6 +145,7 @@ class Frontend {
 			'locale'     => $locale,
 			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
 			'homeUrl'    => esc_url( home_url( '/' ) ),
+			'logoutUrl'  => esc_url( wp_logout_url( home_url( '/my-account/' ) ) ),
 			'resultBase' => esc_url( home_url( '/investor-profile-quiz/' ) ),
 			'lostUrl'    => esc_url( wp_lostpassword_url() ),
 			'google'     => array(
@@ -242,6 +243,7 @@ class Frontend {
 				'onb_q_label'      => 'Qual é a tua maior dúvida ou dificuldade nos investimentos?',
 				'onb_q_ph'         => 'Escreve à vontade — ajuda-nos a criar conteúdo útil para ti.',
 				'onb_finish'       => 'Concluir',
+				'sign_out'         => 'Terminar sessão',
 			);
 		}
 		return array(
@@ -307,6 +309,7 @@ class Frontend {
 			'onb_q_label'      => 'What’s your biggest doubt or difficulty with investing?',
 			'onb_q_ph'         => 'Write freely — it helps us create content that’s useful to you.',
 			'onb_finish'       => 'Finish',
+			'sign_out'         => 'Sign out',
 		);
 	}
 

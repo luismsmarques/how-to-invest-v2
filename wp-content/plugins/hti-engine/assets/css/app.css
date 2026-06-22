@@ -716,3 +716,119 @@
 .hti-btn-danger:hover {
 	border-color: #b3261e;
 }
+
+/* ====================== Account / auth redesign (design handoff 8) ====================== */
+/* Centred auth screens (login / register / recover). */
+.hti-auth-wrap { max-width: 440px; margin: 0 auto; }
+.hti-google-wrap { margin-bottom: 18px; }
+.hti-google-btn {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 11px;
+	background: #fff;
+	border: 1.5px solid #F0E2DC;
+	color: var( --hti-body );
+	border-radius: 12px;
+	padding: 13px;
+	font: 600 15px var( --hti-font-body );
+}
+.hti-google-btn:hover { background: #FBF6F2; border-color: var( --hti-accent-border ); }
+.hti-auth-or {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	color: #9A8FA8;
+	font: 500 13px var( --hti-font-body );
+	margin: 0 0 18px;
+}
+.hti-auth-or::before,
+.hti-auth-or::after { content: ""; flex: 1; height: 1px; background: #F0E2DC; }
+.hti-auth { display: flex; flex-direction: column; gap: 0; }
+.hti-auth label { font: 600 13px var( --hti-font-body ); color: #5A5270; margin-top: 4px; }
+.hti-auth input {
+	width: 100%;
+	box-sizing: border-box;
+	background: #fff;
+	border: 1.5px solid #F0E2DC;
+	border-radius: 12px;
+	padding: 14px 15px;
+	font: 400 16px var( --hti-font-body );
+	color: var( --hti-text );
+	margin: 6px 0 16px;
+}
+.hti-auth input:focus { outline: none; border-color: var( --wp--preset--color--primary, #FF6B5E ); }
+.hti-auth-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.hti-auth-actions .hti-btn { width: 100%; border-radius: 14px; padding: 16px; font: 600 16px var( --hti-font-body ); }
+.hti-auth-forgot { text-align: right; margin: -10px 0 0; }
+.hti-auth-forgot .hti-linkbtn { color: var( --hti-primary ); font: 600 13px var( --hti-font-body ); }
+.hti-error { color: #C0392B; font-weight: 600; margin: 4px 0 0; }
+
+/* Dashboard header (avatar + name + email). */
+.hti-acct-head { display: flex; align-items: center; gap: 18px; margin: 4px 0 30px; }
+.hti-acct-avatar {
+	flex: none; width: 68px; height: 68px; border-radius: 50%;
+	background: var( --hti-primary ); color: #fff;
+	display: flex; align-items: center; justify-content: center;
+	font: 600 28px var( --hti-font-body );
+}
+.hti-acct-head__id { min-width: 0; flex: 1 1 auto; }
+.hti-acct-head__name { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 1.4rem, 3vw, 2rem ); letter-spacing: -0.02em; line-height: 1.1; color: var( --hti-text ); }
+.hti-acct-head__email { color: var( --hti-muted-light ); font-size: 16px; margin-top: 4px; word-break: break-word; }
+.hti-acct-head__out {
+	flex: none; align-self: flex-start;
+	display: inline-flex; align-items: center; gap: 6px;
+	font: 600 14px var( --hti-font-body ); color: var( --hti-muted-light );
+	text-decoration: none; padding: 8px 14px; border-radius: 999px;
+	border: 1px solid var( --wp--preset--color--border, #F2E4DD );
+	background: #fff; transition: color 0.15s ease, border-color 0.15s ease;
+}
+.hti-acct-head__out:hover { color: var( --hti-primary ); border-color: var( --hti-primary ); }
+@media ( max-width: 560px ) {
+	.hti-acct-head { flex-wrap: wrap; gap: 14px; }
+	.hti-acct-head__out { order: 3; width: 100%; justify-content: center; }
+}
+
+/* Dashboard section eyebrows + cards. */
+.hti-account > h2 { font: 600 12px var( --hti-font-body ); text-transform: uppercase; letter-spacing: 0.06em; color: var( --hti-muted-light ); margin: 0 0 12px; }
+.hti-account-list,
+.hti-account-email,
+.hti-account-prefs,
+.hti-save {
+	background: #fff;
+	border: 1px solid var( --hti-border );
+	border-radius: 20px;
+	padding: clamp( 20px, 3vw, 26px );
+	margin: 0 0 24px;
+}
+.hti-account-email h3,
+.hti-account-prefs h3,
+.hti-save h3 { font-family: var( --hti-font-head ); font-weight: 700; font-size: 18px; }
+
+/* Saved-profile list as cards. */
+.hti-profile-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.hti-profile-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0; }
+.hti-profile-item + .hti-profile-item { border-top: 1px solid var( --hti-border ); padding-top: 12px; }
+.hti-profile-link { font-family: var( --hti-font-head ); font-weight: 700; font-size: 1.25rem; color: var( --hti-text ); text-decoration: none; }
+.hti-profile-link:hover { color: var( --hti-primary ); }
+.hti-profile-date { color: var( --hti-muted-light ); font-weight: 500; }
+
+/* RGPD actions row. */
+.hti-account-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; align-items: center; }
+.hti-account-actions .hti-btn { border-radius: 12px; padding: 13px 22px; }
+.hti-btn-danger { background: #fff; border: 1.5px solid #F4D9D4; color: #C0392B; }
+.hti-btn-danger:hover { background: #FDF3F2; border-color: #E8C0B9; color: #A52F22; }
+
+/* Recover panel polish. */
+.hti-recover__check {
+	display: flex; align-items: center; justify-content: center;
+	width: 64px; height: 64px; border-radius: 50%;
+	background: #E6F7EF; color: #1F8A5B; font-size: 30px; margin: 0 auto 18px;
+}
+.hti-recover__title { font-family: var( --hti-font-head ); font-weight: 700; }
+.hti-recover__input { width: 100%; box-sizing: border-box; border: 1.5px solid #F0E2DC; border-radius: 12px; padding: 14px 15px; font: 400 16px var( --hti-font-body ); }
+
+/* Save-on-result card. */
+.hti-save h3 { margin: 0 0 0.5rem; }
+.hti-save-done { font-weight: 700; color: var( --hti-primary ); }

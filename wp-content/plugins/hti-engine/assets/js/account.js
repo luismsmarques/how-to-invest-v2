@@ -559,6 +559,24 @@
 			return;
 		}
 
+		// Account header: avatar (email initial) + identity. Inserted above the
+		// "My profiles" eyebrow so the screen reads like the design.
+		var email = ctx.email || '';
+		var display = email ? email.split( '@' )[ 0 ] : '';
+		var initial = ( display || email || '?' ).charAt( 0 ).toUpperCase();
+		var head = el( 'div', { class: 'hti-acct-head' } );
+		head.appendChild( el( 'span', { class: 'hti-acct-avatar', 'aria-hidden': 'true' }, initial ) );
+		var headId = el( 'div', { class: 'hti-acct-head__id' } );
+		if ( display ) {
+			headId.appendChild( el( 'div', { class: 'hti-acct-head__name' }, display ) );
+		}
+		headId.appendChild( el( 'div', { class: 'hti-acct-head__email' }, email ) );
+		head.appendChild( headId );
+		if ( ctx.logoutUrl ) {
+			head.appendChild( el( 'a', { href: ctx.logoutUrl, class: 'hti-acct-head__out' }, s.sign_out ) );
+		}
+		root.insertBefore( head, root.querySelector( 'h2' ) );
+
 		var listWrap = el( 'div', { class: 'hti-account-list' } );
 		listWrap.appendChild( el( 'p', { role: 'status' }, s.working ) );
 		root.appendChild( listWrap );
