@@ -3,7 +3,7 @@
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Ingests RSS feeds into drafts, clusters similar items, and (on demand) researches facts with Gemini grounding to generate SEO/Google-News articles for review. Feeds the hti-engine "news" content type.
- * Version:           1.5.0
+ * Version:           1.6.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '1.5.0';
+const VERSION = '1.6.0';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );
@@ -46,9 +46,7 @@ require_once RSSAI_PATH . 'includes/class-gemini-client.php';
 require_once RSSAI_PATH . 'includes/class-image-client.php';
 require_once RSSAI_PATH . 'includes/class-prompt.php';
 require_once RSSAI_PATH . 'includes/class-validator.php';
-require_once RSSAI_PATH . 'includes/class-social-card.php';
 require_once RSSAI_PATH . 'includes/class-featured-image.php';
-require_once RSSAI_PATH . 'includes/class-social-kit.php';
 require_once RSSAI_PATH . 'includes/class-generator.php';
 require_once RSSAI_PATH . 'includes/class-admin.php';
 require_once RSSAI_PATH . 'includes/class-drafts.php';
@@ -83,7 +81,6 @@ Review::init();
 Logs_Page::init();
 Fetcher::init();
 Featured_Image::init();
-Social_Kit::init();
 
 /**
  * Warn (without breaking) when hti-engine's "news" type is missing — the

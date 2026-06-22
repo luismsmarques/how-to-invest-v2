@@ -17,15 +17,18 @@ See the full plan: [`docs/RSS_AI_Feed_Plan.md`](../../../docs/RSS_AI_Feed_Plan.m
 - **M5 — review + SEO (done):** news edit-screen meta box (AI provenance + sources + sitelinking suggestions) and meta-description bridge to RankMath/Yoast.
 - **M6 — hardening (done):** capped activity Logger + Logs page; logging across fetch/group/generate; `uninstall.php` (drops tables + options); pure-PHP test suite (extract-json, validator, grouping).
 - **M7 — featured image (done):** on generation, an **AI photo** about the article topic (Imagen) is set as the post's featured image, with graceful fallback to the feed image. "Regenerate AI image" button in a news-editor meta box. Settings: enable toggle + image model.
-- **M8 — social media kit (done):** after publishing, downloadable branded cards (**square 1080×1080** for feed, **story 1080×1920** for stories) rendered locally with GD, with the **featured image placed inside** + headline/date/disclaimer. Reuses the featured image — no extra AI calls. "Social media kit" meta box on the news editor.
+- **M8 — social media kit (removed in v1.6.0):** the old GD-rendered cards
+  (square 1080×1080 + story 1080×1920) were **removed** — superseded by the
+  **`hti-social`** plugin (Social Generator), which renders the full design
+  template set as HTML/CSS and exports faithful PNGs, auto-filled from the news
+  post. The featured image is still reused there (no extra AI calls).
 
-The full pipeline (feeds → drafts → groups → generate → AI featured image → review → social kit) is complete.
+The full pipeline (feeds → drafts → groups → generate → AI featured image →
+review) is complete. Social cards are now produced by **`hti-social`**.
 
-## Featured image & social kit
+## Featured image
 - **Featured image** = a plain AI photo about the topic (16:9). Source recorded in `rssai_card_photo_source` meta (`ai` / `feed` / `none`).
-- **Social kit** templates match "Notícias · Quadrado" and "Notícias · Story" from the HowToInvest Social Templates design; the featured image is cover-cropped into each.
-- Fonts are bundled as `.ttf` under `assets/fonts/` (GD cannot read the theme's woff2).
-- Requires the GD extension with TrueType support (standard on WordPress hosts).
+- It is reused by the `hti-social` card generator (auto-fill), no extra AI calls.
 
 ## Requirements
 - WordPress 6.7+, PHP 8.3+.

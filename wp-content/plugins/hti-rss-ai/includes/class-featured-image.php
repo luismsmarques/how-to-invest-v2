@@ -1,9 +1,9 @@
 <?php
 /**
  * Featured image for a generated `news` post: a plain AI photo about the
- * article's topic (Imagen), saved as the post thumbnail. The same photo is
- * later reused — without re-calling the AI — inside the social-media kit
- * (see Social_Kit). Best-effort: a failure here never blocks the article.
+ * article's topic (Imagen), saved as the post thumbnail. The photo can then be
+ * reused — without re-calling the AI — by the hti-social card generator.
+ * Best-effort: a failure here never blocks the article.
  *
  * @package HTI_RSS_AI
  */

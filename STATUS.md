@@ -100,10 +100,10 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
     e é reinventada no estilo da marca por um modelo Gemini-image (default `gemini-2.5-flash-image`); senão
     text-to-image; senão imagem do feed crua; senão nenhuma. Fonte registada (`ai-from-feed`/`ai`/`feed`/`none`).
     Botão *Regenerate AI image* na meta box. **Imagen exige billing + acesso a image-gen**.
-  - **Kit de redes sociais (M8):** meta box pós-publicação com **download** de cartões de marca renderizados
-    **localmente com GD** (fontes `.ttf` em `assets/fonts/`) — **Quadrado 1080×1080** (feed) e **Story 1080×1920**
-    (stories) — com a **foto de destaque lá dentro** + título/data/disclaimer. **Reaproveita** a foto (sem gastar AI).
-    Templates fiéis a *Notícias · Quadrado* e *Notícias · Story* do design. **Adiados:** editorial 4:5, X/Twitter.
+  - **Kit de redes sociais (M8) — REMOVIDO:** o antigo kit GD (cartões Quadrado/Story renderizados com GD +
+    fontes `.ttf`) foi **removido** (hti-rss-ai v1.6.0) por ser substituído pelo plugin **`hti-social`** (Social
+    Generator), que cobre os mesmos formatos e mais — com muito maior fidelidade ao design e exportação por
+    `<foreignObject>`. A foto de destaque AI continua a ser reaproveitada (auto-fill na meta box do `hti-social`).
   - Meta box no editor de `news`: proveniência + fontes + sugestões de sitelinking (glossário/related).
   - Detalhe: `wp-content/plugins/hti-rss-ai/README.md`; plano: `docs/RSS_AI_Feed_Plan.md`.
 
@@ -148,7 +148,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - **Bump de versão obrigatório** ao mexer em CSS/JS do tema/plugin (constante VERSION → `?ver=`), senão a cache serve assets antigos. Em template parts personalizadas no Site Editor, *Clear customizations* para o tema voltar a usar os ficheiros.
 - Testes engine (157 verdes): `for t in engine settings explainer prompt ratelimit cron mailer google llm; do php wp-content/plugins/hti-engine/tests/test-$t.php; done`
 - Testes calculadoras (Node, 14 verdes): `node wp-content/plugins/hti-engine/tests/test-tools-core.mjs`
-- Testes RSS AI (29 verdes): `for t in extract-json validator grouping social-card image-client; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
+- Testes RSS AI (24 verdes): `for t in extract-json validator grouping image-client; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
 
 ## O que falta para o GO-LIVE público (checklist completa: `docs/QA_Gate_Lancamento.md`)
 **Código (produto):** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
