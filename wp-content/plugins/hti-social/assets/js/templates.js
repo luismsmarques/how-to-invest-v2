@@ -471,10 +471,258 @@ window.HTI_SOCIAL_TEMPLATES = ( function () {
 			'</div>'
 	};
 
+	// --- og:image · Full photo 1200×630 -----------------------------------
+	var ogPhoto = {
+		id: 'og-photo',
+		category: 'og',
+		label: { en: 'og:image · Full photo', pt: 'og:image · Foto cheia' },
+		w: 1200,
+		h: 630,
+		images: { 'og-photo-bg': { h: '100%', radius: 0, placeholder: 'Arrasta a foto do artigo' } },
+		fields: [
+			{ key: 'badge', label: { en: 'Badge', pt: 'Etiqueta' }, type: 'text', default: 'Notícias' },
+			{ key: 'headline', label: { en: 'Headline', pt: 'Título' }, type: 'textarea', default: 'Banco Central mantém as taxas de juro.' },
+			{ key: 'dek', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'textarea', default: 'O que muda — e o que não muda — para quem poupa.' }
+		],
+		html:
+			'<div style="position:relative;width:1200px;height:630px;overflow:hidden;background:#0B0D24;font-family:' + JAKARTA + ';">' +
+				'<div style="position:absolute;inset:0;">{{img:og-photo-bg}}</div>' +
+				'<div style="position:absolute;inset:0;background:linear-gradient(100deg,rgba(8,10,30,.92) 0%,rgba(8,10,30,.7) 38%,rgba(8,10,30,.15) 70%,rgba(8,10,30,.45) 100%);"></div>' +
+				'<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:56px 60px;">' +
+					'<div style="display:flex;align-items:center;justify-content:space-between;">' +
+						'<div style="display:flex;align-items:center;gap:14px;"><span style="width:50px;height:50px;display:flex;flex:none;">{{logo}}</span><span style="font:700 27px ' + POPPINS + ';color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.5);">HowToInvest</span></div>' +
+						'<span style="font:700 16px ' + JAKARTA + ';letter-spacing:.16em;text-transform:uppercase;color:#fff;background:#FF6B5E;padding:10px 20px;border-radius:999px;">{{badge}}</span>' +
+					'</div>' +
+					'<div style="max-width:680px;">' +
+						'<span style="display:block;width:64px;height:5px;background:#FF6B5E;border-radius:3px;margin-bottom:18px;"></span>' +
+						'<h2 style="margin:0;font:800 60px ' + POPPINS + ';line-height:1.02;letter-spacing:-.02em;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.5);">{{headline}}</h2>' +
+						'<p style="margin:16px 0 0;font:600 22px ' + JAKARTA + ';color:#C7CEF2;line-height:1.35;text-shadow:0 1px 8px rgba(0,0,0,.5);">{{dek}}</p>' +
+					'</div>' +
+				'</div>' +
+			'</div>'
+	};
+
+	// --- og:image · Split 1200×630 -----------------------------------------
+	var ogSplit = {
+		id: 'og-split',
+		category: 'og',
+		label: { en: 'og:image · Split', pt: 'og:image · Split' },
+		w: 1200,
+		h: 630,
+		images: { 'og-split-img': { h: '100%', radius: 20, placeholder: 'Arrasta a foto' } },
+		fields: [
+			{ key: 'badge', label: { en: 'Badge', pt: 'Etiqueta' }, type: 'text', default: 'Notícias' },
+			{ key: 'date', label: { en: 'Date', pt: 'Data' }, type: 'text', default: '16 jun 2026' },
+			{ key: 'headline', label: { en: 'Headline', pt: 'Título' }, type: 'textarea', default: 'Reabertura de Ormuz pode baixar o Brent em 2026.' }
+		],
+		html:
+			'<div style="display:flex;width:1200px;height:630px;overflow:hidden;background:linear-gradient(155deg,#1C2150,#0F1130);font-family:' + JAKARTA + ';color:#fff;">' +
+				'<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:56px;">' +
+					'<div style="display:flex;align-items:center;gap:14px;"><span style="width:50px;height:50px;display:flex;flex:none;">{{logo}}</span><span style="font:700 27px ' + POPPINS + ';color:#fff;">HowToInvest</span></div>' +
+					'<div>' +
+						'<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">' +
+							'<span style="font:700 15px ' + JAKARTA + ';letter-spacing:.16em;text-transform:uppercase;color:#fff;background:#FF6B5E;padding:9px 18px;border-radius:999px;">{{badge}}</span>' +
+							'<span style="font:600 18px ' + JAKARTA + ';color:#9BA7E8;">{{date}}</span>' +
+						'</div>' +
+						'<h2 style="margin:0;font:800 52px ' + POPPINS + ';line-height:1.05;letter-spacing:-.02em;color:#fff;">{{headline}}</h2>' +
+					'</div>' +
+					'<span style="font:600 19px ' + JAKARTA + ';color:#6E76A8;">{{domain}}</span>' +
+				'</div>' +
+				'<div style="flex:none;width:480px;padding:32px 32px 32px 0;">{{img:og-split-img}}</div>' +
+			'</div>'
+	};
+
+	// --- Editorial · Featured news 4:5 -------------------------------------
+	var edNews = {
+		id: 'ed-news',
+		category: 'editorial',
+		label: { en: 'Editorial · Featured', pt: 'Editorial · Destaque' },
+		w: 1080,
+		h: 1350,
+		images: { 'ed-news-bg': { h: '100%', radius: 0, placeholder: 'Arrasta a foto principal — retrato, edifício, mercado…' } },
+		fields: [
+			{ key: 'headline', label: { en: 'Headline', pt: 'Título' }, type: 'textarea', default: 'Decisão de taxas de juro do BCE é hoje.' },
+			{ key: 'dek', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'textarea', default: 'Os mercados esperam que as taxas fiquem inalteradas.' }
+		],
+		html:
+			'<div style="position:relative;width:1080px;height:1350px;overflow:hidden;background:#0B0D24;font-family:' + JAKARTA + ';">' +
+				'<div style="position:absolute;inset:0;">{{img:ed-news-bg}}</div>' +
+				'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,10,30,.5) 0%,rgba(8,10,30,0) 26%,rgba(8,10,30,.08) 46%,rgba(8,10,30,.78) 68%,#080A1E 100%);"></div>' +
+				'<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:64px;">' +
+					'<div style="display:flex;align-items:center;gap:16px;"><span style="width:58px;height:58px;display:flex;flex:none;">{{logo}}</span><span style="font:700 30px ' + POPPINS + ';color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.5);">HowToInvest</span></div>' +
+					'<div>' +
+						'<div style="display:flex;align-items:center;gap:18px;margin-bottom:26px;">' +
+							'<span style="flex:1;height:1px;background:rgba(255,255,255,.4);"></span>' +
+							'<span style="font:700 19px ' + JAKARTA + ';letter-spacing:.08em;color:#fff;">@{{handle}}</span>' +
+							'<span style="flex:1;height:1px;background:rgba(255,255,255,.4);"></span>' +
+						'</div>' +
+						'<h2 style="margin:0;font:800 70px ' + POPPINS + ';line-height:1.02;letter-spacing:-.01em;text-transform:uppercase;color:#F4C24E;text-shadow:0 2px 16px rgba(0,0,0,.5);">{{headline}}</h2>' +
+						'<p style="margin:22px 0 0;font:700 28px ' + JAKARTA + ';color:#fff;line-height:1.3;text-shadow:0 1px 10px rgba(0,0,0,.55);">{{dek}}</p>' +
+						'{{#legal}}<p style="margin:22px 0 0;font:400 15px ' + JAKARTA + ';color:rgba(255,255,255,.62);line-height:1.45;">{{disclaimer}}</p>{{/legal}}' +
+					'</div>' +
+				'</div>' +
+			'</div>'
+	};
+
+	// --- Editorial · Economy 4:5 -------------------------------------------
+	var edEcon = {
+		id: 'ed-econ',
+		category: 'editorial',
+		label: { en: 'Editorial · Economy', pt: 'Editorial · Economia' },
+		w: 1080,
+		h: 1350,
+		images: { 'ed-econ-bg': { h: '100%', radius: 0, placeholder: 'Arrasta a foto — mercado, barris, gráfico…' } },
+		fields: [
+			{ key: 'headline', label: { en: 'Headline', pt: 'Título' }, type: 'textarea', default: 'Reabertura total de Ormuz pode baixar o Brent para 82€/barril em 2026.' }
+		],
+		html:
+			'<div style="position:relative;width:1080px;height:1350px;overflow:hidden;background:#11131F;font-family:' + JAKARTA + ';">' +
+				'<div style="position:absolute;inset:0;">{{img:ed-econ-bg}}</div>' +
+				'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,24,.45) 0%,rgba(10,12,24,0) 30%,rgba(10,12,24,.05) 55%,rgba(10,12,24,.9) 88%);"></div>' +
+				'<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:64px;">' +
+					'<div>' +
+						'<div style="display:flex;align-items:center;gap:14px;"><span style="width:54px;height:54px;display:flex;flex:none;">{{logo}}</span><span style="font:700 30px ' + POPPINS + ';color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.5);">HowToInvest</span></div>' +
+						'<span style="display:block;width:96px;height:5px;background:#FF6B5E;border-radius:3px;margin-top:14px;"></span>' +
+					'</div>' +
+					'<div>' +
+						'<h2 style="margin:0;font:800 64px ' + POPPINS + ';line-height:1.08;letter-spacing:-.01em;text-transform:uppercase;color:#fff;max-width:18ch;text-shadow:0 2px 16px rgba(0,0,0,.55);">{{headline}}</h2>' +
+						'{{#legal}}<p style="margin:22px 0 0;font:400 15px ' + JAKARTA + ';color:rgba(255,255,255,.6);line-height:1.45;">{{disclaimer}}</p>{{/legal}}' +
+					'</div>' +
+				'</div>' +
+			'</div>'
+	};
+
+	// --- Editorial · Tool promo (square) -----------------------------------
+	var edPromo = {
+		id: 'ed-promo',
+		category: 'editorial',
+		label: { en: 'Editorial · Tool promo', pt: 'Editorial · Promo ferramenta' },
+		w: 1080,
+		h: 1080,
+		images: { 'ed-phone': { h: '100%', radius: 34, placeholder: 'Captura do site / app' } },
+		fields: [
+			{ key: 'headline', label: { en: 'Headline', pt: 'Título' }, type: 'textarea', default: 'Inteligência de mercado, explicada.' },
+			{ key: 'body', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'text', default: 'Educação clara para decisões mais informadas.' },
+			{ key: 'button', label: { en: 'Button', pt: 'Botão' }, type: 'text', default: 'Descobre o teu perfil' },
+			{ key: 'foot', label: { en: 'Footnote', pt: 'Rodapé' }, type: 'text', default: 'Conteúdo educativo. Não é aconselhamento financeiro.' }
+		],
+		html:
+			'<div style="position:relative;width:1080px;height:1080px;overflow:hidden;background:#0E1030;font-family:' + JAKARTA + ';">' +
+				'<div style="position:absolute;inset:0;background:radial-gradient(75% 85% at 100% 2%,rgba(255,107,94,.95) 0%,rgba(255,107,94,.2) 26%,rgba(14,16,48,0) 52%),linear-gradient(135deg,#15183C,#0A0C20);"></div>' +
+				'<div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:68px;color:#fff;">' +
+					'<div style="display:flex;align-items:center;gap:14px;"><span style="width:52px;height:52px;display:flex;flex:none;">{{logo}}</span><span style="font:700 28px ' + POPPINS + ';color:#fff;">HowToInvest</span></div>' +
+					'<div style="text-align:center;margin-top:26px;">' +
+						'<h2 style="margin:0;font:800 58px ' + POPPINS + ';line-height:1.04;letter-spacing:-.02em;color:#fff;">{{headline}}</h2>' +
+						'<p style="margin:14px 0 0;font:500 26px ' + JAKARTA + ';color:#B6BFEC;">{{body}}</p>' +
+					'</div>' +
+					'<div style="flex:1;display:flex;align-items:center;justify-content:center;">' +
+						'<div style="position:relative;width:320px;height:500px;background:#1B1F3A;border:11px solid #05060F;border-radius:46px;padding:9px;box-shadow:0 34px 70px rgba(0,0,0,.55);">' +
+							'{{img:ed-phone}}' +
+							'<div style="position:absolute;top:20px;left:50%;transform:translateX(-50%);width:108px;height:26px;background:#05060F;border-radius:14px;"></div>' +
+						'</div>' +
+					'</div>' +
+					'<div style="display:flex;justify-content:center;">' +
+						'<div style="background:#FF6B5E;color:#fff;font:700 30px ' + POPPINS + ';padding:23px 46px;border-radius:18px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 24px rgba(255,107,94,.4);"><span style="width:30px;height:30px;display:flex;flex:none;">{{logo}}</span>{{button}}</div>' +
+					'</div>' +
+					'<p style="margin:20px 0 0;text-align:center;font:400 15px ' + JAKARTA + ';color:#7E86B6;">{{foot}}</p>' +
+				'</div>' +
+			'</div>'
+	};
+
+	// --- Editorial · Data infographic 4:5 ----------------------------------
+	var edInfographic = {
+		id: 'ed-infographic',
+		category: 'editorial',
+		label: { en: 'Editorial · Infographic', pt: 'Editorial · Infográfico' },
+		w: 1080,
+		h: 1350,
+		fields: [
+			{ key: 'title', label: { en: 'Title', pt: 'Título' }, type: 'text', default: 'O poder do tempo' },
+			{ key: 'subtitle', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'text', default: 'Juntar 100€/mês durante 30 anos' },
+			{ key: 'legend1', label: { en: 'Legend 1', pt: 'Legenda 1' }, type: 'text', default: 'Investido e diversificado' },
+			{ key: 'legend2', label: { en: 'Legend 2', pt: 'Legenda 2' }, type: 'text', default: 'Só a poupar' },
+			{ key: 'annotMain', label: { en: 'Main annotation', pt: 'Anotação principal' }, type: 'text', default: '≈ 113 000€' },
+			{ key: 'annotSecond', label: { en: 'Second annotation', pt: 'Anotação secundária' }, type: 'text', default: '36 000€ poupados' },
+			{ key: 'foot', label: { en: 'Footnote', pt: 'Rodapé' }, type: 'textarea', default: 'Exemplo ilustrativo: retorno médio anual hipotético de 7%. Não é previsão nem recomendação — investir envolve risco, incluindo a perda de capital.' }
+		],
+		html:
+			'<div style="width:1080px;height:1350px;background:radial-gradient(130% 80% at 0% 0%,#1A1E3C,#0B0D20 62%);font-family:' + JAKARTA + ';color:#fff;padding:72px;display:flex;flex-direction:column;box-sizing:border-box;">' +
+				'<div style="display:flex;align-items:center;justify-content:space-between;">' +
+					'<div style="display:flex;align-items:center;gap:14px;"><span style="width:50px;height:50px;display:flex;flex:none;">{{logo}}</span><span style="font:700 27px ' + POPPINS + ';color:#fff;">HowToInvest</span></div>' +
+					'<span style="font:600 22px ' + JAKARTA + ';color:#8189B8;">{{domain}}</span>' +
+				'</div>' +
+				'<div style="margin-top:46px;">' +
+					'<h2 style="margin:0;font:800 96px ' + POPPINS + ';line-height:.98;letter-spacing:-.02em;color:#FF6B5E;">{{title}}</h2>' +
+					'<p style="margin:14px 0 0;font:700 32px ' + JAKARTA + ';color:#fff;">{{subtitle}}</p>' +
+				'</div>' +
+				'<div style="display:flex;gap:26px;margin-top:30px;flex-wrap:wrap;">' +
+					'<span style="display:flex;align-items:center;gap:10px;font:600 22px ' + JAKARTA + ';color:#E7E0F6;"><span style="width:18px;height:6px;border-radius:3px;background:#FF6B5E;"></span>{{legend1}}</span>' +
+					'<span style="display:flex;align-items:center;gap:10px;font:600 22px ' + JAKARTA + ';color:#E7E0F6;"><span style="width:18px;height:6px;border-radius:3px;background:#7C5CFC;"></span>{{legend2}}</span>' +
+				'</div>' +
+				'<div style="flex:1;margin-top:24px;">' +
+					'<svg viewBox="0 0 940 540" width="100%" height="100%" preserveAspectRatio="none" style="overflow:visible;">' +
+						'<g stroke="rgba(255,255,255,.1)" stroke-width="1">' +
+							'<line x1="90" y1="40" x2="900" y2="40"></line>' +
+							'<line x1="90" y1="147.5" x2="900" y2="147.5"></line>' +
+							'<line x1="90" y1="255" x2="900" y2="255"></line>' +
+							'<line x1="90" y1="362.5" x2="900" y2="362.5"></line>' +
+							'<line x1="90" y1="470" x2="900" y2="470"></line>' +
+						'</g>' +
+						'<g fill="#7E86B6" font-family="Plus Jakarta Sans" font-size="20" text-anchor="end">' +
+							'<text x="76" y="47">120k€</text><text x="76" y="154.5">90k€</text><text x="76" y="262">60k€</text><text x="76" y="369.5">30k€</text><text x="76" y="477">0</text>' +
+						'</g>' +
+						'<path d="M90 470 L225 445.3 L360 410.6 L495 361.9 L630 293.7 L765 198.1 L900 63.8 L900 470 L90 470 Z" fill="rgba(255,107,94,.16)"></path>' +
+						'<path d="M90 470 L225 448.5 L360 427 L495 405.5 L630 384 L765 362.5 L900 341" fill="none" stroke="#7C5CFC" stroke-width="4.5" stroke-dasharray="3 9" stroke-linecap="round"></path>' +
+						'<path d="M90 470 L225 445.3 L360 410.6 L495 361.9 L630 293.7 L765 198.1 L900 63.8" fill="none" stroke="#FF6B5E" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path>' +
+						'<circle cx="900" cy="63.8" r="8" fill="#FF6B5E" stroke="#0B0D20" stroke-width="3"></circle>' +
+						'<circle cx="900" cy="341" r="7" fill="#7C5CFC" stroke="#0B0D20" stroke-width="3"></circle>' +
+						'<text x="884" y="50" text-anchor="end" font-family="Poppins" font-weight="700" font-size="30" fill="#FF6B5E">{{annotMain}}</text>' +
+						'<text x="884" y="332" text-anchor="end" font-family="Poppins" font-weight="700" font-size="26" fill="#B7A6F5">{{annotSecond}}</text>' +
+						'<g fill="#7E86B6" font-family="Plus Jakarta Sans" font-size="20" text-anchor="middle">' +
+							'<text x="90" y="500">0</text><text x="225" y="500">5</text><text x="360" y="500">10</text><text x="495" y="500">15</text><text x="630" y="500">20</text><text x="765" y="500">25</text><text x="900" y="500">30 anos</text>' +
+						'</g>' +
+					'</svg>' +
+				'</div>' +
+				'<p style="margin:14px 0 0;font:400 16px ' + JAKARTA + ';color:#8189B8;line-height:1.45;">{{foot}}</p>' +
+			'</div>'
+	};
+
+	// --- Editorial · Daily recap 4:5 ---------------------------------------
+	var edRecap = {
+		id: 'ed-recap',
+		category: 'editorial',
+		label: { en: 'Editorial · Daily recap', pt: 'Editorial · Resumo diário' },
+		w: 1080,
+		h: 1350,
+		images: { 'ed-recap-bg': { h: '100%', radius: 0, placeholder: 'Arrasta a foto principal' } },
+		fields: [
+			{ key: 'headline', label: { en: 'Headline', pt: 'Título' }, type: 'textarea', default: 'Tudo o que aconteceu no mundo das finanças nas últimas 24 horas' },
+			{ key: 'strap', label: { en: 'Strap', pt: 'Assinatura' }, type: 'text', default: 'HOWTOINVEST.PRO' }
+		],
+		html:
+			'<div style="position:relative;width:1080px;height:1350px;overflow:hidden;background:#11131F;font-family:' + JAKARTA + ';">' +
+				'<div style="position:absolute;inset:0;">{{img:ed-recap-bg}}</div>' +
+				'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,24,.35) 0%,rgba(10,12,24,0) 32%,rgba(10,12,24,.12) 52%,rgba(10,12,24,.92) 84%);"></div>' +
+				'<div style="position:absolute;top:0;left:0;width:0;height:0;border-top:210px solid #FF6B5E;border-right:210px solid transparent;"></div>' +
+				'<span style="position:absolute;top:40px;left:40px;width:62px;height:62px;display:flex;filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));">{{logo}}</span>' +
+				'<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:64px;">' +
+					'<h2 style="margin:0;font:800 66px ' + POPPINS + ';line-height:1.05;letter-spacing:-.01em;text-transform:uppercase;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.55);">{{headline}}</h2>' +
+					'<div style="display:flex;align-items:center;gap:18px;margin-top:30px;">' +
+						'<span style="flex:1;height:1px;background:rgba(255,255,255,.45);"></span>' +
+						'<span style="font:700 20px ' + JAKARTA + ';letter-spacing:.18em;color:#fff;">{{strap}}</span>' +
+						'<span style="flex:1;height:1px;background:rgba(255,255,255,.45);"></span>' +
+					'</div>' +
+					'{{#legal}}<p style="margin:20px 0 0;font:400 15px ' + JAKARTA + ';color:rgba(255,255,255,.6);line-height:1.45;text-align:center;">{{disclaimer}}</p>{{/legal}}' +
+				'</div>' +
+			'</div>'
+	};
+
 	return [
 		newsSquare, newsStory, newsX,
 		glossaryFb, glossaryFeed, glossaryStory,
 		factGreen, factPurple, factStory,
-		ctaSquare, ctaStory, ctaX
+		ctaSquare, ctaStory, ctaX,
+		ogPhoto, ogSplit,
+		edNews, edEcon, edPromo, edInfographic, edRecap
 	];
 }() );

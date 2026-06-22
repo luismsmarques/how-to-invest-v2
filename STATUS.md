@@ -155,8 +155,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 
 **Código — adiado de propósito (opcional, não bloqueia):**
 - [x] **Hub de Ferramentas — 2ª leva (feita):** Fundo de emergência, Visualizador de alocação por arquétipo (donut via `Config`+`Engine::allocate`, por classes), Regra dos 72, Impacto das comissões. (1ª leva — juro composto/inflação/meta/custo de esperar — também feita.) Páginas seedadas EN+PT + ligadas no hub `/tools/`; `tools-core` com 27 testes verdes.
-- [ ] Kit social: template **Editorial 4:5** (img3) e **X/Twitter 1600×900**.
-- [ ] Outros templates do design (Facto curioso, Glossário cards, CTA, Infográfico, Resumo diário) — "kit de conteúdo" futuro.
+- [x] **Plugin `hti-social` (Social Generator) — feito:** novo plugin que rende os modelos do design "Social Templates" (handoff 9) como HTML/CSS e exporta PNG fiel **sem dependências pesadas** (SVG `<foreignObject>` → canvas, fontes self-hosted em base64). **19 templates**: Notícias (Quadrado/Story/X), Glossário (Facebook/Feed/Story), Facto curioso (verde/roxo/story), CTA Questionário (Quadrado/Story/X), og:image (foto cheia/split 1200×630) e Editorial 4:5 (Destaque, Economia, Promo ferramenta, **Infográfico** com gráfico SVG, Resumo diário). Dois locais: página **Social** no admin + meta box **Social cards** em Notícias/Glossário (auto-preenchida). Disclaimer bilingue e linguagem por classes embutidos. Substitui o "kit social" GD do RSS-AI para estes formatos.
 - [ ] **Base dos slugs dos CPTs em PT** (`/news/`, `/glossary/`) — exige Polylang Pro ou rewrite custom (deixada em EN).
 
 **Operacional (teu, no servidor):**

@@ -31,12 +31,18 @@ fonts embedded as base64) and drawn to a canvas.
 Tokens: `{{logo}}`, `{{disclaimer}}`, `{{#legal}}…{{/legal}}`, `{{img:slotId}}`,
 and any `{{field}}` declared in a template's `fields`.
 
-## Status
-- **Done:** engine + editor + export; **News** (Square/Story/X), **Glossary**
-  (Facebook/Feed/Story), **Fun fact** (green/purple square + green story) and
-  **Quiz CTA** (Square/Story/X); both placements. 12 templates.
-- **Next:** og:image (full-photo / split) + Editorial 4:5 (incl. the data
-  infographic).
+## Status — complete (19 templates)
+All families from the handoff are in:
+- **News** — Square 1080×1080, Story 1080×1920, X 1600×900.
+- **Glossary** — Facebook 1080×1080, Feed 1080×1350, Story 1080×1920.
+- **Fun fact** — green / purple square + green story.
+- **Quiz CTA** — Square, Story, X.
+- **og:image** — full-photo / split (1200×630).
+- **Editorial 4:5** — Featured, Economy, Tool promo (square), Data infographic
+  (SVG chart), Daily recap.
+
+Both placements: the **Social** admin page (all templates) and the **Social
+cards** meta box on News (news + og + editorial, auto-filled) and Glossary.
 
 Fun fact uses the ported `{{illoShip}}` / `{{illoGold}}` brand illustrations
 (raw SVG tokens, alongside `{{logo}}`).
