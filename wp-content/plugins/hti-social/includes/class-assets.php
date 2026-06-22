@@ -110,6 +110,7 @@ class Assets {
 		return array(
 			'locale'      => Plugin::locale(),
 			'restCaption' => esc_url_raw( rest_url( 'hti-social/v1/caption' ) ),
+			'restLog'     => esc_url_raw( rest_url( 'hti-social/v1/log' ) ),
 			'nonce'       => wp_create_nonce( 'wp_rest' ),
 			'aiEnabled'   => Gemini::is_configured(),
 			'ffmpeg'      => self::ffmpeg_urls(),

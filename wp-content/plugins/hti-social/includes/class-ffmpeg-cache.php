@@ -54,20 +54,27 @@ class Ffmpeg_Cache {
 			$path = trailingslashit( $dir ) . $name;
 
 			if ( ! file_exists( $path ) || filesize( $path ) < 1024 ) {
+				Logger::log( 'info', 'ffmpeg_download', 'Downloading ' . $key, array( 'src' => $src ) );
 				$res = wp_remote_get( $src, array( 'timeout' => 120 ) );
 				if ( is_wp_error( $res ) ) {
+					Logger::log( 'error', 'ffmpeg_dl_error', $res->get_error_message(), array( 'file' => $key ) );
 					return $res;
 				}
-				if ( 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
-					return new \WP_Error( 'hti_social_dl', sprintf( 'HTTP %d downloading %s', (int) wp_remote_retrieve_response_code( $res ), $src ) );
+				$http = (int) wp_remote_retrieve_response_code( $res );
+				if ( 200 !== $http ) {
+					Logger::log( 'error', 'ffmpeg_dl_http', sprintf( 'HTTP %d for %s', $http, $key ), array( 'src' => $src ) );
+					return new \WP_Error( 'hti_social_dl', sprintf( 'HTTP %d downloading %s', $http, $src ) );
 				}
 				$body = wp_remote_retrieve_body( $res );
 				if ( strlen( $body ) < 1024 ) {
+					Logger::log( 'error', 'ffmpeg_dl_small', 'Tiny download for ' . $key, array( 'bytes' => strlen( $body ) ) );
 					return new \WP_Error( 'hti_social_dl_small', 'Unexpectedly small download for ' . $key );
 				}
 				if ( false === file_put_contents( $path, $body ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+					Logger::log( 'error', 'ffmpeg_write', 'Could not write ' . $name );
 					return new \WP_Error( 'hti_social_write', 'Could not write ' . $name );
 				}
+				Logger::log( 'info', 'ffmpeg_cached', 'Cached ' . $key, array( 'bytes' => strlen( $body ) ) );
 			}
 			$out[ $key ] = trailingslashit( $url ) . $name;
 		}

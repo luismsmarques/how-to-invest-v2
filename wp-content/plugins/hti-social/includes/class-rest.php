@@ -45,6 +45,18 @@ class Rest {
 
 		register_rest_route(
 			self::NS,
+			'/log',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'log_event' ),
+				'permission_callback' => static function () {
+					return current_user_can( 'edit_posts' );
+				},
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/caption',
 			array(
 				'methods'             => 'POST',
@@ -66,6 +78,27 @@ class Rest {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Record a client-side log event (from reels.js).
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public static function log_event( \WP_REST_Request $request ) {
+		$level   = (string) $request->get_param( 'level' );
+		$event   = (string) $request->get_param( 'event' );
+		$message = (string) $request->get_param( 'message' );
+		$context = $request->get_param( 'context' );
+		Logger::log(
+			$level ? $level : 'info',
+			$event ? $event : 'client',
+			$message,
+			is_array( $context ) ? $context : array(),
+			'client'
+		);
+		return new \WP_REST_Response( array( 'ok' => true ), 200 );
 	}
 
 	/**

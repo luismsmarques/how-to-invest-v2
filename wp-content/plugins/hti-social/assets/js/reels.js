@@ -49,6 +49,24 @@
 			.replace( /"/g, '&quot;' );
 	}
 
+	// Fire-and-forget log to the server (shows up in Social → Logs).
+	function logEvent( level, event, message, context ) {
+		if ( window.console ) {
+			window.console[ 'error' === level ? 'error' : 'log' ]( '[hti-social] ' + event + ( message ? ': ' + message : '' ), context || '' );
+		}
+		if ( ! CFG.restLog ) {
+			return;
+		}
+		try {
+			fetch( CFG.restLog, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': CFG.nonce },
+				body: JSON.stringify( { level: level, event: event, message: message || '', context: context || {} } ),
+				keepalive: true
+			} ).catch( function () {} );
+		} catch ( e ) {}
+	}
+
 	// ---- Overlay rendering (shared with the card export technique) --------
 
 	function renderOverlayHtml( tpl, st ) {
@@ -262,6 +280,7 @@
 			return ffmpegReady;
 		}
 		var urls = CFG.ffmpeg || {};
+		logEvent( 'info', 'ffmpeg_init', 'Preparing the MP4 converter' );
 		// The worker, core and wasm must be same-origin (the browser blocks a
 		// cross-origin Worker and the worker's import of the core). Ask the
 		// server to mirror them into uploads/ and use those URLs.
@@ -294,14 +313,17 @@
 						if ( local.worker ) {
 							cfg.classWorkerURL = local.worker;
 						}
+						logEvent( 'info', 'ffmpeg_assets_ready', 'Local ffmpeg files ready' );
 						return ff.load( cfg ).then( function () {
+							logEvent( 'info', 'ffmpeg_loaded', 'ffmpeg.wasm loaded' );
 							return { ff: ff, util: util };
 						} );
 					} );
 			} );
 		ffmpegReady = p;
 		// Allow a retry if loading failed (don't cache the rejection forever).
-		p.catch( function () {
+		p.catch( function ( err ) {
+			logEvent( 'error', 'ffmpeg_load_error', err && err.message ? err.message : String( err || '' ) );
 			if ( ffmpegReady === p ) {
 				ffmpegReady = null;
 			}
@@ -742,6 +764,13 @@
 			videoEl.onloadedmetadata = function () {
 				videoReady = true;
 				sizeStage();
+				logEvent( 'info', 'video_loaded', '', {
+					duration: Math.round( ( videoEl.duration || 0 ) * 10 ) / 10,
+					w: videoEl.videoWidth,
+					h: videoEl.videoHeight,
+					size_mb: Math.round( ( fileObj.size / 1048576 ) * 10 ) / 10,
+					type: fileObj.type
+				} );
 			};
 			videoEl.load();
 		}
@@ -756,6 +785,7 @@
 			button.disabled = true;
 			button.textContent = I.ai_working;
 			status.textContent = '';
+			logEvent( 'info', 'ai_request', '', { chars: brief.length, lang: st.lang } );
 			fetch( CFG.restCaption, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': CFG.nonce },
@@ -768,9 +798,12 @@
 				button.disabled = false;
 				button.textContent = orig;
 				if ( ! res.ok ) {
-					status.textContent = ( res.body && res.body.message ) || I.ai_error;
+					var emsg = ( res.body && res.body.message ) || I.ai_error;
+					status.textContent = emsg;
+					logEvent( 'error', 'ai_error', emsg );
 					return;
 				}
+				logEvent( 'info', 'ai_ok', 'Caption generated' );
 				var d = res.body || {};
 				if ( d.title ) {
 					st.fields.title = d.title;
@@ -786,10 +819,11 @@
 				descBox.value = desc;
 				renderControls();
 				refreshOverlay();
-			} ).catch( function () {
+			} ).catch( function ( err ) {
 				button.disabled = false;
 				button.textContent = orig;
 				status.textContent = I.ai_error;
+				logEvent( 'error', 'ai_network', err && err.message ? err.message : String( err || '' ) );
 			} );
 		}
 
@@ -803,9 +837,17 @@
 				return;
 			}
 			if ( ! window.MediaRecorder ) {
+				logEvent( 'error', 'render_no_recorder', 'MediaRecorder unavailable' );
 				window.alert( I.no_support );
 				return;
 			}
+			logEvent( 'info', 'render_start', '', {
+				template: curTpl().id,
+				to_mp4: st.toMp4,
+				anim_captions: st.animCaptions,
+				end_card: st.endCard,
+				duration: Math.round( ( videoEl.duration || 0 ) * 10 ) / 10
+			} );
 			Promise.all( [
 				buildOverlayImage( curTpl(), st ),
 				ensureCanvasFonts(),
@@ -842,24 +884,26 @@
 				rec.onstop = function () {
 					var blob = new Blob( chunks, { type: mime || 'video/webm' } );
 					var base = 'reel-' + curTpl().id + '-1080x1920';
+					var webmMb = Math.round( ( blob.size / 1048576 ) * 10 ) / 10;
 					if ( ! st.toMp4 ) {
 						downloadBlob( blob, base + '.webm' );
+						logEvent( 'info', 'render_done', 'WebM saved', { size_mb: webmMb } );
 						stop();
 						return;
 					}
+					logEvent( 'info', 'mp4_start', 'Converting to MP4', { webm_mb: webmMb } );
 					renderLabel.textContent = I.mp4_loading;
 					convertToMp4( blob, function ( p ) {
 						renderLabel.textContent = I.mp4_doing + ' ' + Math.round( ( p || 0 ) * 100 ) + '%';
 					} ).then( function ( mp4 ) {
 						downloadBlob( mp4, base + '.mp4' );
+						logEvent( 'info', 'mp4_done', 'MP4 saved', { size_mb: Math.round( ( mp4.size / 1048576 ) * 10 ) / 10 } );
 						stop();
 					} ).catch( function ( err ) {
 						downloadBlob( blob, base + '.webm' );
 						stop();
 						var msg = err && err.message ? err.message : String( err || '' );
-						if ( window.console ) {
-							window.console.error( 'hti-social: MP4 conversion failed', err );
-						}
+						logEvent( 'error', 'mp4_error', msg );
 						renderLabel.textContent = I.mp4_fail;
 						window.alert( I.mp4_fail + ( msg ? '\n\n' + msg : '' ) );
 					} );

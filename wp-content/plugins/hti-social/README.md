@@ -37,9 +37,21 @@ fonts embedded as base64) and drawn to a canvas.
     block a cross-origin Worker and its cross-origin core import. Falls back to
     WebM on failure. Source CDN URLs are filterable via `hti_social_ffmpeg_urls`.
 
+- **Logs:** admin menu → **Social → Logs**. A capped activity log (server +
+  browser) of everything the plugin does — AI caption calls, the ffmpeg mirror
+  download, reel render start/done, MP4 conversion and any errors (with the real
+  message). Level badges, source column, context, and a Clear button. Client
+  events are pushed from reels.js via `POST /log`.
+
 ## REST
 - `POST hti-social/v1/caption` — `{ brief, lang }` → `{ title, caption,
-  description, hashtags[] }`. Capability `edit_posts` + `wp_rest` nonce.
+  description, hashtags[] }`.
+- `POST hti-social/v1/ffmpeg-assets` — mirrors the ffmpeg files; returns local
+  URLs.
+- `POST hti-social/v1/log` — `{ level, event, message, context }` records a
+  client event.
+
+All routes: capability `edit_posts` + `wp_rest` nonce.
 
 ## Invariants (educational platform)
 - The legal **disclaimer** and **by-asset-class** framing are part of the brand,

@@ -81,6 +81,9 @@ class Gemini {
 			),
 		);
 
+		$started = microtime( true );
+		Logger::log( 'info', 'gemini_request', 'Calling Gemini', array( 'model' => self::model() ) );
+
 		$res = wp_remote_post(
 			$url,
 			array(
@@ -91,12 +94,15 @@ class Gemini {
 		);
 
 		if ( is_wp_error( $res ) ) {
+			Logger::log( 'error', 'gemini_error', $res->get_error_message() );
 			return $res;
 		}
 		$code = wp_remote_retrieve_response_code( $res );
 		if ( 200 !== (int) $code ) {
+			Logger::log( 'error', 'gemini_http', sprintf( 'Gemini HTTP %d', (int) $code ), array( 'body' => substr( (string) wp_remote_retrieve_body( $res ), 0, 200 ) ) );
 			return new \WP_Error( 'hti_social_http', sprintf( 'Gemini HTTP %d', (int) $code ) );
 		}
+		Logger::log( 'info', 'gemini_ok', 'Gemini responded', array( 'ms' => (int) ( ( microtime( true ) - $started ) * 1000 ) ) );
 
 		$data = json_decode( wp_remote_retrieve_body( $res ), true );
 		$text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
