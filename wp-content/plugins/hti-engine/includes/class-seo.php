@@ -57,7 +57,12 @@ class SEO {
 			$graph[] = self::defined_term( $post );
 		}
 
-		if ( ! self::seo_plugin_active() ) {
+		if ( 'news' === $post->post_type ) {
+			// News needs a reliable, correct NewsArticle for Google News — emit it
+			// even when an SEO plugin is active (its free tier rarely models the
+			// NewsArticle type, per-post language or a publisher logo).
+			$graph[] = self::article( $post );
+		} elseif ( ! self::seo_plugin_active() ) {
 			$graph[] = self::article( $post );
 		}
 
@@ -173,9 +178,13 @@ class SEO {
 	}
 
 	/**
-	 * Build an Article / NewsArticle node (fallback only).
+	 * Build an Article / NewsArticle node.
 	 *
-	 * @param \WP_Post $post Glossary or news post.
+	 * For `news` this is the Google News article markup; emitted reliably with a
+	 * per-post language, a publisher logo and a headline trimmed to Google's
+	 * 110-character limit.
+	 *
+	 * @param \WP_Post $post Glossary, learn or news post.
 	 * @return array<string,mixed>
 	 */
 	private static function article( \WP_Post $post ): array {
@@ -184,17 +193,17 @@ class SEO {
 		$node = array(
 			'@type'            => $type,
 			'@id'              => get_permalink( $post ) . '#article',
-			'headline'         => wp_strip_all_tags( get_the_title( $post ) ),
+			'headline'         => self::headline( $post ),
 			'url'              => get_permalink( $post ),
 			'datePublished'    => get_the_date( DATE_W3C, $post ),
 			'dateModified'     => get_the_modified_date( DATE_W3C, $post ),
-			'inLanguage'       => get_bloginfo( 'language' ),
-			'mainEntityOfPage' => get_permalink( $post ),
-			'publisher'        => array(
-				'@type' => 'Organization',
-				'name'  => get_bloginfo( 'name' ),
-				'url'   => home_url( '/' ),
+			'inLanguage'       => self::post_lang( $post ),
+			'isAccessibleForFree' => true,
+			'mainEntityOfPage' => array(
+				'@type' => 'WebPage',
+				'@id'   => get_permalink( $post ),
 			),
+			'publisher'        => self::publisher_node(),
 		);
 
 		$description = self::description( $post );
@@ -210,9 +219,123 @@ class SEO {
 			);
 		}
 
-		$image = get_the_post_thumbnail_url( $post, 'full' );
+		$image = self::image_node( $post );
 		if ( $image ) {
 			$node['image'] = $image;
+		}
+
+		return $node;
+	}
+
+	/**
+	 * Headline trimmed to Google's 110-character recommendation for News.
+	 *
+	 * @param \WP_Post $post Post.
+	 */
+	private static function headline( \WP_Post $post ): string {
+		$title = wp_strip_all_tags( get_the_title( $post ) );
+		if ( mb_strlen( $title ) <= 110 ) {
+			return $title;
+		}
+		return rtrim( mb_substr( $title, 0, 109 ) ) . '…';
+	}
+
+	/**
+	 * Per-post BCP-47 language tag for `inLanguage`.
+	 *
+	 * Uses Polylang's per-post language when present, so a PT translation is
+	 * marked `pt-PT` even on an EN-default site; falls back to the site locale.
+	 *
+	 * @param \WP_Post $post Post.
+	 */
+	private static function post_lang( \WP_Post $post ): string {
+		$slug = '';
+		if ( function_exists( 'pll_get_post_language' ) ) {
+			$slug = (string) pll_get_post_language( (int) $post->ID, 'slug' );
+		}
+		if ( '' === $slug ) {
+			$slug = (string) get_locale();
+		}
+		return str_starts_with( strtolower( $slug ), 'pt' ) ? 'pt-PT' : 'en-US';
+	}
+
+	/**
+	 * Organization publisher node, including the logo ImageObject Google News
+	 * requires. Logo resolves from the theme custom logo, else the site icon.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private static function publisher_node(): array {
+		$node = array(
+			'@type' => 'Organization',
+			'@id'   => home_url( '/' ) . '#organization',
+			'name'  => get_bloginfo( 'name' ),
+			'url'   => home_url( '/' ),
+		);
+
+		$logo = self::logo_url();
+		if ( '' !== $logo ) {
+			$node['logo'] = array(
+				'@type' => 'ImageObject',
+				'url'   => $logo,
+			);
+		}
+
+		return $node;
+	}
+
+	/**
+	 * Best available publisher logo URL (custom logo → site icon → filter).
+	 */
+	private static function logo_url(): string {
+		$url = '';
+
+		$logo_id = (int) get_theme_mod( 'custom_logo' );
+		if ( $logo_id ) {
+			$src = wp_get_attachment_image_src( $logo_id, 'full' );
+			if ( is_array( $src ) && ! empty( $src[0] ) ) {
+				$url = (string) $src[0];
+			}
+		}
+
+		if ( '' === $url ) {
+			$url = (string) get_site_icon_url( 512 );
+		}
+
+		/**
+		 * Filter the publisher logo URL used in NewsArticle/Organization schema.
+		 *
+		 * @param string $url Resolved logo URL (may be empty).
+		 */
+		return (string) apply_filters( 'hti_publisher_logo_url', $url );
+	}
+
+	/**
+	 * Featured image as an ImageObject (with dimensions when known).
+	 *
+	 * @param \WP_Post $post Post.
+	 * @return array<string,mixed>|string
+	 */
+	private static function image_node( \WP_Post $post ) {
+		$id = (int) get_post_thumbnail_id( $post );
+		if ( ! $id ) {
+			return '';
+		}
+
+		$src = wp_get_attachment_image_src( $id, 'full' );
+		if ( ! is_array( $src ) || empty( $src[0] ) ) {
+			return '';
+		}
+
+		$node = array(
+			'@type' => 'ImageObject',
+			'url'   => (string) $src[0],
+		);
+		if ( ! empty( $src[1] ) ) {
+			$node['width'] = (int) $src[1];
+		}
+		if ( ! empty( $src[2] ) ) {
+			$node['height'] = (int) $src[2];
 		}
 
 		return $node;

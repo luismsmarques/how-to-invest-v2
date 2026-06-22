@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.20';
+const VERSION = '0.8.21';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -37,6 +37,7 @@ if ( is_readable( HTI_ENGINE_PATH . 'vendor/autoload.php' ) ) {
 require_once HTI_ENGINE_PATH . 'includes/class-cpt.php';
 require_once HTI_ENGINE_PATH . 'includes/class-taxonomy.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seo.php';
+require_once HTI_ENGINE_PATH . 'includes/class-news-sitemap.php';
 require_once HTI_ENGINE_PATH . 'includes/class-redirects.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seeder.php';
 require_once HTI_ENGINE_PATH . 'includes/class-config.php';
@@ -132,6 +133,11 @@ add_action(
  * Wire up SEO structured data (JSON-LD) for the public content types.
  */
 SEO::init();
+
+/**
+ * Google News XML sitemap at /news-sitemap.xml (last 48h, per-post language).
+ */
+News_Sitemap::init();
 
 /**
  * 301 redirects from the legacy Base44 URLs.
