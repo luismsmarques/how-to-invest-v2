@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.25';
+const VERSION = '0.8.26';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -245,6 +245,7 @@ function strings(): array {
 		'nav_glossary'     => array( 'en' => 'Glossary', 'pt' => 'Glossário' ),
 		'nav_news'         => array( 'en' => 'News', 'pt' => 'Notícias' ),
 		'foot_about'       => array( 'en' => 'About', 'pt' => 'Sobre' ),
+		'nav_feedback'     => array( 'en' => 'Feedback', 'pt' => 'Feedback' ),
 		'foot_privacy'     => array( 'en' => 'Privacy', 'pt' => 'Privacidade' ),
 		'foot_terms'       => array( 'en' => 'Terms', 'pt' => 'Termos' ),
 		'foot_contact'     => array( 'en' => 'Contact', 'pt' => 'Contacto' ),
@@ -531,6 +532,7 @@ function render_drawer(): string {
 		'compare' => '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
 		'search'  => '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>',
 		'about'   => '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
+		'feedbk'  => '<path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z"/>',
 		'account' => '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/>',
 		'privacy' => '<path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6z"/>',
 	);
@@ -551,9 +553,14 @@ function render_drawer(): string {
 	$more = array(
 		array( search_url(), t( 'search_label' ), 'search' ),
 		array( page_url( 'about' ), t( 'foot_about' ), 'about' ),
-		array( account_url(), t( 'nav_account' ), 'account' ),
-		array( page_url( 'privacy-policy' ), t( 'menu_privacy_terms' ), 'privacy' ),
 	);
+	// Feedback survey — only when the plugin's feedback page exists.
+	$feedback_url = class_exists( '\\HTI\\Engine\\Feedback' ) ? \HTI\Engine\Feedback::page_url() : '';
+	if ( '' !== $feedback_url ) {
+		$more[] = array( $feedback_url, t( 'nav_feedback' ), 'feedbk' );
+	}
+	$more[] = array( account_url(), t( 'nav_account' ), 'account' );
+	$more[] = array( page_url( 'privacy-policy' ), t( 'menu_privacy_terms' ), 'privacy' );
 
 	$svg = static function ( string $path ): string {
 		return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';

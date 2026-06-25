@@ -305,7 +305,8 @@ label.hti-fb__legend {
 	.hti-fb-fab { transition: none; }
 }
 
-@media (max-width: 480px) {
-	.hti-fb-fab__label { display: none; }
-	.hti-fb-fab { padding: 14px; }
+/* On mobile the bottom tab bar owns the lower-right corner, and feedback is
+   reachable from the drawer menu — so hide the floating button there. */
+@media (max-width: 782px) {
+	.hti-fb-fab { display: none; }
 }
