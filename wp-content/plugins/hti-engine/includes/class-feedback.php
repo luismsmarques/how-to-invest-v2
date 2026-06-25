@@ -662,6 +662,163 @@ class Feedback {
 	}
 
 	/**
+	 * Per-month trend: responses, NPS and average satisfaction.
+	 *
+	 * Months with no responses between the first and last are filled with zeros
+	 * so the timeline reads continuously. Capped to the last 12 months.
+	 *
+	 * @return array<int,array{ym:string,count:int,nps:?int,sat:float}>
+	 */
+	public static function trend(): array {
+		global $wpdb;
+		$table = self::table();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		$raw = (array) $wpdb->get_results(
+			"SELECT DATE_FORMAT(created_at, '%Y-%m') ym,
+				COUNT(*) c,
+				SUM(CASE WHEN nps >= 9 THEN 1 ELSE 0 END) pro,
+				SUM(CASE WHEN nps BETWEEN 0 AND 6 THEN 1 ELSE 0 END) det,
+				SUM(CASE WHEN nps >= 0 THEN 1 ELSE 0 END) nq,
+				AVG(satisfaction) sat
+			FROM {$table}
+			GROUP BY ym
+			ORDER BY ym ASC",
+			ARRAY_A
+		);
+		if ( empty( $raw ) ) {
+			return array();
+		}
+
+		$by_ym = array();
+		foreach ( $raw as $r ) {
+			$nq            = (int) $r['nq'];
+			$by_ym[ $r['ym'] ] = array(
+				'ym'    => (string) $r['ym'],
+				'count' => (int) $r['c'],
+				'nps'   => $nq > 0 ? (int) round( ( (int) $r['pro'] - (int) $r['det'] ) / $nq * 100 ) : null,
+				'sat'   => round( (float) $r['sat'], 1 ),
+			);
+		}
+
+		// Fill the gap months so the x-axis is continuous.
+		$first  = array_key_first( $by_ym );
+		$last   = array_key_last( $by_ym );
+		$cursor = \DateTimeImmutable::createFromFormat( 'Y-m-d', $first . '-01' );
+		$end    = \DateTimeImmutable::createFromFormat( 'Y-m-d', $last . '-01' );
+		$series = array();
+		while ( $cursor && $end && $cursor <= $end ) {
+			$ym       = $cursor->format( 'Y-m' );
+			$series[] = $by_ym[ $ym ] ?? array(
+				'ym'    => $ym,
+				'count' => 0,
+				'nps'   => null,
+				'sat'   => 0.0,
+			);
+			$cursor = $cursor->modify( '+1 month' );
+		}
+
+		return array_slice( $series, -12 );
+	}
+
+	/**
+	 * Build an inline SVG mini-chart: response bars + an NPS line overlay.
+	 *
+	 * @param array<int,array{ym:string,count:int,nps:?int,sat:float}> $series Trend.
+	 * @return string SVG markup (already safe; integers/known strings only).
+	 */
+	private static function trend_svg( array $series ): string {
+		$w   = 640;
+		$h   = 180;
+		$pad = 28;
+		$n   = count( $series );
+		if ( $n < 1 ) {
+			return '';
+		}
+
+		$max_c = 1;
+		foreach ( $series as $p ) {
+			$max_c = max( $max_c, (int) $p['count'] );
+		}
+
+		$inner_w = $w - $pad * 2;
+		$inner_h = $h - $pad * 2;
+		$step    = $n > 1 ? $inner_w / ( $n - 1 ) : 0;
+		$slot    = $inner_w / max( 1, $n );
+		$bar_w   = max( 6, (int) ( $slot * 0.5 ) );
+
+		// X position of the i-th point (centered in its slot).
+		$x = static fn( int $i ): float => $pad + ( $n > 1 ? $i * $step : $inner_w / 2 );
+
+		// Response bars (scaled to max count).
+		$bars = '';
+		foreach ( $series as $i => $p ) {
+			$bh = $max_c > 0 ? ( (int) $p['count'] / $max_c ) * $inner_h : 0;
+			$bx = $x( $i ) - $bar_w / 2;
+			$by = $h - $pad - $bh;
+			$bars .= sprintf(
+				'<rect x="%.1f" y="%.1f" width="%d" height="%.1f" rx="3" fill="#d8d4ec"></rect>',
+				$bx,
+				$by,
+				$bar_w,
+				max( 0, $bh )
+			);
+		}
+
+		// NPS line (-100..100 mapped to the same band); skip null months.
+		$pts  = array();
+		foreach ( $series as $i => $p ) {
+			if ( null === $p['nps'] ) {
+				continue;
+			}
+			$ny    = $h - $pad - ( ( (int) $p['nps'] + 100 ) / 200 ) * $inner_h;
+			$pts[] = array( $x( $i ), $ny, (int) $p['nps'] );
+		}
+		$line = '';
+		$dots = '';
+		if ( count( $pts ) > 0 ) {
+			$d = '';
+			foreach ( $pts as $k => $pt ) {
+				$d   .= ( 0 === $k ? 'M' : 'L' ) . sprintf( '%.1f %.1f ', $pt[0], $pt[1] );
+				$dots .= sprintf( '<circle cx="%.1f" cy="%.1f" r="3.5" fill="#e8552b"></circle>', $pt[0], $pt[1] );
+			}
+			$line = sprintf( '<path d="%s" fill="none" stroke="#e8552b" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>', trim( $d ) );
+		}
+
+		// Zero line for NPS (y where nps=0).
+		$zero_y    = $h - $pad - ( 100 / 200 ) * $inner_h;
+		$baseline  = sprintf( '<line x1="%d" y1="%.1f" x2="%d" y2="%.1f" stroke="#eee" stroke-width="1" stroke-dasharray="3 3"></line>', $pad, $zero_y, $w - $pad, $zero_y );
+
+		// Month labels (show ~6 max to avoid crowding).
+		$labels   = '';
+		$every    = (int) ceil( $n / 6 );
+		foreach ( $series as $i => $p ) {
+			if ( 0 !== $i % $every && $i !== $n - 1 ) {
+				continue;
+			}
+			$labels .= sprintf(
+				'<text x="%.1f" y="%d" text-anchor="middle" font-size="10" fill="#8a85a0">%s</text>',
+				$x( $i ),
+				$h - 8,
+				esc_html( substr( (string) $p['ym'], 2 ) ) // 'YY-MM'.
+			);
+		}
+
+		return sprintf(
+			'<svg viewBox="0 0 %d %d" width="100%%" height="%d" role="img" preserveAspectRatio="xMidYMid meet" style="max-width:%dpx">%s%s%s%s%s</svg>',
+			$w,
+			$h,
+			$h,
+			$w,
+			$baseline,
+			$bars,
+			$line,
+			$dots,
+			$labels
+		);
+	}
+
+	/**
 	 * The most recent responses.
 	 *
 	 * @param int $limit Row cap.
@@ -681,8 +838,9 @@ class Feedback {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		$a    = self::aggregates();
-		$rows = self::recent( 50 );
+		$a      = self::aggregates();
+		$series = self::trend();
+		$rows   = self::recent( 50 );
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'HTI Feedback', 'hti-engine' ); ?></h1>
@@ -695,6 +853,20 @@ class Feedback {
 					<tr><td><?php esc_html_e( 'NPS score', 'hti-engine' ); ?></td><td><?php echo esc_html( (string) $a['nps'] ); ?></td></tr>
 				</tbody>
 			</table>
+
+			<?php if ( count( $series ) >= 2 ) : ?>
+				<h2 style="margin-top:24px"><?php esc_html_e( 'Trend (last 12 months)', 'hti-engine' ); ?></h2>
+				<div style="max-width:660px;padding:16px 20px;background:#fff;border:1px solid #e2e0ec;border-radius:10px">
+					<p style="margin:0 0 8px;font-size:12px;color:#646970">
+						<span style="display:inline-block;width:10px;height:10px;background:#d8d4ec;border-radius:2px;vertical-align:middle"></span>
+						<?php esc_html_e( 'Responses', 'hti-engine' ); ?>
+						&nbsp;&nbsp;
+						<span style="display:inline-block;width:14px;height:3px;background:#e8552b;vertical-align:middle"></span>
+						<?php esc_html_e( 'NPS (−100 to 100)', 'hti-engine' ); ?>
+					</p>
+					<?php echo self::trend_svg( $series ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- SVG built from integers + escaped labels. ?>
+				</div>
+			<?php endif; ?>
 
 			<p style="margin-top:16px">
 				<a class="button button-primary" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=hti_feedback_export' ), 'hti_feedback_export' ) ); ?>">
