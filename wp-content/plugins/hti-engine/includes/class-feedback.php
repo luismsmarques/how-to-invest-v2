@@ -50,6 +50,24 @@ class Feedback {
 		add_action( 'plugins_loaded', array( __CLASS__, 'maybe_install' ) );
 		// Forget the cached feedback-page lookup when any page is saved.
 		add_action( 'save_post_page', array( __CLASS__, 'forget_page' ) );
+		// Site-wide floating feedback widget.
+		add_action( 'wp_footer', array( __CLASS__, 'render_widget' ) );
+	}
+
+	/**
+	 * Whether the floating widget should render on the current view.
+	 *
+	 * On by default for front-end views; never on the dedicated feedback page
+	 * (the full survey is already there) nor in the admin. Filterable.
+	 */
+	public static function widget_enabled(): bool {
+		$show = ! is_admin() && ! self::is_feedback_page();
+		/**
+		 * Filter whether the floating feedback widget shows on this request.
+		 *
+		 * @param bool $show Default visibility.
+		 */
+		return (bool) apply_filters( 'hti_feedback_widget', $show );
 	}
 
 	/**
@@ -214,10 +232,11 @@ class Feedback {
 	}
 
 	/**
-	 * Enqueue the survey script/styles only on the feedback page.
+	 * Enqueue the survey script/styles on the feedback page or wherever the
+	 * floating widget renders.
 	 */
 	public static function enqueue(): void {
-		if ( ! self::is_feedback_page() ) {
+		if ( ! self::is_feedback_page() && ! self::widget_enabled() ) {
 			return;
 		}
 		$pt = 'pt' === self::locale();
@@ -262,6 +281,8 @@ class Feedback {
 				'error'   => 'Não foi possível enviar. Tenta novamente daqui a pouco.',
 				'rate'    => 'Demasiadas tentativas. Aguarda um momento e tenta novamente.',
 				'star'    => '%d de 5 estrelas',
+				'open'    => 'Abrir feedback',
+				'close'   => 'Fechar',
 			);
 		}
 		return array(
@@ -271,7 +292,36 @@ class Feedback {
 			'error'   => 'We couldn’t send your feedback. Please try again shortly.',
 			'rate'    => 'Too many attempts. Please wait a moment and try again.',
 			'star'    => '%d of 5 stars',
+			'open'    => 'Open feedback',
+			'close'   => 'Close',
 		);
+	}
+
+	/**
+	 * Render the floating feedback button + slide-in panel in the footer.
+	 */
+	public static function render_widget(): void {
+		if ( ! self::widget_enabled() ) {
+			return;
+		}
+		$pt    = 'pt' === self::locale();
+		$fab   = $pt ? 'Feedback' : 'Feedback';
+		$close = $pt ? 'Fechar' : 'Close';
+		?>
+		<div class="hti-fb-widget" id="hti-fb-widget" data-state="closed">
+			<button type="button" class="hti-fb-fab" id="hti-fb-fab" aria-haspopup="dialog" aria-expanded="false" aria-controls="hti-fb-panel">
+				<span class="hti-fb-fab__icon" aria-hidden="true">💬</span>
+				<span class="hti-fb-fab__label"><?php echo esc_html( $fab ); ?></span>
+			</button>
+			<div class="hti-fb-overlay" id="hti-fb-overlay" hidden></div>
+			<div class="hti-fb-panel" id="hti-fb-panel" role="dialog" aria-modal="true" aria-label="<?php echo esc_attr( $fab ); ?>" hidden>
+				<button type="button" class="hti-fb-panel__close" id="hti-fb-close" aria-label="<?php echo esc_attr( $close ); ?>">&times;</button>
+				<div class="hti-fb-panel__body">
+					<?php echo self::render(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render() returns escaped markup. ?>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 
 	/**

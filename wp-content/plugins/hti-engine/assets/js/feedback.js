@@ -16,6 +16,49 @@
 
 	var S = cfg.strings || {};
 
+	function track( name, params ) {
+		if ( window.HTITrack ) { window.HTITrack.event( name, params || {} ); }
+	}
+
+	/* ---------- floating widget open/close ---------- */
+	var widget = document.getElementById( 'hti-fb-widget' );
+	if ( widget ) {
+		var fab = document.getElementById( 'hti-fb-fab' );
+		var panel = document.getElementById( 'hti-fb-panel' );
+		var overlay = document.getElementById( 'hti-fb-overlay' );
+		var closeBtn = document.getElementById( 'hti-fb-close' );
+		var lastFocus = null;
+
+		var open = function () {
+			lastFocus = document.activeElement;
+			panel.hidden = false;
+			overlay.hidden = false;
+			// Allow the unhidden elements to paint before transitioning in.
+			window.requestAnimationFrame( function () {
+				widget.setAttribute( 'data-state', 'open' );
+			} );
+			fab.setAttribute( 'aria-expanded', 'true' );
+			if ( closeBtn ) { closeBtn.focus(); }
+			track( 'feedback_widget_open', {} );
+		};
+		var close = function () {
+			widget.setAttribute( 'data-state', 'closed' );
+			fab.setAttribute( 'aria-expanded', 'false' );
+			window.setTimeout( function () {
+				panel.hidden = true;
+				overlay.hidden = true;
+			}, 280 );
+			if ( lastFocus && lastFocus.focus ) { lastFocus.focus(); }
+		};
+
+		fab.addEventListener( 'click', open );
+		if ( closeBtn ) { closeBtn.addEventListener( 'click', close ); }
+		if ( overlay ) { overlay.addEventListener( 'click', close ); }
+		document.addEventListener( 'keydown', function ( e ) {
+			if ( e.key === 'Escape' && widget.getAttribute( 'data-state' ) === 'open' ) { close(); }
+		} );
+	}
+
 	/* ---------- star rating ---------- */
 	var starGroups = form.querySelectorAll( '.hti-fb-stars' );
 	Array.prototype.forEach.call( starGroups, function ( group ) {
@@ -125,6 +168,7 @@
 		} ).then( function () {
 			form.classList.add( 'is-done' );
 			setStatus( S.sent, 'ok' );
+			track( 'feedback_submitted', { nps: payload.nps, satisfaction: payload.satisfaction } );
 		} ).catch( function ( err ) {
 			if ( submit ) { submit.disabled = false; }
 			setStatus( err && err.message === 'rate' ? S.rate : S.error, 'error' );

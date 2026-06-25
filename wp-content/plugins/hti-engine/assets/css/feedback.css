@@ -221,3 +221,91 @@ label.hti-fb__legend {
 	clip: rect(0, 0, 0, 0);
 	border: 0;
 }
+
+/* ============ Floating widget ============ */
+.hti-fb-fab {
+	position: fixed;
+	right: 22px;
+	bottom: 22px;
+	z-index: 9998;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 13px 20px;
+	border: 0;
+	border-radius: 999px;
+	background: #e8552b;
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.95rem;
+	cursor: pointer;
+	box-shadow: 0 8px 24px rgba(232, 85, 43, 0.35);
+	transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.hti-fb-fab:hover { background: #d8461d; transform: translateY(-2px); }
+.hti-fb-fab__icon { font-size: 1.1rem; line-height: 1; }
+.hti-fb-widget[data-state="open"] .hti-fb-fab { display: none; }
+
+.hti-fb-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9998;
+	background: rgba(20, 18, 40, 0.45);
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+.hti-fb-widget[data-state="open"] .hti-fb-overlay { opacity: 1; }
+
+.hti-fb-panel {
+	position: fixed;
+	top: 0;
+	right: 0;
+	z-index: 9999;
+	width: min(420px, 100vw);
+	height: 100%;
+	background: #fff;
+	box-shadow: -12px 0 40px rgba(30, 33, 71, 0.2);
+	overflow-y: auto;
+	transform: translateX(100%);
+	transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hti-fb-widget[data-state="open"] .hti-fb-panel { transform: translateX(0); }
+
+.hti-fb-panel__close {
+	position: absolute;
+	top: 12px;
+	right: 14px;
+	z-index: 1;
+	width: 38px;
+	height: 38px;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(30, 33, 71, 0.06);
+	color: #1e2147;
+	font-size: 1.5rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+.hti-fb-panel__close:hover { background: rgba(30, 33, 71, 0.12); }
+
+/* The survey inside the panel: drop its own chrome (panel provides it). */
+.hti-fb-panel .hti-fb {
+	max-width: none;
+	margin: 0;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	padding: 48px 24px 32px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.hti-fb-panel,
+	.hti-fb-overlay,
+	.hti-fb-fab { transition: none; }
+}
+
+@media (max-width: 480px) {
+	.hti-fb-fab__label { display: none; }
+	.hti-fb-fab { padding: 14px; }
+}
