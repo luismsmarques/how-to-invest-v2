@@ -37,6 +37,7 @@ class RateLimit {
 				'register'  => array( 5, 3600 ),
 				'login'     => array( 10, 900 ),
 				'contact'   => array( 5, 3600 ),
+				'feedback'  => array( 5, 3600 ),
 				'email_result' => array( 10, 3600 ),
 				'subscribe' => array( 5, 3600 ),
 				'change_email' => array( 5, 3600 ),

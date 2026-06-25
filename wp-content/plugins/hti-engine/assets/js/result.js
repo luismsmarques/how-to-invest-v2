@@ -165,6 +165,14 @@
 			safety: trap ? 1 : 0
 		} );
 
+		// Remember the archetype (non-PII) so a later feedback submission can be
+		// attributed to a profile, without retaining any personal data.
+		try {
+			if ( res.archetype && res.archetype.id ) {
+				window.localStorage.setItem( 'hti_last_archetype', String( res.archetype.id ) );
+			}
+		} catch ( e ) {}
+
 		// Heading. Eyebrow + bare archetype name + short illustrative subtitle.
 		if ( trap && exp.safety_message ) {
 			root.appendChild( el( 'p', { class: 'hti-result-pretitle' }, ui.before_portfolios ) );

@@ -1,0 +1,223 @@
+/**
+ * Feedback survey ([hti_feedback]). Light, self-contained, no framework.
+ * Uses the theme's CSS custom properties when present, with safe fallbacks.
+ */
+
+.hti-fb {
+	max-width: 640px;
+	margin: 0 auto;
+	padding: clamp(20px, 4vw, 36px);
+	background: var(--wp--preset--color--base, #fff);
+	border: 1px solid rgba(30, 33, 71, 0.08);
+	border-radius: 18px;
+	box-shadow: 0 10px 40px rgba(30, 33, 71, 0.06);
+}
+
+.hti-fb__head {
+	text-align: center;
+	margin-bottom: 28px;
+}
+
+.hti-fb__title {
+	margin: 0 0 8px;
+	font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+	font-weight: 800;
+	color: var(--wp--preset--color--contrast, #1e2147);
+}
+
+.hti-fb__intro {
+	margin: 0;
+	color: #6a6480;
+	font-size: 0.97rem;
+}
+
+/* Question block */
+.hti-fb__q {
+	border: 0;
+	padding: 22px 0;
+	margin: 0;
+	border-top: 1px solid rgba(30, 33, 71, 0.08);
+}
+.hti-fb__q:first-of-type { border-top: 0; }
+
+.hti-fb__legend,
+label.hti-fb__legend {
+	display: block;
+	padding: 0;
+	margin: 0 0 14px;
+	font-weight: 700;
+	font-size: 1.02rem;
+	color: var(--wp--preset--color--contrast, #1e2147);
+	line-height: 1.4;
+}
+
+.hti-fb__req { color: #e8552b; }
+.hti-fb__opt-tag {
+	font-weight: 500;
+	font-size: 0.82rem;
+	color: #9a93a8;
+}
+
+/* Radio rows */
+.hti-fb__opts { display: flex; flex-direction: column; gap: 8px; }
+
+.hti-fb-opt {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 14px;
+	border: 1px solid rgba(30, 33, 71, 0.14);
+	border-radius: 10px;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+.hti-fb-opt:hover { border-color: #e8552b; }
+.hti-fb-opt input { accent-color: #e8552b; width: 18px; height: 18px; flex: none; }
+.hti-fb-opt:has(input:checked) {
+	border-color: #e8552b;
+	background: rgba(232, 85, 43, 0.05);
+}
+.hti-fb-opt__txt { font-size: 0.95rem; color: #2b2840; }
+
+/* Star rating */
+.hti-fb-stars { display: inline-flex; gap: 6px; }
+.hti-fb-star { position: relative; cursor: pointer; line-height: 1; }
+.hti-fb-star input {
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+}
+.hti-fb-star__glyph {
+	font-size: 2rem;
+	color: #d8d4e0;
+	transition: color 0.12s, transform 0.12s;
+}
+.hti-fb-star:hover .hti-fb-star__glyph { transform: scale(1.12); }
+.hti-fb-star.is-filled .hti-fb-star__glyph { color: #f5a623; }
+.hti-fb-star input:focus-visible + .hti-fb-star__glyph {
+	outline: 2px solid #e8552b;
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+/* NPS 0-10 */
+.hti-fb-nps { display: flex; flex-wrap: wrap; gap: 6px; }
+.hti-fb-nps__btn { cursor: pointer; }
+.hti-fb-nps__btn input {
+	position: absolute;
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+}
+.hti-fb-nps__num {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border: 1px solid rgba(30, 33, 71, 0.16);
+	border-radius: 9px;
+	font-weight: 700;
+	font-size: 0.95rem;
+	color: #2b2840;
+	transition: all 0.12s;
+}
+.hti-fb-nps__btn:hover .hti-fb-nps__num { border-color: #e8552b; }
+.hti-fb-nps__btn.is-selected .hti-fb-nps__num {
+	background: #e8552b;
+	border-color: #e8552b;
+	color: #fff;
+}
+.hti-fb-nps__btn input:focus-visible + .hti-fb-nps__num {
+	outline: 2px solid #e8552b;
+	outline-offset: 2px;
+}
+
+/* Textareas */
+.hti-fb__textarea {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 12px 14px;
+	border: 1px solid rgba(30, 33, 71, 0.16);
+	border-radius: 10px;
+	font: inherit;
+	font-size: 0.95rem;
+	resize: vertical;
+	background: #fbfafd;
+}
+.hti-fb__textarea:focus {
+	outline: none;
+	border-color: #e8552b;
+	background: #fff;
+}
+
+/* Honeypot */
+.hti-fb__trap {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+/* Actions */
+.hti-fb__actions { text-align: center; margin-top: 28px; }
+.hti-fb__submit {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 14px 36px;
+	border: 0;
+	border-radius: 11px;
+	background: #e8552b;
+	color: #fff;
+	font-weight: 700;
+	font-size: 1rem;
+	cursor: pointer;
+	transition: background 0.15s, transform 0.1s;
+}
+.hti-fb__submit:hover { background: #d8461d; }
+.hti-fb__submit:active { transform: translateY(1px); }
+.hti-fb__submit:disabled { opacity: 0.6; cursor: default; }
+
+.hti-fb__status {
+	text-align: center;
+	margin: 14px 0 0;
+	font-weight: 600;
+	min-height: 1.2em;
+}
+.hti-fb__status.is-error { color: #c0392b; }
+.hti-fb__status.is-ok { color: #147a57; }
+
+.hti-fb__privacy {
+	text-align: center;
+	margin: 18px 0 0;
+	font-size: 0.82rem;
+	color: #9a93a8;
+}
+
+/* Success state: collapse the form, show a thank-you */
+.hti-fb.is-done .hti-fb__q,
+.hti-fb.is-done .hti-fb__actions,
+.hti-fb.is-done .hti-fb__privacy { display: none; }
+.hti-fb.is-done .hti-fb__head { margin-bottom: 0; }
+
+.hti-fb__noscript {
+	max-width: 640px;
+	margin: 16px auto;
+	padding: 14px;
+	text-align: center;
+	color: #c0392b;
+}
+
+.screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	border: 0;
+}
