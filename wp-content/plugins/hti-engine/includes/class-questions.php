@@ -231,6 +231,8 @@ class Questions {
 			'read_more'         => array( 'en' => 'Learn more', 'pt' => 'Aprender mais' ),
 			'retake'            => array( 'en' => 'Retake', 'pt' => 'Refazer' ),
 			'start_over_note'   => array( 'en' => 'Retaking starts fresh and keeps nothing.', 'pt' => 'Refazer recomeça do zero e não guarda nada.' ),
+			'feedback_intro'    => array( 'en' => 'Was this helpful? Your feedback shapes what we build next.', 'pt' => 'Isto foi útil? O teu feedback ajuda a decidir o que construímos a seguir.' ),
+			'feedback_cta'      => array( 'en' => 'Share your feedback', 'pt' => 'Dar o teu feedback' ),
 		);
 		return array_map( static fn( array $pair ): string => $pair[ $l ] ?? $pair['en'], $s );
 	}

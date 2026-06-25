@@ -285,6 +285,19 @@
 			window.HTIAccount.mountSave( save, res.session_token );
 		}
 
+		// Feedback invite — only when a feedback page exists.
+		var feedbackUrl = window.HTI_DATA && window.HTI_DATA.feedbackUrl;
+		if ( feedbackUrl && ui.feedback_cta ) {
+			var invite = el( 'div', { class: 'hti-feedback-invite' } );
+			invite.appendChild( el( 'p', { class: 'hti-feedback-invite__txt' }, ui.feedback_intro || '' ) );
+			var fbLink = el( 'a', { class: 'hti-btn hti-btn-ghost', href: feedbackUrl }, ui.feedback_cta );
+			fbLink.addEventListener( 'click', function () {
+				track( 'feedback_invite_click', { archetype: res.archetype && res.archetype.id } );
+			} );
+			invite.appendChild( fbLink );
+			root.appendChild( invite );
+		}
+
 		mount.appendChild( root );
 		root.setAttribute( 'tabindex', '-1' );
 		root.focus();

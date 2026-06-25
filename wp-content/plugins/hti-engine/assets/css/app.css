@@ -462,6 +462,21 @@
 	border-radius: 12px;
 }
 
+/* --- Feedback invite (end of result) --- */
+.hti-feedback-invite {
+	margin-top: 1.5rem;
+	padding: 1.25rem;
+	text-align: center;
+	background: var( --hti-soft-surface, #f7f5fc );
+	border: 1px solid rgba( 30, 33, 71, 0.08 );
+	border-radius: 14px;
+}
+.hti-feedback-invite__txt {
+	margin: 0 0 0.75rem;
+	font-size: 0.95rem;
+	color: var( --hti-muted, #6a6480 );
+}
+
 /* --- Email my result (inline form on the result page) --- */
 .hti-email-result {
 	display: flex;

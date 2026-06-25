@@ -114,6 +114,7 @@ class Frontend {
 					'nonce'     => wp_create_nonce( 'wp_rest' ),
 					'locale'    => $locale,
 					'data'      => Questions::payload( $locale ),
+					'feedbackUrl' => Feedback::page_url(),
 					'pdf'       => array(
 						'url'   => esc_url_raw( admin_url( 'admin-post.php' ) ),
 						'nonce' => wp_create_nonce( 'hti_pdf' ),

@@ -48,6 +48,62 @@ class Feedback {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_post_hti_feedback_export', array( __CLASS__, 'handle_export' ) );
 		add_action( 'plugins_loaded', array( __CLASS__, 'maybe_install' ) );
+		// Forget the cached feedback-page lookup when any page is saved.
+		add_action( 'save_post_page', array( __CLASS__, 'forget_page' ) );
+	}
+
+	/**
+	 * URL of the page containing the [hti_feedback] shortcode, in the current
+	 * language. Auto-detected (cached) and overridable via the `hti_feedback_url`
+	 * filter. Empty string when no such page exists yet.
+	 */
+	public static function page_url(): string {
+		$id = get_transient( 'hti_feedback_page_id' );
+		if ( false === $id ) {
+			$id    = 0;
+			$pages = get_posts(
+				array(
+					'post_type'   => 'page',
+					'post_status' => 'publish',
+					'numberposts' => 100,
+					'fields'      => 'ids',
+				)
+			);
+			foreach ( $pages as $pid ) {
+				if ( has_shortcode( (string) get_post_field( 'post_content', $pid ), self::SHORTCODE ) ) {
+					$id = (int) $pid;
+					break;
+				}
+			}
+			set_transient( 'hti_feedback_page_id', $id, DAY_IN_SECONDS );
+		}
+
+		$url = '';
+		if ( $id ) {
+			// Resolve the translation for the current language when Polylang is on.
+			if ( function_exists( 'pll_get_post' ) && function_exists( 'pll_current_language' ) ) {
+				$cur = (string) pll_current_language( 'slug' );
+				$tr  = $cur ? (int) pll_get_post( $id, $cur ) : 0;
+				if ( $tr ) {
+					$id = $tr;
+				}
+			}
+			$url = (string) get_permalink( $id );
+		}
+
+		/**
+		 * Filter the feedback page URL used by the result-page invite.
+		 *
+		 * @param string $url Resolved URL (may be empty).
+		 */
+		return (string) apply_filters( 'hti_feedback_url', $url );
+	}
+
+	/**
+	 * Invalidate the cached feedback-page lookup.
+	 */
+	public static function forget_page(): void {
+		delete_transient( 'hti_feedback_page_id' );
 	}
 
 	/* ---------- storage ---------- */
