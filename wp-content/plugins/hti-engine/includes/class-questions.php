@@ -203,6 +203,7 @@ class Questions {
 			'why_we_ask'        => array( 'en' => 'Why we ask', 'pt' => 'Porque perguntamos' ),
 			'previous'          => array( 'en' => '← Previous', 'pt' => '← Anterior' ),
 			'next'              => array( 'en' => 'Continue →', 'pt' => 'Continuar →' ),
+			'exit'              => array( 'en' => 'Exit ✕', 'pt' => 'Sair ✕' ),
 			'see_result'        => array( 'en' => 'See my profile', 'pt' => 'Ver o meu perfil' ),
 			'choose_one'        => array( 'en' => 'Please choose an option to continue.', 'pt' => 'Escolhe uma opção para continuar.' ),
 			'short_disclaimer'  => array( 'en' => 'Educational tool · not financial advice · examples by asset class only', 'pt' => 'Ferramenta educativa · não é aconselhamento · exemplos só por classe de ativos' ),

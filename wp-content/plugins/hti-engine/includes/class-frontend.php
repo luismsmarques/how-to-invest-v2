@@ -113,6 +113,7 @@ class Frontend {
 					'emailUrl'  => esc_url_raw( rest_url( 'htinvest/v1/email-result' ) ),
 					'nonce'     => wp_create_nonce( 'wp_rest' ),
 					'locale'    => $locale,
+					'homeUrl'   => esc_url( home_url( '/' ) ),
 					'data'      => Questions::payload( $locale ),
 					'feedbackUrl' => Feedback::page_url(),
 					'pdf'       => array(

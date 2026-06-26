@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.8.47
+Version: 0.8.48
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -491,22 +491,19 @@ a.hti-lang__item:hover {
    ( :where() layout rules are 0-specificity, so these class rules win. ) */
 .hti-page-account .wp-block-post-content,
 .hti-page-quiz .wp-block-post-content,
-.hti-page-tool .wp-block-post-content,
 .hti-page-account .wp-block-post-content > *,
 .hti-page-quiz .wp-block-post-content > *,
-.hti-page-tool .wp-block-post-content > *,
 .hti-page-account main,
-.hti-page-quiz main,
-.hti-page-tool main { max-width: none; }
+.hti-page-quiz main { max-width: none; }
 
-/* Full-screen questionnaire takeover (E5): no chrome, centred on screen.
-   questionnaire.js toggles .hti-quiz-active on <html> only while the quiz steps
-   show — the result (E7) keeps the header. */
+/* Full-screen questionnaire takeover (E5): the questionnaire renders its own
+   minimal top bar (logo + exit) and fixed footer, so the site chrome is hidden.
+   questionnaire.js toggles .hti-quiz-active on <html> only while the steps show
+   — the result (E7) keeps the header. */
 html.hti-quiz-active .hti-header,
 html.hti-quiz-active .hti-footer,
 html.hti-quiz-active .hti-mbar { display: none !important; }
 html.hti-quiz-active .hti-page-quiz main { margin-top: 0; margin-bottom: 0; }
-html.hti-quiz-active .hti-app { padding-top: clamp( 32px, 6vh, 72px ); padding-bottom: 64px; }
 
 /* ---------- Glossary hub (archive): search + topic + A–Z + grouped list ---------- */
 /* Count pill below the H1/sub: total terms. */

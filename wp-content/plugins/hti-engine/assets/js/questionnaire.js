@@ -68,17 +68,34 @@
 		} catch ( e ) {}
 	}
 
+	// Brand mark for the quiz top bar (mirrors the site header logo).
+	var QZ_LOGO = '<svg viewBox="0 0 64 64" width="100%" height="100%" fill="none" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#1E2147"/><circle cx="32" cy="32" r="29.3" stroke="#fff" stroke-opacity=".28" stroke-width=".8"/><path d="M32 12L50 17.5V32c0 10-7.5 16.6-18 20-10.5-3.4-18-10-18-20V17.5z" fill="#fff"/><g fill="#7C5CFC"><rect x="20.5" y="22" width="1" height="11"/><rect x="19.2" y="25.5" width="3.6" height="5" rx="1"/><rect x="25.6" y="20" width="1" height="12.5"/><rect x="24.3" y="23.5" width="3.6" height="5.5" rx="1"/><rect x="30.2" y="21.5" width="1" height="11"/><rect x="28.9" y="24.5" width="3.6" height="4.5" rx="1"/><rect x="35.6" y="18" width="1" height="12.5"/><rect x="34.3" y="21" width="3.6" height="5.8" rx="1"/><rect x="20.4" y="40" width="3.6" height="6" rx=".8"/><rect x="25.9" y="37.5" width="3.6" height="8.5" rx=".8"/><rect x="31.4" y="35" width="3.6" height="11" rx=".8"/><rect x="36.9" y="32.5" width="3.6" height="13.5" rx=".8"/></g></svg>';
+
 	function renderStep() {
 		stopProcessing();
 		setQuizFullscreen( true );
 		var q = questions[ step ];
 		mount.innerHTML = '';
 
-		var form = el( 'form', { class: 'hti-step', novalidate: 'novalidate' } );
-
-		// Progress.
-		var progress = el( 'div', { class: 'hti-progress' } );
+		var form = el( 'form', { class: 'hti-qz', novalidate: 'novalidate' } );
 		var pct = Math.round( ( ( step + 1 ) / total ) * 100 );
+		var nextLabel = step === total - 1 ? ui.see_result : ui.next;
+
+		// --- Top bar: brand + exit, then step label + progress. ---
+		var top = el( 'div', { class: 'hti-qz__top' } );
+		var topin = el( 'div', { class: 'hti-qz__topin' } );
+		var brand = el( 'div', { class: 'hti-qz__brand' } );
+		var logo = el( 'span', { class: 'hti-qz__logo', 'aria-hidden': 'true' } );
+		logo.innerHTML = QZ_LOGO;
+		brand.appendChild( logo );
+		brand.appendChild( el( 'span', { class: 'hti-qz__brandtext' }, 'HowToInvest' ) );
+		topin.appendChild( brand );
+		var exit = el( 'a', { class: 'hti-qz__exit', href: cfg.homeUrl || '/' }, ui.exit || 'Exit ✕' );
+		topin.appendChild( exit );
+		top.appendChild( topin );
+
+		var prog = el( 'div', { class: 'hti-qz__prog' } );
+		prog.appendChild( el( 'span', { class: 'hti-qz__steplabel' }, sprintf2( ui.step, step + 1, total ) ) );
 		var bar = el( 'div', {
 			class: 'hti-progress-bar',
 			role: 'progressbar',
@@ -88,35 +105,28 @@
 			'aria-label': sprintf2( ui.step, step + 1, total )
 		} );
 		bar.appendChild( el( 'span', { class: 'hti-progress-fill', style: 'width:' + pct + '%' } ) );
-		progress.appendChild( bar );
-		progress.appendChild( el( 'p', { class: 'hti-step-count' }, sprintf2( ui.step, step + 1, total ) ) );
-		form.appendChild( progress );
+		prog.appendChild( bar );
+		top.appendChild( prog );
+		form.appendChild( top );
 
-		// Question as a fieldset/legend.
+		// --- Body: question + why + options. ---
+		var body = el( 'div', { class: 'hti-qz__body' } );
 		var fieldset = el( 'fieldset', { class: 'hti-fieldset' } );
-		var legendId = 'hti-q-' + q.id;
-		var legend = el( 'legend', { class: 'hti-question', id: legendId }, q.label );
+		var legend = el( 'legend', { class: 'hti-question', id: 'hti-q-' + q.id }, q.label );
 		fieldset.appendChild( legend );
 
-		// "Why we ask" micro-explanation.
 		var info = el( 'div', { class: 'hti-info' } );
 		info.appendChild( el( 'span', { class: 'hti-info-label' }, 'ℹ ' + ui.why_we_ask ) );
 		info.appendChild( el( 'p', null, q.info ) );
 		fieldset.appendChild( info );
 
-		// Options.
 		var current = answers[ q.id ];
 		var unknownNote = el( 'p', { class: 'hti-unknown-note', hidden: 'hidden' } );
 
 		q.options.forEach( function ( opt, i ) {
 			var id = 'hti-' + q.id + '-' + i;
 			var wrap = el( 'label', { class: 'hti-option', for: id } );
-			var input = el( 'input', {
-				type: 'radio',
-				name: q.id,
-				id: id,
-				value: opt.value
-			} );
+			var input = el( 'input', { type: 'radio', name: q.id, id: id, value: opt.value } );
 			if ( String( current ) === String( opt.value ) ) {
 				input.checked = true;
 			}
@@ -125,6 +135,7 @@
 				save( 'hti_answers', answers );
 				clearError();
 				toggleUnknown( q, opt.value, unknownNote );
+				setNextEnabled( true );
 			} );
 			wrap.appendChild( input );
 			wrap.appendChild( el( 'span', { class: 'hti-option-label' }, opt.label ) );
@@ -135,28 +146,32 @@
 		if ( current != null ) {
 			toggleUnknown( q, current, unknownNote );
 		}
-		form.appendChild( fieldset );
+		body.appendChild( fieldset );
 
-		// Error slot.
 		var error = el( 'p', { class: 'hti-error', role: 'alert', hidden: 'hidden' }, ui.choose_one );
-		form.appendChild( error );
+		body.appendChild( error );
+		body.appendChild( el( 'p', { class: 'hti-microcopy' }, ui.short_disclaimer ) );
+		form.appendChild( body );
 
-		// Navigation.
-		var nav = el( 'div', { class: 'hti-nav' } );
+		// --- Fixed footer: previous + continue. ---
+		var footer = el( 'div', { class: 'hti-qz__footer' } );
+		var footin = el( 'div', { class: 'hti-qz__footin' } );
 		if ( step > 0 ) {
-			var prev = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost' }, ui.previous );
-			prev.addEventListener( 'click', function () {
-				go( step - 1 );
-			} );
-			nav.appendChild( prev );
+			var prev = el( 'button', { type: 'button', class: 'hti-qz__prev' }, ui.previous );
+			prev.addEventListener( 'click', function () { go( step - 1 ); } );
+			footin.appendChild( prev );
+		} else {
+			footin.classList.add( 'hti-qz__footin--end' );
 		}
-		var nextLabel = step === total - 1 ? ui.see_result : ui.next;
-		var next = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-primary' }, nextLabel );
-		nav.appendChild( next );
-		form.appendChild( nav );
+		var next = el( 'button', { type: 'submit', class: 'hti-qz__next' }, nextLabel );
+		footin.appendChild( next );
+		footer.appendChild( footin );
+		form.appendChild( footer );
 
-		// Short disclaimer.
-		form.appendChild( el( 'p', { class: 'hti-microcopy' }, ui.short_disclaimer ) );
+		function setNextEnabled( on ) {
+			if ( on ) { next.removeAttribute( 'disabled' ); } else { next.setAttribute( 'disabled', 'disabled' ); }
+		}
+		setNextEnabled( current != null );
 
 		form.addEventListener( 'submit', function ( e ) {
 			e.preventDefault();

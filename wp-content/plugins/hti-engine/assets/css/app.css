@@ -40,6 +40,31 @@
 	min-height: 0;
 }
 
+/* ---- Full-screen questionnaire chrome (E5): own top bar + fixed footer ---- */
+/* During the takeover the mount fills the screen; the inner sections centre. */
+html.hti-quiz-active #hti-app.hti-app { max-width: none; min-height: 0; margin: 0; padding: 0; }
+.hti-qz__top { position: sticky; top: 0; z-index: 10; background: var( --hti-cream, #FFF6F1 ); border-bottom: 1px solid var( --hti-border ); }
+.hti-qz__topin { max-width: 720px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.hti-qz__brand { display: flex; align-items: center; gap: 9px; }
+.hti-qz__logo { width: 27px; height: 27px; display: flex; flex: none; }
+.hti-qz__brandtext { font: 600 15px var( --hti-font-body ); color: var( --hti-text ); }
+.hti-qz__exit { display: inline-flex; align-items: center; gap: 7px; background: none; border: 1px solid #F0E2DC; border-radius: 8px; cursor: pointer; font: 500 14px var( --hti-font-body ); color: var( --hti-muted-light ); padding: 7px 14px; text-decoration: none; }
+.hti-qz__exit:hover { background: #fff; color: var( --hti-text ); }
+.hti-qz__prog { max-width: 720px; margin: 0 auto; padding: 0 24px 16px; }
+.hti-qz__steplabel { display: block; font: 600 13px var( --hti-font-body ); color: #FF6B5E; margin-bottom: 8px; }
+.hti-qz__prog .hti-progress-fill { background: #FF6B5E; }
+.hti-qz__body { max-width: 680px; margin: 0 auto; padding: clamp( 32px, 5vw, 56px ) 24px 140px; }
+.hti-qz__footer { position: fixed; bottom: 0; left: 0; right: 0; background: rgba( 244, 246, 249, 0.92 ); -webkit-backdrop-filter: blur( 10px ); backdrop-filter: blur( 10px ); border-top: 1px solid var( --hti-border ); z-index: 20; }
+.hti-qz__footin { max-width: 680px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.hti-qz__footin--end { justify-content: flex-end; }
+.hti-qz__prev { background: none; border: 1.5px solid #F0E2DC; border-radius: 10px; cursor: pointer; font: 600 15px var( --hti-font-body ); color: #5A5270; padding: 13px 22px; }
+.hti-qz__prev:hover { background: #fff; }
+.hti-qz__next { background: #FF6B5E; color: #fff; border: none; cursor: pointer; border-radius: 10px; padding: 14px 28px; font: 600 16px var( --hti-font-body ); box-shadow: 0 2px 8px rgba( 28, 76, 124, 0.22 ); }
+.hti-qz__next:hover { background: #FF5544; }
+.hti-qz__next[disabled] { background: #C9D4DF; cursor: not-allowed; box-shadow: none; }
+/* The body already pads for the fixed footer; drop the takeover top-padding. */
+html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
+
 .hti-app *:focus-visible {
 	outline: 2.5px solid var( --hti-primary );
 	outline-offset: 2px;

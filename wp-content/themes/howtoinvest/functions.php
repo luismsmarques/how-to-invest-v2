@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.47';
+const VERSION = '0.8.48';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -2216,9 +2216,8 @@ function tool_page_body_class( array $classes ): array {
 	if ( has_shortcode( $content, 'hti_questionnaire' ) ) {
 		$classes[] = 'hti-page-quiz';
 	}
-	if ( has_shortcode( $content, 'hti_depositos' ) ) {
-		$classes[] = 'hti-page-tool';
-	}
+	// The comparator manages its own full-bleed width, so it gets no width-lift
+	// class — only the page-title is hidden (via is_tool_page / the filter).
 	return $classes;
 }
 add_filter( 'body_class', __NAMESPACE__ . '\\tool_page_body_class' );

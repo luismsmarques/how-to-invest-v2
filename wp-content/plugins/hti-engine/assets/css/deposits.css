@@ -29,7 +29,7 @@
    that column on desktop and centre on the viewport. The `section.hti-dep`
    selector outranks the constrained-layout max-width rule so the cap lifts. */
 section.hti-dep {
-	width: min( 1100px, 100vw - 48px );
+	width: min( 1280px, 100vw - 48px );
 	max-width: none;
 	position: relative;
 	left: 50%;
