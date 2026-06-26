@@ -154,7 +154,114 @@ class Frontend {
 				'enabled' => Google::is_configured(),
 				'start'   => esc_url_raw( Google::start_url() ),
 			),
+			'learn'      => self::learn_dashboard( get_current_user_id(), $locale ),
+			'discover'   => self::discover_links(),
+			'archDesc'   => self::archetype_descriptions( $locale ),
+			'allocColors' => array(
+				'global_equity' => '#FF6B5E',
+				'bonds'         => '#7C5CFC',
+				'reits_alt'     => '#D69A1E',
+				'crypto'        => '#22C3A6',
+				'cash'          => '#B7AEC4',
+			),
+			'classLabels' => 'pt' === $locale
+				? array( 'global_equity' => 'Ações globais', 'bonds' => 'Obrigações', 'reits_alt' => 'REITs e alternativos', 'cash' => 'Liquidez', 'crypto' => 'Cripto' )
+				: array( 'global_equity' => 'Global equities', 'bonds' => 'Bonds', 'reits_alt' => 'REITs & alternatives', 'cash' => 'Cash', 'crypto' => 'Crypto' ),
 			'strings'    => self::account_strings( 'pt' === $locale ),
+		);
+	}
+
+	/**
+	 * Per-archetype short descriptions keyed by id (for the dashboard profile card).
+	 *
+	 * @return array<int,string>
+	 */
+	private static function archetype_descriptions( string $locale ): array {
+		$key = 'pt' === $locale ? 'pt' : 'en';
+		$out = array();
+		if ( class_exists( '\\HTI\\Engine\\Config' ) ) {
+			foreach ( Config::descriptions() as $id => $d ) {
+				$out[ (int) $id ] = (string) ( $d[ $key ] ?? ( $d['en'] ?? '' ) );
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Resolve the "Discover" cross-link URLs for the account hub.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function discover_links(): array {
+		$learn = get_post_type_archive_link( 'learn' );
+		return array(
+			'comparador' => esc_url( (string) apply_filters( 'hti_deposits_page_url', home_url( '/comparador-de-depositos/' ) ) ),
+			'glossary'   => esc_url( (string) ( get_post_type_archive_link( 'glossary' ) ?: home_url( '/investing-glossary/' ) ) ),
+			'news'       => esc_url( (string) ( get_post_type_archive_link( 'news' ) ?: home_url( '/financial-news/' ) ) ),
+			'ebook'      => esc_url( (string) ( $learn ?: home_url( '/learn/' ) ) ),
+			'learn'      => esc_url( (string) ( $learn ?: home_url( '/learn/' ) ) ),
+		);
+	}
+
+	/**
+	 * Compute the signed-in user's learning summary for the account hub:
+	 * chapters done/total, percent, per-module badge state, and the next chapter.
+	 *
+	 * @param int    $uid    User id.
+	 * @param string $locale Locale.
+	 * @return array<string,mixed>
+	 */
+	private static function learn_dashboard( int $uid, string $locale ): array {
+		if ( ! $uid || ! class_exists( '\\HTI\\Engine\\Content_Import' ) || ! class_exists( '\\HTI\\Engine\\Learn' ) ) {
+			return array( 'enabled' => false );
+		}
+		$lang = 'pt' === $locale ? 'pt' : 'en';
+		$cur  = Content_Import::curriculum( $lang );
+		if ( empty( $cur ) ) {
+			return array( 'enabled' => false );
+		}
+		$prog   = Learn::get( $uid );
+		$done   = array_flip( $prog['done'] );
+		$passed = array_flip( $prog['passed'] );
+
+		$total = 0;
+		$dn    = 0;
+		$next  = null;
+		$badges = array();
+		foreach ( $cur as $m ) {
+			$mtotal = 0;
+			$mmast  = 0;
+			foreach ( (array) $m['chapters'] as $c ) {
+				++$total;
+				++$mtotal;
+				$slug    = (string) $c['slug'];
+				$is_done = isset( $done[ $slug ] );
+				if ( $is_done ) {
+					++$dn;
+				}
+				if ( isset( $passed[ $slug ] ) || ( empty( $c['has_quiz'] ) && $is_done ) ) {
+					++$mmast;
+				}
+				if ( null === $next && ! empty( $c['published'] ) && ! $is_done ) {
+					$next = array( 'title' => (string) $c['title'], 'url' => (string) $c['url'] );
+				}
+			}
+			$badges[] = array(
+				'num'   => (string) $m['num'],
+				'title' => (string) $m['title'],
+				'state' => ( $mtotal > 0 && $mmast === $mtotal ) ? 'earned' : ( $mmast > 0 ? 'inprog' : 'locked' ),
+			);
+		}
+		$hub = get_post_type_archive_link( 'learn' ) ?: home_url( '/learn/' );
+		return array(
+			'enabled'   => true,
+			'done'      => $dn,
+			'total'     => $total,
+			'pct'       => $total ? (int) round( $dn / $total * 100 ) : 0,
+			'badges'    => $badges,
+			'nextTitle' => $next['title'] ?? '',
+			'nextUrl'   => esc_url( (string) ( $next['url'] ?? $hub ) ),
+			'hubUrl'    => esc_url( (string) $hub ),
 		);
 	}
 
@@ -256,6 +363,27 @@ class Frontend {
 				'acc_redo'         => '↻ Refazer questionário',
 				'acc_no_profile'   => 'Ainda não fizeste o questionário. Descobre o teu perfil em poucos minutos.',
 				'acc_discover'     => 'Descobrir o meu perfil →',
+				'acc_learn_eyebrow' => 'A tua aprendizagem',
+				'acc_discover_eyebrow' => 'Descobrir',
+				'acc_data_settings' => 'Os teus dados e definições',
+				'acc_learn_path'   => 'Do zero à tua primeira carteira',
+				'acc_chapters_done' => '%1$s de %2$s capítulos concluídos',
+				'acc_continue_learning' => 'Continuar a aprender →',
+				'acc_course'       => 'Curso',
+				'acc_by_class'     => 'por classe',
+				'acc_illustrative' => 'Exemplo ilustrativo por classes de ativos — educativo, não é aconselhamento.',
+				'acc_saved'        => 'Guardado',
+				'acc_noprofile_t'  => 'Ainda não fizeste o questionário',
+				'acc_noprofile_b'  => 'Em ~2 minutos descobres o teu perfil e um exemplo de carteira por classes de ativos.',
+				'acc_dc_comp_t'    => 'Comparador de Depósitos',
+				'acc_dc_comp_d'    => 'Compara taxas a prazo, sem letras pequenas.',
+				'acc_dc_gloss_t'   => 'Glossário',
+				'acc_dc_gloss_d'   => '~54 termos, em português simples.',
+				'acc_dc_news_t'    => 'Notícias',
+				'acc_dc_news_d'    => 'As finanças explicadas com calma.',
+				'acc_dc_ebook_t'   => 'Ebook grátis',
+				'acc_dc_ebook_d'   => 'As bases, num PDF para guardares.',
+				'acc_dc_open'      => 'Abrir →',
 			);
 		}
 		return array(
@@ -332,6 +460,27 @@ class Frontend {
 			'acc_redo'         => '↻ Retake quiz',
 			'acc_no_profile'   => 'You haven\'t taken the quiz yet. Discover your profile in minutes.',
 			'acc_discover'     => 'Discover my profile →',
+			'acc_learn_eyebrow' => 'Your learning',
+			'acc_discover_eyebrow' => 'Discover',
+			'acc_data_settings' => 'Your data & settings',
+			'acc_learn_path'   => 'From zero to your first portfolio',
+			'acc_chapters_done' => '%1$s of %2$s chapters completed',
+			'acc_continue_learning' => 'Continue learning →',
+			'acc_course'       => 'Course',
+			'acc_by_class'     => 'by class',
+			'acc_illustrative' => 'Illustrative example by asset class — educational, not advice.',
+			'acc_saved'        => 'Saved',
+			'acc_noprofile_t'  => 'You haven\'t taken the quiz yet',
+			'acc_noprofile_b'  => 'In ~2 minutes, discover your profile and an example portfolio by asset class.',
+			'acc_dc_comp_t'    => 'Deposit comparator',
+			'acc_dc_comp_d'    => 'Compare term rates, no small print.',
+			'acc_dc_gloss_t'   => 'Glossary',
+			'acc_dc_gloss_d'   => '~54 terms, in plain language.',
+			'acc_dc_news_t'    => 'News',
+			'acc_dc_news_d'    => 'Finance, explained calmly.',
+			'acc_dc_ebook_t'   => 'Free ebook',
+			'acc_dc_ebook_d'   => 'The basics, in a PDF to keep.',
+			'acc_dc_open'      => 'Open →',
 		);
 	}
 

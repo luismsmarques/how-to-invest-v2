@@ -558,60 +558,89 @@
 			return;
 		}
 
-		// --- Account header: avatar (email initial) + identity (E "Conta") ---
+		// --- Live region for async status (export, save, delete) ---
+		var live = el( 'div', { class: 'hti-acct-live', role: 'status', 'aria-live': 'polite' } );
+		root.appendChild( live );
+
+		// --- Account header: avatar (email initial) + identity ---
 		var email = ctx.email || '';
 		var display = email ? email.split( '@' )[ 0 ] : '';
 		var initial = ( display || email || '?' ).charAt( 0 ).toUpperCase();
 		var head = el( 'div', { class: 'hti-acct-head' } );
 		head.appendChild( el( 'span', { class: 'hti-acct-avatar', 'aria-hidden': 'true' }, initial ) );
 		var headId = el( 'div', { class: 'hti-acct-head__id' } );
-		if ( display ) {
-			headId.appendChild( el( 'h1', { class: 'hti-acct-head__name' }, display ) );
-		}
+		if ( display ) { headId.appendChild( el( 'h1', { class: 'hti-acct-head__name' }, display ) ); }
 		headId.appendChild( el( 'div', { class: 'hti-acct-head__email' }, email ) );
 		head.appendChild( headId );
 		root.appendChild( head );
 
-		// --- Two-column grid: profile (left) · data/GDPR (right) ---
-		var grid = el( 'div', { class: 'hti-acct-grid' } );
+		var colors = ctx.allocColors || {};
+		var classLabels = ctx.classLabels || {};
+		function donutConic( alloc ) {
+			var acc = 0, stops = [];
+			( alloc || [] ).forEach( function ( sl ) {
+				var c = colors[ sl.class ] || '#D9CFE8';
+				var to = acc + ( Number( sl.pct ) || 0 );
+				stops.push( c + ' ' + acc + '% ' + to + '%' );
+				acc = to;
+			} );
+			return acc > 0 ? 'conic-gradient(' + stops.join( ',' ) + ')' : '#F2E4DD';
+		}
+		function allocList( alloc ) {
+			var ul = el( 'ul', { class: 'hti-acct-alloc' } );
+			( alloc || [] ).forEach( function ( sl ) {
+				var li = el( 'li', { class: 'hti-acct-alloc__i' } );
+				var sw = el( 'span', { class: 'hti-acct-alloc__sw', 'aria-hidden': 'true' } );
+				sw.style.background = colors[ sl.class ] || '#D9CFE8';
+				li.appendChild( sw );
+				li.appendChild( el( 'span', { class: 'hti-acct-alloc__l' }, classLabels[ sl.class ] || sl.class ) );
+				li.appendChild( el( 'span', { class: 'hti-acct-alloc__p' }, ( Number( sl.pct ) || 0 ) + '%' ) );
+				ul.appendChild( li );
+			} );
+			return ul;
+		}
 
-		// LEFT — saved investor profile.
-		var pcol = el( 'div', { class: 'hti-acct-col' } );
-		pcol.appendChild( el( 'span', { class: 'hti-acct-eyebrow' }, s.acc_profile_eyebrow ) );
+		var hub = el( 'div', { class: 'hti-acct-hub' } );
+
+		// ===== ZONE 1 · investor profile =====
+		var z1 = el( 'div', { class: 'hti-acct-zone' } );
+		z1.appendChild( el( 'h2', { class: 'hti-acct-eyebrow' }, s.acc_profile_eyebrow ) );
 		var pcard = el( 'div', { class: 'hti-acct-card hti-acct-pcard' } );
 		pcard.appendChild( el( 'p', { role: 'status', class: 'hti-acct-muted' }, s.working ) );
-		pcol.appendChild( pcard );
-		grid.appendChild( pcol );
+		z1.appendChild( pcard );
+		hub.appendChild( z1 );
 
 		request( '/my-profiles', 'GET' ).then( function ( res ) {
 			pcard.innerHTML = '';
 			var profiles = ( res.data && res.data.profiles ) || [];
 			if ( ! profiles.length ) {
-				pcard.className = 'hti-acct-card hti-acct-pcard is-empty';
-				pcard.appendChild( el( 'p', { class: 'hti-acct-muted' }, s.acc_no_profile ) );
+				pcard.className = 'hti-acct-card hti-acct-pcard hti-acct-empty';
+				var t = el( 'div' );
+				t.appendChild( el( 'div', { class: 'hti-acct-empty__t' }, s.acc_noprofile_t ) );
+				t.appendChild( el( 'p', { class: 'hti-acct-empty__b' }, s.acc_noprofile_b ) );
+				pcard.appendChild( t );
 				pcard.appendChild( el( 'a', { href: ctx.resultBase || '#', class: 'hti-acct-btn hti-acct-btn--primary' }, s.acc_discover ) );
 				return;
 			}
-			var ul = el( 'ul', { class: 'hti-profile-list' } );
-			profiles.forEach( function ( p ) {
-				var li = el( 'li', { class: 'hti-profile-item' } );
-				var label = ( p.archetype && p.archetype.label ) || ( s.archetype + ' ' + ( p.archetype && p.archetype.id ) );
-				if ( ctx.resultBase && p.profile_id ) {
-					li.appendChild( el( 'a', { href: ctx.resultBase + '?profile=' + encodeURIComponent( p.profile_id ), class: 'hti-profile-link' }, label ) );
-				} else {
-					li.appendChild( el( 'strong', null, label ) );
-				}
-				if ( p.generated_at ) {
-					li.appendChild( el( 'span', { class: 'hti-profile-date' }, ' · ' + String( p.generated_at ).slice( 0, 10 ) ) );
-				}
-				ul.appendChild( li );
-			} );
-			pcard.appendChild( ul );
+			var p = profiles[ 0 ];
+			var alloc = p.allocation || [];
+			var prow = el( 'div', { class: 'hti-acct-pcard__row' } );
+			var donut = el( 'div', { class: 'hti-acct-donut', 'aria-hidden': 'true' } );
+			donut.style.background = donutConic( alloc );
+			donut.appendChild( el( 'span', { class: 'hti-acct-donut__c' }, s.acc_by_class ) );
+			prow.appendChild( donut );
+			var body = el( 'div', { class: 'hti-acct-pcard__body' } );
+			if ( p.generated_at ) { body.appendChild( el( 'span', { class: 'hti-acct-pcard__saved' }, s.acc_saved + ' · ' + String( p.generated_at ).slice( 0, 10 ) ) ); }
+			var label = ( p.archetype && p.archetype.label ) || ( s.archetype + ' ' + ( p.archetype && p.archetype.id ) );
+			body.appendChild( el( 'div', { class: 'hti-acct-pcard__name' }, label ) );
+			var desc = ctx.archDesc && p.archetype && ctx.archDesc[ p.archetype.id ];
+			if ( desc ) { body.appendChild( el( 'p', { class: 'hti-acct-pcard__desc' }, desc ) ); }
+			body.appendChild( allocList( alloc ) );
+			prow.appendChild( body );
+			pcard.appendChild( prow );
+			pcard.appendChild( el( 'p', { class: 'hti-acct-illus' }, s.acc_illustrative ) );
 			var acts = el( 'div', { class: 'hti-acct-pcard__acts' } );
-			var first = profiles[ 0 ];
-			if ( ctx.resultBase && first && first.profile_id ) {
-				acts.appendChild( el( 'a', { href: ctx.resultBase + '?profile=' + encodeURIComponent( first.profile_id ), class: 'hti-acct-btn hti-acct-btn--primary' }, s.acc_view_result ) );
-			}
+			if ( ctx.resultBase && p.profile_id ) { acts.appendChild( el( 'a', { href: ctx.resultBase + '?profile=' + encodeURIComponent( p.profile_id ), class: 'hti-acct-btn hti-acct-btn--primary' }, s.acc_view_result ) ); }
 			acts.appendChild( el( 'a', { href: ctx.resultBase || '#', class: 'hti-acct-btn hti-acct-btn--outline' }, s.acc_redo ) );
 			pcard.appendChild( acts );
 		} ).catch( function () {
@@ -619,9 +648,81 @@
 			pcard.appendChild( el( 'p', { class: 'hti-error' }, s.error ) );
 		} );
 
-		// RIGHT — my data (GDPR): tidy icon rows + sign out.
-		var dcol = el( 'div', { class: 'hti-acct-col' } );
-		dcol.appendChild( el( 'span', { class: 'hti-acct-eyebrow' }, s.acc_data_eyebrow ) );
+		// ===== ZONE 2 · learning =====
+		var L = ctx.learn;
+		if ( L && L.enabled ) {
+			var z2 = el( 'div', { class: 'hti-acct-zone' } );
+			z2.appendChild( el( 'h2', { class: 'hti-acct-eyebrow' }, s.acc_learn_eyebrow ) );
+			var lc = el( 'div', { class: 'hti-acct-card hti-acct-learn' } );
+			var ltop = el( 'div', { class: 'hti-acct-learn__top' } );
+			var lti = el( 'div' );
+			lti.appendChild( el( 'span', { class: 'hti-acct-learn__path' }, s.acc_learn_path ) );
+			lti.appendChild( el( 'div', { class: 'hti-acct-learn__count' }, ( s.acc_chapters_done || '%1$s / %2$s' ).replace( '%1$s', L.done ).replace( '%2$s', L.total ) ) );
+			ltop.appendChild( lti );
+			ltop.appendChild( el( 'span', { class: 'hti-acct-learn__pct' }, L.pct + '%' ) );
+			lc.appendChild( ltop );
+			var lbar = el( 'div', { class: 'hti-acct-learn__bar', role: 'progressbar', 'aria-label': s.acc_learn_eyebrow, 'aria-valuenow': String( L.pct ), 'aria-valuemin': '0', 'aria-valuemax': '100' } );
+			var lfill = el( 'span', { class: 'hti-acct-learn__fill' } );
+			lfill.style.width = L.pct + '%';
+			lbar.appendChild( lfill );
+			lc.appendChild( lbar );
+			var brow = el( 'div', { class: 'hti-acct-badges' } );
+			var CHECK = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+			var LOCK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+			( L.badges || [] ).forEach( function ( b ) {
+				var item = el( 'div', { class: 'hti-acct-badge is-' + b.state } );
+				var med = el( 'span', { class: 'hti-acct-badge__m', title: b.title } );
+				if ( 'earned' === b.state ) { med.innerHTML = CHECK; }
+				else if ( 'inprog' === b.state ) { med.textContent = b.num; }
+				else { med.innerHTML = LOCK; }
+				item.appendChild( med );
+				item.appendChild( el( 'span', { class: 'hti-acct-badge__t' }, b.title ) );
+				brow.appendChild( item );
+			} );
+			var course = el( 'div', { class: 'hti-acct-badge is-course' } );
+			var cmed = el( 'span', { class: 'hti-acct-badge__m', title: s.acc_course } );
+			cmed.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M5 5H3v1a3 3 0 0 0 3 3M19 5h2v1a3 3 0 0 1-3 3"/></svg>';
+			course.appendChild( cmed );
+			course.appendChild( el( 'span', { class: 'hti-acct-badge__t' }, s.acc_course ) );
+			brow.appendChild( course );
+			lc.appendChild( brow );
+			var cont = el( 'a', { href: L.nextUrl || L.hubUrl || '#', class: 'hti-acct-continue' } );
+			cont.appendChild( document.createTextNode( s.acc_continue_learning ) );
+			if ( L.nextTitle ) { cont.appendChild( el( 'span', { class: 'hti-acct-continue__ch' }, L.nextTitle ) ); }
+			lc.appendChild( cont );
+			z2.appendChild( lc );
+			hub.appendChild( z2 );
+		}
+
+		// ===== ZONE 3 · discover =====
+		var z3 = el( 'div', { class: 'hti-acct-zone' } );
+		z3.appendChild( el( 'h2', { class: 'hti-acct-eyebrow' }, s.acc_discover_eyebrow ) );
+		var dgrid = el( 'div', { class: 'hti-acct-discover' } );
+		var D = ctx.discover || {};
+		var DISC = [
+			{ url: D.comparador, ic: 'is-blue', svg: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>', t: s.acc_dc_comp_t, d: s.acc_dc_comp_d },
+			{ url: D.glossary, ic: 'is-coral', svg: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 5.5V20.5"/></svg>', t: s.acc_dc_gloss_t, d: s.acc_dc_gloss_d },
+			{ url: D.news, ic: 'is-purple', svg: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg>', t: s.acc_dc_news_t, d: s.acc_dc_news_d },
+			{ url: D.ebook, ic: 'is-green', svg: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>', t: s.acc_dc_ebook_t, d: s.acc_dc_ebook_d }
+		];
+		DISC.forEach( function ( c ) {
+			var a = el( 'a', { href: c.url || '#', class: 'hti-acct-dc' } );
+			var dic = el( 'span', { class: 'hti-acct-dc__ic ' + c.ic, 'aria-hidden': 'true' } );
+			dic.innerHTML = c.svg;
+			a.appendChild( dic );
+			var dt = el( 'span', { class: 'hti-acct-dc__t' } );
+			dt.appendChild( el( 'span', { class: 'hti-acct-dc__title' }, c.t ) );
+			dt.appendChild( el( 'span', { class: 'hti-acct-dc__d' }, c.d ) );
+			a.appendChild( dt );
+			a.appendChild( el( 'span', { class: 'hti-acct-dc__open', 'aria-hidden': 'true' }, s.acc_dc_open ) );
+			dgrid.appendChild( a );
+		} );
+		z3.appendChild( dgrid );
+		hub.appendChild( z3 );
+
+		// ===== ZONE 4 · data & settings =====
+		var z4 = el( 'div', { class: 'hti-acct-zone' } );
+		z4.appendChild( el( 'h2', { class: 'hti-acct-eyebrow' }, s.acc_data_settings ) );
 		var rows = el( 'div', { class: 'hti-acct-rows' } );
 
 		function dataRow( tag, attrs, svg, icMod, title, sub, rowMod ) {
@@ -638,15 +739,25 @@
 			return b;
 		}
 
+		var IC_MAIL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B5E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>';
 		var IC_DL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>';
 		var IC_SHIELD = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B5E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6z"/></svg>';
 		var IC_TRASH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0392B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M6 7l1 13h10l1-13"/></svg>';
 
+		// Newsletter — scrolls to the preferences card below.
+		var nlRow = dataRow( 'button', { type: 'button' }, IC_MAIL, 'is-coral', s.preferences, s.pref_newsletter );
+		nlRow.addEventListener( 'click', function () {
+			var pc = root.querySelector( '.hti-account-prefs' );
+			if ( pc && pc.scrollIntoView ) { pc.scrollIntoView( { behavior: 'smooth', block: 'center' } ); }
+		} );
+		rows.appendChild( nlRow );
+
 		// Export (download JSON).
 		var exportRow = dataRow( 'button', { type: 'button' }, IC_DL, 'is-purple', s.export_data, s.acc_export_sub );
 		exportRow.addEventListener( 'click', function () {
+			live.textContent = s.working;
 			request( '/export', 'GET' ).then( function ( res ) {
-				if ( ! res.ok ) { return; }
+				if ( ! res.ok ) { live.textContent = ''; return; }
 				var blob = new Blob( [ JSON.stringify( res.data, null, 2 ) ], { type: 'application/json' } );
 				var url = URL.createObjectURL( blob );
 				var a = el( 'a', { href: url, download: 'howtoinvest-data-export.json' } );
@@ -654,21 +765,20 @@
 				a.click();
 				document.body.removeChild( a );
 				URL.revokeObjectURL( url );
+				live.textContent = '';
 			} );
 		} );
 		rows.appendChild( exportRow );
 
-		// Privacy & terms (link).
 		if ( ctx.policiesUrl ) {
 			rows.appendChild( dataRow( 'a', { href: ctx.policiesUrl }, IC_SHIELD, 'is-coral', s.acc_privacy, s.acc_privacy_sub ) );
 		}
 
-		// Delete account (danger) + scheduled-deletion handling.
 		var deleteStatus = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
 		var deleteRow = dataRow( 'button', { type: 'button' }, IC_TRASH, 'is-danger', s.delete_account, s.acc_delete_sub, 'is-danger' );
 
 		function renderDeletion( dateStr ) {
-			dcol.querySelectorAll( '.hti-deletion' ).forEach( function ( n ) { n.remove(); } );
+			z4.querySelectorAll( '.hti-deletion' ).forEach( function ( n ) { n.remove(); } );
 			if ( dateStr ) {
 				var wrap = el( 'div', { class: 'hti-deletion' } );
 				wrap.appendChild( el( 'p', { class: 'hti-error', role: 'alert' }, s.delete_scheduled.replace( '%s', dateStr ) ) );
@@ -676,17 +786,12 @@
 				cancelBtn.addEventListener( 'click', function () {
 					cancelBtn.disabled = true;
 					request( '/cancel-deletion', 'POST', {} ).then( function ( res ) {
-						if ( res.ok ) {
-							renderDeletion( '' );
-							deleteStatus.textContent = s.deletion_off;
-							deleteRow.style.display = '';
-						} else {
-							cancelBtn.disabled = false;
-						}
+						if ( res.ok ) { renderDeletion( '' ); deleteStatus.textContent = s.deletion_off; live.textContent = s.deletion_off; deleteRow.style.display = ''; }
+						else { cancelBtn.disabled = false; }
 					} );
 				} );
 				wrap.appendChild( cancelBtn );
-				dcol.insertBefore( wrap, deleteStatus );
+				z4.insertBefore( wrap, deleteStatus );
 				deleteRow.style.display = 'none';
 			}
 		}
@@ -697,29 +802,28 @@
 				if ( res.ok && res.data ) {
 					track( 'account_delete_request', {} );
 					deleteStatus.textContent = s.deletion_set;
+					live.textContent = s.deletion_set;
 					renderDeletion( res.data.date || '' );
 				}
 			} );
 		} );
 		rows.appendChild( deleteRow );
 
-		dcol.appendChild( rows );
-		dcol.appendChild( deleteStatus );
-		if ( ctx.deleteAt ) {
-			renderDeletion( ctx.deleteAt );
-		}
-		if ( ctx.logoutUrl ) {
-			dcol.appendChild( el( 'a', { href: ctx.logoutUrl, class: 'hti-acct-logout' }, s.sign_out ) );
-		}
-		grid.appendChild( dcol );
-		root.appendChild( grid );
+		z4.appendChild( rows );
+		z4.appendChild( deleteStatus );
+		if ( ctx.deleteAt ) { renderDeletion( ctx.deleteAt ); }
 
-		// --- Settings (full width): account email + email preferences ---
 		var settings = el( 'div', { class: 'hti-acct-settings' } );
 		settings.appendChild( emailSection() );
 		settings.appendChild( prefsSection() );
-		root.appendChild( settings );
+		z4.appendChild( settings );
 
+		if ( ctx.logoutUrl ) {
+			z4.appendChild( el( 'a', { href: ctx.logoutUrl, class: 'hti-acct-logout' }, s.sign_out ) );
+		}
+		hub.appendChild( z4 );
+
+		root.appendChild( hub );
 		mount.appendChild( root );
 	}
 
