@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.27';
+const VERSION = '0.8.29';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -155,6 +155,33 @@ function enqueue_scripts(): void {
 		VERSION,
 		array( 'strategy' => 'defer', 'in_footer' => true )
 	);
+
+	// Learn hub: path progress (localStorage) + ebook lead-magnet. Registered
+	// here; the learn-hub block enqueues it on render (HTI_LEARN localized there).
+	wp_register_script(
+		'howtoinvest-learn',
+		get_stylesheet_directory_uri() . '/assets/js/learn.js',
+		array(),
+		VERSION,
+		array( 'strategy' => 'defer', 'in_footer' => true )
+	);
+
+	// On a single Learn guide, record the visit so the path marks it complete.
+	// The path keys on the canonical (EN) slug, so resolve PT posts back to it.
+	if ( is_singular( 'learn' ) ) {
+		$post = get_queried_object();
+		if ( $post instanceof \WP_Post ) {
+			$slug = $post->post_name;
+			if ( function_exists( 'pll_get_post_language' ) && 'pt' === pll_get_post_language( (int) $post->ID, 'slug' ) ) {
+				$en = (int) pll_get_post( (int) $post->ID, 'en' );
+				if ( $en ) {
+					$slug = get_post_field( 'post_name', $en );
+				}
+			}
+			wp_enqueue_script( 'howtoinvest-learn' );
+			wp_localize_script( 'howtoinvest-learn', 'HTI_LEARN_REC', array( 'slug' => $slug ) );
+		}
+	}
 }
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
 
@@ -719,71 +746,346 @@ function render_related(): string {
 }
 
 /**
- * Render the Learn hub: the educational articles grouped by category, in the
- * current language. Polylang filters the query/terms by language when active.
+ * Strings for the Learn hub (EN default + PT), kept local to the renderer.
+ *
+ * @param bool $pt Whether Portuguese.
+ * @return array<string,string>
+ */
+function learn_hub_strings( bool $pt ): array {
+	if ( $pt ) {
+		return array(
+			'eyebrow'    => 'O teu caminho · começa aqui',
+			'h1'         => 'Do zero à tua primeira carteira',
+			'lead'       => 'Um percurso guiado em 7 módulos, uma ideia de cada vez. Sem jargão e sem pressa — saberás sempre onde estás e qual é o próximo passo.',
+			'progress'   => 'O teu progresso',
+			'chapters'   => 'capítulos',
+			'continue'   => 'Continuar o caminho →',
+			'open_gloss' => 'Abrir o glossário',
+			'path_h'     => 'O percurso',
+			'path_p'     => '7 módulos, do essencial ao teu plano. Avança quando quiseres — está tudo aberto.',
+			'mod'        => 'Módulo',
+			'done'       => 'Concluído',
+			'current'    => 'A decorrer',
+			'open'       => 'Por começar',
+			'cont_pill'  => 'Continuar',
+			'soon'       => 'Em breve',
+			'featured'   => 'Guia em destaque',
+			'feat_title' => 'Como montar a tua primeira carteira, passo a passo',
+			'feat_desc'  => 'Um guia prático que junta tudo — sempre por classes de ativos, nunca por produtos.',
+			'feat_tag'   => 'Na prática',
+			'read_guide' => 'Ler o guia →',
+			'quiz_h'     => 'Descobre o teu perfil de investidor',
+			'quiz_p'     => '6 perguntas curtas. Ajuda-te a saber por onde começar.',
+			'quiz_btn'   => 'Começar o questionário',
+			'gloss_h'    => 'Glossário',
+			'gloss_p'    => 'Termos essenciais, sem jargão',
+			'topics_h'   => 'Explorar por tema',
+			'topics_p'   => 'Preferes saltar para um assunto específico? Começa por aqui.',
+			'guides'     => 'guias',
+			'ebook_tag'  => 'Gratuito · PT / EN',
+			'ebook_h'    => 'Recebe o ebook “Como começar a investir”',
+			'ebook_p'    => 'Um PDF que reúne as bases num só sítio — pensado para quem está mesmo a começar. Sem produtos, sem promessas.',
+			'ebook_ph'   => 'o-teu-email@exemplo.pt',
+			'ebook_btn'  => 'Quero o ebook',
+			'ebook_ok'   => 'Enviámos-te o ebook. Verifica a tua caixa de entrada.',
+			'ebook_cons' => 'Aceito receber a newsletter educativa por email. Sem spam — podes cancelar quando quiseres.',
+			'ebook_cov1' => 'Ebook gratuito',
+			'ebook_cov2' => 'Como começar a investir',
+			'ebook_cov3' => 'PT · EN · PDF',
+			'disc'       => 'Conteúdo meramente educativo. Não constitui aconselhamento financeiro, fiscal ou de investimento. Todos os exemplos são ilustrativos e referem-se apenas a classes de ativos — nunca a produtos, fundos ou empresas específicas.',
+		);
+	}
+	return array(
+		'eyebrow'    => 'Your path · start here',
+		'h1'         => 'From zero to your first portfolio',
+		'lead'       => 'A guided path in 7 modules, one idea at a time. No jargon and no rush — you’ll always know where you are and what’s next.',
+		'progress'   => 'Your progress',
+		'chapters'   => 'chapters',
+		'continue'   => 'Continue the path →',
+		'open_gloss' => 'Open the glossary',
+		'path_h'     => 'The path',
+		'path_p'     => '7 modules, from the essentials to your own plan. Move whenever you like — everything is open.',
+		'mod'        => 'Module',
+		'done'       => 'Done',
+		'current'    => 'In progress',
+		'open'       => 'Not started',
+		'cont_pill'  => 'Continue',
+		'soon'       => 'Soon',
+		'featured'   => 'Featured guide',
+		'feat_title' => 'How to build your first portfolio, step by step',
+		'feat_desc'  => 'A practical guide that brings it together — always by asset class, never by product.',
+		'feat_tag'   => 'In practice',
+		'read_guide' => 'Read the guide →',
+		'quiz_h'     => 'Discover your investor profile',
+		'quiz_p'     => '6 short questions. It helps you know where to begin.',
+		'quiz_btn'   => 'Start the questionnaire',
+		'gloss_h'    => 'Glossary',
+		'gloss_p'    => 'Essential terms, no jargon',
+		'topics_h'   => 'Browse by topic',
+		'topics_p'   => 'Prefer to jump to a specific subject? Start here.',
+		'guides'     => 'guides',
+		'ebook_tag'  => 'Free · PT / EN',
+		'ebook_h'    => 'Get the “How to start investing” ebook',
+		'ebook_p'    => 'A PDF that gathers the basics in one place — made for people who are truly starting out. No products, no promises.',
+		'ebook_ph'   => 'your-email@example.com',
+		'ebook_btn'  => 'Send me the ebook',
+		'ebook_ok'   => 'We’ve sent you the ebook. Please check your inbox.',
+		'ebook_cons' => 'I agree to receive the educational newsletter by email. No spam — unsubscribe anytime.',
+		'ebook_cov1' => 'Free ebook',
+		'ebook_cov2' => 'How to start investing',
+		'ebook_cov3' => 'PT · EN · PDF',
+		'disc'       => 'Purely educational content. It is not financial, tax or investment advice. All examples are illustrative and refer only to asset classes — never to specific products, funds or companies.',
+	);
+}
+
+/**
+ * Topic cards (4 fixed categories) with live guide counts + tints.
+ *
+ * @param bool $pt Whether Portuguese.
+ * @return string
+ */
+function learn_topic_cards( bool $pt ): string {
+	$cats = array(
+		'getting-started' => array(
+			'en' => array( 'Getting started', 'The first steps, no rush.' ),
+			'pt' => array( 'Começar', 'Os primeiros passos, sem pressa.' ),
+			'tint' => '#FFEDE9', 'ink' => '#FF6B5E', 'count' => '#C9362C',
+			'icon' => '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+		),
+		'concepts' => array(
+			'en' => array( 'Concepts', 'The key ideas, explained calmly.' ),
+			'pt' => array( 'Conceitos', 'As ideias-chave, explicadas com calma.' ),
+			'tint' => '#EFE9FE', 'ink' => '#7C5CFC', 'count' => '#7C5CFC',
+			'icon' => '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>',
+		),
+		'mindset' => array(
+			'en' => array( 'Behaviour & mindset', 'The right head for investing.' ),
+			'pt' => array( 'Comportamento & mentalidade', 'A cabeça certa para investir.' ),
+			'tint' => '#E2F7F2', 'ink' => '#14A88F', 'count' => '#14A88F',
+			'icon' => '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+		),
+		'planning' => array(
+			'en' => array( 'Planning', 'From goal to plan, with clarity.' ),
+			'pt' => array( 'Planeamento', 'Do objetivo ao plano, com clareza.' ),
+			'tint' => '#F8EFD9', 'ink' => '#B8801A', 'count' => '#B8801A',
+			'icon' => '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+		),
+	);
+
+	$out = '';
+	foreach ( $cats as $slug => $c ) {
+		$term = get_term_by( 'slug', $pt ? $slug . '-pt' : $slug, 'learn_topic' );
+		$url  = $term instanceof \WP_Term ? get_term_link( $term ) : archive_url( 'learn', 'learn' );
+		$n    = $term instanceof \WP_Term ? (int) $term->count : 0;
+		list( $name, $desc ) = $pt ? $c['pt'] : $c['en'];
+		$out .= '<a class="hti-lh-topic" href="' . esc_url( is_wp_error( $url ) ? '#' : (string) $url ) . '">'
+			. '<span class="hti-lh-topic__ic" style="background:' . esc_attr( $c['tint'] ) . '"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="' . esc_attr( $c['ink'] ) . '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' . $c['icon'] . '</svg></span>'
+			. '<span class="hti-lh-topic__h">' . esc_html( $name ) . '</span>'
+			. '<span class="hti-lh-topic__p">' . esc_html( $desc ) . '</span>'
+			/* translators: %d: number of guides. */
+			. '<span class="hti-lh-topic__n" style="color:' . esc_attr( $c['count'] ) . '">' . esc_html( sprintf( '%d %s', $n, $pt ? 'guias' : 'guides' ) ) . '</span>'
+			. '</a>';
+	}
+	return $out;
+}
+
+/**
+ * Render the Learn hub — the "From zero to your first portfolio" path, topic
+ * cards and the ebook lead-magnet. Server-rendered; learn.js hydrates per-user
+ * progress (anonymous, localStorage). Matches the Claude Design redesign.
  */
 function render_learn_hub(): string {
-	if ( ! taxonomy_exists( 'learn_topic' ) || ! post_type_exists( 'learn' ) ) {
+	if ( ! post_type_exists( 'learn' ) ) {
 		return '';
 	}
-	$pt    = 'pt' === current_lang();
-	$terms = get_terms(
-		array(
-			'taxonomy'   => 'learn_topic',
-			'hide_empty' => true,
-		)
-	);
-	if ( is_wp_error( $terms ) || empty( $terms ) ) {
-		return '';
-	}
+	$pt   = 'pt' === current_lang();
+	$lang = $pt ? 'pt' : 'en';
+	$s    = learn_hub_strings( $pt );
 
-	$out = '<div class="hti-learn">';
-	$out .= '<p class="hti-learn__intro">' . esc_html( t( 'learn_intro' ) ) . '</p>';
+	$curriculum = class_exists( '\\HTI\\Engine\\Content_Import' )
+		? \HTI\Engine\Content_Import::curriculum( $lang )
+		: array();
 
-	foreach ( $terms as $term ) {
-		$name = $term->name;
-		if ( $pt ) {
-			$meta = get_term_meta( $term->term_id, 'hti_name_pt', true );
-			if ( is_string( $meta ) && '' !== $meta ) {
-				$name = $meta;
+	$quiz_url  = page_url( 'investor-profile-quiz' );
+	$gloss_url = archive_url( 'glossary', 'investing-glossary' );
+
+	// Featured guide → the flagship "build a portfolio" chapter, else the quiz.
+	$feat_post = get_page_by_path( 'how-a-portfolio-is-built', OBJECT, 'learn' );
+	$feat_url  = ( $feat_post instanceof \WP_Post && 'publish' === $feat_post->post_status )
+		? (string) get_permalink( $feat_post )
+		: $quiz_url;
+
+	// Total chapters + the first published chapter (the path entry point).
+	$total = 0;
+	$first_url = '';
+	foreach ( $curriculum as $m ) {
+		foreach ( $m['chapters'] as $c ) {
+			++$total;
+			if ( '' === $first_url && $c['published'] ) {
+				$first_url = $c['url'];
 			}
 		}
-
-		$q = new \WP_Query(
-			array(
-				'post_type'           => 'learn',
-				'posts_per_page'      => 20,
-				'ignore_sticky_posts' => true,
-				'no_found_rows'       => true,
-				'orderby'             => 'title',
-				'order'               => 'ASC',
-				'tax_query'           => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
-					array(
-						'taxonomy' => 'learn_topic',
-						'terms'    => (int) $term->term_id,
-					),
-				),
-			)
-		);
-		if ( ! $q->have_posts() ) {
-			continue;
-		}
-
-		$out .= '<section class="hti-learn__cat"><h2 class="hti-learn__cat-title">' . esc_html( $name ) . '</h2><ul class="hti-learn__list">';
-		while ( $q->have_posts() ) {
-			$q->the_post();
-			$excerpt = get_the_excerpt();
-			$out    .= '<li class="hti-learn__item"><a href="' . esc_url( (string) get_permalink() ) . '">'
-				. esc_html( (string) get_the_title() ) . '</a>'
-				. ( '' !== $excerpt ? ' <span class="hti-learn__excerpt">— ' . esc_html( $excerpt ) . '</span>' : '' )
-				. '</li>';
-		}
-		$out .= '</ul></section>';
-		wp_reset_postdata();
+	}
+	if ( '' === $first_url ) {
+		$first_url = $quiz_url;
 	}
 
-	$out .= '</div>';
-	return $out;
+	// Assets.
+	wp_enqueue_style( 'howtoinvest-learn', get_stylesheet_directory_uri() . '/assets/css/learn.css', array(), VERSION );
+	wp_enqueue_script( 'howtoinvest-learn' );
+	wp_localize_script(
+		'howtoinvest-learn',
+		'HTI_LEARN',
+		array(
+			'subscribeUrl' => esc_url_raw( rest_url( 'htinvest/v1/subscribe' ) ),
+			'nonce'        => wp_create_nonce( 'wp_rest' ),
+			'locale'       => $lang,
+			'strings'      => array(
+				'done'    => $s['done'],
+				'current' => $s['current'],
+				'open'    => $s['open'],
+				'cont'    => $s['cont_pill'],
+				'ok'      => $s['ebook_ok'],
+				'err'     => $pt ? 'Não foi possível. Tenta novamente.' : 'Something went wrong. Please try again.',
+				'consent' => $pt ? 'Aceita receber os emails para continuar.' : 'Please accept the emails to continue.',
+			),
+		)
+	);
+
+	ob_start();
+	?>
+	<div class="hti-lh">
+
+		<!-- Hero -->
+		<div class="hti-lh-hero">
+			<div class="hti-lh-hero__glow" aria-hidden="true"></div>
+			<div class="hti-lh-hero__in">
+				<span class="hti-lh-hero__badge"><span class="hti-lh-dot"></span><?php echo esc_html( $s['eyebrow'] ); ?></span>
+				<h1 class="hti-lh-hero__h1"><?php echo esc_html( $s['h1'] ); ?></h1>
+				<p class="hti-lh-hero__lead"><?php echo esc_html( $s['lead'] ); ?></p>
+				<div class="hti-lh-prog">
+					<div class="hti-lh-prog__row">
+						<span class="hti-lh-prog__lbl"><?php echo esc_html( $s['progress'] ); ?></span>
+						<span class="hti-lh-prog__num"><span class="hti-lh-prog-done">0</span> / <span class="hti-lh-prog-total"><?php echo (int) $total; ?></span> <?php echo esc_html( $s['chapters'] ); ?></span>
+					</div>
+					<div class="hti-lh-prog__bar"><div class="hti-lh-prog__fill" style="width:0%"></div></div>
+				</div>
+				<div class="hti-lh-hero__cta">
+					<a class="hti-lh-btn hti-lh-continue" href="<?php echo esc_url( $first_url ); ?>" data-fallback="<?php echo esc_url( $first_url ); ?>"><?php echo esc_html( $s['continue'] ); ?></a>
+					<a class="hti-lh-btn hti-lh-btn--ghost" href="<?php echo esc_url( $gloss_url ); ?>"><?php echo esc_html( $s['open_gloss'] ); ?></a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Path (stepper) + rail -->
+		<div class="hti-lh-grid">
+			<div class="hti-lh-stepper">
+				<h2 class="hti-lh-h2"><?php echo esc_html( $s['path_h'] ); ?></h2>
+				<p class="hti-lh-sub"><?php echo esc_html( $s['path_p'] ); ?></p>
+				<div class="hti-lh-track">
+					<?php
+					foreach ( $curriculum as $i => $m ) :
+						$state = 0 === $i ? 'current' : 'open';
+						?>
+						<div class="hti-lh-mod" data-state="<?php echo esc_attr( $state ); ?>">
+							<div class="hti-lh-mod__node">
+								<span class="hti-lh-node hti-lh-node--done"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+								<span class="hti-lh-node hti-lh-node--current"><?php echo esc_html( (string) $m['num'] ); ?></span>
+								<span class="hti-lh-node hti-lh-node--open"><?php echo esc_html( (string) $m['num'] ); ?></span>
+							</div>
+							<div class="hti-lh-mod__card">
+								<div class="hti-lh-mod__top">
+									<div>
+										<div class="hti-lh-mod__eyebrow"><?php echo esc_html( $s['mod'] . ' ' . $m['num'] ); ?></div>
+										<h3 class="hti-lh-mod__title"><?php echo esc_html( (string) $m['title'] ); ?></h3>
+									</div>
+									<span class="hti-lh-badge hti-lh-badge--done"><?php echo esc_html( $s['done'] ); ?></span>
+									<span class="hti-lh-badge hti-lh-badge--current"><?php echo esc_html( $s['current'] ); ?></span>
+									<span class="hti-lh-badge hti-lh-badge--open"><?php echo esc_html( $s['open'] ); ?></span>
+								</div>
+								<p class="hti-lh-mod__desc"><?php echo esc_html( (string) $m['desc'] ); ?></p>
+								<div class="hti-lh-chaps">
+									<?php foreach ( $m['chapters'] as $c ) : ?>
+										<?php $tag = $c['published'] ? 'a' : 'span'; ?>
+										<<?php echo esc_html( $tag ); ?> class="hti-lh-chap" data-state="open" data-slug="<?php echo esc_attr( (string) $c['slug'] ); ?>" data-url="<?php echo esc_url( (string) $c['url'] ); ?>"<?php echo $c['published'] ? ' href="' . esc_url( (string) $c['url'] ) . '"' : ''; ?>>
+											<span class="hti-lh-chap__dot">
+												<span class="hti-lh-dot--done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+												<span class="hti-lh-dot--current"></span>
+												<span class="hti-lh-dot--open"></span>
+											</span>
+											<span class="hti-lh-chap__t"><?php echo esc_html( (string) $c['title'] ); ?></span>
+											<span class="hti-lh-chap__cont"><?php echo esc_html( $s['cont_pill'] ); ?></span>
+											<span class="hti-lh-chap__meta"><?php echo $c['published'] ? esc_html( $c['mins'] . ' min' ) : esc_html( $s['soon'] ); ?></span>
+										</<?php echo esc_html( $tag ); ?>>
+									<?php endforeach; ?>
+								</div>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+
+			<aside class="hti-lh-rail">
+				<div class="hti-lh-feat">
+					<div class="hti-lh-feat__ribbon"><?php echo esc_html( $s['featured'] ); ?></div>
+					<div class="hti-lh-feat__body">
+						<h3 class="hti-lh-feat__title"><?php echo esc_html( $s['feat_title'] ); ?></h3>
+						<p class="hti-lh-feat__desc"><?php echo esc_html( $s['feat_desc'] ); ?></p>
+						<div class="hti-lh-feat__meta"><span class="hti-lh-pill hti-lh-pill--purple"><?php echo esc_html( $s['feat_tag'] ); ?></span></div>
+						<a class="hti-lh-btn hti-lh-btn--dark" href="<?php echo esc_url( $feat_url ); ?>"><?php echo esc_html( $s['read_guide'] ); ?></a>
+					</div>
+				</div>
+
+				<div class="hti-lh-quiz">
+					<span class="hti-lh-quiz__ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.1 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg></span>
+					<h3 class="hti-lh-quiz__h"><?php echo esc_html( $s['quiz_h'] ); ?></h3>
+					<p class="hti-lh-quiz__p"><?php echo esc_html( $s['quiz_p'] ); ?></p>
+					<a class="hti-lh-btn hti-lh-btn--purple" href="<?php echo esc_url( $quiz_url ); ?>"><?php echo esc_html( $s['quiz_btn'] ); ?></a>
+				</div>
+
+				<a class="hti-lh-glosscard" href="<?php echo esc_url( $gloss_url ); ?>">
+					<span class="hti-lh-glosscard__ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B5E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+					<span><span class="hti-lh-glosscard__h"><?php echo esc_html( $s['gloss_h'] ); ?></span><span class="hti-lh-glosscard__p"><?php echo esc_html( $s['gloss_p'] ); ?></span></span>
+				</a>
+			</aside>
+		</div>
+
+		<!-- Browse by topic -->
+		<div class="hti-lh-topics">
+			<h2 class="hti-lh-h2"><?php echo esc_html( $s['topics_h'] ); ?></h2>
+			<p class="hti-lh-sub"><?php echo esc_html( $s['topics_p'] ); ?></p>
+			<div class="hti-lh-topics__grid"><?php echo learn_topic_cards( $pt ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+		</div>
+
+		<!-- Ebook lead-magnet -->
+		<div class="hti-lh-ebook">
+			<div class="hti-lh-ebook__main">
+				<span class="hti-lh-ebook__tag"><?php echo esc_html( $s['ebook_tag'] ); ?></span>
+				<h2 class="hti-lh-ebook__h"><?php echo esc_html( $s['ebook_h'] ); ?></h2>
+				<p class="hti-lh-ebook__p"><?php echo esc_html( $s['ebook_p'] ); ?></p>
+				<form class="hti-lh-ebook__form" novalidate>
+					<div class="hti-lh-ebook__row">
+						<input class="hti-lh-ebook__email" type="email" autocomplete="email" placeholder="<?php echo esc_attr( $s['ebook_ph'] ); ?>" aria-label="Email" required>
+						<button class="hti-lh-btn" type="submit"><?php echo esc_html( $s['ebook_btn'] ); ?></button>
+					</div>
+					<label class="hti-lh-ebook__consent"><input type="checkbox" class="hti-lh-ebook__cons" required> <span><?php echo esc_html( $s['ebook_cons'] ); ?></span></label>
+					<input type="text" class="hti-lh-ebook__hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
+					<p class="hti-lh-ebook__status" role="status" aria-live="polite"></p>
+				</form>
+			</div>
+			<div class="hti-lh-ebook__cover" aria-hidden="true">
+				<div class="hti-lh-book">
+					<span class="hti-lh-book__k"><?php echo esc_html( $s['ebook_cov1'] ); ?></span>
+					<span class="hti-lh-book__t"><?php echo esc_html( $s['ebook_cov2'] ); ?></span>
+					<span class="hti-lh-book__f"><?php echo esc_html( $s['ebook_cov3'] ); ?></span>
+				</div>
+			</div>
+		</div>
+
+		<p class="hti-lh-disc"><?php echo esc_html( $s['disc'] ); ?></p>
+	</div>
+	<?php
+	return (string) ob_get_clean();
 }
 
 /**

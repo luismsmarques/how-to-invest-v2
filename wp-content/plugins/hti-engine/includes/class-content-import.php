@@ -42,6 +42,140 @@ class Content_Import {
 		add_action( 'admin_post_hti_import_learn', array( __CLASS__, 'handle_import' ) );
 	}
 
+	/* ---------- editorial plan / curriculum (front-end) ---------- */
+
+	/**
+	 * Parse the editorial plan CSV into rows keyed by column.
+	 *
+	 * @return array<int,array<string,string>>
+	 */
+	public static function plan(): array {
+		$path = HTI_ENGINE_PATH . 'content/learn-plan.csv';
+		if ( ! is_readable( $path ) ) {
+			return array();
+		}
+		$lines = file( $path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file
+		if ( ! $lines ) {
+			return array();
+		}
+		$head = str_getcsv( (string) array_shift( $lines ) );
+		$rows = array();
+		foreach ( $lines as $line ) {
+			$cols = str_getcsv( $line );
+			$rows[] = array_combine( $head, array_pad( $cols, count( $head ), '' ) );
+		}
+		return $rows;
+	}
+
+	/**
+	 * Bilingual module titles + descriptions for the "From zero to your first
+	 * portfolio" path (keyed by module number).
+	 *
+	 * @return array<string,array{title:array<string,string>,desc:array<string,string>}>
+	 */
+	private static function module_meta(): array {
+		return array(
+			'0' => array(
+				'title' => array( 'en' => 'Mindset & money', 'pt' => 'Mentalidade & dinheiro' ),
+				'desc'  => array( 'en' => 'The right relationship with risk, time and your goals.', 'pt' => 'A relação certa com o risco, o tempo e os teus objetivos.' ),
+			),
+			'1' => array(
+				'title' => array( 'en' => 'Foundations', 'pt' => 'Fundamentos' ),
+				'desc'  => array( 'en' => 'The base ideas that everything else rests on.', 'pt' => 'As ideias-base que sustentam tudo o resto.' ),
+			),
+			'2' => array(
+				'title' => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
+				'desc'  => array( 'en' => 'Global equities, bonds, cash and alternatives.', 'pt' => 'Ações globais, obrigações, liquidez e alternativos.' ),
+			),
+			'3' => array(
+				'title' => array( 'en' => 'Diversification & portfolios', 'pt' => 'Diversificação & carteiras' ),
+				'desc'  => array( 'en' => 'How simple pieces form a robust whole.', 'pt' => 'Como peças simples formam um todo robusto.' ),
+			),
+			'4' => array(
+				'title' => array( 'en' => 'In practice', 'pt' => 'Na prática' ),
+				'desc'  => array( 'en' => 'The habits that make a plan work over the years.', 'pt' => 'Os hábitos que fazem o plano funcionar ao longo dos anos.' ),
+			),
+			'5' => array(
+				'title' => array( 'en' => 'Behaviour', 'pt' => 'Comportamento' ),
+				'desc'  => array( 'en' => 'Keeping a cool head when markets shake.', 'pt' => 'Manter a cabeça fria quando o mercado treme.' ),
+			),
+			'6' => array(
+				'title' => array( 'en' => 'Your plan', 'pt' => 'O teu plano' ),
+				'desc'  => array( 'en' => 'Bring it all together into a simple plan of your own.', 'pt' => 'Juntar tudo num plano simples e teu.' ),
+			),
+		);
+	}
+
+	/**
+	 * The learning path for the hub: modules (with bilingual meta) and their
+	 * chapters resolved against the published `learn` posts.
+	 *
+	 * @param string $lang 'en'|'pt'.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function curriculum( string $lang ): array {
+		$meta = self::module_meta();
+		$mods = array();
+
+		foreach ( self::plan() as $r ) {
+			$mn = (string) ( $r['module'] ?? '' );
+			if ( '' === $mn ) {
+				continue;
+			}
+			if ( ! isset( $mods[ $mn ] ) ) {
+				$mods[ $mn ] = array(
+					'num'      => $mn,
+					'title'    => $meta[ $mn ]['title'][ $lang ] ?? ( $meta[ $mn ]['title']['en'] ?? ( 'Module ' . $mn ) ),
+					'desc'     => $meta[ $mn ]['desc'][ $lang ] ?? ( $meta[ $mn ]['desc']['en'] ?? '' ),
+					'chapters' => array(),
+				);
+			}
+
+			$slug = (string) ( $r['slug'] ?? '' );
+			$post = $slug ? get_page_by_path( $slug, OBJECT, self::TYPE ) : null;
+			$url  = '';
+			$mins = 0;
+			$published = false;
+			if ( $post instanceof \WP_Post && 'publish' === $post->post_status ) {
+				$published = true;
+				$id        = (int) $post->ID;
+				if ( 'pt' === $lang && function_exists( 'pll_get_post' ) ) {
+					$tr = (int) pll_get_post( $id, 'pt' );
+					if ( $tr ) {
+						$id = $tr;
+					}
+				}
+				$url  = (string) get_permalink( $id );
+				$mins = self::reading_time( (string) get_post_field( 'post_content', $id ) );
+			}
+
+			$title = 'pt' === $lang ? (string) ( $r['title_pt'] ?? '' ) : (string) ( $r['title_en'] ?? '' );
+			if ( '' === $title ) {
+				$title = ucwords( str_replace( '-', ' ', $slug ) );
+			}
+
+			$mods[ $mn ]['chapters'][] = array(
+				'slug'      => $slug,
+				'title'     => $title,
+				'url'       => $url,
+				'published' => $published,
+				'mins'      => $mins > 0 ? $mins : 5,
+			);
+		}
+
+		return array_values( $mods );
+	}
+
+	/**
+	 * Rough reading time in minutes from post content (≈200 wpm, min 2).
+	 *
+	 * @param string $content Post content.
+	 */
+	private static function reading_time( string $content ): int {
+		$words = str_word_count( wp_strip_all_tags( strip_shortcodes( $content ) ) );
+		return max( 2, (int) ceil( $words / 200 ) );
+	}
+
 	/* ---------- parsing ---------- */
 
 	/**
