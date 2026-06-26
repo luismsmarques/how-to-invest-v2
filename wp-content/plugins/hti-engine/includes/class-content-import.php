@@ -135,7 +135,8 @@ class Content_Import {
 			$post = $slug ? get_page_by_path( $slug, OBJECT, self::TYPE ) : null;
 			$url  = '';
 			$mins = 0;
-			$published = false;
+			$published   = false;
+			$post_title  = '';
 			if ( $post instanceof \WP_Post && 'publish' === $post->post_status ) {
 				$published = true;
 				$id        = (int) $post->ID;
@@ -145,11 +146,16 @@ class Content_Import {
 						$id = $tr;
 					}
 				}
-				$url  = (string) get_permalink( $id );
-				$mins = self::reading_time( (string) get_post_field( 'post_content', $id ) );
+				$url        = (string) get_permalink( $id );
+				$mins       = self::reading_time( (string) get_post_field( 'post_content', $id ) );
+				$post_title = wp_strip_all_tags( get_the_title( $id ) );
 			}
 
-			$title = 'pt' === $lang ? (string) ( $r['title_pt'] ?? '' ) : (string) ( $r['title_en'] ?? '' );
+			// Prefer the real published post title (kept in sync with WordPress);
+			// fall back to the editorial plan, then a humanized slug.
+			$title = '' !== $post_title
+				? $post_title
+				: ( 'pt' === $lang ? (string) ( $r['title_pt'] ?? '' ) : (string) ( $r['title_en'] ?? '' ) );
 			if ( '' === $title ) {
 				$title = ucwords( str_replace( '-', ' ', $slug ) );
 			}
