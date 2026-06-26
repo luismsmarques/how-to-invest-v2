@@ -31,6 +31,32 @@ const brandRow = ( size = 15 ) =>
 const foot = ( n, title ) =>
 	`<div class="pgfoot"><span>${title}</span><span>${String( n ).padStart( 2, '0' )}</span></div>`;
 
+// Shared chapter-page header + title row.
+const chapHead = ( c ) =>
+	`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7mm"><span class="kick kick--purple">${c.modlabel}</span><span style="flex:1"></span><span style="font-weight:600;font-size:10px;color:#fff;background:#FF6B5E;padding:3px 10px;border-radius:999px">${c.time}</span></div>`;
+const chapTitle = ( c ) =>
+	`<div style="display:flex;align-items:baseline;gap:12px"><span class="pop" style="font-weight:800;font-size:22px;color:#FFD3CC">${c.num}</span><h3 class="h3" style="max-width:440px">${c.h}</h3></div>`;
+
+// Module summary page (numbered takeaways + term pills + a reflection card).
+// Accent 'coral' (default) or 'purple' tints the number chips + question icon.
+function summaryPage( t, r, num ) {
+	const purple = r.accent === 'purple';
+	const cBg = purple ? '#EFE9FE' : '#FFEDE9';
+	const cFg = purple ? '#7C5CFC' : '#FF6B5E';
+	const icon = purple
+		? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B7A4FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+		: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B7A4FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>';
+	return `<section class="pg"><div class="pad">
+	  <div style="margin-bottom:7mm"><span class="kick">${r.kick}</span></div>
+	  <h3 class="h3" style="font-size:28px;max-width:440px">${r.h}</h3>
+	  <div style="display:flex;flex-direction:column;gap:12px;margin:22px 0 0">${r.points.map( ( p, i ) => `<div class="card" style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px"><span class="pop" style="flex:none;width:26px;height:26px;border-radius:50%;background:${cBg};color:${cFg};font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">${i + 1}</span><p style="margin:0;font-size:14.5px;line-height:1.55;color:#3A3450">${p}</p></div>` ).join( '' )}</div>
+	  <div style="margin-top:22px"><div class="kick kick--purple" style="letter-spacing:.1em;margin-bottom:10px">${r.termsL}</div><div style="display:flex;flex-wrap:wrap;gap:8px">${r.terms.map( w => `<span style="background:#fff;border:1px solid #E7DBF6;color:#6A4BE0;font-weight:600;font-size:12px;padding:6px 13px;border-radius:999px">${w}</span>` ).join( '' )}</div></div>
+	  <div class="push" style="background:#1E2147;border-radius:16px;padding:20px 24px;color:#fff;display:flex;align-items:center;gap:18px">
+	    <span style="flex:none;width:42px;height:42px;border-radius:12px;background:rgba(124,92,252,.25);display:flex;align-items:center;justify-content:center">${icon}</span>
+	    <div><div class="kick" style="color:#B7A4FF;letter-spacing:.08em;margin-bottom:4px">${r.qKick}</div><p style="margin:0;font-size:15px;line-height:1.45;color:#fff">${r.q}</p></div>
+	  </div>${foot( num, t.running )}</div></section>`;
+}
+
 /* ------------------------------------------------------------------ content */
 const C = {
 	pt: {
@@ -126,6 +152,47 @@ const C = {
 			'<strong>Automatiza</strong> o reforço periódico e mantém custos baixos.',
 			'<strong>Mantém o rumo</strong> e relê o teu plano nos dias de queda.',
 		],
+		m1: {
+			label: 'Módulo 01', read: '13 min de leitura', num: '01', divBg: '#F0EBFE',
+			title: 'Fundamentos', desc: 'As ideias-base que sustentam tudo o resto — juro composto, inflação e a relação entre liquidez e tempo.',
+			inThis: 'Neste módulo',
+			chapters: [ [ '1', 'Juro composto, explicado com calma', '5 min' ], [ '2', 'Inflação: o imposto invisível', '4 min' ], [ '3', 'Liquidez e horizonte temporal', '4 min' ] ],
+		},
+		m1c1: {
+			modlabel: 'Módulo 01 · Fundamentos', time: '5 min', num: '01', h: 'Juro composto, explicado com calma',
+			p1: 'É a ideia mais poderosa de todas — e a mais simples. <span class="term">Juro composto</span> é ganhares rendimento não só sobre o que investiste, mas também sobre o rendimento que já foi acumulando. Os ganhos passam a gerar os seus próprios ganhos.',
+			chartH: '100 € por mês, durante 30 anos', chartSub: 'retorno ilustrativo de ~6%/ano',
+			legA: 'Só o que depositaste · ~36 000 €', legB: 'Com juro composto · ~100 000 €',
+			p2: 'Repara na curva: no início mal se distingue de uma linha reta. É lá para o fim que dispara. Por isso o ingrediente mais valioso não é teres muito dinheiro — é dares <strong>tempo</strong> ao processo.',
+			key: 'O tempo é o motor do juro composto. Começar cedo vale mais do que começar com muito.',
+		},
+		m1c2: {
+			modlabel: 'Módulo 01 · Fundamentos', time: '4 min', num: '02', h: 'Inflação: o imposto invisível',
+			p1: 'Ninguém te cobra inflação diretamente, mas ela tira-te poder de compra todos os anos. Se os preços sobem 3% e o teu dinheiro está parado, ficaste 3% mais pobre sem teres gasto nada. É o imposto que não vem no recibo.',
+			chartH: 'O que 100 € compram ao longo do tempo (inflação ~3%/ano)',
+			bars: [ [ '100 €', 100, 'Hoje', true ], [ '~86 €', 74, '5 anos', false ], [ '~74 €', 60, '10 anos', false ], [ '~55 €', 42, '20 anos', false ] ],
+			exL: 'Exemplo', ex: 'Um café a 1 € hoje custará perto de 1,34 € daqui a 10 anos com 3% de inflação. O preço subiu; o teu dinheiro parado não.',
+			cauL: 'Cuidado', cau: '"Não perdi dinheiro, está tudo na conta" é uma ilusão. Em poder de compra, dinheiro parado perde quase sempre.',
+		},
+		m1c3: {
+			modlabel: 'Módulo 01 · Fundamentos', time: '4 min', num: '03', h: 'Liquidez e horizonte temporal',
+			p1: '<span class="term">Liquidez</span> é a rapidez com que transformas algo em dinheiro sem perder valor. Dinheiro na conta é muito líquido; um imóvel é pouco líquido. Cruza isto com o teu horizonte e percebes onde colocar cada euro.',
+			chartH: 'Da mais líquida à menos líquida',
+			spectrum: [ [ 'Conta / depósito', '#22C3A6', 'Imediato', '#0E9C84' ], [ 'Obrigações', '#5BB8C9', 'Dias', '#A89FB5' ], [ 'Ações', '#7C5CFC', 'Dias', '#A89FB5' ], [ 'Imóvel', '#FF6B5E', 'Meses', '#C9362C' ] ],
+			chartNote: 'Quanto menos líquido, mais tempo (e paciência) o ativo costuma exigir.',
+			p2: 'Regra prática: o dinheiro de que podes precisar a qualquer momento fica líquido; o que tem anos pela frente pode ir para ativos menos líquidos, que tendem a compensar essa espera.',
+			key: 'Combina liquidez e horizonte: dinheiro próximo, líquido e estável; dinheiro distante, a render.',
+		},
+		m1r: {
+			kick: 'Módulo 01 · Em resumo', h: 'O que levas deste módulo', accent: 'purple',
+			points: [
+				'O juro composto faz os ganhos gerarem ganhos. A curva dispara no fim, por isso o tempo é o ingrediente mais valioso.',
+				'A inflação corrói dinheiro parado todos os anos. Investir é a forma de tentar crescer acima dela.',
+				'Liquidez e horizonte andam a par: dinheiro de curto prazo fica acessível; dinheiro de longo prazo pode render mais.',
+			],
+			termsL: 'Termos deste módulo', terms: [ 'Juro composto', 'Inflação', 'Poder de compra', 'Liquidez' ],
+			qKick: 'Uma pergunta para ti', q: 'Se começasses hoje com pouco, mas todos os meses, onde estarias daqui a 20 anos?',
+		},
 		nsQrKick: 'Continua na app', nsQrH: 'Descobre o teu perfil e segue o percurso guiado',
 		nsQrP: 'Aponta a câmara ao código para abrir a HowToInvest. Questionário de perfil, módulos e glossário interativo — gratuito e sem produtos à venda.',
 		// Back cover
@@ -223,6 +290,47 @@ C.en = {
 		'<strong>Automate</strong> regular contributions and keep costs low.',
 		'<strong>Stay the course</strong> and re-read your plan on down days.',
 	],
+	m1: {
+		label: 'Module 01', read: '13 min read', num: '01', divBg: '#F0EBFE',
+		title: 'Fundamentals', desc: 'The core ideas that hold up everything else — compound interest, inflation, and the link between liquidity and time.',
+		inThis: 'In this module',
+		chapters: [ [ '1', 'Compound interest, explained calmly', '5 min' ], [ '2', 'Inflation: the invisible tax', '4 min' ], [ '3', 'Liquidity and time horizon', '4 min' ] ],
+	},
+	m1c1: {
+		modlabel: 'Module 01 · Fundamentals', time: '5 min', num: '01', h: 'Compound interest, explained calmly',
+		p1: 'It is the most powerful idea of all — and the simplest. <span class="term">Compound interest</span> is earning a return not only on what you invested, but also on the return that has already built up. Gains start generating their own gains.',
+		chartH: '€100 a month, for 30 years', chartSub: 'illustrative ~6%/yr return',
+		legA: 'Only what you paid in · ~€36,000', legB: 'With compound interest · ~€100,000',
+		p2: 'Notice the curve: at the start it barely differs from a straight line. It only takes off near the end. That is why the most valuable ingredient is not having a lot of money — it is giving <strong>time</strong> to the process.',
+		key: 'Time is the engine of compound interest. Starting early is worth more than starting big.',
+	},
+	m1c2: {
+		modlabel: 'Module 01 · Fundamentals', time: '4 min', num: '02', h: 'Inflation: the invisible tax',
+		p1: 'Nobody charges you inflation directly, but it takes buying power from you every year. If prices rise 3% and your money sits idle, you became 3% poorer without spending a thing. It is the tax that never shows on a receipt.',
+		chartH: 'What €100 buys over time (inflation ~3%/yr)',
+		bars: [ [ '€100', 100, 'Today', true ], [ '~€86', 74, '5 years', false ], [ '~€74', 60, '10 years', false ], [ '~€55', 42, '20 years', false ] ],
+		exL: 'Example', ex: 'A €1 coffee today will cost close to €1.34 in 10 years at 3% inflation. The price went up; your idle money did not.',
+		cauL: 'Caution', cau: '"I didn\'t lose money, it\'s all in the account" is an illusion. In buying power, idle money almost always loses.',
+	},
+	m1c3: {
+		modlabel: 'Module 01 · Fundamentals', time: '4 min', num: '03', h: 'Liquidity and time horizon',
+		p1: '<span class="term">Liquidity</span> is how quickly you can turn something into cash without losing value. Money in an account is very liquid; property is not. Cross this with your horizon and you see where to place each euro.',
+		chartH: 'From most to least liquid',
+		spectrum: [ [ 'Account / deposit', '#22C3A6', 'Instant', '#0E9C84' ], [ 'Bonds', '#5BB8C9', 'Days', '#A89FB5' ], [ 'Equities', '#7C5CFC', 'Days', '#A89FB5' ], [ 'Property', '#FF6B5E', 'Months', '#C9362C' ] ],
+		chartNote: 'The less liquid it is, the more time (and patience) the asset tends to ask for.',
+		p2: 'Rule of thumb: money you might need at any moment stays liquid; money with years ahead can go to less-liquid assets, which tend to reward that wait.',
+		key: 'Pair liquidity and horizon: near money liquid and stable; distant money put to work.',
+	},
+	m1r: {
+		kick: 'Module 01 · In summary', h: 'What you take from this module', accent: 'purple',
+		points: [
+			'Compound interest makes gains generate gains. The curve takes off at the end, so time is the most valuable ingredient.',
+			'Inflation erodes idle money every year. Investing is how you try to grow above it.',
+			'Liquidity and horizon go together: short-term money stays accessible; long-term money can earn more.',
+		],
+		termsL: 'Terms in this module', terms: [ 'Compound interest', 'Inflation', 'Buying power', 'Liquidity' ],
+		qKick: 'A question for you', q: 'If you started today with little, but every month, where would you be in 20 years?',
+	},
 	nsQrKick: 'Continue in the app', nsQrH: 'Discover your profile and follow the guided path',
 	nsQrP: 'Point your camera at the code to open HowToInvest. A profile quiz, modules and an interactive glossary — free and with no products for sale.',
 	bcH: 'Starting is the hardest step.',
@@ -370,16 +478,66 @@ function buildPages( t, qrSvg ) {
 	  </div>${foot( num, t.running )}</div></section>` );
 
 	// 9 · M0 · summary
-	const r = t.m0r;
+	add( ( num ) => summaryPage( t, t.m0r, num ) );
+
+	// ===== Module 01 · Fundamentos =====
+	const m1 = t.m1;
+	add( () => `<section class="pg"><div style="position:absolute;left:0;bottom:0;width:100%;height:34%;background:${m1.divBg}"></div>
+	  <div style="position:relative;height:100%;padding:24mm 22mm 22mm;display:flex;flex-direction:column">
+	    <div style="display:flex;align-items:center;gap:8px"><span class="kick kick--purple" style="letter-spacing:.16em;color:#7C5CFC">${m1.label}</span><span style="flex:1;height:1px;background:#ECD9CF"></span><span style="font-weight:600;font-size:11px;color:#A89FB5">${m1.read}</span></div>
+	    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+	      <div class="pop" style="font-weight:800;font-size:150px;line-height:.85;letter-spacing:-.04em;color:#7C5CFC;opacity:.16">${m1.num}</div>
+	      <h2 class="h2" style="font-size:46px;margin:6px 0 0;line-height:1.02">${m1.title}</h2>
+	      <p class="lead" style="font-size:17px;color:#6E6680;margin:18px 0 0;max-width:420px">${m1.desc}</p>
+	    </div>
+	    <div><div class="kick kick--purple" style="letter-spacing:.1em;margin-bottom:12px;color:#6A4BE0">${m1.inThis}</div>
+	      <div style="display:flex;flex-direction:column;gap:2px">${m1.chapters.map( c => `<div style="display:flex;align-items:center;gap:14px;padding:11px 0;border-top:1px solid #E4DAF6"><span class="pop" style="font-weight:700;font-size:14px;color:#7C5CFC;width:24px">${c[ 0 ]}</span><span style="flex:1;font-weight:600;font-size:15px;color:#2A2438">${c[ 1 ]}</span><span style="font-weight:600;font-size:12px;color:#A89FB5">${c[ 2 ]}</span></div>` ).join( '' )}</div></div>
+	  </div></section>`, { num: m1.num, title: m1.title, sub: m1.desc.split( '—' )[ 0 ].trim() } );
+
+	// M1 · chapter 1 — compound interest (navy line chart)
+	const a = t.m1c1;
 	add( ( num ) => `<section class="pg"><div class="pad">
-	  <div style="margin-bottom:7mm"><span class="kick">${r.kick}</span></div>
-	  <h3 class="h3" style="font-size:28px;max-width:440px">${r.h}</h3>
-	  <div style="display:flex;flex-direction:column;gap:12px;margin:22px 0 0">${r.points.map( ( p, i ) => `<div class="card" style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px"><span class="pop" style="flex:none;width:26px;height:26px;border-radius:50%;background:#FFEDE9;color:#FF6B5E;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">${i + 1}</span><p style="margin:0;font-size:14.5px;line-height:1.55;color:#3A3450">${p}</p></div>` ).join( '' )}</div>
-	  <div style="margin-top:22px"><div class="kick kick--purple" style="letter-spacing:.1em;margin-bottom:10px">${r.termsL}</div><div style="display:flex;flex-wrap:wrap;gap:8px">${r.terms.map( w => `<span style="background:#fff;border:1px solid #E7DBF6;color:#6A4BE0;font-weight:600;font-size:12px;padding:6px 13px;border-radius:999px">${w}</span>` ).join( '' )}</div></div>
-	  <div class="push" style="background:#1E2147;border-radius:16px;padding:20px 24px;color:#fff;display:flex;align-items:center;gap:18px">
-	    <span style="flex:none;width:42px;height:42px;border-radius:12px;background:rgba(124,92,252,.25);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B7A4FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></span>
-	    <div><div class="kick" style="color:#B7A4FF;letter-spacing:.08em;margin-bottom:4px">${r.qKick}</div><p style="margin:0;font-size:15px;line-height:1.45;color:#fff">${r.q}</p></div>
+	  ${chapHead( a )}${chapTitle( a )}
+	  <p class="body" style="margin:14px 0 0;max-width:485px">${a.p1}</p>
+	  <div style="background:#1E2147;border-radius:16px;padding:22px 24px;margin:20px 0 0;color:#fff">
+	    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px"><div class="pop" style="font-weight:700;font-size:15px">${a.chartH}</div><span style="font-weight:500;font-size:12px;color:#9A9EC4">${a.chartSub}</span></div>
+	    <svg viewBox="0 0 480 150" width="100%" height="150"><defs><linearGradient id="gjc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FF6B5E"/><stop offset="1" stop-color="#7C5CFC"/></linearGradient></defs><line x1="6" y1="132" x2="474" y2="132" stroke="#3A3E66" stroke-width="1.5"/><path d="M6 120 L474 60" fill="none" stroke="#6B6F96" stroke-width="2" stroke-dasharray="5 5"/><path d="M6 120 C 160 116, 280 96, 360 70 C 420 50, 452 26, 474 10" fill="none" stroke="url(#gjc)" stroke-width="3.5" stroke-linecap="round"/><path d="M6 120 C 160 116, 280 96, 360 70 C 420 50, 452 26, 474 10 L474 132 L6 132 Z" fill="url(#gjc)" opacity=".14"/><circle cx="474" cy="10" r="4.5" fill="#FF8377"/><circle cx="474" cy="60" r="4" fill="#6B6F96"/></svg>
+	    <div style="display:flex;gap:20px;margin-top:10px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:7px"><span style="width:18px;height:3px;border-radius:2px;background:#6B6F96"></span><span style="font-weight:500;font-size:12px;color:#9A9EC4">${a.legA}</span></div><div style="display:flex;align-items:center;gap:7px"><span style="width:18px;height:3px;border-radius:2px;background:#FF8377"></span><span style="font-weight:500;font-size:12px;color:#fff">${a.legB}</span></div></div>
+	  </div>
+	  <p class="body" style="margin:18px 0 0;max-width:485px">${a.p2}</p>
+	  <div class="key push" style="padding:15px 20px"><div class="key__l">${t.lang === 'pt' ? 'Ideia-chave' : 'Key idea'}</div><p class="key__p">${a.key}</p></div>
+	  ${foot( num, t.running )}</div></section>` );
+
+	// M1 · chapter 2 — inflation decay bars (purple)
+	const b = t.m1c2;
+	add( ( num ) => `<section class="pg"><div class="pad">
+	  ${chapHead( b )}${chapTitle( b )}
+	  <p class="body" style="margin:14px 0 0;max-width:485px">${b.p1}</p>
+	  <div class="card" style="margin:20px 0 0">
+	    <div class="pop" style="font-weight:700;font-size:15px;margin-bottom:18px">${b.chartH}</div>
+	    <div style="display:flex;align-items:flex-end;gap:16px;height:130px">${b.bars.map( ( bar ) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><span class="pop" style="font-weight:700;font-size:13px;color:${bar[ 3 ] ? '#2A2438' : '#8A7FA0'};margin-bottom:7px">${bar[ 0 ]}</span><div style="width:100%;height:${bar[ 1 ]}%;background:${bar[ 3 ] ? 'linear-gradient(180deg,#7C5CFC,#9B7BF7)' : '#E2DAF1'};border-radius:8px 8px 0 0"></div><span style="font-weight:600;font-size:11px;color:#6E6680;margin-top:8px">${bar[ 2 ]}</span></div>` ).join( '' )}</div>
+	  </div>
+	  <div style="display:flex;gap:12px;margin-top:18px">
+	    <div class="mini mini--ex" style="flex:1"><div class="mini__l">${b.exL}</div><p class="mini__p">${b.ex}</p></div>
+	    <div class="mini mini--caution" style="flex:1"><div class="mini__l">${b.cauL}</div><p class="mini__p">${b.cau}</p></div>
 	  </div>${foot( num, t.running )}</div></section>` );
+
+	// M1 · chapter 3 — liquidity spectrum
+	const cc = t.m1c3;
+	add( ( num ) => `<section class="pg"><div class="pad">
+	  ${chapHead( cc )}${chapTitle( cc )}
+	  <p class="body" style="margin:14px 0 0;max-width:485px">${cc.p1}</p>
+	  <div class="card" style="margin:20px 0 0;padding:22px">
+	    <div class="pop" style="font-weight:700;font-size:15px;margin-bottom:18px">${cc.chartH}</div>
+	    <div style="display:flex;align-items:center;gap:0">${cc.spectrum.map( ( sp, i ) => `<div style="flex:1;text-align:center"><div style="height:34px;background:${sp[ 1 ]};${i === 0 ? 'border-radius:9px 0 0 9px;' : i === cc.spectrum.length - 1 ? 'border-radius:0 9px 9px 0;' : ''}display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:12px">${sp[ 0 ]}</div><div style="font-weight:600;font-size:11px;color:${sp[ 3 ]};margin-top:8px">${sp[ 2 ]}</div></div>` ).join( '' )}</div>
+	    <div style="font-weight:500;font-size:12px;color:#A89FB5;margin-top:16px;text-align:center">${cc.chartNote}</div>
+	  </div>
+	  <p class="body" style="margin:18px 0 0;max-width:485px">${cc.p2}</p>
+	  <div class="key push" style="padding:15px 20px"><div class="key__l">${t.lang === 'pt' ? 'Ideia-chave' : 'Key idea'}</div><p class="key__p">${cc.key}</p></div>
+	  ${foot( num, t.running )}</div></section>` );
+
+	// M1 · summary (purple accent)
+	add( ( num ) => summaryPage( t, t.m1r, num ) );
 
 	// 10 · Next steps + QR
 	add( ( num ) => `<section class="pg"><div class="pad">
