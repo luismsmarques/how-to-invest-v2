@@ -18,16 +18,16 @@ next: reading-an-example-portfolio
 
 Once you know the asset classes, the next question is how much of each. That split is called asset allocation, and it is the quiet decision doing most of the work behind any portfolio.
 
-## What allocation means
-Allocation is simply the proportion of each class you hold — how much in global equities, how much in bonds, how much in cash, and so on. Written out, it is a list of slices that add up to the whole.
+## What does asset allocation mean?
+Allocation is simply the proportion of each class you hold — how much in [glossary:global-equities|global equities], how much in [glossary:bonds|bonds], how much in [glossary:cash|cash], and so on. Written out, it is a list of slices that add up to the whole.
 
-## Why it matters so much
+## Why does asset allocation matter so much?
 How you divide between growth and steadier classes tends to shape your experience — both the long-term growth potential and the size of the swings — more than the finer details within any single class. Get the broad mix right for your situation, and the rest matters less than people expect.
 
-## What sets the right mix
+## What sets the right mix?
 Two things lead: your time horizon and your comfort with ups and downs. A longer horizon can usually carry more of the growth-focused classes; a shorter one or a lower tolerance leans steadier. There is no single "correct" allocation — only one that fits a situation.
 
-## Always by class, within ranges
+## Why is allocation always shown by class, within ranges?
 A useful allocation is described by asset class, never by specific products, and a curated profile keeps each slice inside a sensible range. The point is a balanced whole that suits you, not chasing any single number.
 
 ## Key takeaways
@@ -51,16 +51,16 @@ A useful allocation is described by asset class, never by specific products, and
 
 Depois de conheceres as classes de ativos, a pergunta seguinte é quanto de cada uma. Essa divisão chama-se alocação de ativos, e é a decisão silenciosa que faz a maior parte do trabalho por trás de qualquer carteira.
 
-## O que significa alocação
+## O que significa a alocação de ativos?
 A alocação é simplesmente a proporção de cada classe que tens — quanto em ações globais, quanto em obrigações, quanto em liquidez, e assim por diante. Escrita, é uma lista de fatias que somam o todo.
 
-## Porque conta tanto
+## Porque é que a alocação conta tanto?
 A forma como divides entre crescimento e classes mais estáveis tende a moldar a tua experiência — tanto o potencial de crescimento a longo prazo como o tamanho das oscilações — mais do que os detalhes finos dentro de cada classe. Acerta na mistura ampla para a tua situação e o resto conta menos do que as pessoas esperam.
 
-## O que define a mistura certa
+## O que define a mistura certa?
 Duas coisas lideram: o teu horizonte temporal e o teu conforto com altos e baixos. Um horizonte mais longo costuma poder carregar mais das classes focadas em crescimento; um mais curto ou uma tolerância menor inclina-se para o estável. Não há uma única alocação "correta" — apenas uma que encaixa numa situação.
 
-## Sempre por classe, dentro de intervalos
+## Porque é a alocação sempre mostrada por classe, dentro de intervalos?
 Uma alocação útil é descrita por classe de ativos, nunca por produtos específicos, e um perfil curado mantém cada fatia dentro de um intervalo sensato. O objetivo é um todo equilibrado que te sirva, não perseguir um número qualquer.
 
 ## Pontos-chave

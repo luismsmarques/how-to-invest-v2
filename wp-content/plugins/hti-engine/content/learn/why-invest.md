@@ -18,14 +18,14 @@ next: how-compound-interest-works
 
 If you have ever wondered why people bother investing instead of just saving, this is the place to start. The short answer: over long periods prices tend to rise, and money left sitting still slowly loses some of what it can buy.
 
-## The quiet problem: inflation
-Inflation is the slow rise in the price of things over time. A note kept under the mattress does not shrink in number, but year after year it tends to buy a little less. That is the quiet cost of doing nothing with savings you will not need for a long time.
+## What is inflation and why does it matter?
+[glossary:inflation|Inflation] is the slow rise in the price of things over time. A note kept under the mattress does not shrink in number, but year after year it tends to buy a little less. That is the quiet cost of doing nothing with savings you will not need for a long time.
 
-## What investing adds
-Investing puts money to work across broad asset classes — like global equities, bonds or cash — that have, over long periods, tended to grow. That growth is never guaranteed and always comes with ups and downs; the idea is to give your money a chance to outpace rising prices over many years, not to get rich quickly.
+## What does investing add?
+Investing puts money to work across broad asset classes — like [glossary:global-equities|global equities], [glossary:bonds|bonds] or [glossary:cash|cash] — that have, over long periods, tended to grow. That growth is never guaranteed and always comes with ups and downs; the idea is to give your money a chance to outpace rising prices over many years, not to get rich quickly.
 
-## Time does the heavy lifting
-The real engine is time. Money you leave invested for many years can grow on its own past growth — an effect called compound interest, which the next chapter unpacks. The earlier the idea clicks, the more time can work in your favour.
+## How does time do the heavy lifting?
+The real engine is time. Money you leave invested for many years can grow on its own past growth — an effect called [glossary:compound-interest|compound interest], which the next chapter unpacks. The earlier the idea clicks, the more time can work in your favour.
 
 ## Key takeaways
 - Cash is safe day to day, but inflation slowly reduces what it can buy.
@@ -48,13 +48,13 @@ The real engine is time. Money you leave invested for many years can grow on its
 
 Se alguma vez te perguntaste porque é que as pessoas investem em vez de só pouparem, este é o ponto de partida. A resposta curta: em períodos longos os preços tendem a subir, e o dinheiro parado vai perdendo, devagar, parte daquilo que consegue comprar.
 
-## O problema silencioso: a inflação
+## O que é a inflação e porque é que importa?
 A inflação é a subida lenta do preço das coisas ao longo do tempo. Uma nota guardada debaixo do colchão não diminui em número, mas, ano após ano, tende a comprar um pouco menos. É esse o custo silencioso de não fazer nada com poupanças de que não vais precisar durante muito tempo.
 
-## O que o investimento acrescenta
+## O que é que o investimento acrescenta?
 Investir põe o dinheiro a trabalhar em classes de ativos amplas — como ações globais, obrigações ou liquidez — que, em períodos longos, tenderam a crescer. Esse crescimento nunca é garantido e traz sempre altos e baixos; a ideia é dar ao teu dinheiro a hipótese de acompanhar a subida dos preços ao longo de muitos anos, não enriquecer depressa.
 
-## O tempo faz o trabalho pesado
+## Como é que o tempo faz o trabalho pesado?
 O verdadeiro motor é o tempo. O dinheiro que deixas investido durante muitos anos pode crescer sobre o seu próprio crescimento passado — um efeito chamado juros compostos, que o próximo capítulo explica. Quanto mais cedo a ideia encaixa, mais o tempo pode trabalhar a teu favor.
 
 ## Pontos-chave

@@ -18,17 +18,17 @@ next: what-is-esg-investing
 
 Cash rarely gets much attention, but it plays a quiet, important role. Knowing when it helps — and when it quietly holds you back — is part of seeing the whole picture.
 
-## What cash is here
-As an asset class, cash means money kept ready and stable — reachable at short notice, with little day-to-day movement in its value. Its strength is certainty: you know roughly what it will be worth tomorrow.
+## What is cash as an asset class?
+As an [glossary:asset|asset class], [glossary:cash|cash] means money kept ready and stable — reachable at short notice, with little day-to-day movement in its value. Its strength is certainty: you know roughly what it will be worth tomorrow.
 
-## When it helps most
+## When does cash help most?
 Cash is the natural home for money you may need soon — an emergency fund, or a goal that is only a year or two away. For those jobs, stability beats growth, because there is little time to recover from a fall.
 
-## Its quiet cost
-The same stability has a downside over long periods: cash does not aim to grow, so inflation slowly reduces what it can buy. Money meant for far-off goals, parked in cash for years, tends to fall behind rising prices.
+## What is the quiet cost of cash?
+The same stability has a downside over long periods: cash does not aim to grow, so [glossary:inflation|inflation] slowly reduces what it can buy. Money meant for far-off goals, parked in cash for years, tends to fall behind rising prices.
 
-## Where it fits in a mix
-In an illustrative portfolio, a small cash slice can add steadiness and flexibility — a calm corner that does not swing. The right amount depends on the situation, and like every class here, it is shown only by class, never as specific products.
+## Where does cash fit in a mix?
+In an illustrative [glossary:portfolio|portfolio], a small cash slice can add steadiness and flexibility — a calm corner that does not swing. The right amount depends on the situation, and like every class here, it is shown only by class, never as specific products.
 
 ## Key takeaways
 - Cash is stable, reachable money — its strength is certainty.
@@ -51,16 +51,16 @@ In an illustrative portfolio, a small cash slice can add steadiness and flexibil
 
 A liquidez raramente recebe muita atenção, mas desempenha um papel discreto e importante. Saber quando ajuda — e quando, em silêncio, te trava — faz parte de ver o quadro completo.
 
-## O que é a liquidez aqui
+## O que é a liquidez como classe de ativos?
 Como classe de ativos, a liquidez é dinheiro mantido pronto e estável — acessível a curto prazo, com pouco movimento diário no seu valor. A sua força é a certeza: sabes mais ou menos quanto valerá amanhã.
 
-## Quando ajuda mais
+## Quando é que a liquidez ajuda mais?
 A liquidez é o lar natural do dinheiro de que podes precisar em breve — um fundo de emergência, ou um objetivo a apenas um ou dois anos de distância. Para essas funções, a estabilidade vence o crescimento, porque há pouco tempo para recuperar de uma queda.
 
-## O seu custo silencioso
+## Qual é o custo silencioso da liquidez?
 A mesma estabilidade tem uma desvantagem em períodos longos: a liquidez não procura crescer, por isso a inflação reduz devagar o que ela compra. Dinheiro destinado a objetivos distantes, parado em liquidez durante anos, tende a ficar para trás dos preços a subir.
 
-## Onde encaixa numa mistura
+## Onde encaixa a liquidez numa mistura?
 Num exemplo ilustrativo de carteira, uma pequena fatia de liquidez pode acrescentar estabilidade e flexibilidade — um canto calmo que não oscila. O valor certo depende da situação e, como todas as classes aqui, é mostrada apenas por classe, nunca como produtos específicos.
 
 ## Pontos-chave

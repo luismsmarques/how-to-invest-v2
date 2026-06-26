@@ -18,16 +18,16 @@ next: what-is-an-investor-profile
 
 It is easy to ask "what should I invest in?" before asking "what am I investing for?". Yet the goal comes first, because it shapes every decision that follows.
 
-## Name what it is for
+## How do you name what the money is for?
 Money tends to behave better when it has a purpose — a safety net, a home one day, a far-off retirement. Naming the goal turns a vague urge to "do something" into a concrete target you can actually plan around.
 
-## Pin down the when
+## Why does the time horizon matter most?
 Every goal has a time attached, and that time is the single most important detail. A goal a couple of years away leans on steadier classes; one decades away can carry more growth, with time to ride out the swings.
 
-## Separate short from long
+## Why separate short-term from long-term goals?
 Most people hold several goals at once, and they do not all want the same treatment. Short-term money stays calm and reachable; long-term money is where investing does its work. Keeping the pots separate keeps each one honest.
 
-## Let the goal set the mix
+## How does the goal set the mix?
 Once the purpose and the horizon are clear, the right balance between growth and steadiness almost suggests itself. That is the quiet power of starting with the goal: the rest stops being guesswork.
 
 ## Key takeaways
@@ -51,16 +51,16 @@ Once the purpose and the horizon are clear, the right balance between growth and
 
 É fácil perguntar "em que devo investir?" antes de perguntar "para que estou a investir?". No entanto, o objetivo vem primeiro, porque molda todas as decisões seguintes.
 
-## Dá-lhe um nome
+## Como dar um nome ao que o dinheiro serve?
 O dinheiro tende a comportar-se melhor quando tem um propósito — uma rede de segurança, uma casa um dia, uma reforma distante. Dar nome ao objetivo transforma a vontade vaga de "fazer alguma coisa" num alvo concreto em torno do qual consegues mesmo planear.
 
-## Define o quando
+## Porque é que o horizonte temporal é o que mais importa?
 Todo o objetivo tem um tempo associado, e esse tempo é o detalhe mais importante. Um objetivo a um ou dois anos apoia-se em classes mais estáveis; um a décadas pode carregar mais crescimento, com tempo para atravessar as oscilações.
 
-## Separa o curto do longo
+## Porque separar os objetivos de curto e de longo prazo?
 A maioria das pessoas tem vários objetivos ao mesmo tempo, e nem todos querem o mesmo tratamento. O dinheiro de curto prazo fica calmo e acessível; o de longo prazo é onde o investimento faz o seu trabalho. Manter os bolsos separados mantém cada um honesto.
 
-## Deixa o objetivo definir a mistura
+## Como é que o objetivo define a mistura?
 Quando o propósito e o horizonte estão claros, o equilíbrio certo entre crescimento e estabilidade quase se sugere a si próprio. É esse o poder silencioso de começar pelo objetivo: o resto deixa de ser adivinha.
 
 ## Pontos-chave

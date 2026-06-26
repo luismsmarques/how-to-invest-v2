@@ -18,14 +18,14 @@ next: why-an-emergency-fund-comes-first
 
 Compound interest is the single idea that makes long-term investing powerful. Once you see it, the value of starting early clicks into place.
 
-## Growth on top of growth
-Imagine a small snowball rolling downhill. It picks up snow, gets bigger, and because it is bigger it picks up even more. Compounding works the same way: any growth your money earns can itself go on to earn more. Early on it feels slow; given enough time, it can build momentum.
+## What does growth on top of growth mean?
+Imagine a small snowball rolling downhill. It picks up snow, gets bigger, and because it is bigger it picks up even more. [glossary:compound-interest|Compounding] works the same way: any growth your money earns can itself go on to earn more. Early on it feels slow; given enough time, it can build momentum.
 
-## Why time matters more than amount
+## Why does time matter more than amount?
 Because the snowball feeds on itself, the length of the hill — your time horizon — often matters more than how big the snowball starts. Starting earlier with a little can, over many years, do more than starting later with a lot. There are no guarantees, but time is the ingredient compounding needs most.
 
-## It cuts both ways
-The same force works against you when it comes to costs and inflation: high fees and rising prices also compound over time, quietly eating into growth. That is why long-term thinking tends to favour keeping costs low and staying patient.
+## Does compounding cut both ways?
+The same force works against you when it comes to costs and [glossary:inflation|inflation]: high fees and rising prices also compound over time, quietly eating into growth. That is why long-term thinking tends to favour keeping costs low and staying patient.
 
 ## Key takeaways
 - Compounding means your gains start earning gains of their own.
@@ -48,13 +48,13 @@ The same force works against you when it comes to costs and inflation: high fees
 
 Os juros compostos são a ideia que torna o investimento de longo prazo tão poderoso. Quando a percebes, o valor de começar cedo encaixa de imediato.
 
-## Crescimento sobre crescimento
+## O que significa crescimento sobre crescimento?
 Imagina uma pequena bola de neve a descer uma encosta. Vai apanhando neve, fica maior e, por ser maior, apanha ainda mais. Os juros compostos funcionam da mesma forma: qualquer crescimento que o teu dinheiro gera pode, por sua vez, gerar mais. Ao início parece lento; com tempo suficiente, ganha balanço.
 
-## Porque o tempo conta mais do que o montante
+## Porque é que o tempo conta mais do que o montante?
 Como a bola de neve se alimenta a si própria, o comprimento da encosta — o teu horizonte temporal — costuma contar mais do que o tamanho com que ela começa. Começar mais cedo com pouco pode, ao longo de muitos anos, fazer mais do que começar mais tarde com muito. Não há garantias, mas o tempo é o ingrediente de que os juros compostos mais precisam.
 
-## Funciona nos dois sentidos
+## Os juros compostos funcionam nos dois sentidos?
 A mesma força joga contra ti nos custos e na inflação: comissões altas e preços a subir também compõem ao longo do tempo, corroendo o crescimento em silêncio. É por isso que o pensamento de longo prazo tende a preferir manter os custos baixos e ter paciência.
 
 ## Pontos-chave

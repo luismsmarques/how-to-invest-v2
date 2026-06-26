@@ -18,16 +18,16 @@ next: what-is-rebalancing
 
 When you see a sample portfolio here, it is shown as a handful of slices by asset class. Knowing how to read one turns an abstract chart into something you actually understand.
 
-## What it shows
-An example portfolio breaks 100% into slices — a share for global equities, a share for bonds, a share for cash, and sometimes a small one for other classes. The slices always sum to the whole; nothing is left unaccounted for.
+## What does an example portfolio show?
+An example portfolio breaks 100% into slices — a share for [glossary:global-equities|global equities], a share for [glossary:bonds|bonds], a share for [glossary:cash|cash], and sometimes a small one for other classes. The slices always sum to the whole; nothing is left unaccounted for.
 
-## How to read the slices
+## How do you read the slices?
 Think of each slice by its job. The growth-focused classes are the engine; the steadier ones are the ballast; cash is the calm corner for short-term needs. A bigger growth slice signals more long-term potential and more movement; a bigger steady slice signals a smoother ride.
 
-## Why it is only an example
+## Why is it only an example?
 These portfolios are illustrative and educational — a picture of the kind of structure a situation might explore, never a personal recommendation and never specific products. They are built by asset class, with each slice kept within a sensible range for the profile.
 
-## Why yours might differ
+## Why might yours differ?
 Two people who look similar can still land on different mixes, because horizon, goals and comfort all play in. An example is a starting point for understanding, not a target to copy exactly.
 
 ## Key takeaways
@@ -51,16 +51,16 @@ Two people who look similar can still land on different mixes, because horizon, 
 
 Quando vês uma carteira-exemplo aqui, ela é mostrada como um punhado de fatias por classe de ativos. Saber lê-la transforma um gráfico abstrato em algo que percebes mesmo.
 
-## O que mostra
+## O que mostra um exemplo de carteira?
 Um exemplo de carteira divide os 100% em fatias — uma parte para ações globais, uma para obrigações, uma para liquidez e, por vezes, uma pequena para outras classes. As fatias somam sempre o todo; nada fica por contar.
 
-## Como ler as fatias
+## Como se leem as fatias?
 Pensa em cada fatia pela sua função. As classes focadas em crescimento são o motor; as mais estáveis são o lastro; a liquidez é o canto calmo para necessidades de curto prazo. Uma fatia de crescimento maior sinaliza mais potencial a longo prazo e mais movimento; uma fatia estável maior sinaliza um percurso mais suave.
 
-## Porque é só um exemplo
+## Porque é que é só um exemplo?
 Estas carteiras são ilustrativas e educativas — uma imagem do tipo de estrutura que uma situação poderia estudar, nunca uma recomendação pessoal e nunca produtos específicos. São construídas por classe de ativos, com cada fatia mantida dentro de um intervalo sensato para o perfil.
 
-## Porque a tua pode ser diferente
+## Porque é que a tua pode ser diferente?
 Duas pessoas que parecem semelhantes podem ainda assim chegar a misturas diferentes, porque o horizonte, os objetivos e o conforto entram todos em jogo. Um exemplo é um ponto de partida para perceber, não um alvo para copiar tal e qual.
 
 ## Pontos-chave

@@ -18,16 +18,16 @@ next: cash-and-when-it-helps
 
 If equities are a portfolio's growth engine, bonds are often its ballast. They behave differently, and that difference is exactly why the two are so often used together.
 
-## What a bond is
-A bond is a loan. When you hold one, you have effectively lent money — to a government or a company — in return for regular interest and the promise of the amount back at the end. That steady interest is where the calmer reputation comes from.
+## What is a bond, exactly?
+A [glossary:bonds|bond] is a loan. When you hold one, you have effectively lent money — to a government or a company — in return for regular interest and the promise of the amount back at the end. That steady interest is where the calmer reputation comes from.
 
-## Why they move more gently
-Because the payments are agreed in advance, bonds tend to swing less than equities. They are not risk-free — their value moves as interest rates change, and a borrower can disappoint — but as a class they usually travel a smoother road.
+## Why do bonds move more gently than equities?
+Because the payments are agreed in advance, bonds tend to swing less than equities. They are not risk-free — their value moves as [glossary:interest-rate|interest rates] change, and a borrower can disappoint — but as a class they usually travel a smoother road.
 
-## Their job in a portfolio
-Bonds often soften the overall ride. When equities fall, a bond slice can hold steadier, which can make a portfolio easier to stick with. That steadying role tends to matter more as a goal gets closer in time.
+## What is a bond's job in a portfolio?
+Bonds often soften the overall ride. When equities fall, a bond slice can hold steadier, which can make a [glossary:portfolio|portfolio] easier to stick with. That steadying role tends to matter more as a goal gets closer in time.
 
-## The trade-off
+## What is the trade-off with bonds?
 Calmer usually means lower long-term growth potential than equities. That is the exchange: less bounce, but also less climb. The balance between the two classes is one of the main things an asset mix decides — always shown by class, never as specific products.
 
 ## Key takeaways
@@ -51,16 +51,16 @@ Calmer usually means lower long-term growth potential than equities. That is the
 
 Se as ações são o motor de crescimento de uma carteira, as obrigações são muitas vezes o seu lastro. Comportam-se de forma diferente, e é precisamente essa diferença que faz com que as duas sejam tão usadas em conjunto.
 
-## O que é uma obrigação
+## O que é, exatamente, uma obrigação?
 Uma obrigação é um empréstimo. Quando tens uma, emprestaste dinheiro — a um governo ou a uma empresa — em troca de juros regulares e da promessa de receberes o montante de volta no fim. É desses juros estáveis que vem a reputação mais calma.
 
-## Porque se movem de forma mais suave
+## Porque é que as obrigações se movem de forma mais suave que as ações?
 Como os pagamentos são acordados à partida, as obrigações tendem a oscilar menos do que as ações. Não são isentas de risco — o seu valor mexe-se conforme as taxas de juro mudam, e quem pede emprestado pode desiludir — mas, como classe, costumam percorrer um caminho mais suave.
 
-## A sua função numa carteira
+## Qual é a função de uma obrigação numa carteira?
 As obrigações costumam suavizar o percurso global. Quando as ações caem, uma fatia de obrigações pode manter-se mais estável, o que pode tornar uma carteira mais fácil de manter. Esse papel estabilizador tende a contar mais à medida que um objetivo se aproxima no tempo.
 
-## O compromisso
+## Qual é o compromisso com as obrigações?
 Mais calmo costuma significar menor potencial de crescimento a longo prazo do que as ações. É essa a troca: menos balanço, mas também menos subida. O equilíbrio entre as duas classes é uma das principais coisas que uma mistura de ativos decide — sempre mostrada por classe, nunca como produtos específicos.
 
 ## Pontos-chave

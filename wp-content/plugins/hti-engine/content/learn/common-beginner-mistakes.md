@@ -18,19 +18,19 @@ next: spotting-scams-and-red-flags
 
 You do not need to be brilliant to invest well, but a few common traps catch almost everyone at the start. Knowing them in advance is half the protection.
 
-## Chasing what just went up
+## Should I chase what just went up?
 It is tempting to pile into whatever has soared lately. But past performance is not a promise, and yesterday's winner can be tomorrow's laggard. A steady mix beats chasing heat.
 
-## Panic-selling in a drop
-Selling after a fall locks in the loss and misses the recovery that has historically followed — the single costliest reaction to volatility. A plan that fits your comfort makes it far easier to sit still.
+## What happens if I panic-sell in a drop?
+Selling after a fall locks in the loss and misses the recovery that has historically followed — the single costliest reaction to [glossary:volatility|volatility]. A plan that fits your comfort makes it far easier to sit still.
 
-## Checking too often
-Watching a portfolio daily turns normal swings into stress and tempts needless tinkering. Looking less often is not laziness — it is usually the calmer, better choice.
+## How often should I check my portfolio?
+Watching a [glossary:portfolio|portfolio] daily turns normal swings into stress and tempts needless tinkering. Looking less often is not laziness — it is usually the calmer, better choice.
 
-## Investing money you will need soon
-Money for next year does not belong in growth assets, because there is little time to recover from a dip. Short-term money stays in cash; only long-term money is invested.
+## Should I invest money I will need soon?
+Money for next year does not belong in growth assets, because there is little time to recover from a dip. Short-term money stays in [glossary:cash|cash]; only long-term money is invested.
 
-## Trying to time the market
+## Can I time the market?
 Waiting for the "perfect" moment usually means missing time in the market, which matters far more than timing it. Consistency tends to beat cleverness.
 
 ## Key takeaways
@@ -54,19 +54,19 @@ Waiting for the "perfect" moment usually means missing time in the market, which
 
 Não precisas de ser brilhante para investir bem, mas algumas armadilhas comuns apanham quase toda a gente no início. Conhecê-las de antemão é metade da proteção.
 
-## Perseguir o que acabou de subir
+## Devo perseguir o que acabou de subir?
 É tentador atirar-se ao que disparou ultimamente. Mas o desempenho passado não é uma promessa, e o vencedor de ontem pode ser o atrasado de amanhã. Uma mistura constante vence a perseguição ao calor do momento.
 
-## Vender em pânico numa queda
+## O que acontece se vender em pânico numa queda?
 Vender depois de uma queda fixa a perda e perde a recuperação que historicamente se seguiu — a reação mais cara à volatilidade. Um plano adequado ao teu conforto torna muito mais fácil ficar quieto.
 
-## Verificar demasiadas vezes
+## Com que frequência devo verificar a carteira?
 Olhar para a carteira todos os dias transforma oscilações normais em stress e tenta-te a mexer sem necessidade. Olhar menos vezes não é preguiça — costuma ser a escolha mais calma e melhor.
 
-## Investir dinheiro de que vais precisar em breve
+## Devo investir dinheiro de que vou precisar em breve?
 O dinheiro para o próximo ano não pertence a ativos de crescimento, porque há pouco tempo para recuperar de uma descida. O dinheiro de curto prazo fica em liquidez; só o de longo prazo é investido.
 
-## Tentar acertar no momento do mercado
+## Consigo acertar no momento do mercado?
 Esperar pelo momento "perfeito" costuma significar perder tempo no mercado, o que conta muito mais do que acertar no momento. A consistência tende a vencer a esperteza.
 
 ## Pontos-chave

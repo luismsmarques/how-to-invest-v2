@@ -18,17 +18,17 @@ next: risk-and-reward-explained
 
 The word "investing" can sound technical, but the idea is simple. Instead of leaving money still, you place it into things that have, over long periods, tended to grow — accepting that their value will rise and fall along the way.
 
-## Saving versus investing
+## What is the difference between saving and investing?
 Saving keeps your money safe and reachable; its job is stability. Investing has a different job: to grow your money faster than prices over the long run. One is not better than the other — they solve different problems, and most people need both.
 
-## What you actually own
-When you invest, you own a slice of an asset class. Global equities are part-ownership of companies. Bonds are loans that pay interest. Cash sits ready for short-term needs, and a few other classes add variety. Everything here is described by class, never by specific products.
+## What do you actually own when you invest?
+When you invest, you own a slice of an [glossary:asset|asset class]. [glossary:global-equities|Global equities] are part-ownership of companies. [glossary:bonds|Bonds] are loans that pay interest. [glossary:cash|Cash] sits ready for short-term needs, and a few other classes add variety. Everything here is described by class, never by specific products.
 
-## Return comes with risk
+## Why does return come with risk?
 There is no growth without some movement. The chance of a higher long-term return is the reward for living with shorter-term swings. How much swing you take on depends on your situation — mostly your time and your comfort, which later chapters explore.
 
-## It is a long game
-The real power shows up over years, not weeks, as gains build on earlier gains. That is why investing rewards patience and a plan far more than clever timing.
+## Why is investing a long game?
+The real power shows up over years, not weeks, as [glossary:compound-interest|gains build on earlier gains]. That is why investing rewards patience and a plan far more than clever timing.
 
 ## Key takeaways
 - Saving keeps money safe; investing aims to grow it over the long run.
@@ -51,16 +51,16 @@ The real power shows up over years, not weeks, as gains build on earlier gains. 
 
 A palavra "investir" pode soar técnica, mas a ideia é simples. Em vez de deixar o dinheiro parado, colocas-lo em coisas que, em períodos longos, tenderam a crescer — aceitando que o seu valor vai subir e descer pelo caminho.
 
-## Poupar versus investir
+## Qual é a diferença entre poupar e investir?
 Poupar mantém o teu dinheiro seguro e acessível; a sua função é a estabilidade. Investir tem outra função: fazer o dinheiro crescer mais depressa do que os preços a longo prazo. Um não é melhor do que o outro — resolvem problemas diferentes, e a maioria das pessoas precisa dos dois.
 
-## O que realmente possuis
+## O que possuis realmente quando investes?
 Quando investes, possuis uma fatia de uma classe de ativos. As ações globais são participação em empresas. As obrigações são empréstimos que pagam juros. A liquidez fica pronta para necessidades de curto prazo, e algumas outras classes acrescentam variedade. Tudo aqui é descrito por classe, nunca por produtos específicos.
 
-## O retorno vem com risco
+## Porque é que o retorno vem com risco?
 Não há crescimento sem algum movimento. A hipótese de um retorno mais alto a longo prazo é a recompensa por conviver com oscilações de curto prazo. Quanta oscilação aceitas depende da tua situação — sobretudo do teu tempo e do teu conforto, que capítulos seguintes exploram.
 
-## É um jogo de longo prazo
+## Porque é que investir é um jogo de longo prazo?
 O verdadeiro poder aparece ao longo de anos, não de semanas, à medida que os ganhos se acumulam sobre ganhos anteriores. É por isso que investir recompensa a paciência e um plano muito mais do que a esperteza no momento certo.
 
 ## Pontos-chave
