@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.35';
+const VERSION = '0.8.36';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1475,7 +1475,18 @@ function render_learn_quiz(): string {
 
 	ob_start();
 	?>
-	<section class="hti-quiz" data-slug="<?php echo esc_attr( $slug ); ?>" aria-label="<?php echo esc_attr( $s['h'] ); ?>">
+	<section class="hti-quiz"
+			data-slug="<?php echo esc_attr( $slug ); ?>"
+			data-l-check="<?php echo esc_attr( $s['check'] ); ?>"
+			data-l-retry="<?php echo esc_attr( $s['retry'] ); ?>"
+			data-l-partial="<?php echo esc_attr( $s['partial'] ); ?>"
+			data-l-tagcorrect="<?php echo esc_attr( $s['tag_correct'] ); ?>"
+			data-l-tagyour="<?php echo esc_attr( $s['tag_your'] ); ?>"
+			data-l-passedsub="<?php echo esc_attr( $s['passed_sub'] ); ?>"
+			data-l-returningsub="<?php echo esc_attr( $s['returning_sub'] ); ?>"
+			data-l-review="<?php echo esc_attr( $s['review'] ); ?>"
+			data-l-returnreview="<?php echo esc_attr( $s['return_review'] ); ?>"
+			aria-label="<?php echo esc_attr( $s['h'] ); ?>">
 		<div class="hti-quiz__boundary" aria-hidden="true">
 			<span class="hti-quiz__dash"></span>
 			<span class="hti-quiz__seal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4l9 2.5L5 9M5 9l11 2.5"/></svg></span>

@@ -518,57 +518,7 @@ class Content_Import {
 			. '</p><!-- /wp:paragraph -->' . "\n\n";
 	}
 
-	/**
-	 * A "label: link · link" related line.
-	 *
-	 * @param string                              $label Localized lead label.
-	 * @param array<int,array{0:string,1:string}> $links [url, text] pairs.
-	 */
-	private static function block_related( string $label, array $links ): string {
-		if ( ! $links ) {
-			return '';
-		}
-		$parts = array();
-		foreach ( $links as $link ) {
-			$parts[] = '<a href="' . esc_url( $link[0] ) . '">' . esc_html( $link[1] ) . '</a>';
-		}
-		return '<!-- wp:paragraph {"fontSize":"small"} --><p class="has-small-font-size">'
-			. esc_html( $label ) . ': ' . implode( ' · ', $parts )
-			. '</p><!-- /wp:paragraph -->' . "\n\n";
-	}
-
-	private static function block_cta(): string {
-		return '<!-- wp:pattern {"slug":"howtoinvest/cta-questionnaire"} /-->' . "\n\n";
-	}
-
 	/* ---------- import ---------- */
-
-	/**
-	 * Localized labels for the generated blocks.
-	 *
-	 * @param string $lang 'en'|'pt'.
-	 * @return array<string,mixed>
-	 */
-	private static function labels( string $lang ): array {
-		if ( 'pt' === $lang ) {
-			return array(
-				'tldr'      => 'Em uma linha',
-				'takeaways' => array( 'Key takeaways', 'Pontos-chave' ),
-				'learn'     => 'Sabe mais',
-				'continue'  => 'Continua o percurso',
-				'prev'      => 'Anterior',
-				'next'      => 'A seguir',
-			);
-		}
-		return array(
-			'tldr'      => 'In one line',
-			'takeaways' => array( 'Key takeaways', 'Pontos-chave' ),
-			'learn'     => 'Learn more',
-			'continue'  => 'Continue the path',
-			'prev'      => 'Previous',
-			'next'      => 'Next',
-		);
-	}
 
 	/**
 	 * Import (upsert) every chapter. Returns a per-chapter report.
@@ -596,7 +546,7 @@ class Content_Import {
 	 * Upsert one chapter (EN + PT) and link them.
 	 *
 	 * @param array<string,mixed> $c        Parsed chapter.
-	 * @param array<string,mixed> $chapters All chapters (for prev/next labels).
+	 * @param array<string,mixed> $chapters All chapters (reserved for cross-references).
 	 * @return array<string,mixed>
 	 */
 	private static function import_chapter( array $c, array $chapters ): array {
@@ -608,12 +558,12 @@ class Content_Import {
 		list( $body_en, $quiz_en ) = self::split_quiz( (string) $c['body_en'] );
 		list( $body_pt, $quiz_pt ) = self::split_quiz( (string) $c['body_pt'] );
 
-		$content_en = self::to_blocks( $body_en, 'In one line', array( 'Key takeaways' ) )
-			. self::related_blocks( $c, $chapters, 'en' )
-			. self::block_cta();
-		$content_pt = self::to_blocks( $body_pt, 'Em uma linha', array( 'Pontos-chave' ) )
-			. self::related_blocks( $c, $chapters, 'pt' )
-			. self::block_cta();
+		// The chapter prose is the whole content. The end-of-chapter glossary
+		// "Learn more" line and the questionnaire CTA were removed: they broke
+		// the reading flow before the quiz / course nav. Prev/next is rendered
+		// by the howtoinvest/learn-nav block, the quiz by howtoinvest/learn-quiz.
+		$content_en = self::to_blocks( $body_en, 'In one line', array( 'Key takeaways' ) );
+		$content_pt = self::to_blocks( $body_pt, 'Em uma linha', array( 'Pontos-chave' ) );
 
 		$en_id = self::upsert( $slug, (string) ( $c['title_en'] ?? $slug ), $content_en, (string) ( $c['excerpt_en'] ?? '' ) );
 		$pt_id = 0;
@@ -644,80 +594,6 @@ class Content_Import {
 			'en_status' => $en_id ? get_post_status( $en_id ) : 'none',
 			'pt_status' => $pt_id ? get_post_status( $pt_id ) : 'none',
 		);
-	}
-
-	/**
-	 * Build the "Learn more" (glossary) and "Continue the path" (prev/next) lines.
-	 *
-	 * @param array<string,mixed> $c        Chapter.
-	 * @param array<string,mixed> $chapters All chapters.
-	 * @param string              $lang     Language.
-	 */
-	private static function related_blocks( array $c, array $chapters, string $lang ): string {
-		$l   = self::labels( $lang );
-		$out = '';
-
-		// Glossary terms → link to the localized term when it exists.
-		$gloss = array();
-		foreach ( (array) ( $c['glossary'] ?? array() ) as $g_slug ) {
-			$link = self::glossary_link( (string) $g_slug, $lang );
-			if ( $link ) {
-				$gloss[] = $link;
-			}
-		}
-		$out .= self::block_related( $l['learn'], $gloss );
-
-		// Prev / next chapter navigation is rendered by the single-learn
-		// course nav block (howtoinvest/learn-nav), not inline in the content.
-		return $out;
-	}
-
-	/**
-	 * [url, text] for a glossary term in a language, or null if it does not exist.
-	 *
-	 * @param string $slug Glossary slug.
-	 * @param string $lang Language.
-	 * @return array{0:string,1:string}|null
-	 */
-	private static function glossary_link( string $slug, string $lang ): ?array {
-		$en = get_page_by_path( $slug, OBJECT, 'glossary' );
-		if ( ! $en instanceof \WP_Post ) {
-			return null;
-		}
-		$id = (int) $en->ID;
-		if ( 'pt' === $lang && function_exists( 'pll_get_post' ) ) {
-			$pt = (int) pll_get_post( $id, self::lang_slugs()['pt'] );
-			if ( $pt ) {
-				$id = $pt;
-			}
-		}
-		return array( (string) get_permalink( $id ), wp_strip_all_tags( get_the_title( $id ) ) );
-	}
-
-	/**
-	 * Title of a referenced chapter (from frontmatter, falling back to slug).
-	 */
-	private static function chapter_title( string $slug, array $chapters, string $lang ): string {
-		$c = $chapters[ $slug ] ?? null;
-		if ( $c ) {
-			$key = 'pt' === $lang ? 'title_pt' : 'title_en';
-			if ( ! empty( $c[ $key ] ) ) {
-				return (string) $c[ $key ];
-			}
-		}
-		return ucwords( str_replace( '-', ' ', $slug ) );
-	}
-
-	/**
-	 * URL of a referenced chapter in a language.
-	 */
-	private static function chapter_url( string $slug, array $chapters, string $lang ): string {
-		$c   = $chapters[ $slug ] ?? null;
-		$use = $slug;
-		if ( 'pt' === $lang && $c ) {
-			$use = (string) ( $c['slug_pt'] ?? ( $slug . '-pt' ) );
-		}
-		return home_url( '/learn/' . $use . '/' );
 	}
 
 	/**

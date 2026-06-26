@@ -190,8 +190,24 @@
 	function wireQuiz() {
 		var quiz = document.querySelector( '.hti-quiz' );
 		if ( ! quiz ) { return; }
-		var Q = window.HTI_LEARN_QUIZ || {};
 		var slug = quiz.getAttribute( 'data-slug' );
+
+		// Labels come from the server-rendered data-* attributes (always present),
+		// falling back to the localized global. This keeps the UI text correct
+		// regardless of when wp_localize_script runs relative to the block.
+		var G = window.HTI_LEARN_QUIZ || {};
+		function lbl( key, fb ) { var v = quiz.getAttribute( 'data-l-' + key ); return v != null ? v : ( fb || '' ); }
+		var Q = {
+			check: lbl( 'check', G.check ),
+			retry: lbl( 'retry', G.retry ),
+			partial: lbl( 'partial', G.partial ),
+			tagCorrect: lbl( 'tagcorrect', G.tagCorrect ),
+			tagYour: lbl( 'tagyour', G.tagYour ),
+			passedSub: lbl( 'passedsub', G.passedSub ),
+			returningSub: lbl( 'returningsub', G.returningSub ),
+			review: lbl( 'review', G.review ),
+			returnReview: lbl( 'returnreview', G.returnReview )
+		};
 
 		var quizview = quiz.querySelector( '.hti-quiz__quizview' );
 		var complete = quiz.querySelector( '.hti-quiz__complete' );
