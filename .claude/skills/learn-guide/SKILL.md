@@ -59,8 +59,8 @@ The seeder is install-only. Ongoing Learn content lives in the editorial pipelin
 2. **Author** one Markdown file per chapter at `wp-content/plugins/hti-engine/content/learn/<slug>.md`:
    - Frontmatter: `slug`, `slug_pt`, `module`, `order`, `topic`, `status`, `title_en`, `title_pt`, `excerpt_en`, `excerpt_pt`, `glossary` (comma list), `prev`, `next`.
    - Body split by `<!-- EN -->` / `<!-- PT -->`. Dialect: a leading `> ` line = the TL;DR callout; `## ` / `### ` headings; `- ` bullet lists; a `## Key takeaways` / `## Pontos-chave` heading whose list becomes the takeaways box; `**bold**`. The glossary "Learn more" line and the prev/next chapter nav are **auto-appended from frontmatter** — don't write them in the body. The questionnaire CTA is appended automatically too.
-3. **Import** with `wp hti import-learn` (or Tools → Learn content). It upserts both languages as **drafts**, idempotent by slug, links them via Polylang, files them under `learn_topic`, and sets the SEO description from the excerpt. Never auto-publishes.
-4. **Review & publish** in WordPress; update the `status` column in the sheet.
+3. **Import** with `wp hti import-learn` (or Tools → Learn content). It upserts both languages, idempotent by slug, links them via Polylang, files them under `learn_topic`, and sets the SEO description from the excerpt. New chapters are **published straight away** in both languages; an existing post keeps its current status (a re-sync never reverts an editor change).
+4. Update the `status` column in the sheet as chapters ship.
 
 Inline glossary tokens `[glossary:slug|Text]` / `[learn:slug|Text]` exist but resolve to the given slug regardless of language — for correct PT term URLs prefer the auto-built "Learn more" line (frontmatter `glossary`), which resolves the localized term.
 

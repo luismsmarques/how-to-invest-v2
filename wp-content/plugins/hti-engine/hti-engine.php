@@ -241,7 +241,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			foreach ( $report as $r ) {
 				\WP_CLI::line( sprintf( '- %-34s EN:%-8s PT:%-8s', $r['slug'], $r['en_status'], $r['pt_status'] ) );
 			}
-			\WP_CLI::success( sprintf( '%d Learn chapters imported/updated as drafts.', count( $report ) ) );
+			\WP_CLI::success( sprintf( '%d Learn chapters imported/synced (new ones published in both languages).', count( $report ) ) );
 		}
 	);
 }

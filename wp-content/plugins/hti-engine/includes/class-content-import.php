@@ -4,12 +4,14 @@
  *
  * Source of truth for Learn guides is a set of bilingual Markdown files in
  * `content/learn/*.md` (authored with the learn-guide skill). This importer
- * parses them and upserts `learn` posts as DRAFTS for review — idempotent by
- * slug, language-linked via Polylang, filed under the right `learn_topic`, with
- * a TL;DR callout, key-takeaways box and auto-built glossary + chapter links.
+ * parses them and upserts `learn` posts — idempotent by slug, language-linked
+ * via Polylang (default language + translation), filed under the right
+ * `learn_topic`, with a TL;DR callout, key-takeaways box and auto-built
+ * glossary + chapter links.
  *
- * The seeder stays install-only; ongoing content lives here. Nothing is ever
- * auto-published — you review and publish in WordPress.
+ * New posts are published straight away (both languages); an existing post
+ * keeps its current status, so a re-sync never reverts an editor's change. The
+ * seeder stays install-only; ongoing content lives here.
  *
  * Run: `wp hti import-learn` (CLI) or Tools → Learn content (admin).
  *
@@ -583,7 +585,9 @@ class Content_Import {
 	}
 
 	/**
-	 * Create (draft) or update a `learn` post by slug. Existing status is kept.
+	 * Create (published) or update a `learn` post by slug. New posts are
+	 * published straight away; an existing post keeps its current status, so a
+	 * re-sync never reverts something an editor unpublished.
 	 *
 	 * @return int Post id (0 on failure).
 	 */
@@ -602,7 +606,7 @@ class Content_Import {
 			$data['ID'] = (int) $existing->ID;
 			$id         = wp_update_post( $data, true );
 		} else {
-			$data['post_status'] = 'draft';
+			$data['post_status'] = 'publish';
 			$id                  = wp_insert_post( $data, true );
 		}
 		if ( is_wp_error( $id ) || ! $id ) {
@@ -709,11 +713,11 @@ class Content_Import {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Learn content', 'hti-engine' ); ?></h1>
-			<p><?php esc_html_e( 'Imports the bilingual guides in content/learn/*.md as drafts for review. Idempotent — re-running updates existing posts and never changes their published status. Nothing is auto-published.', 'hti-engine' ); ?></p>
+			<p><?php esc_html_e( 'Imports the bilingual guides in content/learn/*.md. New chapters are published straight away in both languages (linked as translations); existing posts are updated in place and keep their current status, so a re-sync never reverts an editor change. Idempotent by slug.', 'hti-engine' ); ?></p>
 
 			<?php if ( $imported >= 0 ) : ?>
 				<div class="notice notice-success is-dismissible"><p>
-					<?php /* translators: %d: chapters processed. */ printf( esc_html__( 'Imported/updated %d chapters as drafts.', 'hti-engine' ), (int) $imported ); ?>
+					<?php /* translators: %d: chapters processed. */ printf( esc_html__( 'Imported/synced %d chapters (new ones published in both languages).', 'hti-engine' ), (int) $imported ); ?>
 				</p></div>
 			<?php endif; ?>
 
