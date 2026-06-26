@@ -125,8 +125,11 @@
 		fieldset.appendChild( legend );
 
 		var info = el( 'div', { class: 'hti-info' } );
-		info.appendChild( el( 'span', { class: 'hti-info-label' }, 'ℹ ' + ui.why_we_ask ) );
-		info.appendChild( el( 'p', null, q.info ) );
+		info.appendChild( el( 'span', { class: 'hti-info__i', 'aria-hidden': 'true' }, 'i' ) );
+		var infoP = el( 'p', { class: 'hti-info__p' } );
+		infoP.appendChild( el( 'strong', { class: 'hti-info__label' }, ui.why_we_ask + ':' ) );
+		infoP.appendChild( document.createTextNode( ' ' + q.info ) );
+		info.appendChild( infoP );
 		fieldset.appendChild( info );
 
 		var current = answers[ q.id ];

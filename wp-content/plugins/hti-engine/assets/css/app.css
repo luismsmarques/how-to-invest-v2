@@ -65,6 +65,18 @@ html.hti-quiz-active #hti-app.hti-app { max-width: none; min-height: 0; margin: 
 /* The body already pads for the fixed footer; drop the takeover top-padding. */
 html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 
+/* Tighter, less airy spacing on phones (the form felt too spread out). */
+@media ( max-width: 600px ) {
+	.hti-qz__topin { padding: 14px 20px; }
+	.hti-qz__prog { padding: 0 20px 14px; }
+	.hti-qz__body { padding: 20px 20px 124px; }
+	.hti-qz__footin { padding: 12px 20px calc( 12px + env( safe-area-inset-bottom ) ); }
+	.hti-qz .hti-question { font-size: clamp( 1.5rem, 6.5vw, 1.9rem ); margin-bottom: 0.9rem; }
+	.hti-qz .hti-info { padding: 0.8rem 1rem; margin-bottom: 1.1rem; }
+	.hti-qz .hti-option { padding: 0.9rem 1.1rem; margin-bottom: 0.6rem; }
+	.hti-qz .hti-microcopy { margin-top: 1rem; }
+}
+
 .hti-app *:focus-visible {
 	outline: 2.5px solid var( --hti-primary );
 	outline-offset: 2px;
@@ -118,24 +130,35 @@ html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 }
 .hti-info {
 	display: flex;
+	align-items: flex-start;
 	gap: 0.7rem;
 	background: var( --hti-accent-soft );
 	border-radius: 12px;
 	padding: 0.95rem 1.15rem;
 	margin-bottom: 1.75rem;
 }
-.hti-info-label {
-	display: block;
-	font-weight: 600;
-	color: var( --hti-accent );
-	margin-bottom: 0.25rem;
+.hti-info__i {
+	flex: none;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: #FF6B5E;
+	color: #fff;
+	font: 600 13px var( --hti-font-body );
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
-.hti-info p {
+.hti-info__p {
 	margin: 0;
 	font-size: 0.9375rem;
 	line-height: 1.5;
 	color: #54497A;
 }
+.hti-info__label { color: #FF6B5E; font-weight: 700; }
+/* Legacy (kept for any cached markup): old stacked label. */
+.hti-info-label { display: block; font-weight: 600; color: var( --hti-accent ); margin-bottom: 0.25rem; }
+.hti-info p { margin: 0; font-size: 0.9375rem; line-height: 1.5; color: #54497A; }
 
 /* --- Options --- */
 .hti-option {
