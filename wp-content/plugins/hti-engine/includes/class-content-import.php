@@ -116,8 +116,9 @@ class Content_Import {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public static function curriculum( string $lang ): array {
-		$meta = self::module_meta();
-		$mods = array();
+		$meta  = self::module_meta();
+		$slugs = self::lang_slugs();
+		$mods  = array();
 
 		foreach ( self::plan() as $r ) {
 			$mn = (string) ( $r['module'] ?? '' );
@@ -142,19 +143,26 @@ class Content_Import {
 			if ( $post instanceof \WP_Post && 'publish' === $post->post_status ) {
 				$published = true;
 				$id        = (int) $post->ID;
+				$resolved  = true;
 				if ( 'pt' === $lang && function_exists( 'pll_get_post' ) ) {
-					$tr = (int) pll_get_post( $id, 'pt' );
+					$tr = (int) pll_get_post( $id, $slugs['pt'] );
 					if ( $tr ) {
 						$id = $tr;
+					} else {
+						$resolved = false; // PT translation not linked yet.
 					}
 				}
-				$url        = (string) get_permalink( $id );
-				$mins       = self::reading_time( (string) get_post_field( 'post_content', $id ) );
-				$post_title = wp_strip_all_tags( get_the_title( $id ) );
+				$url  = (string) get_permalink( $id );
+				$mins = self::reading_time( (string) get_post_field( 'post_content', $id ) );
+				// Use the real post title only when it is actually in the
+				// requested language; otherwise fall back to the editorial plan.
+				if ( $resolved ) {
+					$post_title = wp_strip_all_tags( get_the_title( $id ) );
+				}
 			}
 
-			// Prefer the real published post title (kept in sync with WordPress);
-			// fall back to the editorial plan, then a humanized slug.
+			// Prefer the real published title (in sync with WordPress); else the
+			// editorial plan in the requested language; else a humanized slug.
 			$title = '' !== $post_title
 				? $post_title
 				: ( 'pt' === $lang ? (string) ( $r['title_pt'] ?? '' ) : (string) ( $r['title_en'] ?? '' ) );
@@ -172,6 +180,38 @@ class Content_Import {
 		}
 
 		return array_values( $mods );
+	}
+
+	/**
+	 * Resolve the site's real Polylang language slugs (default + Portuguese).
+	 * Polylang slugs are not guaranteed to be 'en'/'pt', so we read them rather
+	 * than hard-coding — otherwise translation links silently fail to form.
+	 *
+	 * @return array{default:string,pt:string}
+	 */
+	public static function lang_slugs(): array {
+		$def = 'en';
+		$pt  = 'pt';
+		if ( function_exists( 'pll_default_language' ) ) {
+			$d = (string) pll_default_language( 'slug' );
+			if ( '' !== $d ) {
+				$def = $d;
+			}
+		}
+		if ( function_exists( 'pll_languages_list' ) ) {
+			$list    = (array) pll_languages_list( array( 'fields' => 'slug' ) );
+			$locales = (array) pll_languages_list( array( 'fields' => 'locale' ) );
+			foreach ( $list as $i => $slug ) {
+				if ( $slug === $def ) {
+					continue;
+				}
+				if ( 0 === stripos( (string) ( $locales[ $i ] ?? '' ), 'pt' ) ) {
+					$pt = (string) $slug;
+					break;
+				}
+			}
+		}
+		return array( 'default' => $def, 'pt' => $pt );
 	}
 
 	/**
@@ -540,7 +580,7 @@ class Content_Import {
 		}
 		$id = (int) $en->ID;
 		if ( 'pt' === $lang && function_exists( 'pll_get_post' ) ) {
-			$pt = (int) pll_get_post( $id, 'pt' );
+			$pt = (int) pll_get_post( $id, self::lang_slugs()['pt'] );
 			if ( $pt ) {
 				$id = $pt;
 			}
@@ -619,15 +659,14 @@ class Content_Import {
 		if ( ! $en_id || ! function_exists( 'pll_set_post_language' ) ) {
 			return;
 		}
-		if ( ! pll_get_post_language( $en_id ) ) {
-			pll_set_post_language( $en_id, 'en' );
-		}
+		$L = self::lang_slugs();
+		// Always (re)assert the default language so the pair links reliably even
+		// if a prior import left it unset or wrong.
+		pll_set_post_language( $en_id, $L['default'] );
 		if ( $pt_id ) {
-			if ( ! pll_get_post_language( $pt_id ) ) {
-				pll_set_post_language( $pt_id, 'pt' );
-			}
+			pll_set_post_language( $pt_id, $L['pt'] );
 			if ( function_exists( 'pll_save_post_translations' ) ) {
-				pll_save_post_translations( array( 'en' => $en_id, 'pt' => $pt_id ) );
+				pll_save_post_translations( array( $L['default'] => $en_id, $L['pt'] => $pt_id ) );
 			}
 		}
 	}

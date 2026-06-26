@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.31';
+const VERSION = '0.8.32';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -172,10 +172,13 @@ function enqueue_scripts(): void {
 		$post = get_queried_object();
 		if ( $post instanceof \WP_Post ) {
 			$slug = $post->post_name;
-			if ( function_exists( 'pll_get_post_language' ) && 'pt' === pll_get_post_language( (int) $post->ID, 'slug' ) ) {
-				$en = (int) pll_get_post( (int) $post->ID, 'en' );
-				if ( $en ) {
-					$slug = get_post_field( 'post_name', $en );
+			if ( class_exists( '\\HTI\\Engine\\Content_Import' ) && function_exists( 'pll_get_post_language' ) ) {
+				$L = \HTI\Engine\Content_Import::lang_slugs();
+				if ( $L['pt'] === pll_get_post_language( (int) $post->ID, 'slug' ) ) {
+					$en = (int) pll_get_post( (int) $post->ID, $L['default'] );
+					if ( $en ) {
+						$slug = get_post_field( 'post_name', $en );
+					}
 				}
 			}
 			wp_enqueue_script( 'howtoinvest-learn' );
@@ -1241,10 +1244,13 @@ function render_learn_nav( array $attrs = array() ): string {
 
 	// Canonical (EN) slug — the curriculum keys on it.
 	$slug = $post->post_name;
-	if ( function_exists( 'pll_get_post_language' ) && 'pt' === pll_get_post_language( (int) $post->ID, 'slug' ) ) {
-		$en = (int) pll_get_post( (int) $post->ID, 'en' );
-		if ( $en ) {
-			$slug = get_post_field( 'post_name', $en );
+	if ( class_exists( '\\HTI\\Engine\\Content_Import' ) && function_exists( 'pll_get_post_language' ) ) {
+		$L = \HTI\Engine\Content_Import::lang_slugs();
+		if ( $L['pt'] === pll_get_post_language( (int) $post->ID, 'slug' ) ) {
+			$en = (int) pll_get_post( (int) $post->ID, $L['default'] );
+			if ( $en ) {
+				$slug = get_post_field( 'post_name', $en );
+			}
 		}
 	}
 
