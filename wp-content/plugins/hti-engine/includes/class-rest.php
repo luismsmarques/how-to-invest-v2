@@ -389,6 +389,11 @@ class REST {
 					'callback'            => array( __CLASS__, 'save_learn_progress' ),
 					'permission_callback' => array( __CLASS__, 'check_auth' ),
 				),
+				array(
+					'methods'             => 'DELETE',
+					'callback'            => array( __CLASS__, 'reset_learn_progress' ),
+					'permission_callback' => array( __CLASS__, 'check_auth' ),
+				),
 			)
 		);
 	}
@@ -413,6 +418,19 @@ class REST {
 		$done   = (array) $request->get_param( 'done' );
 		$passed = (array) $request->get_param( 'passed' );
 		return new WP_REST_Response( Learn::merge( get_current_user_id(), $done, $passed ), 200 );
+	}
+
+	/**
+	 * DELETE /learn-progress — erase the signed-in user's learning progress
+	 * (chapters read + quizzes passed). Self-serve RGPD data deletion scoped to
+	 * the Learn course; the account itself is untouched.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function reset_learn_progress( WP_REST_Request $request ) {
+		Learn::erase( get_current_user_id() );
+		return new WP_REST_Response( array( 'done' => array(), 'passed' => array() ), 200 );
 	}
 
 	/**
@@ -912,14 +930,15 @@ class REST {
 		}
 
 		$data = array(
-			'exported_at' => gmdate( 'c' ),
-			'account'     => array(
+			'exported_at'     => gmdate( 'c' ),
+			'account'         => array(
 				'id'           => $user->ID,
 				'email'        => $user->user_email,
 				'display_name' => $user->display_name,
 				'registered'   => $user->user_registered,
 			),
-			'profiles'    => $profiles,
+			'profiles'        => $profiles,
+			'learn_progress'  => Learn::get( $user->ID ),
 		);
 
 		$response = new WP_REST_Response( $data, 200 );

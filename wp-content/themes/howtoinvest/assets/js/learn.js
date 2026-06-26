@@ -174,10 +174,32 @@
 		var en = ach.querySelector( '.hti-lh-ach-earned' );
 		if ( en ) { en.textContent = String( earned ); }
 
-		var nudge = ach.querySelector( '.hti-lh-ach__nudge' );
-		var isGuest = ! ( window.HTI_LEARN_CFG && window.HTI_LEARN_CFG.isLoggedIn );
+		var cfg = window.HTI_LEARN_CFG || {};
+		var isGuest = ! cfg.isLoggedIn;
 		var hasProgress = doneCount > 0 || Object.keys( passedSet ).length > 0;
-		if ( nudge && isGuest && hasProgress ) { nudge.hidden = false; }
+
+		var nudge = ach.querySelector( '.hti-lh-ach__nudge' );
+		if ( nudge ) { nudge.hidden = ! ( isGuest && hasProgress ); }
+
+		// Self-serve RGPD: wipe local progress + badges, and the account-side
+		// record when signed in. Shown only when there is progress to clear.
+		var reset = ach.querySelector( '.hti-lh-ach__reset' );
+		if ( reset ) {
+			reset.hidden = ! hasProgress;
+			if ( hasProgress && ! reset.getAttribute( 'data-wired' ) ) {
+				reset.setAttribute( 'data-wired', '1' );
+				reset.addEventListener( 'click', function () {
+					var msg = reset.getAttribute( 'data-confirm' ) || '';
+					if ( msg && ! window.confirm( msg ) ) { return; }
+					save( KEY_DONE, [] );
+					save( KEY_PASS, [] );
+					if ( cfg.isLoggedIn && cfg.progressUrl ) {
+						fetch( cfg.progressUrl, { method: 'DELETE', headers: { 'X-WP-Nonce': cfg.nonce } } ).catch( function () {} );
+					}
+					hydrate( root );
+				} );
+			}
+		}
 	}
 
 	/* ---- homepage path block ---- */

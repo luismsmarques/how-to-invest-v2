@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.38';
+const VERSION = '0.8.39';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1084,6 +1084,8 @@ function render_learn_hub(): string {
 				'locked'   => 'Por desbloquear',
 				'nudge'    => 'Cria uma conta gratuita para guardares os teus crachás em todos os dispositivos.',
 				'nudge_c'  => 'Guardar o meu progresso',
+				'reset'    => 'Repor o meu progresso',
+				'reset_c'  => 'Isto apaga o teu progresso de aprendizagem e os crachás. Continuar?',
 			)
 			: array(
 				'title'    => 'Your achievements',
@@ -1096,6 +1098,8 @@ function render_learn_hub(): string {
 				'locked'   => 'Locked',
 				'nudge'    => 'Create a free account to keep your badges across every device.',
 				'nudge_c'  => 'Save my progress',
+				'reset'    => 'Reset my progress',
+				'reset_c'  => 'This will erase your learning progress and badges. Continue?',
 			);
 		$reg_url = ( ! is_user_logged_in() && get_option( 'users_can_register' ) ) ? wp_registration_url() : '';
 		$mod_count = count( $curriculum );
@@ -1140,6 +1144,10 @@ function render_learn_hub(): string {
 					<a class="hti-lh-ach__nudge-cta" href="<?php echo esc_url( $reg_url ); ?>"><?php echo esc_html( $ach['nudge_c'] ); ?></a>
 				</div>
 			<?php endif; ?>
+			<button type="button" class="hti-lh-ach__reset" data-confirm="<?php echo esc_attr( $ach['reset_c'] ); ?>" hidden>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+				<?php echo esc_html( $ach['reset'] ); ?>
+			</button>
 		</section>
 
 		<!-- Path (stepper) + rail -->
