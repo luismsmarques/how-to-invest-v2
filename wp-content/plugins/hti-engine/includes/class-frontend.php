@@ -199,7 +199,7 @@ class Frontend {
 			'comparador' => esc_url( (string) apply_filters( 'hti_deposits_page_url', home_url( '/comparador-de-depositos/' ) ) ),
 			'glossary'   => esc_url( (string) ( get_post_type_archive_link( 'glossary' ) ?: home_url( '/investing-glossary/' ) ) ),
 			'news'       => esc_url( (string) ( get_post_type_archive_link( 'news' ) ?: home_url( '/financial-news/' ) ) ),
-			'ebook'      => esc_url( (string) ( $learn ?: home_url( '/learn/' ) ) ),
+			'ebook'      => esc_url( (string) apply_filters( 'hti_ebook_page_url', home_url( '/ebook/' ) ) ),
 			'learn'      => esc_url( (string) ( $learn ?: home_url( '/learn/' ) ) ),
 		);
 	}

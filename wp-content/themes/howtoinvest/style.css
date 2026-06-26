@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.8.49
+Version: 0.8.50
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -1893,4 +1893,41 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	.hti-newshub__row-media { width: 66px; height: 66px; }
 	.hti-newshub__row-title { font-size: 16px; }
 	.hti-newshub__row-sum { display: none; }
+}
+
+/* ---------- Ebook landing (/ebook) ---------- */
+.hti-ebp { max-width: 1080px; margin: 0 auto; }
+.hti-ebp__grid { display: grid; grid-template-columns: minmax( 0, 340px ) minmax( 0, 1fr ); gap: clamp( 32px, 5vw, 60px ); align-items: start; }
+.hti-ebp__cover-wrap { position: sticky; top: 96px; }
+.hti-ebp__cover { width: 100%; height: auto; display: block; border-radius: 8px; box-shadow: 0 24px 60px rgba( 42, 36, 56, 0.22 ); border: 1px solid var( --wp--preset--color--border ); }
+.hti-ebp__eyebrow { display: inline-flex; align-items: center; gap: 8px; background: var( --wp--preset--color--primary-soft ); color: var( --wp--preset--color--primary-strong ); font: 600 12px var( --wp--preset--font-family--body ); letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; }
+.hti-ebp__dot { width: 7px; height: 7px; border-radius: 50%; background: var( --wp--preset--color--accent ); }
+.hti-ebp__h { font-family: var( --wp--preset--font-family--heading ); font-weight: 700; font-size: clamp( 32px, 5vw, 46px ); letter-spacing: -0.03em; line-height: 1.04; margin: 16px 0 0; color: var( --wp--preset--color--contrast ); }
+.hti-ebp__lead { font-size: clamp( 16px, 2vw, 19px ); line-height: 1.55; color: var( --wp--preset--color--muted ); margin: 16px 0 0; max-width: 52ch; }
+.hti-ebp__stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 0; }
+.hti-ebp__stat { background: #fff; border: 1px solid var( --wp--preset--color--border ); border-radius: 999px; padding: 7px 14px; font: 600 13px var( --wp--preset--font-family--body ); color: var( --wp--preset--color--contrast ); }
+.hti-ebp__form { background: #fff; border: 1px solid var( --wp--preset--color--border ); border-radius: 20px; padding: clamp( 22px, 3vw, 28px ); margin: 26px 0 0; box-shadow: 0 2px 14px rgba( 42, 36, 56, 0.05 ); }
+.hti-ebp__formh { font-family: var( --wp--preset--font-family--heading ); font-weight: 700; font-size: 21px; margin: 0; color: var( --wp--preset--color--contrast ); }
+.hti-ebp__formp { color: var( --wp--preset--color--muted ); font-size: 15px; margin: 6px 0 16px; }
+.hti-ebp__row { display: flex; gap: 10px; flex-wrap: wrap; }
+.hti-ebp__email { flex: 1; min-width: 200px; background: #fff; border: 1.5px solid var( --wp--preset--color--border ); border-radius: 12px; padding: 14px 16px; font: 500 15px var( --wp--preset--font-family--body ); color: var( --wp--preset--color--contrast ); outline: none; }
+.hti-ebp__email:focus { border-color: var( --wp--preset--color--primary ); box-shadow: 0 0 0 3px #FFD9D2; }
+.hti-ebp__btn { flex: none; background: var( --wp--preset--color--primary ); color: #fff; border: none; cursor: pointer; border-radius: 12px; padding: 14px 24px; font: 600 15px var( --wp--preset--font-family--body ); white-space: nowrap; box-shadow: 0 2px 8px rgba( 201, 54, 44, 0.22 ); }
+.hti-ebp__btn:hover { background: var( --wp--preset--color--primary-hover ); }
+.hti-ebp__consent { display: flex; align-items: flex-start; gap: 11px; cursor: pointer; margin-top: 14px; font: 500 13px var( --wp--preset--font-family--body ); color: var( --wp--preset--color--muted ); line-height: 1.45; }
+.hti-ebp__consent input { flex: none; width: 18px; height: 18px; margin-top: 1px; accent-color: var( --wp--preset--color--primary ); }
+.hti-ebp__status { margin: 12px 0 0; font: 600 14px var( --wp--preset--font-family--body ); }
+.hti-ebp__status.is-err { color: #C0392B; }
+.hti-ebp__status.is-ok { color: #1F8A5B; }
+.hti-ebp__disc { display: flex; align-items: flex-start; gap: 8px; margin: 16px 0 0; font: 500 13px var( --wp--preset--font-family--body ); color: var( --wp--preset--color--muted-light ); }
+.hti-ebp__inside { margin-top: clamp( 40px, 6vw, 64px ); }
+.hti-ebp__insideh { font-family: var( --wp--preset--font-family--heading ); font-weight: 700; font-size: clamp( 22px, 3vw, 28px ); letter-spacing: -0.02em; margin: 0 0 18px; color: var( --wp--preset--color--contrast ); }
+.hti-ebp__mods { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat( auto-fit, minmax( 280px, 1fr ) ); gap: 12px; }
+.hti-ebp__mod { display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 1px solid var( --wp--preset--color--border ); border-radius: 14px; padding: 16px 18px; }
+.hti-ebp__modnum { flex: none; font-family: var( --wp--preset--font-family--heading ); font-weight: 700; font-size: 14px; color: var( --wp--preset--color--primary ); width: 26px; }
+.hti-ebp__modt { display: block; font: 700 16px var( --wp--preset--font-family--body ); color: var( --wp--preset--color--contrast ); letter-spacing: -0.01em; }
+.hti-ebp__modd { display: block; font: 500 13.5px var( --wp--preset--font-family--body ); color: var( --wp--preset--color--muted-light ); margin-top: 2px; line-height: 1.4; }
+@media ( max-width: 720px ) {
+	.hti-ebp__grid { grid-template-columns: 1fr; }
+	.hti-ebp__cover-wrap { position: static; max-width: 300px; }
 }

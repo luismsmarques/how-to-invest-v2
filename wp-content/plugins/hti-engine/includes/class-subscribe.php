@@ -257,7 +257,29 @@ class Subscribe {
 		}
 
 		self::send_optin_email( $email, $locale );
+
+		// Lead magnet: when the form is the ebook gate, also deliver the ebook
+		// itself right away (the requested content), alongside the newsletter
+		// opt-in. The source is set by the ebook form ("ebook-…").
+		$source = sanitize_key( (string) $request->get_param( 'source' ) );
+		if ( str_starts_with( $source, 'ebook' ) ) {
+			self::send_ebook_email( $email, $locale );
+		}
+
 		return new \WP_REST_Response( array( 'sent' => true ), 200 );
+	}
+
+	/**
+	 * Public URL of the ebook PDF for a locale. Themes/plugins can override via
+	 * the `hti_ebook_url` filter; defaults to the file bundled in the theme.
+	 *
+	 * @param string $locale Locale.
+	 * @return string
+	 */
+	public static function ebook_url( string $locale ): string {
+		$file    = 'pt' === $locale ? 'howtoinvest-como-comecar-a-investir.pdf' : 'howtoinvest-how-to-start-investing.pdf';
+		$default = function_exists( 'get_theme_file_uri' ) ? get_theme_file_uri( 'assets/ebook/' . $file ) : '';
+		return (string) apply_filters( 'hti_ebook_url', $default, $locale );
 	}
 
 	/* ---------- confirm / unsubscribe links ---------- */
@@ -374,6 +396,47 @@ class Subscribe {
 		)
 			. Emails::row( Emails::button( $btn, $url ), '28px 48px 6px', true )
 			. Emails::row( Emails::url_fallback( $url, $locale ), '18px 48px 8px' )
+			. Emails::row( Emails::note( $note ), '18px 48px 44px', true );
+
+		Mailer::send( $email, $subject, Emails::layout( $locale, $inner, $heading ) );
+	}
+
+	/**
+	 * Deliver the ebook: a branded email with the download button (and the
+	 * other language as a secondary link). Sent on the ebook lead-magnet gate.
+	 *
+	 * @param string $email  Email.
+	 * @param string $locale Locale.
+	 */
+	private static function send_ebook_email( string $email, string $locale ): void {
+		$pt  = 'pt' === $locale;
+		$url = self::ebook_url( $locale );
+		if ( '' === $url ) {
+			return;
+		}
+		$other_locale = $pt ? 'en' : 'pt';
+		$other_url    = self::ebook_url( $other_locale );
+
+		$subject = $pt ? 'O teu ebook chegou — Como começar a investir' : 'Your ebook is here — How to start investing';
+		$heading = $pt ? 'O teu ebook está pronto' : 'Your ebook is ready';
+		$lead    = $pt
+			? 'Aqui tens o guia “Como começar a investir” — as bases reunidas num só sítio, sem produtos e sem promessas. Carrega no botão para o descarregar (PDF).'
+			: 'Here is your guide “How to start investing” — the essentials in one place, with no products and no promises. Use the button to download it (PDF).';
+		$btn   = $pt ? 'Descarregar o ebook (PDF)' : 'Download the ebook (PDF)';
+		$other = $pt
+			? '<a href="' . esc_url( $other_url ) . '" style="font:400 13px Arial,sans-serif;color:#7C5CFC;">Prefere a versão em inglês? Descarrega aqui.</a>'
+			: '<a href="' . esc_url( $other_url ) . '" style="font:400 13px Arial,sans-serif;color:#7C5CFC;">Prefer the Portuguese version? Download here.</a>';
+		$note  = $pt
+			? 'Conteúdo educativo, não constitui aconselhamento financeiro. Exemplos só por classe de ativos.'
+			: 'Educational content, not financial advice. Examples by asset class only.';
+
+		$inner = Emails::row(
+			Emails::icon_circle( '&#128214;', '#EFE9FE', '#6A4BE0' ) . Emails::h1( $heading ) . Emails::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. Emails::row( Emails::button( $btn, $url ), '28px 48px 6px', true )
+			. Emails::row( $other, '14px 48px 8px', true )
 			. Emails::row( Emails::note( $note ), '18px 48px 44px', true );
 
 		Mailer::send( $email, $subject, Emails::layout( $locale, $inner, $heading ) );

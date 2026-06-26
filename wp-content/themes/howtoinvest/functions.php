@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.49';
+const VERSION = '0.8.50';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -681,6 +681,15 @@ function register_dynamic_blocks(): void {
 		)
 	);
 	register_block_type(
+		'howtoinvest/ebook',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Ebook landing', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_ebook_landing',
+		)
+	);
+	register_block_type(
 		'howtoinvest/drawer',
 		array(
 			'api_version'     => 3,
@@ -971,6 +980,129 @@ function render_term_footer(): string {
 		. esc_html( t( 'term_back' ) ) . '</a></div>';
 
 	return $card . $disclaimer . $back;
+}
+
+/**
+ * Ebook landing (the `[/ebook]` page): cover + "what's inside" + an email gate
+ * that posts to /subscribe with an "ebook-page" source, so the lead-magnet flow
+ * delivers the PDF and starts the newsletter opt-in. Bilingual.
+ *
+ * @return string Safe HTML.
+ */
+function render_ebook_landing(): string {
+	$pt   = 'pt' === current_lang();
+	$cover = get_theme_file_uri( 'assets/ebook/cover-a.png' );
+
+	// Register + enqueue the tiny form handler, with the REST route + nonce.
+	if ( ! wp_script_is( 'howtoinvest-ebook', 'registered' ) ) {
+		wp_register_script( 'howtoinvest-ebook', get_stylesheet_directory_uri() . '/assets/js/ebook.js', array(), VERSION, array( 'in_footer' => true, 'strategy' => 'defer' ) );
+	}
+	wp_enqueue_script( 'howtoinvest-ebook' );
+	wp_localize_script(
+		'howtoinvest-ebook',
+		'HTI_EBOOK',
+		array(
+			'subscribeUrl' => esc_url_raw( rest_url( 'htinvest/v1/subscribe' ) ),
+			'nonce'        => wp_create_nonce( 'wp_rest' ),
+			'locale'       => $pt ? 'pt' : 'en',
+			'strings'      => array(
+				'err'     => $pt ? 'Indica um email válido.' : 'Please enter a valid email.',
+				'consent' => $pt ? 'Aceita receber os emails para continuar.' : 'Please agree to receive the emails to continue.',
+				'ok'      => $pt ? 'Enviámos-te o ebook. Verifica a tua caixa de entrada (e o spam).' : 'We’ve sent you the ebook. Check your inbox (and spam).',
+				'sending' => $pt ? 'A enviar…' : 'Sending…',
+			),
+		)
+	);
+
+	$modules = $pt
+		? array(
+			array( '00', 'Mentalidade & dinheiro', 'A relação certa com o risco, o tempo e os objetivos' ),
+			array( '01', 'Fundamentos', 'As ideias-base que sustentam tudo o resto' ),
+			array( '02', 'Classes de ativos', 'Ações, obrigações, liquidez e alternativos' ),
+			array( '03', 'Diversificação & carteiras', 'Como peças simples formam um todo robusto' ),
+			array( '04', 'Na prática', 'Os hábitos que fazem o plano funcionar' ),
+			array( '05', 'Comportamento', 'Manter a cabeça fria quando o mercado treme' ),
+			array( '06', 'O teu plano', 'Juntar tudo num plano simples e teu' ),
+		)
+		: array(
+			array( '00', 'Mindset & money', 'The right relationship with risk, time and goals' ),
+			array( '01', 'Fundamentals', 'The core ideas that hold up everything else' ),
+			array( '02', 'Asset classes', 'Equities, bonds, cash and alternatives' ),
+			array( '03', 'Diversification & portfolios', 'How simple pieces form a robust whole' ),
+			array( '04', 'In practice', 'The habits that make the plan work' ),
+			array( '05', 'Behaviour', 'Keeping a cool head when markets shake' ),
+			array( '06', 'Your plan', 'Bringing it all into one simple plan that’s yours' ),
+		);
+
+	$t = $pt
+		? array(
+			'eyebrow' => 'Guia educativo gratuito', 'h' => 'Como começar a investir',
+			'lead'    => 'As bases reunidas num só sítio — pensado para quem está mesmo a começar. Sem produtos, sem promessas.',
+			'inside'  => 'O que vais encontrar', 'stats' => array( '7 módulos', '~75 min de leitura', 'PT / EN', 'Gratuito' ),
+			'formH'   => 'Recebe o ebook gratuito', 'formP' => 'Diz-nos o teu email e enviamos-te o PDF de imediato.',
+			'ph'      => 'o-teu-email@exemplo.pt', 'btn' => 'Quero o ebook',
+			'consent' => 'Aceito receber a newsletter educativa por email. Sem spam — podes cancelar quando quiseres.',
+			'disc'    => 'Conteúdo educativo, não constitui aconselhamento financeiro. Exemplos só por classe de ativos.',
+			'covAlt'  => 'Capa do ebook “Como começar a investir”',
+		)
+		: array(
+			'eyebrow' => 'Free educational guide', 'h' => 'How to start investing',
+			'lead'    => 'The essentials gathered in one place — made for people who are truly just starting. No products, no promises.',
+			'inside'  => 'What’s inside', 'stats' => array( '7 modules', '~75 min read', 'EN / PT', 'Free' ),
+			'formH'   => 'Get the free ebook', 'formP' => 'Tell us your email and we’ll send you the PDF right away.',
+			'ph'      => 'you@example.com', 'btn' => 'Send me the ebook',
+			'consent' => 'I agree to receive the educational newsletter by email. No spam — cancel anytime.',
+			'disc'    => 'Educational content, not financial advice. Examples by asset class only.',
+			'covAlt'  => 'Cover of the ebook “How to start investing”',
+		);
+
+	$mods = '';
+	foreach ( $modules as $m ) {
+		$mods .= '<li class="hti-ebp__mod"><span class="hti-ebp__modnum">' . esc_html( $m[0] ) . '</span>'
+			. '<span class="hti-ebp__modtxt"><span class="hti-ebp__modt">' . esc_html( $m[1] ) . '</span>'
+			. '<span class="hti-ebp__modd">' . esc_html( $m[2] ) . '</span></span></li>';
+	}
+
+	$stats = '';
+	foreach ( $t['stats'] as $s ) {
+		$stats .= '<span class="hti-ebp__stat">' . esc_html( $s ) . '</span>';
+	}
+
+	ob_start();
+	?>
+	<section class="hti-ebp">
+		<div class="hti-ebp__grid">
+			<div class="hti-ebp__cover-wrap">
+				<img class="hti-ebp__cover" src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( $t['covAlt'] ); ?>" width="480" height="679" loading="eager" />
+			</div>
+			<div class="hti-ebp__body">
+				<span class="hti-ebp__eyebrow"><span class="hti-ebp__dot" aria-hidden="true"></span><?php echo esc_html( $t['eyebrow'] ); ?></span>
+				<h1 class="hti-ebp__h"><?php echo esc_html( $t['h'] ); ?></h1>
+				<p class="hti-ebp__lead"><?php echo esc_html( $t['lead'] ); ?></p>
+				<div class="hti-ebp__stats"><?php echo $stats; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above. ?></div>
+
+				<form class="hti-ebp__form" novalidate>
+					<h2 class="hti-ebp__formh"><?php echo esc_html( $t['formH'] ); ?></h2>
+					<p class="hti-ebp__formp"><?php echo esc_html( $t['formP'] ); ?></p>
+					<div class="hti-ebp__row">
+						<input class="hti-ebp__email" type="email" autocomplete="email" required placeholder="<?php echo esc_attr( $t['ph'] ); ?>" aria-label="<?php echo esc_attr( $t['ph'] ); ?>" />
+						<button class="hti-ebp__btn" type="submit"><?php echo esc_html( $t['btn'] ); ?></button>
+					</div>
+					<label class="hti-ebp__consent"><input class="hti-ebp__cons" type="checkbox" /><span><?php echo esc_html( $t['consent'] ); ?></span></label>
+					<input class="hti-ebp__hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px" />
+					<p class="hti-ebp__status" role="status" aria-live="polite"></p>
+				</form>
+				<p class="hti-ebp__disc"><?php echo esc_html( $t['disc'] ); ?></p>
+			</div>
+		</div>
+
+		<div class="hti-ebp__inside">
+			<h2 class="hti-ebp__insideh"><?php echo esc_html( $t['inside'] ); ?></h2>
+			<ul class="hti-ebp__mods"><?php echo $mods; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above. ?></ul>
+		</div>
+	</section>
+	<?php
+	return (string) ob_get_clean();
 }
 
 /**
