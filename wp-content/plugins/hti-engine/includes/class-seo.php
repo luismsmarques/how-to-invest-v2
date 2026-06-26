@@ -407,12 +407,13 @@ class SEO {
 				continue;
 			}
 			$questions[] = array(
-				'@type'          => 'Question',
-				'eduQuestionType' => 'Multiple choice',
-				'name'           => $text,
-				'text'           => $text,
-				'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $correct ),
-				'suggestedAnswer' => $wrong,
+				'@type'                => 'Question',
+				'eduQuestionType'      => 'Multiple choice',
+				'learningResourceType' => 'Practice problem',
+				'name'                 => $text,
+				'text'                 => $text,
+				'acceptedAnswer'       => array( '@type' => 'Answer', 'text' => $correct ),
+				'suggestedAnswer'      => $wrong,
 			);
 		}
 
@@ -420,13 +421,20 @@ class SEO {
 			return null;
 		}
 
+		$pt    = 'pt-PT' === self::post_lang( $post );
+		$title = wp_strip_all_tags( get_the_title( $post ) );
+
 		return array(
-			'@type'      => 'Quiz',
-			'@id'        => get_permalink( $post ) . '#quiz',
-			'about'      => array( '@id' => get_permalink( $post ) . '#chapter' ),
-			'inLanguage' => self::post_lang( $post ),
+			'@type'               => 'Quiz',
+			'@id'                 => get_permalink( $post ) . '#quiz',
+			'name'                => $title . ( $pt ? ' — Questionário' : ' — Quiz' ),
+			'about'               => array( '@id' => get_permalink( $post ) . '#chapter' ),
+			'educationalLevel'    => 'Beginner',
+			'typicalAgeRange'     => '18-',
+			'learningResourceType' => 'Quiz',
+			'inLanguage'          => self::post_lang( $post ),
 			'isAccessibleForFree' => true,
-			'hasPart'    => $questions,
+			'hasPart'             => $questions,
 		);
 	}
 
