@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.51';
+const VERSION = '0.8.52';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1008,7 +1008,7 @@ function render_ebook_landing(): string {
 			'strings'      => array(
 				'err'     => $pt ? 'Indica um email válido.' : 'Please enter a valid email.',
 				'consent' => $pt ? 'Aceita receber os emails para continuar.' : 'Please agree to receive the emails to continue.',
-				'ok'      => $pt ? 'Enviámos-te o ebook. Verifica a tua caixa de entrada (e o spam).' : 'We’ve sent you the ebook. Check your inbox (and spam).',
+				'ok'      => $pt ? 'Verifica o teu email e confirma a subscrição — logo a seguir enviamos-te o ebook.' : 'Check your email and confirm your subscription — we’ll send you the ebook right after.',
 				'sending' => $pt ? 'A enviar…' : 'Sending…',
 			),
 		)
@@ -1147,7 +1147,7 @@ function learn_hub_strings( bool $pt ): array {
 			'ebook_p'    => 'Um PDF que reúne as bases num só sítio — pensado para quem está mesmo a começar. Sem produtos, sem promessas.',
 			'ebook_ph'   => 'o-teu-email@exemplo.pt',
 			'ebook_btn'  => 'Quero o ebook',
-			'ebook_ok'   => 'Enviámos-te o ebook. Verifica a tua caixa de entrada.',
+			'ebook_ok'   => 'Verifica o teu email e confirma a subscrição — logo a seguir enviamos-te o ebook.',
 			'ebook_cons' => 'Aceito receber a newsletter educativa por email. Sem spam — podes cancelar quando quiseres.',
 			'ebook_cov1' => 'Ebook gratuito',
 			'ebook_cov2' => 'Como começar a investir',
@@ -1189,7 +1189,7 @@ function learn_hub_strings( bool $pt ): array {
 		'ebook_p'    => 'A PDF that gathers the basics in one place — made for people who are truly starting out. No products, no promises.',
 		'ebook_ph'   => 'your-email@example.com',
 		'ebook_btn'  => 'Send me the ebook',
-		'ebook_ok'   => 'We’ve sent you the ebook. Please check your inbox.',
+		'ebook_ok'   => 'Check your email and confirm your subscription — we’ll send you the ebook right after.',
 		'ebook_cons' => 'I agree to receive the educational newsletter by email. No spam — unsubscribe anytime.',
 		'ebook_cov1' => 'Free ebook',
 		'ebook_cov2' => 'How to start investing',

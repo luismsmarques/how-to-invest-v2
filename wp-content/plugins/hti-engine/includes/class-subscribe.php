@@ -258,15 +258,27 @@ class Subscribe {
 
 		self::send_optin_email( $email, $locale );
 
-		// Lead magnet: when the form is the ebook gate, also deliver the ebook
-		// itself right away (the requested content), alongside the newsletter
-		// opt-in. The source is set by the ebook form ("ebook-…").
+		// Lead magnet: when the form is the ebook gate, remember that intent so
+		// the ebook is delivered *after* the newsletter opt-in is confirmed (the
+		// PDF is gated behind the double opt-in). The source is set by the ebook
+		// form ("ebook-…").
 		$source = sanitize_key( (string) $request->get_param( 'source' ) );
 		if ( str_starts_with( $source, 'ebook' ) ) {
-			self::send_ebook_email( $email, $locale );
+			set_transient( self::ebook_pending_key( $email ), 1, WEEK_IN_SECONDS );
 		}
 
 		return new \WP_REST_Response( array( 'sent' => true ), 200 );
+	}
+
+	/**
+	 * Transient key flagging that this email is awaiting the ebook (set on the
+	 * ebook gate, consumed when the opt-in is confirmed).
+	 *
+	 * @param string $email Email.
+	 * @return string
+	 */
+	private static function ebook_pending_key( string $email ): string {
+		return 'hti_eb_' . md5( strtolower( $email ) );
 	}
 
 	/**
@@ -307,7 +319,16 @@ class Subscribe {
 				array_filter( array( Brevo::list_id( $locale ) ) )
 			);
 			if ( $ok ) {
-				self::send_confirmed_email( $email, $locale );
+				// Now that the subscription is confirmed, deliver the ebook to
+				// those who came via the lead-magnet gate; everyone else gets the
+				// plain welcome.
+				$eb_key = self::ebook_pending_key( $email );
+				if ( get_transient( $eb_key ) ) {
+					delete_transient( $eb_key );
+					self::send_ebook_email( $email, $locale );
+				} else {
+					self::send_confirmed_email( $email, $locale );
+				}
 			}
 			self::redirect_result( $ok ? 'confirmed' : 'error', $locale );
 		}
@@ -426,9 +447,13 @@ class Subscribe {
 		$other = $pt
 			? '<a href="' . esc_url( $other_url ) . '" style="font:400 13px Arial,sans-serif;color:#7C5CFC;">Prefere a versão em inglês? Descarrega aqui.</a>'
 			: '<a href="' . esc_url( $other_url ) . '" style="font:400 13px Arial,sans-serif;color:#7C5CFC;">Prefer the Portuguese version? Download here.</a>';
-		$note  = $pt
+		// This email doubles as the post-confirmation welcome, so it carries the
+		// disclaimer + an unsubscribe link.
+		$note    = $pt
 			? 'Conteúdo educativo, não constitui aconselhamento financeiro. Exemplos só por classe de ativos.'
 			: 'Educational content, not financial advice. Examples by asset class only.';
+		$unsub   = self::link( 'unsub', $email, $locale );
+		$unlabel = $pt ? 'Cancelar subscrição' : 'Unsubscribe';
 
 		$inner = Emails::row(
 			Emails::icon_circle( '&#128214;', '#EFE9FE', '#6A4BE0' ) . Emails::h1( $heading ) . Emails::lead( esc_html( $lead ) ),
@@ -437,7 +462,8 @@ class Subscribe {
 		)
 			. Emails::row( Emails::button( $btn, $url ), '28px 48px 6px', true )
 			. Emails::row( $other, '14px 48px 8px', true )
-			. Emails::row( Emails::note( $note ), '18px 48px 44px', true );
+			. Emails::row( Emails::note( $note ), '18px 48px 10px', true )
+			. Emails::row( '<a href="' . esc_url( $unsub ) . '" style="font:400 12.5px Arial,sans-serif;color:#9A93A8;">' . esc_html( $unlabel ) . '</a>', '0 48px 44px', true );
 
 		Mailer::send( $email, $subject, Emails::layout( $locale, $inner, $heading ) );
 	}
