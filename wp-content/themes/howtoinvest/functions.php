@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.44';
+const VERSION = '0.8.45';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -2889,10 +2889,22 @@ function account_url(): string {
  */
 function render_mobile_bar(): string {
 	$search = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>';
-	$user   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
+
+	// Logged-in users get an initial avatar; guests get the generic user icon.
+	if ( is_user_logged_in() ) {
+		$u       = wp_get_current_user();
+		$name    = $u->display_name ? $u->display_name : $u->user_login;
+		$initial = mb_strtoupper( mb_substr( wp_strip_all_tags( (string) $name ), 0, 1 ) );
+		$account = '<span class="hti-mbar__avatar">' . esc_html( '' !== $initial ? $initial : '·' ) . '</span>';
+		$label   = t( 'nav_my_account' );
+	} else {
+		$account = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6"></path></svg>';
+		$label   = t( 'nav_account' );
+	}
+
 	return '<div class="hti-mbar">'
 		. '<a class="hti-mbar__btn" href="' . esc_url( search_url() ) . '" aria-label="' . esc_attr( t( 'search_label' ) ) . '">' . $search . '</a>'
-		. '<a class="hti-mbar__btn hti-mbar__btn--account" href="' . esc_url( account_url() ) . '" aria-label="' . esc_attr( t( 'nav_account' ) ) . '">' . $user . '</a>'
+		. '<a class="hti-mbar__btn hti-mbar__btn--account" href="' . esc_url( account_url() ) . '" aria-label="' . esc_attr( $label ) . '">' . $account . '</a>'
 		. '</div>';
 }
 

@@ -710,6 +710,15 @@ a.hti-lang__item:hover {
 }
 
 /* ---------- Header account area (login-state aware) ---------- */
+/* Thin divider between the primary menu and the actions cluster (desktop only;
+   the whole nav-wrap is hidden ≤782px). */
+.hti-header__divider {
+	flex: none;
+	width: 1px;
+	height: 22px;
+	background: #EAD9D1;
+	margin: 0 6px;
+}
 .hti-header__actions {
 	display: flex;
 	align-items: center;
@@ -1177,6 +1186,13 @@ a.hti-lang__item:hover {
 	text-decoration: none;
 }
 .hti-mbar__btn--account { background: var( --wp--preset--color--primary-soft ); }
+.hti-mbar__avatar {
+	font-family: var( --wp--preset--font-family--body );
+	font-weight: 600;
+	font-size: 15px;
+	color: var( --wp--preset--color--primary, #FF6B5E );
+	line-height: 1;
+}
 .hti-nav-overlay { display: none; }
 .hti-tabbar { display: none; }
 
