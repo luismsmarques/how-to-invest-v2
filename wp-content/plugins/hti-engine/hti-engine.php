@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.32';
+const VERSION = '0.8.33';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );

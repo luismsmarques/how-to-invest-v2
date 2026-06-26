@@ -148,6 +148,7 @@ class Frontend {
 			'homeUrl'    => esc_url( home_url( '/' ) ),
 			'logoutUrl'  => esc_url( wp_logout_url( home_url( '/my-account/' ) ) ),
 			'resultBase' => esc_url( home_url( '/investor-profile-quiz/' ) ),
+			'policiesUrl' => esc_url( ( $p = get_page_by_path( 'privacy-policy' ) ) ? (string) get_permalink( $p->ID ) : home_url( '/privacy-policy/' ) ),
 			'lostUrl'    => esc_url( wp_lostpassword_url() ),
 			'google'     => array(
 				'enabled' => Google::is_configured(),
@@ -245,6 +246,16 @@ class Frontend {
 				'onb_q_ph'         => 'Escreve à vontade — ajuda-nos a criar conteúdo útil para ti.',
 				'onb_finish'       => 'Concluir',
 				'sign_out'         => 'Terminar sessão',
+				'acc_profile_eyebrow' => 'O meu perfil de investidor',
+				'acc_data_eyebrow' => 'Os meus dados (RGPD)',
+				'acc_export_sub'   => 'Portabilidade — descarrega tudo',
+				'acc_delete_sub'   => 'Irreversível',
+				'acc_privacy'      => 'Privacidade e termos',
+				'acc_privacy_sub'  => 'Como tratamos os teus dados',
+				'acc_view_result'  => 'Ver resultado completo',
+				'acc_redo'         => '↻ Refazer questionário',
+				'acc_no_profile'   => 'Ainda não fizeste o questionário. Descobre o teu perfil em poucos minutos.',
+				'acc_discover'     => 'Descobrir o meu perfil →',
 			);
 		}
 		return array(
@@ -311,6 +322,16 @@ class Frontend {
 			'onb_q_ph'         => 'Write freely — it helps us create content that’s useful to you.',
 			'onb_finish'       => 'Finish',
 			'sign_out'         => 'Sign out',
+			'acc_profile_eyebrow' => 'My investor profile',
+			'acc_data_eyebrow' => 'My data (GDPR)',
+			'acc_export_sub'   => 'Portability — download everything',
+			'acc_delete_sub'   => 'Irreversible',
+			'acc_privacy'      => 'Privacy & terms',
+			'acc_privacy_sub'  => 'How we handle your data',
+			'acc_view_result'  => 'View full result',
+			'acc_redo'         => '↻ Retake quiz',
+			'acc_no_profile'   => 'You haven\'t taken the quiz yet. Discover your profile in minutes.',
+			'acc_discover'     => 'Discover my profile →',
 		);
 	}
 

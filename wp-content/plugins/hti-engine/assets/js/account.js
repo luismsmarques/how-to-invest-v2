@@ -542,9 +542,8 @@
 			return;
 		}
 
-		root.appendChild( el( 'h2', null, s.my_profiles ) );
-
 		if ( ! loggedIn ) {
+			root.appendChild( el( 'h2', null, s.my_profiles ) );
 			root.appendChild( el( 'p', null, s.signin_to_view ) );
 			root.appendChild( authForm(
 				{
@@ -559,8 +558,7 @@
 			return;
 		}
 
-		// Account header: avatar (email initial) + identity. Inserted above the
-		// "My profiles" eyebrow so the screen reads like the design.
+		// --- Account header: avatar (email initial) + identity (E "Conta") ---
 		var email = ctx.email || '';
 		var display = email ? email.split( '@' )[ 0 ] : '';
 		var initial = ( display || email || '?' ).charAt( 0 ).toUpperCase();
@@ -568,62 +566,87 @@
 		head.appendChild( el( 'span', { class: 'hti-acct-avatar', 'aria-hidden': 'true' }, initial ) );
 		var headId = el( 'div', { class: 'hti-acct-head__id' } );
 		if ( display ) {
-			headId.appendChild( el( 'div', { class: 'hti-acct-head__name' }, display ) );
+			headId.appendChild( el( 'h1', { class: 'hti-acct-head__name' }, display ) );
 		}
 		headId.appendChild( el( 'div', { class: 'hti-acct-head__email' }, email ) );
 		head.appendChild( headId );
-		if ( ctx.logoutUrl ) {
-			head.appendChild( el( 'a', { href: ctx.logoutUrl, class: 'hti-acct-head__out' }, s.sign_out ) );
-		}
-		root.insertBefore( head, root.querySelector( 'h2' ) );
+		root.appendChild( head );
 
-		var listWrap = el( 'div', { class: 'hti-account-list' } );
-		listWrap.appendChild( el( 'p', { role: 'status' }, s.working ) );
-		root.appendChild( listWrap );
+		// --- Two-column grid: profile (left) · data/GDPR (right) ---
+		var grid = el( 'div', { class: 'hti-acct-grid' } );
+
+		// LEFT — saved investor profile.
+		var pcol = el( 'div', { class: 'hti-acct-col' } );
+		pcol.appendChild( el( 'span', { class: 'hti-acct-eyebrow' }, s.acc_profile_eyebrow ) );
+		var pcard = el( 'div', { class: 'hti-acct-card hti-acct-pcard' } );
+		pcard.appendChild( el( 'p', { role: 'status', class: 'hti-acct-muted' }, s.working ) );
+		pcol.appendChild( pcard );
+		grid.appendChild( pcol );
 
 		request( '/my-profiles', 'GET' ).then( function ( res ) {
-			listWrap.innerHTML = '';
+			pcard.innerHTML = '';
 			var profiles = ( res.data && res.data.profiles ) || [];
 			if ( ! profiles.length ) {
-				listWrap.appendChild( el( 'p', null, s.no_profiles ) );
-			} else {
-				var ul = el( 'ul', { class: 'hti-profile-list' } );
-				profiles.forEach( function ( p ) {
-					var li = el( 'li', { class: 'hti-profile-item' } );
-					var label = ( p.archetype && p.archetype.label ) || ( s.archetype + ' ' + ( p.archetype && p.archetype.id ) );
-					// Link to the saved result (owner is authorized server-side).
-					if ( ctx.resultBase && p.profile_id ) {
-						li.appendChild( el( 'a', { href: ctx.resultBase + '?profile=' + encodeURIComponent( p.profile_id ), class: 'hti-profile-link' }, label ) );
-					} else {
-						li.appendChild( el( 'strong', null, label ) );
-					}
-					if ( p.generated_at ) {
-						li.appendChild( el( 'span', { class: 'hti-profile-date' }, ' · ' + String( p.generated_at ).slice( 0, 10 ) ) );
-					}
-					ul.appendChild( li );
-				} );
-				listWrap.appendChild( ul );
+				pcard.className = 'hti-acct-card hti-acct-pcard is-empty';
+				pcard.appendChild( el( 'p', { class: 'hti-acct-muted' }, s.acc_no_profile ) );
+				pcard.appendChild( el( 'a', { href: ctx.resultBase || '#', class: 'hti-acct-btn hti-acct-btn--primary' }, s.acc_discover ) );
+				return;
 			}
+			var ul = el( 'ul', { class: 'hti-profile-list' } );
+			profiles.forEach( function ( p ) {
+				var li = el( 'li', { class: 'hti-profile-item' } );
+				var label = ( p.archetype && p.archetype.label ) || ( s.archetype + ' ' + ( p.archetype && p.archetype.id ) );
+				if ( ctx.resultBase && p.profile_id ) {
+					li.appendChild( el( 'a', { href: ctx.resultBase + '?profile=' + encodeURIComponent( p.profile_id ), class: 'hti-profile-link' }, label ) );
+				} else {
+					li.appendChild( el( 'strong', null, label ) );
+				}
+				if ( p.generated_at ) {
+					li.appendChild( el( 'span', { class: 'hti-profile-date' }, ' · ' + String( p.generated_at ).slice( 0, 10 ) ) );
+				}
+				ul.appendChild( li );
+			} );
+			pcard.appendChild( ul );
+			var acts = el( 'div', { class: 'hti-acct-pcard__acts' } );
+			var first = profiles[ 0 ];
+			if ( ctx.resultBase && first && first.profile_id ) {
+				acts.appendChild( el( 'a', { href: ctx.resultBase + '?profile=' + encodeURIComponent( first.profile_id ), class: 'hti-acct-btn hti-acct-btn--primary' }, s.acc_view_result ) );
+			}
+			acts.appendChild( el( 'a', { href: ctx.resultBase || '#', class: 'hti-acct-btn hti-acct-btn--outline' }, s.acc_redo ) );
+			pcard.appendChild( acts );
 		} ).catch( function () {
-			listWrap.innerHTML = '';
-			listWrap.appendChild( el( 'p', { class: 'hti-error' }, s.error ) );
+			pcard.innerHTML = '';
+			pcard.appendChild( el( 'p', { class: 'hti-error' }, s.error ) );
 		} );
 
-		// Account email + change-email form.
-		root.appendChild( emailSection() );
+		// RIGHT — my data (GDPR): tidy icon rows + sign out.
+		var dcol = el( 'div', { class: 'hti-acct-col' } );
+		dcol.appendChild( el( 'span', { class: 'hti-acct-eyebrow' }, s.acc_data_eyebrow ) );
+		var rows = el( 'div', { class: 'hti-acct-rows' } );
 
-		// Email preferences.
-		root.appendChild( prefsSection() );
+		function dataRow( tag, attrs, svg, icMod, title, sub, rowMod ) {
+			var b = el( tag, attrs );
+			b.className = 'hti-acct-row' + ( rowMod ? ' ' + rowMod : '' );
+			var ic = el( 'span', { class: 'hti-acct-row__ic ' + icMod, 'aria-hidden': 'true' } );
+			ic.innerHTML = svg;
+			b.appendChild( ic );
+			var t = el( 'span', { class: 'hti-acct-row__t' } );
+			t.appendChild( el( 'span', { class: 'hti-acct-row__title' }, title ) );
+			if ( sub ) { t.appendChild( el( 'span', { class: 'hti-acct-row__sub' }, sub ) ); }
+			b.appendChild( t );
+			b.appendChild( el( 'span', { class: 'hti-acct-row__arrow', 'aria-hidden': 'true' }, '→' ) );
+			return b;
+		}
 
-		// RGPD actions.
-		var actions = el( 'div', { class: 'hti-account-actions' } );
+		var IC_DL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>';
+		var IC_SHIELD = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B5E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6z"/></svg>';
+		var IC_TRASH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0392B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M6 7l1 13h10l1-13"/></svg>';
 
-		var exportBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-secondary' }, s.export_data );
-		exportBtn.addEventListener( 'click', function () {
+		// Export (download JSON).
+		var exportRow = dataRow( 'button', { type: 'button' }, IC_DL, 'is-purple', s.export_data, s.acc_export_sub );
+		exportRow.addEventListener( 'click', function () {
 			request( '/export', 'GET' ).then( function ( res ) {
-				if ( ! res.ok ) {
-					return;
-				}
+				if ( ! res.ok ) { return; }
 				var blob = new Blob( [ JSON.stringify( res.data, null, 2 ) ], { type: 'application/json' } );
 				var url = URL.createObjectURL( blob );
 				var a = el( 'a', { href: url, download: 'howtoinvest-data-export.json' } );
@@ -633,38 +656,43 @@
 				URL.revokeObjectURL( url );
 			} );
 		} );
+		rows.appendChild( exportRow );
 
+		// Privacy & terms (link).
+		if ( ctx.policiesUrl ) {
+			rows.appendChild( dataRow( 'a', { href: ctx.policiesUrl }, IC_SHIELD, 'is-coral', s.acc_privacy, s.acc_privacy_sub ) );
+		}
+
+		// Delete account (danger) + scheduled-deletion handling.
 		var deleteStatus = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
+		var deleteRow = dataRow( 'button', { type: 'button' }, IC_TRASH, 'is-danger', s.delete_account, s.acc_delete_sub, 'is-danger' );
 
 		function renderDeletion( dateStr ) {
-			actions.querySelectorAll( '.hti-deletion' ).forEach( function ( n ) { n.remove(); } );
+			dcol.querySelectorAll( '.hti-deletion' ).forEach( function ( n ) { n.remove(); } );
 			if ( dateStr ) {
 				var wrap = el( 'div', { class: 'hti-deletion' } );
 				wrap.appendChild( el( 'p', { class: 'hti-error', role: 'alert' }, s.delete_scheduled.replace( '%s', dateStr ) ) );
-				var cancelBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-secondary hti-deletion__cancel' }, s.cancel_deletion );
+				var cancelBtn = el( 'button', { type: 'button', class: 'hti-acct-btn hti-acct-btn--outline hti-deletion__cancel' }, s.cancel_deletion );
 				cancelBtn.addEventListener( 'click', function () {
 					cancelBtn.disabled = true;
 					request( '/cancel-deletion', 'POST', {} ).then( function ( res ) {
 						if ( res.ok ) {
 							renderDeletion( '' );
 							deleteStatus.textContent = s.deletion_off;
-							deleteBtn.style.display = '';
+							deleteRow.style.display = '';
 						} else {
 							cancelBtn.disabled = false;
 						}
 					} );
 				} );
 				wrap.appendChild( cancelBtn );
-				actions.appendChild( wrap );
-				deleteBtn.style.display = 'none';
+				dcol.insertBefore( wrap, deleteStatus );
+				deleteRow.style.display = 'none';
 			}
 		}
 
-		var deleteBtn = el( 'button', { type: 'button', class: 'hti-btn hti-btn-ghost hti-btn-danger' }, s.delete_account );
-		deleteBtn.addEventListener( 'click', function () {
-			if ( ! window.confirm( s.delete_confirm ) ) {
-				return;
-			}
+		deleteRow.addEventListener( 'click', function () {
+			if ( ! window.confirm( s.delete_confirm ) ) { return; }
 			request( '/account', 'DELETE', { confirm: true } ).then( function ( res ) {
 				if ( res.ok && res.data ) {
 					track( 'account_delete_request', {} );
@@ -673,16 +701,24 @@
 				}
 			} );
 		} );
+		rows.appendChild( deleteRow );
 
-		actions.appendChild( exportBtn );
-		actions.appendChild( deleteBtn );
-		actions.appendChild( deleteStatus );
-		root.appendChild( actions );
-
-		// Reflect an already-scheduled deletion (from a prior request/email).
+		dcol.appendChild( rows );
+		dcol.appendChild( deleteStatus );
 		if ( ctx.deleteAt ) {
 			renderDeletion( ctx.deleteAt );
 		}
+		if ( ctx.logoutUrl ) {
+			dcol.appendChild( el( 'a', { href: ctx.logoutUrl, class: 'hti-acct-logout' }, s.sign_out ) );
+		}
+		grid.appendChild( dcol );
+		root.appendChild( grid );
+
+		// --- Settings (full width): account email + email preferences ---
+		var settings = el( 'div', { class: 'hti-acct-settings' } );
+		settings.appendChild( emailSection() );
+		settings.appendChild( prefsSection() );
+		root.appendChild( settings );
 
 		mount.appendChild( root );
 	}
