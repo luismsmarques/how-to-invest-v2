@@ -291,6 +291,91 @@ class Settings {
 	/**
 	 * Render the settings page.
 	 */
+	/**
+	 * Read-only "is the email / ebook lead magnet ready?" panel, shown at the
+	 * top of the settings screen so the config can be verified at a glance
+	 * without sending a test email.
+	 */
+	private static function email_diagnostics(): void {
+		$settings = get_option( 'htinvest_settings' );
+		$settings = is_array( $settings ) ? $settings : array();
+
+		$rows = array();
+
+		// Brevo transactional sending.
+		$brevo_ok = Mailer::is_brevo_configured();
+		$rows[]   = array(
+			$brevo_ok ? 'ok' : 'warn',
+			__( 'Brevo transactional API', 'hti-engine' ),
+			$brevo_ok
+				? __( 'API key set — emails are sent via Brevo.', 'hti-engine' )
+				: __( 'No API key — emails fall back to wp_mail(). Set HTI_BREVO_API_KEY or the key below.', 'hti-engine' ),
+		);
+
+		// Sender identity.
+		$sender_set = ! empty( $settings['brevo_sender_email'] );
+		$sender     = Mailer::sender();
+		$rows[]     = array(
+			$sender_set ? 'ok' : 'warn',
+			__( 'Sender identity', 'hti-engine' ),
+			sprintf(
+				/* translators: %s: sender email address. */
+				$sender_set ? __( 'From: %s — make sure this domain is verified in Brevo.', 'hti-engine' ) : __( 'Falling back to %s. Set a sender whose domain is verified in Brevo.', 'hti-engine' ),
+				$sender['email']
+			),
+		);
+
+		// Newsletter lists per language (used on opt-in confirm).
+		foreach ( array( 'pt' => __( 'Newsletter list (PT)', 'hti-engine' ), 'en' => __( 'Newsletter list (EN)', 'hti-engine' ) ) as $loc => $label ) {
+			$id     = Brevo::list_id( $loc );
+			$rows[] = array(
+				$id > 0 ? 'ok' : 'fail',
+				$label,
+				$id > 0
+					/* translators: %d: Brevo list id. */
+					? sprintf( __( 'List ID %d.', 'hti-engine' ), $id )
+					: __( 'Not set — confirmed subscribers cannot be added to a list.', 'hti-engine' ),
+			);
+		}
+
+		// Ebook PDF assets (the download link points to these theme files).
+		foreach ( array(
+			'pt' => 'assets/ebook/howtoinvest-como-comecar-a-investir.pdf',
+			'en' => 'assets/ebook/howtoinvest-how-to-start-investing.pdf',
+		) as $loc => $rel ) {
+			$exists = file_exists( get_theme_file_path( $rel ) );
+			$rows[] = array(
+				$exists ? 'ok' : 'fail',
+				sprintf(
+					/* translators: %s: uppercased locale. */
+					__( 'Ebook PDF (%s)', 'hti-engine' ),
+					strtoupper( $loc )
+				),
+				$exists ? __( 'File found in the theme.', 'hti-engine' ) : __( 'Missing — deploy the theme assets/ebook/ folder.', 'hti-engine' ),
+			);
+		}
+
+		$colors = array(
+			'ok'   => array( '#15803d', '#dcfce7', '✓' ),
+			'warn' => array( '#92400e', '#fef3c7', '!' ),
+			'fail' => array( '#b91c1c', '#fee2e2', '✕' ),
+		);
+		?>
+		<div style="background:#fff;border:1px solid #dcdcde;border-left:4px solid #2271b1;border-radius:4px;padding:12px 16px;margin:16px 0;max-width:760px">
+			<strong style="display:block;margin-bottom:8px"><?php echo esc_html__( 'Lead magnet & email readiness', 'hti-engine' ); ?></strong>
+			<ul style="margin:0;list-style:none;padding:0">
+				<?php foreach ( $rows as $r ) :
+					$c = $colors[ $r[0] ]; ?>
+					<li style="display:flex;gap:10px;align-items:flex-start;padding:5px 0">
+						<span style="flex:none;width:20px;height:20px;border-radius:50%;background:<?php echo esc_attr( $c[1] ); ?>;color:<?php echo esc_attr( $c[0] ); ?>;font-weight:700;text-align:center;line-height:20px"><?php echo esc_html( $c[2] ); ?></span>
+						<span><strong><?php echo esc_html( $r[1] ); ?>:</strong> <?php echo esc_html( $r[2] ); ?></span>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		</div>
+		<?php
+	}
+
 	public static function render(): void {
 		$settings   = get_option( 'htinvest_settings' );
 		$settings   = is_array( $settings ) ? $settings : array();
@@ -300,6 +385,8 @@ class Settings {
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'HowToInvest Engine', 'hti-engine' ); ?></h1>
 			<p><?php echo esc_html__( 'Edit the LLM connection and the deterministic scoring & allocation. Invalid scoring/allocation is rejected so the engine always produces a valid 100% allocation.', 'hti-engine' ); ?></p>
+
+			<?php self::email_diagnostics(); ?>
 
 			<form method="post" action="options.php">
 				<?php settings_fields( self::GROUP ); ?>
