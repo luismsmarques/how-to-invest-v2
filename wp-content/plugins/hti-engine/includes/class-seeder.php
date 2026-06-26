@@ -1056,27 +1056,15 @@ class Seeder {
 	 * @param string $lang 'en' or 'pt'.
 	 */
 	private static function glossary_related( string $slug, string $lang ): string {
-		$siblings = array();
-		foreach ( self::glossary_topic_members( self::glossary_topic_of( $slug ) ) as $other ) {
-			if ( $other === $slug ) {
-				continue;
-			}
-			$siblings[] = array( self::gloss_url( $other ), self::glossary_title( $other, $lang ) );
-			if ( count( $siblings ) >= 4 ) {
-				break;
-			}
-		}
-
-		$out = self::links_para(
-			'pt' === $lang ? 'Termos relacionados' : 'Related terms',
-			$siblings
-		);
-
+		// The "Related terms" siblings are rendered by the howtoinvest/related
+		// block (pills) on the single-glossary template, so we no longer bake
+		// them into the content — that produced a duplicate. Keep only the
+		// curated "Learn more" deep link, which the pills do not provide.
 		$deep = self::glossary_deep_link( $slug, $lang );
-		if ( $deep ) {
-			$out .= self::links_para( 'pt' === $lang ? 'Saber mais' : 'Learn more', array( $deep ) );
+		if ( ! $deep ) {
+			return '';
 		}
-		return $out;
+		return self::links_para( 'pt' === $lang ? 'Saber mais' : 'Learn more', array( $deep ) );
 	}
 
 	/**

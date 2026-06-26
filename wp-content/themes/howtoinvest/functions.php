@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.41';
+const VERSION = '0.8.42';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -238,6 +238,37 @@ function strip_legacy_learn_blocks( string $content ): string {
 	return $changed ? serialize_blocks( $kept ) : $content;
 }
 add_filter( 'the_content', __NAMESPACE__ . '\\strip_legacy_learn_blocks', 8 );
+
+/**
+ * Remove the inline "Related terms:" paragraph baked into glossary content by
+ * the seeder. The same related terms are shown by the howtoinvest/related block
+ * (pills) on the single-glossary template, so the in-content line was a
+ * duplicate. The curated "Learn more:" line is kept. Runs at render so existing
+ * seeded terms are cleaned without a re-seed.
+ *
+ * @param string $content Post content (raw block markup at priority 8).
+ * @return string
+ */
+function strip_glossary_inline_related( string $content ): string {
+	if ( ! is_singular( 'glossary' ) || false === strpos( $content, '<!-- wp:' ) ) {
+		return $content;
+	}
+	$blocks  = parse_blocks( $content );
+	$changed = false;
+	$kept    = array();
+	foreach ( $blocks as $b ) {
+		if ( 'core/paragraph' === ( $b['blockName'] ?? '' ) ) {
+			$html = (string) ( $b['innerHTML'] ?? '' );
+			if ( false !== strpos( $html, 'Related terms:</strong>' ) || false !== strpos( $html, 'Termos relacionados:</strong>' ) ) {
+				$changed = true;
+				continue;
+			}
+		}
+		$kept[] = $b;
+	}
+	return $changed ? serialize_blocks( $kept ) : $content;
+}
+add_filter( 'the_content', __NAMESPACE__ . '\\strip_glossary_inline_related', 8 );
 
 /**
  * One-time: remove a stale Site-Editor customization of the "Home" template.
