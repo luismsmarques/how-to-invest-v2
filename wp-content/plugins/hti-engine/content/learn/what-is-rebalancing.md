@@ -36,6 +36,16 @@ Rebalancing is a calm, occasional habit, not a constant fiddle — many approach
 - Its job is to keep risk aligned with your profile, not to chase returns.
 - It is an occasional, scheduled habit — not constant tinkering.
 
+## Quiz
+1. Why does a portfolio drift from its target mix over time?
+- [x] Some asset classes grow faster than others, so their slices get bigger
+- [ ] The target proportions are recalculated automatically each month
+- [ ] Holding cash always shrinks every other class on its own
+2. What is the main purpose of rebalancing?
+- [ ] To chase the highest possible returns
+- [x] To keep risk aligned with the profile the mix was built for
+- [ ] To trade as frequently as possible throughout the year
+
 <!-- PT -->
 > Com o tempo, uma carteira afasta-se da mistura-alvo à medida que algumas classes crescem mais depressa; o rebalanceamento é o ajuste suave que a traz de volta.
 
@@ -58,3 +68,13 @@ O rebalanceamento é um hábito calmo e ocasional, não um remexer constante —
 - O rebalanceamento empurra as fatias de volta à mistura-alvo.
 - A sua função é manter o risco alinhado com o teu perfil, não perseguir retornos.
 - É um hábito ocasional e planeado — não um remexer constante.
+
+## Questionário
+1. Porque é que uma carteira deriva da sua mistura-alvo com o tempo?
+- [x] Algumas classes de ativos crescem mais depressa do que outras, e as suas fatias ficam maiores
+- [ ] As proporções-alvo são recalculadas automaticamente todos os meses
+- [ ] Ter dinheiro em caixa encolhe sempre, por si só, todas as outras classes
+2. Qual é o objetivo principal do rebalanceamento?
+- [ ] Perseguir os retornos mais altos possíveis
+- [x] Manter o risco alinhado com o perfil para o qual a mistura foi construída
+- [ ] Negociar com a maior frequência possível ao longo do ano

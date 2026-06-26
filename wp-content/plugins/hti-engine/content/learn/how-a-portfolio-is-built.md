@@ -39,6 +39,16 @@ A portfolio is built over time, not in a day. Investing regularly and rebalancin
 - Set a mix by asset class, within sensible ranges, summing to the whole.
 - Diversify within each class, then invest regularly and rebalance occasionally.
 
+## Quiz
+1. What does the chapter describe as the first step in building a portfolio?
+- [x] Getting the base in place — an emergency fund and only money you will not need soon
+- [ ] Picking a single asset class to focus everything on
+- [ ] Setting a precise allocation before anything else
+2. In this chapter, what does diversifying within a class mean?
+- [ ] Putting all your weight on one promising name or region
+- [x] Owning a wide slice so no single name or region carries too much weight
+- [ ] Switching between classes whenever markets move
+
 <!-- PT -->
 > Uma carteira monta-se em poucos passos calmos — a base primeiro, depois a mistura por classe, depois um hábito constante — e nada disto tem de ser complicado.
 
@@ -64,3 +74,13 @@ Uma carteira constrói-se ao longo do tempo, não num dia. Investir com regulari
 - Deixa a tua situação apontar para um perfil — o questionário pode ajudar.
 - Define uma mistura por classe de ativos, dentro de intervalos sensatos, somando o todo.
 - Diversifica dentro de cada classe e depois investe com regularidade e rebalanceia de vez em quando.
+
+## Questionário
+1. O que é que o capítulo descreve como o primeiro passo para montar uma carteira?
+- [x] Pôr a base no sítio — um fundo de emergência e apenas dinheiro de que não vais precisar tão cedo
+- [ ] Escolher uma única classe de ativos onde concentrar tudo
+- [ ] Definir uma alocação exata antes de mais nada
+2. Neste capítulo, o que significa diversificar dentro de uma classe?
+- [ ] Pôr todo o peso num único nome ou região promissor
+- [x] Ter uma fatia ampla para que nenhum nome ou região carregue peso a mais
+- [ ] Trocar entre classes sempre que os mercados se mexem

@@ -36,6 +36,16 @@ In an illustrative portfolio, equities usually form a larger slice for long hori
 - Higher long-term growth potential comes with bigger short-term swings.
 - They tend to suit longer horizons, shown only as an asset-class slice.
 
+## Quiz
+1. Why does spreading equity ownership across many regions help?
+- [x] Your outcome no longer rests on a single economy, which can smooth the overall ride
+- [ ] It removes short-term swings entirely
+- [ ] It guarantees a higher return than any other class
+2. What is the trade-off that comes with equities' growth potential?
+- [ ] They pay a fixed interest agreed in advance
+- [x] They tend to have the largest short-term swings of the main classes
+- [ ] They are the safest place for money needed soon
+
 <!-- PT -->
 > As ações globais são possuir pequenas fatias de muitas empresas pelo mundo — o motor de crescimento da maioria das carteiras, e também a parte mais variável.
 
@@ -58,3 +68,13 @@ Num exemplo ilustrativo de carteira, as ações costumam formar uma fatia maior 
 - "Globais" espalha o resultado por regiões — uma diversificação incorporada.
 - O maior potencial de crescimento a longo prazo traz maiores oscilações de curto prazo.
 - Costumam encaixar em horizontes longos, mostradas só como fatia de uma classe.
+
+## Questionário
+1. Porque é que espalhar a participação em ações por muitas regiões ajuda?
+- [x] O teu resultado deixa de depender de uma só economia, o que pode suavizar o percurso global
+- [ ] Elimina por completo as oscilações de curto prazo
+- [ ] Garante um retorno maior do que qualquer outra classe
+2. Qual é o compromisso que acompanha o potencial de crescimento das ações?
+- [ ] Pagam juros fixos acordados à partida
+- [x] Costumam ter as maiores oscilações de curto prazo das principais classes
+- [ ] São o lugar mais seguro para dinheiro de que precisas em breve

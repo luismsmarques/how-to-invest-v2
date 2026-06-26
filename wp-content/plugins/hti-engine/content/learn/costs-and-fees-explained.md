@@ -36,6 +36,16 @@ Low cost matters, but it is not the whole story — what something does still co
 - Costs are one of the few things you control with near-certainty.
 - Aim for value: keep costs low, but judge what they buy too.
 
+## Quiz
+1. Why do small fees matter so much over a long horizon?
+- [x] The same compounding that grows money also works on costs, so a tiny yearly fee adds up over decades
+- [ ] Fees are charged only once, so they never grow with your balance
+- [ ] Small fees become irrelevant the longer you stay invested
+2. According to the chapter, why are costs described as one of the few levers you control?
+- [ ] Because lowering costs guarantees a higher market return
+- [x] Because markets are uncertain while costs are known with near-certainty
+- [ ] Because the cheapest option is always the best one to choose
+
 <!-- PT -->
 > Comissões pequenas parecem inofensivas, mas compõem contra ti ao longo dos anos — e mantê-las baixas é das poucas coisas totalmente sob o teu controlo.
 
@@ -58,3 +68,13 @@ O custo baixo conta, mas não é a história toda — o que algo faz também imp
 - As pequenas percentagens compõem ao longo do tempo, tal como os retornos.
 - Os custos são das poucas coisas que controlas com quase-certeza.
 - Procura valor: mantém os custos baixos, mas avalia também o que compram.
+
+## Questionário
+1. Porque é que as comissões pequenas contam tanto num horizonte longo?
+- [x] Os mesmos juros compostos que fazem o dinheiro crescer também trabalham sobre os custos, por isso uma comissão minúscula acumula ao longo de décadas
+- [ ] As comissões são cobradas só uma vez, por isso nunca crescem com o teu saldo
+- [ ] As comissões pequenas tornam-se irrelevantes quanto mais tempo ficares investido
+2. Segundo o capítulo, porque é que os custos são descritos como das poucas alavancas que controlas?
+- [ ] Porque baixar os custos garante um retorno de mercado mais alto
+- [x] Porque os mercados são incertos, enquanto os custos são conhecidos com quase-certeza
+- [ ] Porque a opção mais barata é sempre a melhor a escolher

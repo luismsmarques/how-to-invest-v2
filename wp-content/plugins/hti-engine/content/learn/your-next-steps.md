@@ -36,6 +36,16 @@ You do not have to know everything at once. The glossary is there for any term, 
 - A simple, steady plan beats a clever, fragile one.
 - Keep the glossary and the ebook handy, and learn at your own pace.
 
+## Quiz
+1. According to this chapter, what kind of plan tends to work best?
+- [x] A simple, steady one you can stick with over years
+- [ ] A clever, intricate one that you adjust constantly
+- [ ] One that aims to learn everything before starting
+2. What does the chapter suggest as a clear, personal place to begin?
+- [ ] Memorising every term in the glossary first
+- [x] Discovering your investor profile through the questionnaire
+- [ ] Waiting until you feel you know everything about investing
+
 <!-- PT -->
 > Já tens o quadro completo — e transformá-lo num plano calmo, simples e teu é o último passo natural.
 
@@ -58,3 +68,13 @@ Não tens de saber tudo de uma vez. O glossário está lá para qualquer termo, 
 - Descobrir o teu perfil de investidor é um ponto de partida claro e teu.
 - Um plano simples e constante vence um plano esperto e frágil.
 - Mantém o glossário e o ebook à mão, e aprende ao teu ritmo.
+
+## Questionário
+1. Segundo este capítulo, que tipo de plano costuma funcionar melhor?
+- [x] Um plano simples e constante que consegues manter durante anos
+- [ ] Um plano esperto e intricado que ajustas a toda a hora
+- [ ] Um que pretende aprender tudo antes de começar
+2. O que é que o capítulo sugere como ponto de partida claro e teu?
+- [ ] Memorizar primeiro todos os termos do glossário
+- [x] Descobrir o teu perfil de investidor através do questionário
+- [ ] Esperar até sentires que sabes tudo sobre investir

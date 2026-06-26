@@ -36,6 +36,16 @@ Once the purpose and the horizon are clear, the right balance between growth and
 - Keep short-term and long-term goals in separate pots.
 - A clear goal makes the right asset-class balance much easier to see.
 
+## Quiz
+1. According to the chapter, what is a goal's single most important detail?
+- [x] The time horizon — when you need the money
+- [ ] The exact products you will hold
+- [ ] The name you give the account
+2. Why does the chapter suggest keeping short-term and long-term goals separate?
+- [ ] So they can all share the same growth-heavy mix
+- [x] Because they do not want the same treatment — each pot stays honest
+- [ ] To guarantee higher returns on the short-term money
+
 <!-- PT -->
 > Um objetivo claro — para que é o dinheiro e quando precisas dele — decide, em silêncio, quase tudo o resto sobre como investes.
 
@@ -58,3 +68,13 @@ Quando o propósito e o horizonte estão claros, o equilíbrio certo entre cresc
 - O tempo de um objetivo é o seu detalhe mais importante.
 - Mantém os objetivos de curto e de longo prazo em bolsos separados.
 - Um objetivo claro torna o equilíbrio certo por classe muito mais fácil de ver.
+
+## Questionário
+1. Segundo o capítulo, qual é o detalhe mais importante de um objetivo?
+- [x] O horizonte temporal — quando precisas do dinheiro
+- [ ] Os produtos exatos que vais ter
+- [ ] O nome que dás à conta
+2. Porque é que o capítulo sugere manter separados os objetivos de curto e de longo prazo?
+- [ ] Para que possam partilhar todos a mesma mistura focada em crescimento
+- [x] Porque não querem o mesmo tratamento — cada bolso fica honesto
+- [ ] Para garantir retornos mais altos no dinheiro de curto prazo

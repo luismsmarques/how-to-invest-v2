@@ -36,6 +36,16 @@ Periodic investing does not remove risk or guarantee a gain — values still ris
 - Its biggest benefit is turning investing into an automatic habit.
 - It reduces timing stress, not risk — values still move.
 
+## Quiz
+1. What does periodic investing (DCA) mean in practice?
+- [x] Adding a fixed amount on a regular schedule, whatever the market is doing
+- [ ] Investing everything on the single best day
+- [ ] Only adding money when prices are falling
+2. What does periodic investing actually reduce?
+- [ ] The risk that values can fall
+- [x] The stress of trying to time the market
+- [ ] The need to ever stay invested
+
 <!-- PT -->
 > Investir periodicamente é juntar um valor fixo num calendário regular — um hábito calmo que tira o stress de acertar no momento.
 
@@ -58,3 +68,13 @@ Investir periodicamente não elimina o risco nem garante um ganho — os valores
 - Suaviza o teu preço médio de entrada ao longo dos altos e baixos.
 - O seu maior benefício é transformar o investimento num hábito automático.
 - Reduz o stress de acertar no momento, não o risco — os valores continuam a mexer-se.
+
+## Questionário
+1. O que significa, na prática, investir periodicamente (DCA)?
+- [x] Juntar um valor fixo num calendário regular, faça o mercado o que fizer
+- [ ] Investir tudo no único melhor dia
+- [ ] Só juntar dinheiro quando os preços estão a cair
+2. O que é que investir periodicamente realmente reduz?
+- [ ] O risco de os valores poderem cair
+- [x] O stress de tentar acertar no momento do mercado
+- [ ] A necessidade de alguma vez te manteres investido

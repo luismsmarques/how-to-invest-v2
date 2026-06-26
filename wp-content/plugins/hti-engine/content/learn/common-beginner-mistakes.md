@@ -39,6 +39,16 @@ Waiting for the "perfect" moment usually means missing time in the market, which
 - Check rarely, tinker less — daily watching breeds stress.
 - Never invest money you will need soon, and skip trying to time the market.
 
+## Quiz
+1. What does the chapter describe as the single costliest reaction to volatility?
+- [x] Panic-selling after a drop, which locks in the loss and misses the recovery
+- [ ] Holding steady through a fall and doing nothing
+- [ ] Adding a little to a steady mix over time
+2. Why is short-term money kept in cash rather than growth assets?
+- [ ] Because cash always grows faster than other asset classes
+- [x] Because there is little time to recover from a dip before the money is needed
+- [ ] Because growth assets are guaranteed to fall in the short term
+
 <!-- PT -->
 > A maioria dos tropeções iniciais vem do comportamento, não do conhecimento — e as soluções são hábitos calmos que qualquer um constrói.
 
@@ -64,3 +74,13 @@ Esperar pelo momento "perfeito" costuma significar perder tempo no mercado, o qu
 - Evita vender em pânico; manter-te investido é o que apanha a recuperação.
 - Verifica raramente, mexe menos — olhar todos os dias gera stress.
 - Nunca invistas dinheiro de que vais precisar em breve e evita tentar acertar no momento.
+
+## Questionário
+1. O que é que o capítulo descreve como a reação mais cara à volatilidade?
+- [x] Vender em pânico depois de uma queda, o que fixa a perda e perde a recuperação
+- [ ] Manter-te quieto durante uma queda e não fazer nada
+- [ ] Acrescentar um pouco a uma mistura constante ao longo do tempo
+2. Porque é que o dinheiro de curto prazo fica em liquidez em vez de ativos de crescimento?
+- [ ] Porque a liquidez cresce sempre mais depressa do que as outras classes de ativos
+- [x] Porque há pouco tempo para recuperar de uma descida antes de precisares do dinheiro
+- [ ] Porque os ativos de crescimento vão de certeza cair no curto prazo

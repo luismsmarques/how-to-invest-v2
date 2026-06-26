@@ -36,6 +36,16 @@ The exact names, limits and tax rules vary from country to country, and they cha
 - General accounts are flexible; tax-advantaged ones trade flexibility for benefits.
 - The exact rules depend on your country, so check local specifics.
 
+## Quiz
+1. What does the account mainly change about the investments held inside it?
+- [x] The tax treatment and the account's purpose
+- [ ] Which asset classes you are allowed to hold
+- [ ] How fast the asset classes grow
+2. How do general and tax-advantaged accounts typically differ?
+- [ ] General accounts always beat tax-advantaged ones
+- [x] General accounts are flexible, while tax-advantaged ones trade flexibility for possible benefits
+- [ ] Tax-advantaged accounts let you hold different asset classes
+
 <!-- PT -->
 > Os investimentos vivem dentro de uma conta, e o tipo que usas muda sobretudo o tratamento fiscal e a finalidade — não o que podes ter.
 
@@ -58,3 +68,13 @@ Os nomes exatos, os limites e as regras fiscais variam de país para país, e mu
 - O invólucro muda sobretudo o tratamento fiscal e a finalidade da conta.
 - As contas gerais são flexíveis; as de vantagens fiscais trocam flexibilidade por benefícios.
 - As regras exatas dependem do teu país, por isso confirma as opções locais.
+
+## Questionário
+1. O que é que a conta muda sobretudo nos investimentos que tens lá dentro?
+- [x] O tratamento fiscal e a finalidade da conta
+- [ ] Quais as classes de ativos que podes ter
+- [ ] A rapidez com que as classes de ativos crescem
+2. Em que costumam diferir as contas gerais e as de vantagens fiscais?
+- [ ] As contas gerais rendem sempre mais do que as de vantagens fiscais
+- [x] As contas gerais são flexíveis, enquanto as de vantagens fiscais trocam flexibilidade por possíveis benefícios
+- [ ] As contas de vantagens fiscais deixam-te ter classes de ativos diferentes

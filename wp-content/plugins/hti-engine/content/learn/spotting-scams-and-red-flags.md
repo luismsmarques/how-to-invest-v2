@@ -39,6 +39,16 @@ Slow down. Anything that pressures you to move money fast, promises the impossib
 - Vague, secret or "too clever to explain" usually hides the risk.
 - Be wary of unsolicited, unregulated offers — check the regulator and slow down.
 
+## Quiz
+1. According to the chapter, what is the number-one red flag of a financial scam?
+- [x] A promise of guaranteed high returns with no downside
+- [ ] An offer that explains its risks in plain words
+- [ ] A chance to take time before deciding
+2. Why do scams rely on pressure and urgency like "act now or miss out"?
+- [ ] Because real opportunities really do vanish in minutes
+- [x] To rush you past your own judgement and stop you thinking
+- [ ] Because regulators require fast decisions
+
 <!-- PT -->
 > Se uma oferta promete retornos grandes, garantidos e urgentes, trata isso como um aviso, não uma oportunidade — investir a sério nunca funciona assim.
 
@@ -64,3 +74,13 @@ Abranda. Tudo o que te pressiona a mexer dinheiro depressa, promete o impossíve
 - A urgência e a pressão existem para contornar o teu juízo.
 - Vago, secreto ou "demasiado esperto para explicar" costuma esconder o risco.
 - Desconfia de ofertas não solicitadas e sem regulação — confirma o regulador e abranda.
+
+## Questionário
+1. Segundo o capítulo, qual é o sinal de alarme número um de uma fraude financeira?
+- [x] A promessa de retornos altos garantidos sem qualquer perda
+- [ ] Uma oferta que explica os seus riscos em palavras simples
+- [ ] A possibilidade de pensares antes de decidir
+2. Porque é que as fraudes se apoiam em pressão e urgência como "age agora ou perdes"?
+- [ ] Porque as oportunidades reais desaparecem mesmo em minutos
+- [x] Para te apressar para lá do teu juízo e te impedir de pensar
+- [ ] Porque os reguladores exigem decisões rápidas

@@ -36,6 +36,16 @@ A useful allocation is described by asset class, never by specific products, and
 - Time horizon and comfort with risk set the right mix.
 - It is shown by class, within curated ranges — never specific products.
 
+## Quiz
+1. What does asset allocation describe?
+- [x] The proportion of each broad asset class you hold
+- [ ] The specific products chosen within a class
+- [ ] A guaranteed return for a portfolio
+2. Which two things mainly set the right mix for someone?
+- [ ] Their account type and their broker
+- [x] Their time horizon and their comfort with ups and downs
+- [ ] The newest market trend and a single perfect number
+
 <!-- PT -->
 > A alocação de ativos é como divides o dinheiro pelas classes amplas — e molda o comportamento de uma carteira mais do que quase tudo o resto.
 
@@ -58,3 +68,13 @@ Uma alocação útil é descrita por classe de ativos, nunca por produtos espec�
 - Molda o potencial de crescimento e as oscilações mais do que escolher dentro de uma classe.
 - O horizonte temporal e o conforto com o risco definem a mistura certa.
 - É mostrada por classe, dentro de intervalos curados — nunca produtos específicos.
+
+## Questionário
+1. O que descreve a alocação de ativos?
+- [x] A proporção de cada classe ampla de ativos que tens
+- [ ] Os produtos específicos escolhidos dentro de uma classe
+- [ ] Um retorno garantido para uma carteira
+2. Que duas coisas definem sobretudo a mistura certa para alguém?
+- [ ] O tipo de conta e a corretora
+- [x] O horizonte temporal e o conforto com os altos e baixos
+- [ ] A tendência mais recente do mercado e um único número perfeito

@@ -36,6 +36,16 @@ Calmer usually means lower long-term growth potential than equities. That is the
 - Their job is to steady a portfolio, especially as a goal nears.
 - Calmer comes with lower long-term growth potential — the core trade-off.
 
+## Quiz
+1. What is a bond, in essence?
+- [x] A loan to a government or company that pays interest and returns the amount at the end
+- [ ] A part-ownership stake in a single company
+- [ ] Money kept ready and reachable at short notice
+2. What is the core trade-off of leaning on bonds rather than equities?
+- [ ] They are completely free of risk
+- [x] Calmer movement usually comes with lower long-term growth potential
+- [ ] They cannot be combined with other asset classes
+
 <!-- PT -->
 > As obrigações são empréstimos a governos ou empresas que pagam juros — costumam ser mais estáveis que as ações, e o lastro que acalma uma carteira.
 
@@ -58,3 +68,13 @@ Mais calmo costuma significar menor potencial de crescimento a longo prazo do qu
 - As obrigações costumam mexer-se mais suavemente que as ações, mas não são isentas de risco.
 - A sua função é estabilizar uma carteira, sobretudo quando um objetivo se aproxima.
 - Mais calmo vem com menor potencial de crescimento a longo prazo — o compromisso central.
+
+## Questionário
+1. O que é, no fundo, uma obrigação?
+- [x] Um empréstimo a um governo ou empresa que paga juros e devolve o montante no fim
+- [ ] Uma participação de propriedade numa única empresa
+- [ ] Dinheiro mantido pronto e acessível a curto prazo
+2. Qual é o compromisso central de te apoiares em obrigações em vez de ações?
+- [ ] São totalmente isentas de risco
+- [x] O movimento mais calmo costuma vir com menor potencial de crescimento a longo prazo
+- [ ] Não podem ser combinadas com outras classes de ativos

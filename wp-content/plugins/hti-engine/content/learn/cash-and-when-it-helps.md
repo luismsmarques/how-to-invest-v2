@@ -36,6 +36,16 @@ In an illustrative portfolio, a small cash slice can add steadiness and flexibil
 - Over long periods, inflation slowly erodes idle cash.
 - A small cash slice adds steadiness; the right amount depends on the situation.
 
+## Quiz
+1. When does cash help most as an asset class?
+- [x] For money that may be needed soon, like an emergency fund or a near-term goal
+- [ ] For far-off goals many years away, to maximise growth
+- [ ] When you want the largest long-term growth potential
+2. What is the quiet cost of holding cash over long periods?
+- [ ] Its day-to-day value swings sharply
+- [x] Inflation slowly reduces what it can buy
+- [ ] It must be returned to a borrower at the end
+
 <!-- PT -->
 > A liquidez é dinheiro a que chegas de imediato — a classe mais segura e estável, e exatamente o que as necessidades de curto prazo pedem.
 
@@ -58,3 +68,13 @@ Num exemplo ilustrativo de carteira, uma pequena fatia de liquidez pode acrescen
 - Encaixa em necessidades de curto prazo e no fundo de emergência, onde a estabilidade vence o crescimento.
 - Em períodos longos, a inflação corrói devagar a liquidez parada.
 - Uma pequena fatia de liquidez acrescenta estabilidade; o valor certo depende da situação.
+
+## Questionário
+1. Quando é que a liquidez ajuda mais como classe de ativos?
+- [x] Para dinheiro de que podes precisar em breve, como um fundo de emergência ou um objetivo próximo
+- [ ] Para objetivos distantes a muitos anos, para maximizar o crescimento
+- [ ] Quando queres o maior potencial de crescimento a longo prazo
+2. Qual é o custo silencioso de manter liquidez durante períodos longos?
+- [ ] O seu valor diário oscila bruscamente
+- [x] A inflação reduz devagar o que ela consegue comprar
+- [ ] Tem de ser devolvida a quem pediu emprestado no fim

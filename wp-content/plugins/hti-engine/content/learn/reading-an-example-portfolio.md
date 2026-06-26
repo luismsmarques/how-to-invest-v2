@@ -36,6 +36,16 @@ Two people who look similar can still land on different mixes, because horizon, 
 - It is illustrative and by class — never products, never a recommendation.
 - Your own mix may differ; it is a learning aid, not a template to copy.
 
+## Quiz
+1. In an example portfolio, what do the asset-class slices always do?
+- [x] Add up to 100% of the whole
+- [ ] Name the specific products to buy
+- [ ] Guarantee a fixed future return
+2. How should you treat an example portfolio shown here?
+- [ ] As a personal recommendation to copy exactly
+- [x] As an illustrative learning aid that may differ from your own mix
+- [ ] As a list of companies to invest in
+
 <!-- PT -->
 > Um exemplo de carteira é um conjunto de fatias por classe que somam 100% — apenas ilustrativo, nunca uma recomendação, e simples de ler quando conheces as partes.
 
@@ -58,3 +68,13 @@ Duas pessoas que parecem semelhantes podem ainda assim chegar a misturas diferen
 - Lê cada fatia pela sua função: motor de crescimento, lastro ou liquidez calma.
 - É ilustrativo e por classe — nunca produtos, nunca uma recomendação.
 - A tua mistura pode ser diferente; é um apoio à aprendizagem, não um molde a copiar.
+
+## Questionário
+1. Num exemplo de carteira, o que fazem sempre as fatias por classe de ativos?
+- [x] Somam 100% do todo
+- [ ] Indicam os produtos específicos a comprar
+- [ ] Garantem um retorno futuro fixo
+2. Como deves encarar um exemplo de carteira aqui mostrado?
+- [ ] Como uma recomendação pessoal para copiar tal e qual
+- [x] Como um apoio ilustrativo à aprendizagem que pode diferir da tua mistura
+- [ ] Como uma lista de empresas onde investir
