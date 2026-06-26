@@ -469,6 +469,11 @@
 			"name": "page-about",
 			"title": "About page",
 			"postTypes": [ "page" ]
+		},
+		{
+			"name": "page-ebook",
+			"title": "Ebook landing",
+			"postTypes": [ "page" ]
 		}
 	]
 }
