@@ -9,7 +9,7 @@ title_en: "Cash, and when it helps"
 title_pt: "Liquidez, e quando ajuda"
 excerpt_en: "Cash is money you can reach instantly — the safest, steadiest class, and exactly what short-term needs call for."
 excerpt_pt: "A liquidez é dinheiro a que chegas de imediato — a classe mais segura e estável, e exatamente o que as necessidades de curto prazo pedem."
-glossary: cash, inflation, asset, portfolio
+glossary: cash, deposit-guarantee, emergency-fund, inflation, asset
 prev: a-closer-look-at-bonds
 next: what-is-esg-investing
 ---

@@ -9,7 +9,7 @@ title_en: "Understanding account types"
 title_pt: "Perceber os tipos de conta"
 excerpt_en: "Investments live inside an account, and the type you use mostly changes the tax treatment — here is the plain-language version."
 excerpt_pt: "Os investimentos vivem dentro de uma conta, e o tipo que usas muda sobretudo o tratamento fiscal — aqui fica a versão simples."
-glossary: asset
+glossary: brokerage-account, tax-advantaged-account, asset
 prev: what-is-rebalancing
 next: costs-and-fees-explained
 ---

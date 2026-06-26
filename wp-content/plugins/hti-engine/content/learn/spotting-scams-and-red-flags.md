@@ -9,7 +9,7 @@ title_en: "Spotting scams and red flags"
 title_pt: "Reconhecer fraudes e sinais de alarme"
 excerpt_en: "If an offer promises big, guaranteed, urgent returns, treat it as a warning — here are the red flags that protect beginners."
 excerpt_pt: "Se uma oferta promete retornos grandes, garantidos e urgentes, trata-a como um aviso — eis os sinais de alarme que protegem quem começa."
-glossary:
+glossary: guaranteed-returns, ponzi-scheme, financial-regulator, risk-and-reward
 prev: common-beginner-mistakes
 next: set-your-goals
 ---
