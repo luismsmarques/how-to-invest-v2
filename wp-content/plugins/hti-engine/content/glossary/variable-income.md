@@ -14,7 +14,7 @@ seo_desc_pt: "Saiba o que é renda variável, quais os principais ativos (açõe
 <!-- EN -->
 > Investments where the future return cannot be guaranteed or anticipated, such as stocks, being subject to market fluctuations.
 
-Variable income covers investments whose returns are not fixed in advance and depend on how markets perform. A typical example is a [glossary:stock|stock], where the future outcome can rise or fall with company results and broader conditions.
+Variable income covers investments whose returns are not fixed in advance and depend on how markets perform. A typical example is a [glossary:stock|stock], part of the broad [learn:a-closer-look-at-global-equities|global equities] class, where the future outcome can rise or fall with company results and broader conditions.
 
 ## How is variable income different from fixed income?
 With [glossary:fixed-income|fixed income], the payment schedule is known up front. With variable income, the return is uncertain and can be higher or lower than expected. That uncertainty is the price paid for the potential of stronger long-term growth.

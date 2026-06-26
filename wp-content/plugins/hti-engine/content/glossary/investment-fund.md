@@ -20,7 +20,7 @@ An investment fund pools money from many people into a single collective pot. Th
 A manager or set of rules decides what the pooled money buys, and each investor holds units that rise or fall with the fund's value. Because the capital is spread across many holdings, a fund is one practical way to achieve [glossary:diversification|diversification] without picking each asset yourself. Funds charge fees for this service.
 
 ## What should you weigh before considering a fund?
-Costs, the type of assets held, and how the fund is structured all matter, since fees reduce returns over time. Some funds simply track a [glossary:benchmark|benchmark], while others are actively run. None remove risk, and past performance never guarantees the future.
+Costs, the type of assets held, and how the fund is structured all matter, since fees reduce returns over time. Some funds simply track a [glossary:benchmark|benchmark], while others are actively run. None remove risk, [learn:costs-and-fees-explained|fees reduce returns] over time, and past performance never guarantees the future.
 
 ## Key takeaways
 - An investment fund pools money from many investors into one collective portfolio.

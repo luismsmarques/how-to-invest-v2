@@ -20,7 +20,7 @@ Crypto is a young asset class built on digital, blockchain-based assets. Compare
 Its [glossary:volatility|price swings] can be far larger than those of mainstream assets, and its long-term behaviour is still not well understood. Prices can rise or fall sharply with little warning. Because of this, a profile that includes any crypto would only ever hold a tiny portion, sized so a steep drop would not derail the whole portfolio.
 
 ## Does everyone need crypto exposure?
-No. It is optional by design. Many example allocations include none at all, and that is a perfectly reasonable outcome. When present, it sits at the edge of a portfolio as a small, speculative slice rather than a core holding.
+No. It is optional by design. Many example allocations include none at all, and that is a perfectly reasonable outcome. When present, it sits at the edge of a portfolio as a small, speculative slice rather than a core holding within an overall [learn:what-is-asset-allocation|asset allocation].
 
 ## Key takeaways
 - Crypto is a young, highly volatile asset class.

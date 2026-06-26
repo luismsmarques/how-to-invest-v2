@@ -14,7 +14,7 @@ seo_desc_pt: "Descubra como funcionam os dividendos, as datas de pagamento e com
 <!-- EN -->
 > A portion of a company's net earnings distributed to its shareholders.
 
-A dividend is a payment a company may choose to share with the people who own its shares. Instead of keeping all of its profit, the company returns some of it to shareholders, usually in cash. Dividends are one of the two ways shares can reward an owner, alongside a rising share price.
+A dividend is a payment a company may choose to share with the people who own its shares. Instead of keeping all of its profit, the company returns some of it to shareholders, usually in cash. Dividends are one of the two ways [learn:a-closer-look-at-global-equities|shares] can reward an owner, alongside a rising share price.
 
 ## How does a dividend actually work?
 When a company earns a profit, its board can decide to distribute part of it as a dividend, often quarterly or yearly. The amount per share is announced in advance, and only those who own the [glossary:stock|stock] before a set date receive it. Not every company pays one, and a dividend is never guaranteed.

@@ -20,7 +20,7 @@ A hedge is a way of offsetting risk. The idea is to hold a position that tends t
 Hedging usually involves pairing an existing holding with something expected to move in the opposite direction. Broad [glossary:diversification|diversification] is itself a gentle form of hedging, while more direct hedges may use instruments designed to rise during a [glossary:bear-market|bear market]. The aim is to soften losses, not to chase extra profit.
 
 ## Does a hedge come at a cost?
-Protection is rarely free. A hedge can reduce potential losses but often caps gains or carries an ongoing cost, much like an insurance premium. It also adds complexity. For most beginners, simple diversification across asset classes does much of this work without specialised tools.
+Protection is rarely free. A hedge can reduce potential losses but often caps gains or carries an ongoing cost, much like an insurance premium. It also adds complexity. For most beginners, the simple diversification across asset classes that happens when you [learn:how-a-portfolio-is-built|build a portfolio] does much of this work without specialised tools.
 
 ## Key takeaways
 - A hedge is a position taken to offset the risk of adverse price moves.

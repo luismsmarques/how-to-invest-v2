@@ -9,7 +9,7 @@ title_en: "Your next steps from here"
 title_pt: "Os teus próximos passos a partir daqui"
 excerpt_en: "You have the whole picture now — here is how to turn it into a simple, calm plan that is yours."
 excerpt_pt: "Já tens o quadro completo — eis como transformá-lo num plano simples, calmo e teu."
-glossary:
+glossary: portfolio, asset, diversification
 prev: what-is-an-investor-profile
 next:
 ---

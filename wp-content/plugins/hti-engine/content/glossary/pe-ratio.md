@@ -20,7 +20,7 @@ The Price-to-Earnings ratio, or P/E, is one of the most widely cited tools for v
 You divide the share price by the earnings per share. A P/E of 20, for example, means investors are paying 20 times the company's yearly per-share profit. A high P/E can signal that the market expects strong future growth, while a low one may suggest modest expectations, though neither reading tells the whole story on its own.
 
 ## What are the limits of the P/E ratio?
-The P/E ignores debt, [glossary:cash-flow|cash flow], and the wider industry context, so it is most useful when comparing similar companies rather than in isolation. Earnings can also be distorted by one-off events. For a profile built on diversified [glossary:global-equities|global equities], the P/E is a learning lens, not a buy-or-sell trigger.
+The P/E ignores debt, [glossary:cash-flow|cash flow], and the wider industry context, so it is most useful when comparing similar companies rather than in isolation. Earnings can also be distorted by one-off events. For a profile built on diversified [learn:a-closer-look-at-global-equities|global equities], the P/E is a learning lens, not a buy-or-sell trigger.
 
 ## Key takeaways
 - The P/E ratio compares share price to earnings per share.

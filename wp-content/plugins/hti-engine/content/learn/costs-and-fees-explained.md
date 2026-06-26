@@ -9,7 +9,7 @@ title_en: "Costs and fees, explained simply"
 title_pt: "Custos e taxas, explicados de forma simples"
 excerpt_en: "Small fees look harmless but compound against you over time — keeping them low is one of the few things you fully control."
 excerpt_pt: "Comissões pequenas parecem inofensivas, mas compõem contra ti com o tempo — mantê-las baixas é das poucas coisas que controlas por inteiro."
-glossary: compound-interest
+glossary: compound-interest, investment-fund, spread
 prev: understanding-account-types
 next: how-a-portfolio-is-built
 ---

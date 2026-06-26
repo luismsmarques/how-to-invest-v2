@@ -20,7 +20,7 @@ Margin refers to borrowing money from a brokerage to buy investments beyond what
 When you trade on margin, the broker lends you part of the purchase price, using the assets in your account as collateral. This is a form of [glossary:leverage|leverage]: a small price move can produce an outsized result on your own money. If the position falls in value, the broker may issue a "margin call" demanding more funds, and can sell your assets to cover the loan.
 
 ## Why is margin risky for most investors?
-Because losses are magnified, margin can wipe out your capital faster than an unleveraged position, and you still owe the borrowed amount plus interest. For a profile building long-term wealth, a simple, fully owned [glossary:portfolio|portfolio] avoids this added fragility. Margin is described here so you can recognise it, not as a tool to reach for.
+Because losses are magnified, margin can wipe out your capital faster than an unleveraged position, and you still owe the borrowed amount plus interest. For a profile building long-term wealth, a simple, fully owned [glossary:portfolio|portfolio] avoids this added fragility. Margin is described here so you can recognise it as one of the [learn:common-beginner-mistakes|common beginner mistakes] to avoid, not as a tool to reach for.
 
 ## Key takeaways
 - Margin is money borrowed from a broker to buy investments.

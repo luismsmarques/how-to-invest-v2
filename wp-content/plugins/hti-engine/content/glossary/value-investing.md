@@ -20,7 +20,7 @@ Value investing is the discipline of buying assets for less than they seem to be
 They study fundamentals such as earnings, cash flow, and book value, often using tools like the [glossary:pe-ratio|price-to-earnings ratio] to judge whether a [glossary:stock|stock] looks cheap relative to what it produces. The goal is a margin of safety: paying enough below estimated value to absorb mistakes.
 
 ## Why is patience central to value investing?
-Undervalued assets can stay cheap for a long time, so this approach usually assumes a long horizon and tolerance for [glossary:volatility|volatility]. The market may take years to recognise value, and there is no guarantee it ever will. This is a description of a style, not a recommendation to follow it.
+Undervalued assets can stay cheap for a long time, so this approach usually assumes a long horizon and tolerance for [glossary:volatility|volatility]. The market may take years to recognise value, and there is no guarantee it ever will. This is a description of a style of [learn:what-is-investing|investing], not a recommendation to follow it.
 
 ## Key takeaways
 - Value investing seeks assets trading below their estimated intrinsic worth.

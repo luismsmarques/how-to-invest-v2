@@ -20,7 +20,7 @@ An option is a contract that gives its holder the right, but not the obligation,
 A "call" option grants the right to buy at a fixed price, while a "put" grants the right to sell at one. Buyers pay a fee, called a premium, for this right and can let the contract expire if it is not worth using. Some investors use options as a [glossary:hedge|hedge] to limit downside, while others use them to speculate on short-term price moves.
 
 ## Why should beginners be cautious with options?
-Options have expiry dates and can lose their entire value quickly, which makes them riskier and more complex than holding [glossary:global-equities|global equities] for the long run. Pricing them well requires understanding volatility, time decay, and probability. They are explained here so you can recognise them, not as something a long-term, diversified profile needs to use.
+Options have expiry dates and can lose their entire value quickly, which makes them riskier and more complex than holding [glossary:global-equities|global equities] for the long run. Pricing them well requires understanding volatility, time decay, and probability. They are explained here so you can recognise them as one of the [learn:common-beginner-mistakes|common beginner mistakes] to avoid, not as something a long-term, diversified profile needs to use.
 
 ## Key takeaways
 - An option is a contract giving the right to buy or sell at a set price.

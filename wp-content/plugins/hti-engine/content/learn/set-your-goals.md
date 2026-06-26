@@ -9,7 +9,7 @@ title_en: "Set your goals first"
 title_pt: "Define primeiro os teus objetivos"
 excerpt_en: "A clear goal — what the money is for and when you need it — quietly decides almost everything else about how you invest."
 excerpt_pt: "Um objetivo claro — para que é o dinheiro e quando precisas dele — decide, em silêncio, quase tudo o resto sobre como investes."
-glossary:
+glossary: asset, portfolio, diversification
 prev: spotting-scams-and-red-flags
 next: what-is-an-investor-profile
 ---

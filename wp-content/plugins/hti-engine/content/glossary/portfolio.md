@@ -17,7 +17,7 @@ seo_desc_pt: "Como construir e gerir o seu portfólio financeiro. Dicas de aloca
 A portfolio is simply the full set of investments a person or institution holds, viewed together rather than one at a time. Thinking at the portfolio level shifts the question from "is this single asset good?" to "how do all my holdings behave as a group?"
 
 ## What goes into a portfolio?
-A portfolio can blend many [glossary:asset|asset] classes — global equities, [glossary:bonds|bonds], cash, real assets and a small optional slice of crypto. The mix is usually expressed as percentages that add up to 100%. Different mixes suit different time horizons and tolerance for ups and downs.
+A portfolio can blend many [glossary:asset|asset] classes — global equities, [glossary:bonds|bonds], cash, real assets and a small optional slice of crypto. The mix is usually expressed as percentages that add up to 100% when you [learn:how-a-portfolio-is-built|build a portfolio]. Different mixes suit different time horizons and tolerance for ups and downs.
 
 ## Why think in terms of a whole portfolio?
 Because individual assets rarely move in the same direction at the same time. Spreading capital across categories, an idea known as [glossary:diversification|diversification], can smooth the overall ride. The goal is a balanced whole, not a basket of individually "best" picks.

@@ -9,7 +9,7 @@ title_en: "What is investing, really?"
 title_pt: "O que é, afinal, investir?"
 excerpt_en: "Investing means putting money to work in assets that can grow over time — accepting some ups and downs for that chance."
 excerpt_pt: "Investir é pôr o dinheiro a trabalhar em ativos que podem crescer com o tempo — aceitando altos e baixos por essa hipótese."
-glossary: asset, compound-interest
+glossary: asset, compound-interest, inflation, global-equities
 prev: budgeting-basics
 next: risk-and-reward-explained
 ---

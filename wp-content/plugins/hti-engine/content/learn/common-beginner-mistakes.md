@@ -9,7 +9,7 @@ title_en: "Common beginner mistakes to avoid"
 title_pt: "Erros comuns de quem começa"
 excerpt_en: "Most early stumbles are about behaviour, not knowledge — here are the common ones and the calmer habit that avoids each."
 excerpt_pt: "A maioria dos tropeções iniciais é de comportamento, não de conhecimento — eis os mais comuns e o hábito calmo que evita cada um."
-glossary: volatility
+glossary: volatility, portfolio, cash
 prev: staying-calm-when-markets-fall
 next: spotting-scams-and-red-flags
 ---

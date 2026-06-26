@@ -20,7 +20,7 @@ A stock is a unit of ownership in a company. Buying one makes you a shareholder,
 As a part-owner, your holding's value rises and falls with how the market judges the company. You may also receive a [glossary:dividend|portion of profits] when the company distributes them. Returns are not fixed or guaranteed, which places stocks among the more variable, growth-oriented investments.
 
 ## How does a single stock differ from the asset class?
-One stock concentrates your outcome on a single company, which can swing sharply. Spreading across many companies adds [glossary:diversification|variety] and softens the impact of any one falling. This is why example portfolios describe the broad equities class rather than individual names.
+One stock concentrates your outcome on a single company, which can swing sharply. Spreading across many companies adds [glossary:diversification|variety] and softens the impact of any one falling. This is why example portfolios describe the broad [learn:a-closer-look-at-global-equities|equities] class rather than individual names.
 
 ## Key takeaways
 - A stock is a unit of ownership that makes you a shareholder.

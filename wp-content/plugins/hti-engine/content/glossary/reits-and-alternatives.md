@@ -20,7 +20,7 @@ REITs and alternatives is a broad bucket covering real estate (often through lis
 When one part of a portfolio dips, another that moves on its own rhythm may hold up. That cushioning effect is the main reason this asset class appears in example allocations — it adds [glossary:diversification|variety] alongside [glossary:global-equities|shares] and [glossary:bonds|bonds]. The aim is a smoother overall ride, not a guarantee of gains.
 
 ## How large a slice is typical?
-Because these assets can be less liquid or harder to value, example portfolios usually frame them as a modest, supporting slice rather than a core holding. A profile that wants extra diversification might lean slightly more on them, always within curated ranges.
+Because these assets can be less liquid or harder to value, example portfolios usually frame them as a modest, supporting slice rather than a core holding. A profile that wants extra diversification might lean slightly more on them, always within the curated ranges of an [learn:what-is-asset-allocation|asset allocation].
 
 ## Key takeaways
 - This class covers real estate and other non-mainstream assets.

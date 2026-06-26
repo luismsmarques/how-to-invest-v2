@@ -20,7 +20,7 @@ Short selling is an advanced, high-risk mechanism in which an investor positions
 In a typical short, an investor borrows an asset, sells it at the current price, and hopes to buy it back later at a lower price to return it. The difference would be the gain. Because borrowing is involved, it often relies on [glossary:margin|margin] and effectively uses [glossary:leverage|leverage].
 
 ## Why is short selling so risky?
-A normal purchase can only fall to zero, but a price that keeps rising means a short position's losses can grow without a clear ceiling. Costs to borrow and forced buy-backs can compound the damage. This is why short selling is generally the domain of experienced professionals, not a starting point.
+A normal purchase can only fall to zero, but a price that keeps rising means a short position's losses can grow without a clear ceiling. Costs to borrow and forced buy-backs can compound the damage. This is why short selling is generally the domain of experienced professionals, and one of the [learn:common-beginner-mistakes|common beginner mistakes] to avoid, not a starting point.
 
 ## Key takeaways
 - Short selling is a bet that an asset's price will fall, the opposite of buying.
