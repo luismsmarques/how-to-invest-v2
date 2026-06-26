@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.29';
+const VERSION = '0.8.30';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1089,89 +1089,104 @@ function render_learn_hub(): string {
 }
 
 /**
- * Query a few published Learn articles in a given language (Polylang-aware).
- *
- * @param string $lang Language slug ('' = no language constraint).
- * @param int    $n    How many.
- * @return array<int,\WP_Post>
- */
-function learn_feed_posts( string $lang, int $n ): array {
-	$args = array(
-		'post_type'           => 'learn',
-		'post_status'         => 'publish',
-		'posts_per_page'      => $n,
-		'orderby'             => 'date',
-		'order'               => 'DESC',
-		'no_found_rows'       => true,
-		'ignore_sticky_posts' => true,
-	);
-	if ( '' !== $lang && function_exists( 'pll_default_language' ) ) {
-		$args['lang'] = $lang;
-	}
-	$query = new \WP_Query( $args );
-	$posts = $query->posts;
-	wp_reset_postdata();
-	return $posts;
-}
-
-/**
- * Homepage "Start learning" feed: the latest Learn articles as cards, in the
- * current language. Falls back to the default language so the section is never
- * empty (e.g. before PT translations are seeded). Replaces a core Query Loop
- * that returned nothing once Polylang filtered it by language.
+ * Homepage Learn block: the "From zero to your first portfolio" path as a
+ * compact card — eyebrow, heading, a progress bar and a horizontal 7-module
+ * stepper, plus a "continue" button. Progress is hydrated client-side by
+ * learn.js (anonymous, localStorage), shared with the Learn hub. Self-contained
+ * (its own heading), so home.html no longer needs a separate section header.
  */
 function render_learn_feed(): string {
-	if ( ! post_type_exists( 'learn' ) ) {
+	if ( ! post_type_exists( 'learn' ) || ! class_exists( '\\HTI\\Engine\\Content_Import' ) ) {
 		return '';
 	}
-	$lang  = current_lang();
-	$posts = learn_feed_posts( $lang, 3 );
-	if ( empty( $posts ) && function_exists( 'pll_default_language' ) ) {
-		$def = (string) pll_default_language( 'slug' );
-		if ( '' !== $def && $def !== $lang ) {
-			$posts = learn_feed_posts( $def, 3 );
-		}
-	}
-	if ( empty( $posts ) ) {
+	$pt   = 'pt' === current_lang();
+	$lang = $pt ? 'pt' : 'en';
+	$mods = \HTI\Engine\Content_Import::curriculum( $lang );
+	if ( empty( $mods ) ) {
 		return '';
 	}
 
-	$pt  = 'pt' === $lang;
-	$out = '<div class="wp-block-group alignwide hti-card-grid"><div class="hti-card-grid__inner" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px">';
-	foreach ( $posts as $post ) {
-		$permalink = (string) get_permalink( $post );
-		$title     = (string) get_the_title( $post );
+	$s = $pt
+		? array(
+			'eyebrow'  => 'O teu percurso · 7 módulos',
+			'h2'       => 'Do zero à tua primeira carteira',
+			'sub'      => 'Um caminho guiado, uma ideia de cada vez. Continua de onde paraste.',
+			'seeall'   => 'Ver o percurso →',
+			'chapters' => 'capítulos',
+			'continue' => 'Continuar o caminho →',
+			'inprog'   => 'A decorrer',
+		)
+		: array(
+			'eyebrow'  => 'Your path · 7 modules',
+			'h2'       => 'From zero to your first portfolio',
+			'sub'      => 'A guided path, one idea at a time. Pick up where you left off.',
+			'seeall'   => 'See the path →',
+			'chapters' => 'chapters',
+			'continue' => 'Continue the path →',
+			'inprog'   => 'In progress',
+		);
 
-		$eyebrow = '';
-		$terms   = get_the_terms( $post, 'learn_topic' );
-		if ( is_array( $terms ) && ! empty( $terms ) ) {
-			$term = $terms[0];
-			$name = $term->name;
-			if ( $pt ) {
-				$meta = get_term_meta( $term->term_id, 'hti_name_pt', true );
-				if ( is_string( $meta ) && '' !== $meta ) {
-					$name = $meta;
-				}
+	$learn_url = archive_url( 'learn', 'learn' );
+
+	// Ordered chapters (for client-side progress) + total + first published URL.
+	$ordered   = array();
+	$total     = 0;
+	$first_url = '';
+	foreach ( $mods as $m ) {
+		foreach ( $m['chapters'] as $c ) {
+			++$total;
+			$ordered[] = array( 's' => $c['slug'], 'u' => $c['url'], 'p' => $c['published'] ? 1 : 0, 't' => $c['title'] );
+			if ( '' === $first_url && $c['published'] ) {
+				$first_url = $c['url'];
 			}
-			$eyebrow = '<div class="hti-article-card__eyebrow">' . esc_html( $name ) . '</div>';
 		}
-
-		$media = '';
-		if ( has_post_thumbnail( $post ) ) {
-			$media = '<a href="' . esc_url( $permalink ) . '">'
-				. get_the_post_thumbnail( $post, 'medium', array( 'style' => 'width:100%;height:120px;object-fit:cover;display:block' ) )
-				. '</a>';
-		}
-
-		$out .= '<div class="wp-block-group hti-article-card">'
-			. '<div class="wp-block-group hti-article-card__media">' . $media . '</div>'
-			. '<div class="wp-block-group hti-article-card__body">'
-			. $eyebrow
-			. '<h3 class="wp-block-heading hti-article-card__title"><a href="' . esc_url( $permalink ) . '">' . esc_html( $title ) . '</a></h3>'
-			. '</div></div>';
 	}
-	$out .= '</div></div>';
-	return $out;
+	if ( '' === $first_url ) {
+		$first_url = $learn_url;
+	}
+
+	// Assets (shared with the hub).
+	wp_enqueue_style( 'howtoinvest-learn', get_stylesheet_directory_uri() . '/assets/css/learn.css', array(), VERSION );
+	wp_enqueue_script( 'howtoinvest-learn' );
+
+	$steps = '';
+	foreach ( $mods as $i => $m ) {
+		$slugs = array();
+		foreach ( $m['chapters'] as $c ) {
+			$slugs[] = $c['slug'];
+		}
+		$state  = 0 === $i ? 'current' : 'open';
+		$steps .= '<a class="hti-hp-mod" data-state="' . esc_attr( $state ) . '" data-slugs="' . esc_attr( implode( ',', $slugs ) ) . '" href="' . esc_url( $learn_url ) . '">'
+			. '<span class="hti-hp-node hti-hp-node--done"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>'
+			. '<span class="hti-hp-node hti-hp-node--current">' . esc_html( (string) $m['num'] ) . '</span>'
+			. '<span class="hti-hp-node hti-hp-node--open">' . esc_html( (string) $m['num'] ) . '</span>'
+			. '<span class="hti-hp-mod__t">' . esc_html( (string) $m['title'] ) . '</span>'
+			. '</a>';
+	}
+
+	ob_start();
+	?>
+	<div class="wp-block-group alignwide hti-hp-path"
+		data-first="<?php echo esc_url( $first_url ); ?>">
+		<script type="application/json" class="hti-hp-data"><?php echo wp_json_encode( $ordered ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></script>
+		<div class="hti-hp-path__head">
+			<div>
+				<span class="hti-hp-path__eyebrow"><?php echo esc_html( $s['eyebrow'] ); ?></span>
+				<h2 class="hti-hp-path__h2"><?php echo esc_html( $s['h2'] ); ?></h2>
+				<p class="hti-hp-path__sub"><?php echo esc_html( $s['sub'] ); ?></p>
+			</div>
+			<a class="hti-hp-path__seeall" href="<?php echo esc_url( $learn_url ); ?>"><?php echo esc_html( $s['seeall'] ); ?></a>
+		</div>
+		<div class="hti-hp-path__prog">
+			<div class="hti-hp-path__bar"><div class="hti-hp-path__fill" style="width:0%"></div></div>
+			<span class="hti-hp-path__count"><span class="hti-hp-prog-done">0</span> <?php echo esc_html( ( $pt ? 'de' : 'of' ) ); ?> <?php echo (int) $total; ?> <?php echo esc_html( $s['chapters'] ); ?></span>
+		</div>
+		<div class="hti-hp-steps"><?php echo $steps; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+		<div class="hti-hp-current"><span class="hti-hp-current__badge"><?php echo esc_html( $s['inprog'] ); ?></span><span class="hti-hp-current__t"></span></div>
+		<a class="hti-lh-btn hti-hp-continue" href="<?php echo esc_url( $first_url ); ?>" data-fallback="<?php echo esc_url( $first_url ); ?>"><?php echo esc_html( $s['continue'] ); ?></a>
+	</div>
+	<?php
+	return (string) ob_get_clean();
 }
 
 /* ============================ News hub ============================ */

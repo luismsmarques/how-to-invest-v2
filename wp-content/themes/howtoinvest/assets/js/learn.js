@@ -35,6 +35,60 @@
 		wireEbook( root );
 	}
 
+	/* ---- hydrate the homepage path block ---- */
+	var hp = document.querySelector( '.hti-hp-path' );
+	if ( hp ) {
+		hydrateHome( hp );
+	}
+
+	function hydrateHome( hp ) {
+		var doneSet = {};
+		load().forEach( function ( s ) { doneSet[ s ] = 1; } );
+
+		var data = [];
+		var node = hp.querySelector( '.hti-hp-data' );
+		try { data = JSON.parse( ( node && node.textContent ) || '[]' ) || []; } catch ( e ) {}
+
+		var total = data.length, doneCount = 0, currentIdx = -1, continueUrl = '';
+		data.forEach( function ( c, i ) {
+			if ( doneSet[ c.s ] ) { doneCount++; }
+			else {
+				if ( currentIdx < 0 ) { currentIdx = i; }
+				if ( ! continueUrl && c.u ) { continueUrl = c.u; }
+			}
+		} );
+
+		// Module states: done if all its chapters are done; the first that isn't
+		// becomes current.
+		var firstCurrent = true;
+		Array.prototype.forEach.call( hp.querySelectorAll( '.hti-hp-mod' ), function ( m ) {
+			var slugs = ( m.getAttribute( 'data-slugs' ) || '' ).split( ',' ).filter( Boolean );
+			var allDone = slugs.length > 0 && slugs.every( function ( s ) { return doneSet[ s ]; } );
+			if ( allDone ) { m.setAttribute( 'data-state', 'done' ); }
+			else if ( firstCurrent ) { m.setAttribute( 'data-state', 'current' ); firstCurrent = false; }
+			else { m.setAttribute( 'data-state', 'open' ); }
+		} );
+
+		// Progress.
+		var pct = total ? Math.round( doneCount / total * 100 ) : 0;
+		var fill = hp.querySelector( '.hti-hp-path__fill' );
+		if ( fill ) { fill.style.width = pct + '%'; }
+		var dn = hp.querySelector( '.hti-hp-prog-done' );
+		if ( dn ) { dn.textContent = String( doneCount ); }
+
+		// Current-chapter label (mobile) + continue target.
+		var cur = currentIdx >= 0 ? data[ currentIdx ] : null;
+		var curRow = hp.querySelector( '.hti-hp-current' );
+		var curT = hp.querySelector( '.hti-hp-current__t' );
+		if ( curT && cur ) { curT.textContent = cur.t || ''; }
+		if ( curRow && ! cur ) { curRow.className += ' is-empty'; }
+
+		var cont = hp.querySelector( '.hti-hp-continue' );
+		if ( cont ) {
+			cont.setAttribute( 'href', continueUrl || hp.getAttribute( 'data-first' ) || cont.getAttribute( 'data-fallback' ) || '#' );
+		}
+	}
+
 	function hydrate( root ) {
 		var doneArr = load();
 		var doneSet = {};
