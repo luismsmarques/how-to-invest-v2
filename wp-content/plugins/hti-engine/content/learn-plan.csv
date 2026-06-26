@@ -13,10 +13,10 @@ module,order,slug,title_en,title_pt,topic,status,glossary,prev,next,notes
 2,4,cash-and-when-it-helps,"Cash, and when it helps","Liquidez, e quando ajuda",concepts,written,cash,a-closer-look-at-bonds,what-is-esg-investing,
 2,5,what-is-esg-investing,"What is ESG investing?","O que é o investimento ESG?",concepts,seeded-legacy,,cash-and-when-it-helps,what-is-diversification,Already seeded
 3,1,what-is-diversification,"What is diversification?","O que é a diversificação?",concepts,seeded-legacy,diversification,what-is-esg-investing,what-is-asset-allocation,Already seeded
-3,2,what-is-asset-allocation,"What is asset allocation?","O que é a alocação de ativos?",concepts,idea,portfolio;diversification,what-is-diversification,reading-an-example-portfolio,
-3,3,reading-an-example-portfolio,"How to read an example portfolio","Como ler um exemplo de carteira",concepts,idea,portfolio,what-is-asset-allocation,what-is-rebalancing,
-3,4,what-is-rebalancing,"What is rebalancing?","O que é o rebalanceamento?",concepts,idea,portfolio,reading-an-example-portfolio,understanding-account-types,
-4,1,understanding-account-types,"Understanding account types","Perceber os tipos de conta",getting-started,idea,,what-is-rebalancing,costs-and-fees-explained,
+3,2,what-is-asset-allocation,"What is asset allocation?","O que é a alocação de ativos?",concepts,written,portfolio;diversification,what-is-diversification,reading-an-example-portfolio,
+3,3,reading-an-example-portfolio,"How to read an example portfolio","Como ler um exemplo de carteira",concepts,written,portfolio,what-is-asset-allocation,what-is-rebalancing,
+3,4,what-is-rebalancing,"What is rebalancing?","O que é o rebalanceamento?",concepts,written,portfolio,reading-an-example-portfolio,understanding-account-types,
+4,1,understanding-account-types,"Understanding account types","Perceber os tipos de conta",getting-started,written,,what-is-rebalancing,costs-and-fees-explained,
 4,2,costs-and-fees-explained,"Costs and fees, explained simply","Custos e taxas, explicados de forma simples",getting-started,idea,,understanding-account-types,how-a-portfolio-is-built,
 4,3,how-a-portfolio-is-built,"How a portfolio is built (step by step)","Como se monta uma carteira (passo a passo)",getting-started,idea,portfolio;diversification,costs-and-fees-explained,what-is-periodic-investing,
 4,4,what-is-periodic-investing,"What is periodic investing (DCA)?","O que é o investimento periódico (DCA)?",getting-started,idea,volatility,how-a-portfolio-is-built,staying-calm-when-markets-fall,
