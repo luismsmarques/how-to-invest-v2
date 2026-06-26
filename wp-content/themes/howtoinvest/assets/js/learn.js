@@ -1,15 +1,18 @@
 /**
- * Learn hub progress + ebook lead-magnet.
+ * Learn course progress + ebook lead-magnet.
  *
- * Progress is anonymous and client-side only (localStorage, RGPD-safe): a
- * chapter counts as "done" once its Learn guide has been visited. On the hub we
- * hydrate the path states + progress bar from that; on a single guide we record
- * the visit. The ebook form posts to the newsletter subscribe endpoint.
+ * Progress is a set of completed chapter slugs. Guests keep it in localStorage
+ * (anonymous, RGPD-safe). Signed-in accounts also sync it to the server, so it
+ * follows them across devices: on load we merge the browser set with the server
+ * set (union) and push the union back. A chapter counts as done once its guide
+ * is visited. Hydrates the hub path, the homepage path block and the single-
+ * guide course nav; the ebook form posts to the newsletter subscribe endpoint.
  */
 ( function () {
 	'use strict';
 
 	var KEY = 'hti_learn_done';
+	var cfg = window.HTI_LEARN_CFG || {};
 
 	function load() {
 		try { return JSON.parse( window.localStorage.getItem( KEY ) || '[]' ) || []; }
@@ -18,29 +21,108 @@
 	function save( arr ) {
 		try { window.localStorage.setItem( KEY, JSON.stringify( arr ) ); } catch ( e ) {}
 	}
+	function union( a, b ) {
+		var seen = {}, out = [];
+		a.concat( b ).forEach( function ( s ) { if ( s && ! seen[ s ] ) { seen[ s ] = 1; out.push( s ); } } );
+		return out;
+	}
 
-	/* ---- record a visit on a single Learn guide ---- */
-	if ( window.HTI_LEARN_REC && window.HTI_LEARN_REC.slug ) {
-		var seen = load();
-		if ( seen.indexOf( window.HTI_LEARN_REC.slug ) < 0 ) {
-			seen.push( window.HTI_LEARN_REC.slug );
-			save( seen );
+	/* ---- account sync (signed-in only) ---- */
+	function postProgress( slugs ) {
+		if ( ! cfg.isLoggedIn || ! cfg.progressUrl ) { return Promise.resolve( null ); }
+		return fetch( cfg.progressUrl, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce },
+			body: JSON.stringify( { done: slugs } )
+		} ).then( function ( r ) { return r.ok ? r.json() : null; } ).catch( function () { return null; } );
+	}
+
+	function syncThenRun( run ) {
+		if ( ! cfg.isLoggedIn || ! cfg.progressUrl ) { run(); return; }
+		fetch( cfg.progressUrl, { headers: { 'X-WP-Nonce': cfg.nonce } } )
+			.then( function ( r ) { return r.ok ? r.json() : null; } )
+			.then( function ( data ) {
+				var server = ( data && data.done ) || [];
+				var merged = union( load(), server );
+				save( merged );
+				return postProgress( merged );
+			} )
+			.catch( function () {} )
+			.then( function () { run(); } );
+	}
+
+	/* ---- main ---- */
+	function run() {
+		// Record a visit on a single Learn guide.
+		if ( window.HTI_LEARN_REC && window.HTI_LEARN_REC.slug ) {
+			var seen = load();
+			if ( seen.indexOf( window.HTI_LEARN_REC.slug ) < 0 ) {
+				seen.push( window.HTI_LEARN_REC.slug );
+				save( seen );
+				postProgress( [ window.HTI_LEARN_REC.slug ] );
+			}
+		}
+
+		var root = document.querySelector( '.hti-lh' );
+		if ( root && window.HTI_LEARN ) { hydrate( root ); wireEbook( root ); }
+
+		var hp = document.querySelector( '.hti-hp-path' );
+		if ( hp ) { hydrateHome( hp ); }
+
+		hydrateNav();
+	}
+
+	syncThenRun( run );
+
+	/* ---- hub path ---- */
+	function hydrate( root ) {
+		var doneSet = {};
+		load().forEach( function ( s ) { doneSet[ s ] = 1; } );
+
+		var chaps = Array.prototype.slice.call( root.querySelectorAll( '.hti-lh-chap' ) );
+		var total = chaps.length, doneCount = 0;
+
+		chaps.forEach( function ( ch ) {
+			var slug = ch.getAttribute( 'data-slug' );
+			if ( slug && doneSet[ slug ] ) { ch.setAttribute( 'data-state', 'done' ); doneCount++; }
+			else { ch.setAttribute( 'data-state', 'open' ); }
+		} );
+
+		var current = null;
+		for ( var i = 0; i < chaps.length; i++ ) {
+			if ( chaps[ i ].getAttribute( 'data-state' ) !== 'done' && chaps[ i ].getAttribute( 'data-url' ) ) { current = chaps[ i ]; break; }
+		}
+		if ( ! current ) {
+			for ( i = 0; i < chaps.length; i++ ) {
+				if ( chaps[ i ].getAttribute( 'data-state' ) !== 'done' ) { current = chaps[ i ]; break; }
+			}
+		}
+		if ( current ) { current.setAttribute( 'data-state', 'current' ); }
+
+		Array.prototype.forEach.call( root.querySelectorAll( '.hti-lh-mod' ), function ( m ) {
+			var cs = m.querySelectorAll( '.hti-lh-chap' );
+			var all = cs.length > 0, anyCurrent = false;
+			Array.prototype.forEach.call( cs, function ( c ) {
+				var st = c.getAttribute( 'data-state' );
+				if ( st !== 'done' ) { all = false; }
+				if ( st === 'current' ) { anyCurrent = true; }
+			} );
+			m.setAttribute( 'data-state', all ? 'done' : ( anyCurrent ? 'current' : 'open' ) );
+		} );
+
+		var pct = total ? Math.round( doneCount / total * 100 ) : 0;
+		var fill = root.querySelector( '.hti-lh-prog__fill' );
+		if ( fill ) { fill.style.width = pct + '%'; }
+		var dn = root.querySelector( '.hti-lh-prog-done' );
+		if ( dn ) { dn.textContent = String( doneCount ); }
+
+		var cont = root.querySelector( '.hti-lh-continue' );
+		if ( cont && current && current.getAttribute( 'data-url' ) ) {
+			cont.setAttribute( 'href', current.getAttribute( 'data-url' ) );
 		}
 	}
 
-	/* ---- hydrate the hub ---- */
-	var root = document.querySelector( '.hti-lh' );
-	if ( root && window.HTI_LEARN ) {
-		hydrate( root );
-		wireEbook( root );
-	}
-
-	/* ---- hydrate the homepage path block ---- */
-	var hp = document.querySelector( '.hti-hp-path' );
-	if ( hp ) {
-		hydrateHome( hp );
-	}
-
+	/* ---- homepage path block ---- */
 	function hydrateHome( hp ) {
 		var doneSet = {};
 		load().forEach( function ( s ) { doneSet[ s ] = 1; } );
@@ -58,8 +140,6 @@
 			}
 		} );
 
-		// Module states: done if all its chapters are done; the first that isn't
-		// becomes current.
 		var firstCurrent = true;
 		Array.prototype.forEach.call( hp.querySelectorAll( '.hti-hp-mod' ), function ( m ) {
 			var slugs = ( m.getAttribute( 'data-slugs' ) || '' ).split( ',' ).filter( Boolean );
@@ -69,14 +149,12 @@
 			else { m.setAttribute( 'data-state', 'open' ); }
 		} );
 
-		// Progress.
 		var pct = total ? Math.round( doneCount / total * 100 ) : 0;
 		var fill = hp.querySelector( '.hti-hp-path__fill' );
 		if ( fill ) { fill.style.width = pct + '%'; }
 		var dn = hp.querySelector( '.hti-hp-prog-done' );
 		if ( dn ) { dn.textContent = String( doneCount ); }
 
-		// Current-chapter label (mobile) + continue target.
 		var cur = currentIdx >= 0 ? data[ currentIdx ] : null;
 		var curRow = hp.querySelector( '.hti-hp-current' );
 		var curT = hp.querySelector( '.hti-hp-current__t' );
@@ -89,64 +167,19 @@
 		}
 	}
 
-	function hydrate( root ) {
-		var doneArr = load();
+	/* ---- single-guide course nav: module progress bar ---- */
+	function hydrateNav() {
+		var el = document.querySelector( '.hti-ln-modprog' );
+		if ( ! el ) { return; }
 		var doneSet = {};
-		doneArr.forEach( function ( s ) { doneSet[ s ] = 1; } );
-
-		var chaps = Array.prototype.slice.call( root.querySelectorAll( '.hti-lh-chap' ) );
-		var total = chaps.length;
-		var doneCount = 0;
-
-		chaps.forEach( function ( ch ) {
-			var slug = ch.getAttribute( 'data-slug' );
-			if ( slug && doneSet[ slug ] ) {
-				ch.setAttribute( 'data-state', 'done' );
-				doneCount++;
-			} else {
-				ch.setAttribute( 'data-state', 'open' );
-			}
-		} );
-
-		// Current = first not-done chapter that is published; else first not-done.
-		var current = null;
-		for ( var i = 0; i < chaps.length; i++ ) {
-			if ( chaps[ i ].getAttribute( 'data-state' ) !== 'done' && chaps[ i ].getAttribute( 'data-url' ) ) {
-				current = chaps[ i ];
-				break;
-			}
-		}
-		if ( ! current ) {
-			for ( i = 0; i < chaps.length; i++ ) {
-				if ( chaps[ i ].getAttribute( 'data-state' ) !== 'done' ) { current = chaps[ i ]; break; }
-			}
-		}
-		if ( current ) { current.setAttribute( 'data-state', 'current' ); }
-
-		// Module states from their chapters.
-		Array.prototype.forEach.call( root.querySelectorAll( '.hti-lh-mod' ), function ( m ) {
-			var cs = m.querySelectorAll( '.hti-lh-chap' );
-			var all = cs.length > 0, anyCurrent = false;
-			Array.prototype.forEach.call( cs, function ( c ) {
-				var st = c.getAttribute( 'data-state' );
-				if ( st !== 'done' ) { all = false; }
-				if ( st === 'current' ) { anyCurrent = true; }
-			} );
-			m.setAttribute( 'data-state', all ? 'done' : ( anyCurrent ? 'current' : 'open' ) );
-		} );
-
-		// Progress bar + counter.
-		var pct = total ? Math.round( doneCount / total * 100 ) : 0;
-		var fill = root.querySelector( '.hti-lh-prog__fill' );
+		load().forEach( function ( s ) { doneSet[ s ] = 1; } );
+		var slugs = ( el.getAttribute( 'data-slugs' ) || '' ).split( ',' ).filter( Boolean );
+		var d = slugs.filter( function ( s ) { return doneSet[ s ]; } ).length;
+		var pct = slugs.length ? Math.round( d / slugs.length * 100 ) : 0;
+		var fill = el.querySelector( '.hti-ln-modprog__fill' );
 		if ( fill ) { fill.style.width = pct + '%'; }
-		var dn = root.querySelector( '.hti-lh-prog-done' );
-		if ( dn ) { dn.textContent = String( doneCount ); }
-
-		// "Continue the path" → current chapter (else its server fallback).
-		var cont = root.querySelector( '.hti-lh-continue' );
-		if ( cont && current && current.getAttribute( 'data-url' ) ) {
-			cont.setAttribute( 'href', current.getAttribute( 'data-url' ) );
-		}
+		var dn = el.querySelector( '.hti-ln-modprog-done' );
+		if ( dn ) { dn.textContent = String( d ); }
 	}
 
 	/* ---- ebook lead-magnet ---- */

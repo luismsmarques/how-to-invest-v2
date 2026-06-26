@@ -521,18 +521,8 @@ class Content_Import {
 		}
 		$out .= self::block_related( $l['learn'], $gloss );
 
-		// Prev / next chapters.
-		$nav = array();
-		$prev = (string) ( $c['prev'] ?? '' );
-		$next = (string) ( $c['next'] ?? '' );
-		if ( '' !== $prev ) {
-			$nav[] = array( self::chapter_url( $prev, $chapters, $lang ), $l['prev'] . ': ' . self::chapter_title( $prev, $chapters, $lang ) );
-		}
-		if ( '' !== $next ) {
-			$nav[] = array( self::chapter_url( $next, $chapters, $lang ), $l['next'] . ': ' . self::chapter_title( $next, $chapters, $lang ) );
-		}
-		$out .= self::block_related( $l['continue'], $nav );
-
+		// Prev / next chapter navigation is rendered by the single-learn
+		// course nav block (howtoinvest/learn-nav), not inline in the content.
 		return $out;
 	}
 

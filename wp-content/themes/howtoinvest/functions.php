@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.30';
+const VERSION = '0.8.31';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -180,6 +180,7 @@ function enqueue_scripts(): void {
 			}
 			wp_enqueue_script( 'howtoinvest-learn' );
 			wp_localize_script( 'howtoinvest-learn', 'HTI_LEARN_REC', array( 'slug' => $slug ) );
+			wp_localize_script( 'howtoinvest-learn', 'HTI_LEARN_CFG', learn_progress_cfg() );
 		}
 	}
 }
@@ -487,6 +488,16 @@ function register_dynamic_blocks(): void {
 			'title'           => __( 'Learn hub', 'howtoinvest' ),
 			'category'        => 'theme',
 			'render_callback' => __NAMESPACE__ . '\\render_learn_hub',
+		)
+	);
+	register_block_type(
+		'howtoinvest/learn-nav',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Learn course nav', 'howtoinvest' ),
+			'category'        => 'theme',
+			'attributes'      => array( 'pos' => array( 'type' => 'string', 'default' => 'bottom' ) ),
+			'render_callback' => __NAMESPACE__ . '\\render_learn_nav',
 		)
 	);
 	register_block_type(
@@ -890,9 +901,25 @@ function learn_topic_cards( bool $pt ): string {
 }
 
 /**
+ * Config for learn.js to sync course progress to a signed-in account (so the
+ * browser set merges with the server set across devices). Localized wherever a
+ * learn progress UI renders. Guests get isLoggedIn=false and stay localStorage.
+ *
+ * @return array<string,mixed>
+ */
+function learn_progress_cfg(): array {
+	return array(
+		'isLoggedIn'  => is_user_logged_in(),
+		'progressUrl' => esc_url_raw( rest_url( 'htinvest/v1/learn-progress' ) ),
+		'nonce'       => wp_create_nonce( 'wp_rest' ),
+	);
+}
+
+/**
  * Render the Learn hub — the "From zero to your first portfolio" path, topic
  * cards and the ebook lead-magnet. Server-rendered; learn.js hydrates per-user
- * progress (anonymous, localStorage). Matches the Claude Design redesign.
+ * progress (anonymous localStorage, or the account when signed in). Matches the
+ * Claude Design redesign.
  */
 function render_learn_hub(): string {
 	if ( ! post_type_exists( 'learn' ) ) {
@@ -951,6 +978,7 @@ function render_learn_hub(): string {
 			),
 		)
 	);
+	wp_localize_script( 'howtoinvest-learn', 'HTI_LEARN_CFG', learn_progress_cfg() );
 
 	ob_start();
 	?>
@@ -1148,6 +1176,7 @@ function render_learn_feed(): string {
 	// Assets (shared with the hub).
 	wp_enqueue_style( 'howtoinvest-learn', get_stylesheet_directory_uri() . '/assets/css/learn.css', array(), VERSION );
 	wp_enqueue_script( 'howtoinvest-learn' );
+	wp_localize_script( 'howtoinvest-learn', 'HTI_LEARN_CFG', learn_progress_cfg() );
 
 	$steps = '';
 	foreach ( $mods as $i => $m ) {
@@ -1185,6 +1214,152 @@ function render_learn_feed(): string {
 		<div class="hti-hp-current"><span class="hti-hp-current__badge"><?php echo esc_html( $s['inprog'] ); ?></span><span class="hti-hp-current__t"></span></div>
 		<a class="hti-lh-btn hti-hp-continue" href="<?php echo esc_url( $first_url ); ?>" data-fallback="<?php echo esc_url( $first_url ); ?>"><?php echo esc_html( $s['continue'] ); ?></a>
 	</div>
+	<?php
+	return (string) ob_get_clean();
+}
+
+/**
+ * Course-style navigation for a single Learn guide: a context bar (module +
+ * "chapter Y of Z" + reading time + module progress) when pos="top", and
+ * prominent Previous / Next chapter cards + "back to the path" when pos="bottom".
+ * Driven by the curriculum so the whole path chains together like an LMS.
+ *
+ * @param array<string,mixed> $attrs Block attributes ('pos' => top|bottom).
+ * @return string
+ */
+function render_learn_nav( array $attrs = array() ): string {
+	if ( ! is_singular( 'learn' ) || ! class_exists( '\\HTI\\Engine\\Content_Import' ) ) {
+		return '';
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof \WP_Post ) {
+		return '';
+	}
+	$pos  = ( isset( $attrs['pos'] ) && 'top' === $attrs['pos'] ) ? 'top' : 'bottom';
+	$pt   = 'pt' === current_lang();
+	$lang = $pt ? 'pt' : 'en';
+
+	// Canonical (EN) slug — the curriculum keys on it.
+	$slug = $post->post_name;
+	if ( function_exists( 'pll_get_post_language' ) && 'pt' === pll_get_post_language( (int) $post->ID, 'slug' ) ) {
+		$en = (int) pll_get_post( (int) $post->ID, 'en' );
+		if ( $en ) {
+			$slug = get_post_field( 'post_name', $en );
+		}
+	}
+
+	$mods = \HTI\Engine\Content_Import::curriculum( $lang );
+	$flat = array();
+	foreach ( $mods as $mi => $m ) {
+		foreach ( $m['chapters'] as $ci => $c ) {
+			$flat[] = array(
+				'mod'      => $m['num'],
+				'modTitle' => $m['title'],
+				'modIdx'   => $mi,
+				'ci'       => $ci,
+				'modCount' => count( $m['chapters'] ),
+				'slug'     => $c['slug'],
+				'title'    => $c['title'],
+				'url'      => $c['url'],
+			);
+		}
+	}
+	$idx = -1;
+	foreach ( $flat as $k => $f ) {
+		if ( $f['slug'] === $slug ) {
+			$idx = $k;
+			break;
+		}
+	}
+	if ( $idx < 0 ) {
+		return ''; // Not part of the curated path.
+	}
+	$cur  = $flat[ $idx ];
+	$prev = $idx > 0 ? $flat[ $idx - 1 ] : null;
+	$next = $idx < count( $flat ) - 1 ? $flat[ $idx + 1 ] : null;
+
+	wp_enqueue_style( 'howtoinvest-learn', get_stylesheet_directory_uri() . '/assets/css/learn.css', array(), VERSION );
+
+	$learn_url = archive_url( 'learn', 'learn' );
+	$s = $pt
+		? array(
+			'learn' => 'Aprender', 'mod' => 'Módulo', 'prev' => 'Anterior', 'next' => 'Seguinte',
+			'back' => '← Voltar ao percurso', 'min' => 'min de leitura',
+			'finish' => 'Concluíste o percurso', 'finish_sub' => 'Descobre o teu perfil de investidor',
+			'newmod' => 'Começa o Módulo',
+		)
+		: array(
+			'learn' => 'Learn', 'mod' => 'Module', 'prev' => 'Previous', 'next' => 'Next',
+			'back' => '← Back to the path', 'min' => 'min read',
+			'finish' => 'You’ve finished the path', 'finish_sub' => 'Discover your investor profile',
+			'newmod' => 'Starts Module',
+		);
+
+	/* ---------- TOP: context bar ---------- */
+	if ( 'top' === $pos ) {
+		$mins = max( 2, (int) ceil( str_word_count( wp_strip_all_tags( strip_shortcodes( (string) $post->post_content ) ) ) / 200 ) );
+		$mod_slugs = array();
+		foreach ( $mods[ $cur['modIdx'] ]['chapters'] as $c ) {
+			$mod_slugs[] = $c['slug'];
+		}
+		/* translators: 1: chapter number, 2: chapters in module. */
+		$chap_of = sprintf( $pt ? 'Capítulo %1$d de %2$d' : 'Chapter %1$d of %2$d', (int) $cur['ci'] + 1, (int) $cur['modCount'] );
+
+		ob_start();
+		?>
+		<nav class="hti-ln-top" aria-label="<?php echo esc_attr( $s['learn'] ); ?>">
+			<div class="hti-ln-crumb">
+				<a href="<?php echo esc_url( $learn_url ); ?>"><?php echo esc_html( $s['learn'] ); ?></a>
+				<span aria-hidden="true">›</span>
+				<span><?php echo esc_html( $s['mod'] . ' ' . $cur['mod'] . ' · ' . $cur['modTitle'] ); ?></span>
+			</div>
+			<div class="hti-ln-meta">
+				<span class="hti-ln-chip"><?php echo esc_html( $chap_of ); ?></span>
+				<span class="hti-ln-mins"><?php echo esc_html( $mins . ' ' . $s['min'] ); ?></span>
+			</div>
+			<div class="hti-ln-modprog" data-slugs="<?php echo esc_attr( implode( ',', $mod_slugs ) ); ?>">
+				<div class="hti-ln-modprog__bar"><div class="hti-ln-modprog__fill" style="width:0%"></div></div>
+				<span class="hti-ln-modprog__txt"><span class="hti-ln-modprog-done">0</span>/<?php echo (int) $cur['modCount']; ?></span>
+			</div>
+		</nav>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/* ---------- BOTTOM: prev / next cards ---------- */
+	$quiz_url = page_url( 'investor-profile-quiz' );
+	$card = static function ( array $c, string $dir, string $dirlabel, array $s, bool $newmod ): string {
+		if ( empty( $c['url'] ) ) {
+			return '';
+		}
+		$tag = $newmod ? '<span class="hti-ln-card__tag">' . esc_html( $s['newmod'] . ' ' . $c['mod'] ) . '</span>' : '';
+		return '<a class="hti-ln-card hti-ln-card--' . esc_attr( $dir ) . '" href="' . esc_url( (string) $c['url'] ) . '">'
+			. '<span class="hti-ln-card__dir">' . esc_html( $dirlabel ) . '</span>'
+			. '<span class="hti-ln-card__t">' . esc_html( (string) $c['title'] ) . '</span>'
+			. '<span class="hti-ln-card__mod">' . esc_html( $s['mod'] . ' ' . $c['mod'] ) . $tag . '</span>'
+			. '</a>';
+	};
+
+	$prev_html = $prev ? $card( $prev, 'prev', '← ' . $s['prev'], $s, false ) : '<span class="hti-ln-card hti-ln-card--empty" aria-hidden="true"></span>';
+
+	if ( $next ) {
+		$next_html = $card( $next, 'next', $s['next'] . ' →', $s, (int) $next['mod'] !== (int) $cur['mod'] );
+	} else {
+		$next_html = '<a class="hti-ln-card hti-ln-card--finish" href="' . esc_url( $quiz_url ) . '">'
+			. '<span class="hti-ln-card__dir">🎉 ' . esc_html( $s['finish'] ) . '</span>'
+			. '<span class="hti-ln-card__t">' . esc_html( $s['finish_sub'] ) . ' →</span>'
+			. '</a>';
+	}
+
+	ob_start();
+	?>
+	<nav class="hti-ln-bottom" aria-label="<?php echo esc_attr( $s['learn'] ); ?>">
+		<a class="hti-ln-back" href="<?php echo esc_url( $learn_url ); ?>"><?php echo esc_html( $s['back'] ); ?></a>
+		<div class="hti-ln-cards">
+			<?php echo $prev_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php echo $next_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+		</div>
+	</nav>
 	<?php
 	return (string) ob_get_clean();
 }

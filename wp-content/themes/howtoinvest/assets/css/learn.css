@@ -177,6 +177,41 @@
 	.hti-hp-continue { width: 100%; }
 }
 
+/* ===== Single-guide course nav ===== */
+.hti-ln-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 0 0 20px; padding-bottom: 14px; border-bottom: 1px solid #F2E4DD; font-family: 'Plus Jakarta Sans'; }
+.hti-ln-crumb { display: flex; align-items: center; gap: 8px; font: 600 13px 'Plus Jakarta Sans'; color: #6E6680; }
+.hti-ln-crumb a { color: #C9362C; text-decoration: none; }
+.hti-ln-crumb a:hover { text-decoration: underline; }
+.hti-ln-meta { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.hti-ln-chip { background: #FFEDE9; color: #C9362C; font: 600 12px 'Plus Jakarta Sans'; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.hti-ln-mins { color: #A89FB5; font: 500 12px 'Plus Jakarta Sans'; white-space: nowrap; }
+.hti-ln-modprog { display: flex; align-items: center; gap: 9px; width: 100%; }
+.hti-ln-modprog__bar { flex: 1; max-width: 260px; height: 6px; background: #F2E4DD; border-radius: 999px; overflow: hidden; }
+.hti-ln-modprog__fill { height: 100%; background: linear-gradient(90deg, #FF6B5E, #7C5CFC); border-radius: 999px; transition: width 0.5s ease; }
+.hti-ln-modprog__txt { font: 600 12px 'Plus Jakarta Sans'; color: #6E6680; }
+
+.hti-ln-bottom { margin-top: 36px; padding-top: 22px; border-top: 1px solid #F2E4DD; }
+.hti-ln-back { display: inline-block; margin-bottom: 14px; color: #A89FB5; font: 500 14px 'Plus Jakarta Sans'; text-decoration: none; }
+.hti-ln-back:hover { color: #C9362C; }
+.hti-ln-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.hti-ln-card { display: flex; flex-direction: column; gap: 5px; padding: 16px 18px; background: #fff; border: 1px solid #F2E4DD; border-radius: 16px; text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s; }
+.hti-ln-card:hover { border-color: #E7DCFB; box-shadow: 0 8px 22px rgba(42, 36, 56, 0.07); transform: translateY(-2px); }
+.hti-ln-card--next, .hti-ln-card--finish { text-align: right; align-items: flex-end; }
+.hti-ln-card--finish { background: linear-gradient(135deg, #FF6B5E, #7C5CFC); border: none; }
+.hti-ln-card--finish .hti-ln-card__dir, .hti-ln-card--finish .hti-ln-card__t { color: #fff; }
+.hti-ln-card--empty { background: none; border: none; box-shadow: none; pointer-events: none; }
+.hti-ln-card__dir { font: 600 12px 'Plus Jakarta Sans'; color: #C9362C; text-transform: uppercase; letter-spacing: 0.04em; }
+.hti-ln-card__t { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 16px; color: #2A2438; line-height: 1.25; }
+.hti-ln-card__mod { font: 500 12px 'Plus Jakarta Sans'; color: #A89FB5; }
+.hti-ln-card__tag { display: inline-block; margin-left: 6px; background: #EFE9FE; color: #7C5CFC; font-weight: 600; padding: 2px 7px; border-radius: 999px; }
+
+@media (max-width: 560px) {
+	.hti-ln-meta { margin-left: 0; }
+	.hti-ln-cards { grid-template-columns: 1fr; }
+	.hti-ln-card--next, .hti-ln-card--finish { text-align: left; align-items: flex-start; }
+	.hti-ln-card--empty { display: none; }
+}
+
 /* ===== Hub responsive ===== */
 @media (max-width: 900px) {
 	.hti-lh-grid { grid-template-columns: 1fr; gap: 28px; }

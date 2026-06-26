@@ -373,6 +373,45 @@ class REST {
 				'permission_callback' => array( __CLASS__, 'check_auth' ),
 			)
 		);
+
+		// Learn course progress (signed-in users; merged with the browser set).
+		register_rest_route(
+			self::NAMESPACE,
+			'/learn-progress',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'get_learn_progress' ),
+					'permission_callback' => array( __CLASS__, 'check_auth' ),
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'save_learn_progress' ),
+					'permission_callback' => array( __CLASS__, 'check_auth' ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * GET /learn-progress — the signed-in user's completed chapters.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function get_learn_progress( WP_REST_Request $request ) {
+		return new WP_REST_Response( Learn::get( get_current_user_id() ), 200 );
+	}
+
+	/**
+	 * POST /learn-progress — merge the posted completed slugs and return the union.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function save_learn_progress( WP_REST_Request $request ) {
+		$done = (array) $request->get_param( 'done' );
+		return new WP_REST_Response( Learn::merge( get_current_user_id(), $done ), 200 );
 	}
 
 	/**
