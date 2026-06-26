@@ -321,7 +321,7 @@ class Content_Import {
 	 * @param array  $takeaway_h  Heading texts that mark the takeaways list.
 	 * @return string Block markup.
 	 */
-	private static function to_blocks( string $body, string $tldr_label, array $takeaway_h ): string {
+	public static function to_blocks( string $body, string $tldr_label, array $takeaway_h ): string {
 		$lines = explode( "\n", $body );
 		$out   = '';
 		$list  = array();
@@ -694,9 +694,10 @@ class Content_Import {
 		}
 		$id = (int) $id;
 
-		// SEO meta (description) for whichever plugin is active.
+		// SEO meta (description) for whichever plugin is active. RankMath's key is
+		// rank_math_description (no leading underscore), matching the seeder.
 		if ( '' !== $excerpt ) {
-			update_post_meta( $id, '_rank_math_description', $excerpt );
+			update_post_meta( $id, 'rank_math_description', $excerpt );
 			update_post_meta( $id, '_yoast_wpseo_metadesc', $excerpt );
 		}
 		return $id;

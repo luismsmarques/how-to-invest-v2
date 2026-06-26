@@ -41,6 +41,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-news-sitemap.php';
 require_once HTI_ENGINE_PATH . 'includes/class-redirects.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seeder.php';
 require_once HTI_ENGINE_PATH . 'includes/class-content-import.php';
+require_once HTI_ENGINE_PATH . 'includes/class-glossary-import.php';
 require_once HTI_ENGINE_PATH . 'includes/class-config.php';
 require_once HTI_ENGINE_PATH . 'includes/class-engine.php';
 require_once HTI_ENGINE_PATH . 'includes/class-fallback.php';
@@ -216,6 +217,7 @@ Seeder::register();
  * Separate from the seeder: imports content/learn/*.md as reviewable drafts.
  */
 Content_Import::init();
+Glossary_Import::init();
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	\WP_CLI::add_command(
@@ -243,6 +245,17 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				\WP_CLI::line( sprintf( '- %-34s EN:%-8s PT:%-8s', $r['slug'], $r['en_status'], $r['pt_status'] ) );
 			}
 			\WP_CLI::success( sprintf( '%d Learn chapters imported/synced (new ones published in both languages).', count( $report ) ) );
+		}
+	);
+
+	\WP_CLI::add_command(
+		'hti import-glossary',
+		function () {
+			$report = Glossary_Import::import();
+			foreach ( $report as $r ) {
+				\WP_CLI::line( sprintf( '- %-26s EN:%-8s PT:%-8s', $r['slug'], $r['en_status'], $r['pt_status'] ) );
+			}
+			\WP_CLI::success( sprintf( '%d glossary terms imported/synced (existing updated in place, new published in both languages).', count( $report ) ) );
 		}
 	);
 }
