@@ -10,8 +10,9 @@ module,order,slug,title_en,title_pt,topic,status,glossary,prev,next,notes
 2,1,asset-classes-explained,"Asset classes explained","As classes de ativos explicadas",concepts,seeded-legacy,global-equities;bonds;cash,what-is-inflation,a-closer-look-at-global-equities,Already seeded
 2,2,a-closer-look-at-global-equities,"A closer look at global equities","As ações globais mais de perto",concepts,written,global-equities;volatility,asset-classes-explained,a-closer-look-at-bonds,
 2,3,a-closer-look-at-bonds,"A closer look at bonds","As obrigações mais de perto",concepts,written,bonds;interest-rate,a-closer-look-at-global-equities,cash-and-when-it-helps,
-2,4,cash-and-when-it-helps,"Cash, and when it helps","Liquidez, e quando ajuda",concepts,written,cash,a-closer-look-at-bonds,what-is-diversification,
-3,1,what-is-diversification,"What is diversification?","O que é a diversificação?",concepts,seeded-legacy,diversification,cash-and-when-it-helps,what-is-asset-allocation,Already seeded
+2,4,cash-and-when-it-helps,"Cash, and when it helps","Liquidez, e quando ajuda",concepts,written,cash,a-closer-look-at-bonds,what-is-esg-investing,
+2,5,what-is-esg-investing,"What is ESG investing?","O que é o investimento ESG?",concepts,seeded-legacy,,cash-and-when-it-helps,what-is-diversification,Already seeded
+3,1,what-is-diversification,"What is diversification?","O que é a diversificação?",concepts,seeded-legacy,diversification,what-is-esg-investing,what-is-asset-allocation,Already seeded
 3,2,what-is-asset-allocation,"What is asset allocation?","O que é a alocação de ativos?",concepts,idea,portfolio;diversification,what-is-diversification,reading-an-example-portfolio,
 3,3,reading-an-example-portfolio,"How to read an example portfolio","Como ler um exemplo de carteira",concepts,idea,portfolio,what-is-asset-allocation,what-is-rebalancing,
 3,4,what-is-rebalancing,"What is rebalancing?","O que é o rebalanceamento?",concepts,idea,portfolio,reading-an-example-portfolio,understanding-account-types,

@@ -11,7 +11,7 @@ excerpt_en: "Cash is money you can reach instantly — the safest, steadiest cla
 excerpt_pt: "A liquidez é dinheiro a que chegas de imediato — a classe mais segura e estável, e exatamente o que as necessidades de curto prazo pedem."
 glossary: cash, inflation
 prev: a-closer-look-at-bonds
-next: what-is-diversification
+next: what-is-esg-investing
 ---
 <!-- EN -->
 > Cash is money you can reach instantly — the safest, steadiest class, and exactly what short-term needs call for.
