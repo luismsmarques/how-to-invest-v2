@@ -9,7 +9,7 @@ title_en: "What is rebalancing?"
 title_pt: "O que é o rebalanceamento?"
 excerpt_en: "Over time a portfolio drifts from its target mix; rebalancing is the gentle nudge that brings it back."
 excerpt_pt: "Com o tempo, uma carteira afasta-se da mistura-alvo; o rebalanceamento é o ajuste suave que a traz de volta."
-glossary: portfolio, diversification
+glossary: rebalancing, portfolio, diversification
 prev: reading-an-example-portfolio
 next: understanding-account-types
 ---

@@ -9,7 +9,7 @@ title_en: "Budgeting basics before you invest"
 title_pt: "O orçamento base antes de investires"
 excerpt_en: "A simple budget — money in, money out, a little set aside — is what frees you to invest without stress."
 excerpt_pt: "Um orçamento simples — o que entra, o que sai, e algo de parte — é o que te liberta para investir sem stress."
-glossary: inflation, cash, asset
+glossary: emergency-fund, inflation, cash, asset
 prev: why-an-emergency-fund-comes-first
 next: what-is-investing
 ---

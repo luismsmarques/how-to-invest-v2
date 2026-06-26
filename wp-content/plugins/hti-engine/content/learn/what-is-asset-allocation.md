@@ -9,7 +9,7 @@ title_en: "What is asset allocation?"
 title_pt: "O que é a alocação de ativos?"
 excerpt_en: "Asset allocation is how you split money across the broad classes — the single decision that shapes a portfolio most."
 excerpt_pt: "A alocação de ativos é como divides o dinheiro pelas classes amplas — a decisão que mais molda uma carteira."
-glossary: portfolio, diversification, asset, bonds, global-equities
+glossary: asset-allocation, portfolio, diversification, asset, bonds, global-equities
 prev: what-is-diversification
 next: reading-an-example-portfolio
 ---

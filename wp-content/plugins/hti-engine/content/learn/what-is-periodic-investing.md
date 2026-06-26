@@ -9,7 +9,7 @@ title_en: "What is periodic investing (DCA)?"
 title_pt: "O que é o investimento periódico (DCA)?"
 excerpt_en: "Periodic investing means adding a fixed amount on a regular schedule — a calm habit that takes the timing stress out of investing."
 excerpt_pt: "Investir periodicamente é juntar um valor fixo num calendário regular — um hábito calmo que tira o stress de acertar no momento."
-glossary: volatility
+glossary: dollar-cost-averaging, volatility
 prev: how-a-portfolio-is-built
 next: staying-calm-when-markets-fall
 ---

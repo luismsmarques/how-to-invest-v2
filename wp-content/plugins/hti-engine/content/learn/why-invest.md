@@ -9,7 +9,7 @@ title_en: "Why invest at all?"
 title_pt: "Porque é que vale a pena investir?"
 excerpt_en: "Saving keeps your money safe; investing gives it a chance to grow faster than prices rise over the long run."
 excerpt_pt: "Poupar mantém o teu dinheiro seguro; investir dá-lhe a hipótese de crescer mais depressa do que os preços sobem ao longo do tempo."
-glossary: inflation, compound-interest
+glossary: risk-and-reward, inflation, compound-interest
 prev: ""
 next: how-compound-interest-works
 ---
