@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.48';
+const VERSION = '0.8.49';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).

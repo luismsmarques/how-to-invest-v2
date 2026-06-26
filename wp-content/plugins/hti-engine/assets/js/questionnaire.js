@@ -24,8 +24,16 @@
 	var answers = load( 'hti_answers', {} );
 	var step = parseInt( load( 'hti_step', 0 ), 10 ) || 0;
 	var processingTimer = null;
+	var advanceTimer = null;
 	if ( step > total - 1 ) {
 		step = total - 1;
+	}
+
+	function clearAdvance() {
+		if ( advanceTimer ) {
+			clearTimeout( advanceTimer );
+			advanceTimer = null;
+		}
 	}
 
 	function load( key, fallback ) {
@@ -73,6 +81,7 @@
 
 	function renderStep() {
 		stopProcessing();
+		clearAdvance();
 		setQuizFullscreen( true );
 		var q = questions[ step ];
 		mount.innerHTML = '';
@@ -136,6 +145,21 @@
 				clearError();
 				toggleUnknown( q, opt.value, unknownNote );
 				setNextEnabled( true );
+				// Auto-advance after a brief beat so the choice registers — except
+				// for the "I'm not sure" option, which shows an explanatory note
+				// the user should read before moving on.
+				clearAdvance();
+				var showsNote = q.unknown_info && String( opt.value ) === 'unknown';
+				if ( ! showsNote ) {
+					advanceTimer = setTimeout( function () {
+						advanceTimer = null;
+						if ( step === total - 1 ) {
+							submit();
+						} else {
+							go( step + 1 );
+						}
+					}, 320 );
+				}
 			} );
 			wrap.appendChild( input );
 			wrap.appendChild( el( 'span', { class: 'hti-option-label' }, opt.label ) );
@@ -206,6 +230,7 @@
 	}
 
 	function go( to ) {
+		clearAdvance();
 		step = to;
 		save( 'hti_step', step );
 		renderStep();
@@ -276,6 +301,7 @@
 	}
 
 	function submit() {
+		clearAdvance();
 		renderProcessing();
 		track( 'quiz_submit', { step_total: total } );
 
