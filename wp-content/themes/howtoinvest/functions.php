@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.45';
+const VERSION = '0.8.46';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -446,6 +446,28 @@ function strings(): array {
 		// Glossary index.
 		'gloss_all'        => array( 'en' => 'All', 'pt' => 'Todos' ),
 		'gloss_filter'     => array( 'en' => 'Filter by letter', 'pt' => 'Filtrar por letra' ),
+		'gloss_filter_topic' => array( 'en' => 'Filter by topic', 'pt' => 'Filtrar por tema' ),
+		'gloss_count_pill' => array( 'en' => '%s terms · each in one line', 'pt' => '%s termos · cada um numa frase' ),
+		'gloss_search_label' => array( 'en' => 'Search the glossary', 'pt' => 'Pesquisar no glossário' ),
+		'gloss_search_ph'  => array( 'en' => 'E.g. diversification, ETF, risk…', 'pt' => 'Ex.: diversificação, ETF, risco…' ),
+		'gloss_clear'      => array( 'en' => 'Clear', 'pt' => 'Limpar' ),
+		'gloss_clear_filters' => array( 'en' => 'Clear filters', 'pt' => 'Limpar filtros' ),
+		'gloss_results'    => array( 'en' => '%s terms', 'pt' => '%s termos' ),
+		'gloss_result_one' => array( 'en' => '1 term', 'pt' => '1 termo' ),
+		'gloss_topic_lbl'  => array( 'en' => 'Topic', 'pt' => 'Tema' ),
+		'gloss_letter_lbl' => array( 'en' => 'Letter', 'pt' => 'Letra' ),
+		'gloss_empty_t'    => array( 'en' => 'No results for this search', 'pt' => 'Sem resultados para esta pesquisa' ),
+		'gloss_empty_b'    => array( 'en' => 'Try another word, or clear the filters to see every term in the glossary.', 'pt' => 'Experimenta outra palavra, ou limpa os filtros para ver todos os termos do glossário.' ),
+		'gloss_course_eyebrow' => array( 'en' => 'Guided path', 'pt' => 'Percurso guiado' ),
+		'gloss_course_t'   => array( 'en' => 'Prefer to learn in order?', 'pt' => 'Preferes aprender por uma ordem?' ),
+		'gloss_course_b'   => array( 'en' => 'The glossary terms come to life in our course “From zero to your first portfolio”.', 'pt' => 'Os termos do glossário ganham vida no nosso curso «Do zero à tua primeira carteira».' ),
+		'gloss_course_btn' => array( 'en' => 'Start learning →', 'pt' => 'Começar a aprender →' ),
+		// Glossary single (term) footer.
+		'term_learn_eyebrow' => array( 'en' => 'Learn more', 'pt' => 'Aprender mais' ),
+		'term_course_name' => array( 'en' => 'From zero to your first portfolio', 'pt' => 'Do zero à tua primeira carteira' ),
+		'term_course_sub'  => array( 'en' => 'Continue from the terms to the full course.', 'pt' => 'Continua dos termos para o curso completo.' ),
+		'term_disclaimer'  => array( 'en' => 'Educational content, not financial advice. Examples by asset class only.', 'pt' => 'Conteúdo educativo, não constitui aconselhamento financeiro. Exemplos só por classe de ativos.' ),
+		'term_back'        => array( 'en' => 'Back to the glossary', 'pt' => 'Voltar ao glossário' ),
 		// Language switcher.
 		'lang_switch'      => array( 'en' => 'Language', 'pt' => 'Idioma' ),
 		// About page.
@@ -629,6 +651,24 @@ function register_dynamic_blocks(): void {
 			'title'           => __( 'Related content', 'howtoinvest' ),
 			'category'        => 'theme',
 			'render_callback' => __NAMESPACE__ . '\\render_related',
+		)
+	);
+	register_block_type(
+		'howtoinvest/term-eyebrow',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Glossary term topic eyebrow', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_term_eyebrow',
+		)
+	);
+	register_block_type(
+		'howtoinvest/term-footer',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Glossary term footer', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_term_footer',
 		)
 	);
 	register_block_type(
@@ -867,6 +907,61 @@ function render_related(): string {
 		. esc_html( t( 'related_read' ) ) . '</h2>'
 		. '<div class="hti-card-grid__inner" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px">'
 		. $cards . '</div></aside>';
+}
+
+/**
+ * Topic eyebrow pill for a glossary term (E3 Termo design): the term's first
+ * glossary_topic, shown above the title. Empty off a glossary single or when
+ * the term has no topic.
+ *
+ * @return string Safe HTML.
+ */
+function render_term_eyebrow(): string {
+	if ( ! is_singular( 'glossary' ) ) {
+		return '';
+	}
+	$terms = get_the_terms( get_queried_object_id(), 'glossary_topic' );
+	if ( ! is_array( $terms ) || empty( $terms ) ) {
+		return '';
+	}
+	return '<span class="hti-term__eyebrow">' . esc_html( $terms[0]->name ) . '</span>';
+}
+
+/**
+ * Glossary term footer (E3 Termo design): a "learn more" cross-link to the
+ * course, the contextual disclaimer, and a back-to-glossary link — replacing
+ * the execution-style CTA. Empty off a glossary single.
+ *
+ * @return string Safe HTML.
+ */
+function render_term_footer(): string {
+	if ( ! is_singular( 'glossary' ) ) {
+		return '';
+	}
+
+	$learn_url = archive_url( 'learn', 'learn' );
+
+	$card = '<a class="hti-term__chapter" href="' . esc_url( $learn_url ) . '">'
+		. '<span class="hti-term__chapter-l">'
+		. '<span class="hti-term__chapter-ic" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 5.5V20.5"/></svg></span>'
+		. '<span class="hti-term__chapter-txt">'
+		. '<span class="hti-term__chapter-eyebrow">' . esc_html( t( 'term_learn_eyebrow' ) ) . '</span>'
+		. '<span class="hti-term__chapter-t">' . esc_html( t( 'term_course_name' ) ) . '</span>'
+		. '<span class="hti-term__chapter-sub">' . esc_html( t( 'term_course_sub' ) ) . '</span>'
+		. '</span></span>'
+		. '<span class="hti-term__chapter-arrow" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>'
+		. '</a>';
+
+	$disclaimer = '<p class="hti-term__disclaimer">'
+		. '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>'
+		. esc_html( t( 'term_disclaimer' ) ) . '</p>';
+
+	$back = '<div class="hti-term__back-wrap">'
+		. '<a class="hti-term__back" href="' . esc_url( get_post_type_archive_link( 'glossary' ) ) . '">'
+		. '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H6M11 18l-6-6 6-6"/></svg>'
+		. esc_html( t( 'term_back' ) ) . '</a></div>';
+
+	return $card . $disclaimer . $back;
 }
 
 /**
@@ -3510,34 +3605,135 @@ function render_glossary_index(): string {
 		return '';
 	}
 
-	// Load the A–Z filter behaviour wherever this block renders.
+	// Load the search/filter behaviour wherever this block renders.
 	wp_enqueue_script( 'howtoinvest-glossary' );
 
-	$rows    = '';
-	$letters = array();
+	// Collect terms grouped by initial letter, plus the set of topics used.
+	$groups = array();   // letter => array of row HTML.
+	$letters = array();  // letter => true (has terms).
+	$topics  = array();  // topic slug => label.
+	$total   = 0;
+
 	while ( $query->have_posts() ) {
 		$query->the_post();
-		$title  = get_the_title();
-		$letter = glossary_letter( $title );
+		$post_id = get_the_ID();
+		$title   = get_the_title();
+		$letter  = glossary_letter( $title );
+		$short   = wp_strip_all_tags( (string) get_the_excerpt() );
+
+		// Topics this term belongs to (for the topic filter + data-topic).
+		$slugs      = array();
+		$post_terms = get_the_terms( $post_id, 'glossary_topic' );
+		if ( is_array( $post_terms ) ) {
+			foreach ( $post_terms as $tp ) {
+				$slugs[]             = $tp->slug;
+				$topics[ $tp->slug ] = $tp->name;
+			}
+		}
+
+		// Accent-folded haystack so search is diacritic-insensitive.
+		$search = remove_accents( strtolower( trim( $title . ' ' . $short ) ) );
 
 		$letters[ $letter ] = true;
-		$short              = wp_strip_all_tags( (string) get_the_excerpt() );
+		++$total;
 
-		$rows .= '<a class="hti-gloss__row" data-letter="' . esc_attr( $letter ) . '" href="' . esc_url( (string) get_permalink() ) . '">'
+		$groups[ $letter ][] = '<li class="hti-gloss__row" data-letter="' . esc_attr( $letter ) . '"'
+			. ' data-topic="' . esc_attr( implode( ' ', $slugs ) ) . '"'
+			. ' data-search="' . esc_attr( $search ) . '">'
+			. '<a class="hti-gloss__link" href="' . esc_url( (string) get_permalink() ) . '">'
 			. '<span class="hti-gloss__rowtext"><span class="hti-gloss__term">' . esc_html( $title ) . '</span>'
 			. ( '' !== $short ? '<span class="hti-gloss__short">' . esc_html( $short ) . '</span>' : '' )
-			. '</span><span class="hti-gloss__arrow" aria-hidden="true">→</span></a>';
+			. '</span><span class="hti-gloss__arrow" aria-hidden="true">'
+			. '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>'
+			. '</span></a></li>';
 	}
 	wp_reset_postdata();
 
+	ksort( $groups );
 	ksort( $letters );
-	$chips = '<button type="button" class="hti-gloss__letter is-active" data-letter="all">' . esc_html( t( 'gloss_all' ) ) . '</button>';
-	foreach ( array_keys( $letters ) as $letter ) {
-		$chips .= '<button type="button" class="hti-gloss__letter" data-letter="' . esc_attr( $letter ) . '">' . esc_html( $letter ) . '</button>';
+
+	// --- Count pill (decorative, static total). ---
+	$count_pill = '<span class="hti-gloss__total"><span class="hti-gloss__dot" aria-hidden="true"></span>'
+		. esc_html( sprintf( t( 'gloss_count_pill' ), number_format_i18n( $total ) ) ) . '</span>';
+
+	// --- Search box + live count. ---
+	$search_box = '<div class="hti-gloss__search">'
+		. '<label class="hti-gloss__slabel" for="hti-gloss-q">' . esc_html( t( 'gloss_search_label' ) ) . '</label>'
+		. '<div class="hti-gloss__sbox">'
+		. '<span class="hti-gloss__sicon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg></span>'
+		. '<input id="hti-gloss-q" class="hti-gloss__input" type="text" autocomplete="off" placeholder="' . esc_attr( t( 'gloss_search_ph' ) ) . '" aria-describedby="hti-gloss-count" />'
+		. '<button type="button" class="hti-gloss__clear" hidden>' . esc_html( t( 'gloss_clear' ) ) . '</button>'
+		. '</div>'
+		. '<p id="hti-gloss-count" class="hti-gloss__count" role="status" aria-live="polite" data-template="' . esc_attr( t( 'gloss_results' ) ) . '" data-one="' . esc_attr( t( 'gloss_result_one' ) ) . '">'
+		. esc_html( sprintf( t( 'gloss_results' ), number_format_i18n( $total ) ) ) . '</p>'
+		. '</div>';
+
+	// --- Topic filter (only when there is more than one topic). ---
+	$topic_filter = '';
+	if ( count( $topics ) > 1 ) {
+		asort( $topics );
+		$chips = '<button type="button" class="hti-gloss__topic is-active" data-topic="all" aria-pressed="true">' . esc_html( t( 'gloss_all' ) ) . '</button>';
+		foreach ( $topics as $slug => $label ) {
+			$chips .= '<button type="button" class="hti-gloss__topic" data-topic="' . esc_attr( $slug ) . '" aria-pressed="false">' . esc_html( $label ) . '</button>';
+		}
+		$topic_filter = '<div class="hti-gloss__filter">'
+			. '<span class="hti-gloss__flabel">' . esc_html( t( 'gloss_topic_lbl' ) ) . '</span>'
+			. '<div class="hti-gloss__topics" role="group" aria-label="' . esc_attr( t( 'gloss_filter_topic' ) ) . '">' . $chips . '</div>'
+			. '</div>';
 	}
 
+	// --- A–Z filter (all 26 letters; letters with no term are inert). ---
+	$alpha = '<button type="button" class="hti-gloss__letter is-active" data-letter="all" aria-pressed="true">' . esc_html( t( 'gloss_all' ) ) . '</button>';
+	foreach ( range( 'A', 'Z' ) as $L ) {
+		if ( isset( $letters[ $L ] ) ) {
+			$alpha .= '<button type="button" class="hti-gloss__letter" data-letter="' . esc_attr( $L ) . '" aria-pressed="false">' . esc_html( $L ) . '</button>';
+		} else {
+			$alpha .= '<span class="hti-gloss__letter is-disabled" aria-hidden="true">' . esc_html( $L ) . '</span>';
+		}
+	}
+	if ( isset( $letters['#'] ) ) {
+		$alpha .= '<button type="button" class="hti-gloss__letter" data-letter="#" aria-pressed="false">#</button>';
+	}
+	$letter_filter = '<div class="hti-gloss__filter">'
+		. '<span class="hti-gloss__flabel">' . esc_html( t( 'gloss_letter_lbl' ) ) . '</span>'
+		. '<div class="hti-gloss__alpha" role="group" aria-label="' . esc_attr( t( 'gloss_filter' ) ) . '">' . $alpha . '</div>'
+		. '</div>';
+
+	// --- Grouped list, one card per letter. ---
+	$list = '<div class="hti-gloss__groups">';
+	foreach ( $groups as $letter => $rows ) {
+		$list .= '<div class="hti-gloss__group" data-letter="' . esc_attr( $letter ) . '">'
+			. '<div class="hti-gloss__gletter" aria-hidden="true">' . esc_html( $letter ) . '</div>'
+			. '<ul class="hti-gloss__glist">' . implode( '', $rows ) . '</ul>'
+			. '</div>';
+	}
+	$list .= '</div>';
+
+	// --- Empty state (hidden until search/filter clears the list). ---
+	$empty = '<div class="hti-gloss__empty" hidden>'
+		. '<div class="hti-gloss__empty-ic" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg></div>'
+		. '<h2 class="hti-gloss__empty-t">' . esc_html( t( 'gloss_empty_t' ) ) . '</h2>'
+		. '<p class="hti-gloss__empty-b">' . esc_html( t( 'gloss_empty_b' ) ) . '</p>'
+		. '<button type="button" class="hti-gloss__empty-btn">' . esc_html( t( 'gloss_clear_filters' ) ) . '</button>'
+		. '</div>';
+
+	// --- Cross-link to the course. ---
+	$course = '<div class="hti-gloss__course">'
+		. '<div class="hti-gloss__course-txt">'
+		. '<span class="hti-gloss__course-eyebrow">' . esc_html( t( 'gloss_course_eyebrow' ) ) . '</span>'
+		. '<h2 class="hti-gloss__course-t">' . esc_html( t( 'gloss_course_t' ) ) . '</h2>'
+		. '<p class="hti-gloss__course-b">' . esc_html( t( 'gloss_course_b' ) ) . '</p>'
+		. '</div>'
+		. '<a class="hti-gloss__course-btn" href="' . esc_url( archive_url( 'learn', 'learn' ) ) . '">' . esc_html( t( 'gloss_course_btn' ) ) . '</a>'
+		. '</div>';
+
 	return '<div class="hti-gloss">'
-		. '<div class="hti-gloss__alpha" role="group" aria-label="' . esc_attr( t( 'gloss_filter' ) ) . '">' . $chips . '</div>'
-		. '<div class="hti-gloss__list">' . $rows . '</div>'
+		. $count_pill
+		. $search_box
+		. $topic_filter
+		. $letter_filter
+		. $list
+		. $empty
+		. $course
 		. '</div>';
 }
