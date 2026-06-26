@@ -304,6 +304,20 @@
 }
 .hti-safety p { margin: 0; color: #7C5E22; line-height: 1.55; }
 
+/* ESG note: a calm, green-tinted contextual note (asset-class-only framing). */
+.hti-esg-note {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	background: #E6F7EF;
+	border: 1px solid #C6EBDB;
+	border-radius: 16px;
+	padding: 1.1rem 1.3rem;
+	margin: 0 0 1.75rem;
+}
+.hti-esg-note__ic { flex: none; font-size: 18px; line-height: 1.5; }
+.hti-esg-note__t { margin: 0; color: #15604A; line-height: 1.55; }
+
 /* Dark, non-dismissible disclaimer banner. */
 .hti-disclaimer {
 	background: var( --hti-dark );

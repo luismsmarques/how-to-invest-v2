@@ -225,6 +225,15 @@
 			root.appendChild( notes );
 		}
 
+		// ESG note (when sustainability interest was expressed) — asset-class-only
+		// framing, per the invariants. Server-supplied deterministic text.
+		if ( exp.esg_note ) {
+			var esg = el( 'div', { class: 'hti-esg-note', role: 'note' } );
+			esg.appendChild( el( 'span', { class: 'hti-esg-note__ic', 'aria-hidden': 'true' }, '🌱' ) );
+			esg.appendChild( el( 'p', { class: 'hti-esg-note__t' }, exp.esg_note ) );
+			root.appendChild( esg );
+		}
+
 		// Closing actions (educational only — never execution/brokerage).
 		var actions = el( 'div', { class: 'hti-actions' } );
 

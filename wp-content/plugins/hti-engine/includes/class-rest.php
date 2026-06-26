@@ -504,6 +504,16 @@ class REST {
 		// Explanation (LLM → validate → fallback; always succeeds).
 		$explained = Explainer::explain( $result, $answers, $locale, $label );
 
+		// ESG note: when the visitor said sustainability matters, add a
+		// deterministic note (not from the LLM) clarifying that the illustrative
+		// example stays at the asset-class level and names no specific ESG
+		// products — keeping the project invariants explicit in the result.
+		if ( 'yes' === ( $answers['p7_esg'] ?? '' ) && isset( $explained['explanation'] ) && is_array( $explained['explanation'] ) ) {
+			$explained['explanation']['esg_note'] = ( 'pt' === $locale )
+				? 'Indicaste que investir de forma sustentável (ESG) é importante para ti. Este exemplo é educativo e mantém-se ao nível das classes de ativos — não nomeia produtos ESG específicos. Saber mais no guia de investimento ESG.'
+				: 'You told us sustainable (ESG) investing matters to you. This example is educational and stays at the asset-class level — it names no specific ESG products. Learn more in the ESG investing guide.';
+		}
+
 		$session_token = wp_generate_uuid4();
 		$consent       = self::sanitize_consent( (array) $request->get_param( 'consent' ) );
 
