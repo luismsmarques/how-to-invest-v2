@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.39';
+const VERSION = '0.8.40';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1258,7 +1258,80 @@ function render_learn_hub(): string {
 		<p class="hti-lh-disc"><?php echo esc_html( $s['disc'] ); ?></p>
 	</div>
 	<?php
-	return (string) ob_get_clean();
+	return (string) ob_get_clean() . learn_course_schema( $curriculum, $lang );
+}
+
+/**
+ * Course structured data (JSON-LD) for the Learn path, built from the live
+ * curriculum. Anchors the learning path as a single Course entity (referenced
+ * by each chapter's LearningResource isPartOf) and is eligible for Google's
+ * course rich results. Provider/Organization is the sitewide node emitted by
+ * HTI\Engine\SEO on the same page.
+ *
+ * @param array<int,array<string,mixed>> $curriculum Modules + chapters.
+ * @param string                         $lang       'en'|'pt'.
+ * @return string A <script type="application/ld+json"> block, or '' if empty.
+ */
+function learn_course_schema( array $curriculum, string $lang ): string {
+	if ( empty( $curriculum ) || ! class_exists( '\\HTI\\Engine\\SEO' ) ) {
+		return '';
+	}
+	$pt      = 'pt' === $lang;
+	$hub_url = get_post_type_archive_link( 'learn' );
+	if ( ! $hub_url ) {
+		$hub_url = home_url( $pt ? '/pt/learn/' : '/learn/' );
+	}
+
+	$parts      = array();
+	$total_mins = 0;
+	foreach ( $curriculum as $m ) {
+		foreach ( $m['chapters'] as $c ) {
+			if ( empty( $c['published'] ) || empty( $c['url'] ) ) {
+				continue;
+			}
+			$total_mins += (int) ( $c['mins'] ?? 0 );
+			$parts[]     = array(
+				'@type'                => 'LearningResource',
+				'name'                 => (string) $c['title'],
+				'url'                  => (string) $c['url'],
+				'learningResourceType' => 'Chapter',
+			);
+		}
+	}
+	if ( empty( $parts ) ) {
+		return '';
+	}
+
+	$lang_tag = $pt ? 'pt-PT' : 'en-US';
+	$course   = array(
+		'@context'            => 'https://schema.org',
+		'@type'               => 'Course',
+		'@id'                 => \HTI\Engine\SEO::course_id(),
+		'name'                => $pt ? 'Do zero à tua primeira carteira' : 'From zero to your first portfolio',
+		'description'         => $pt
+			? 'Um percurso gratuito e passo a passo de literacia financeira: dos conceitos básicos à construção de uma carteira ilustrativa por classes de ativos. Educativo, não é aconselhamento.'
+			: 'A free, step-by-step financial-literacy path: from the basics to building an illustrative portfolio by asset class. Educational, not advice.',
+		'url'                 => $hub_url,
+		'inLanguage'          => $lang_tag,
+		'provider'            => array( '@id' => \HTI\Engine\SEO::org_id() ),
+		'isAccessibleForFree' => true,
+		'educationalLevel'    => 'Beginner',
+		'offers'              => array(
+			'@type'         => 'Offer',
+			'price'         => '0',
+			'priceCurrency' => 'EUR',
+			'category'      => 'Free',
+		),
+		'hasCourseInstance'   => array(
+			'@type'          => 'CourseInstance',
+			'courseMode'     => 'online',
+			'courseWorkload' => 'PT' . max( 1, (int) ceil( $total_mins / 60 ) ) . 'H',
+			'inLanguage'     => $lang_tag,
+		),
+		'hasPart'             => $parts,
+	);
+
+	return '<script type="application/ld+json">' . wp_json_encode( $course, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
 }
 
 /**
