@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.8.27
+ * Version:           0.8.28
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.27';
+const VERSION = '0.8.28';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -40,6 +40,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-seo.php';
 require_once HTI_ENGINE_PATH . 'includes/class-news-sitemap.php';
 require_once HTI_ENGINE_PATH . 'includes/class-redirects.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seeder.php';
+require_once HTI_ENGINE_PATH . 'includes/class-content-import.php';
 require_once HTI_ENGINE_PATH . 'includes/class-config.php';
 require_once HTI_ENGINE_PATH . 'includes/class-engine.php';
 require_once HTI_ENGINE_PATH . 'includes/class-fallback.php';
@@ -209,6 +210,12 @@ Cron::init();
  */
 Seeder::register();
 
+/**
+ * Learn content pipeline (Tools → Learn content, and `wp hti import-learn`).
+ * Separate from the seeder: imports content/learn/*.md as reviewable drafts.
+ */
+Content_Import::init();
+
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	\WP_CLI::add_command(
 		'hti seed',
@@ -224,6 +231,17 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					$report['skipped']
 				)
 			);
+		}
+	);
+
+	\WP_CLI::add_command(
+		'hti import-learn',
+		function () {
+			$report = Content_Import::import();
+			foreach ( $report as $r ) {
+				\WP_CLI::line( sprintf( '- %-34s EN:%-8s PT:%-8s', $r['slug'], $r['en_status'], $r['pt_status'] ) );
+			}
+			\WP_CLI::success( sprintf( '%d Learn chapters imported/updated as drafts.', count( $report ) ) );
 		}
 	);
 }

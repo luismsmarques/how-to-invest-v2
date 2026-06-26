@@ -52,10 +52,19 @@ Tone: warm, encouraging, jargon-free; define every term on first use; prefer "yo
 - Internal links to glossary + adjacent chapters (cluster around the path pillar).
 - Schema is emitted automatically (`Article` via class-seo); ensure title/excerpt/thumbnail are set.
 
-## How to create it
-- New `learn` post (EN) + PT translation, set `learn_topic`, excerpt, featured image, then link translations.
-- For repeatable seeding, extend `class-seeder.php` (`articles()` + `learn_category_of()`), keeping it idempotent — that's how existing chapters ship and stay re-runnable.
-- A chapter authored here must be ebook-ready: self-contained, with the takeaways box (the `ebook-build` skill pulls title + body + takeaways).
+## How to create it — the content pipeline (NOT the seeder)
+The seeder is install-only. Ongoing Learn content lives in the editorial pipeline:
+
+1. **Plan** in the sheet `wp-content/plugins/hti-engine/content/learn-plan.csv` (module, order, slug, EN/PT titles, topic, status, glossary, prev, next). Add/triage the chapter row there first.
+2. **Author** one Markdown file per chapter at `wp-content/plugins/hti-engine/content/learn/<slug>.md`:
+   - Frontmatter: `slug`, `slug_pt`, `module`, `order`, `topic`, `status`, `title_en`, `title_pt`, `excerpt_en`, `excerpt_pt`, `glossary` (comma list), `prev`, `next`.
+   - Body split by `<!-- EN -->` / `<!-- PT -->`. Dialect: a leading `> ` line = the TL;DR callout; `## ` / `### ` headings; `- ` bullet lists; a `## Key takeaways` / `## Pontos-chave` heading whose list becomes the takeaways box; `**bold**`. The glossary "Learn more" line and the prev/next chapter nav are **auto-appended from frontmatter** — don't write them in the body. The questionnaire CTA is appended automatically too.
+3. **Import** with `wp hti import-learn` (or Tools → Learn content). It upserts both languages as **drafts**, idempotent by slug, links them via Polylang, files them under `learn_topic`, and sets the SEO description from the excerpt. Never auto-publishes.
+4. **Review & publish** in WordPress; update the `status` column in the sheet.
+
+Inline glossary tokens `[glossary:slug|Text]` / `[learn:slug|Text]` exist but resolve to the given slug regardless of language — for correct PT term URLs prefer the auto-built "Learn more" line (frontmatter `glossary`), which resolves the localized term.
+
+A chapter must be ebook-ready: self-contained, with TL;DR + takeaways (the `ebook-build` skill pulls title + body + takeaways).
 
 ## Checklist (before "done")
 - [ ] Beginner-readable; every term defined on first use
