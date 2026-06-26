@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.34';
+const VERSION = '0.8.35';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1426,68 +1426,130 @@ function render_learn_quiz(): string {
 		? array(
 			'eyebrow' => 'Fim do capítulo',
 			'badge'   => 1 === $count ? 'Quiz · 1 pergunta' : sprintf( 'Quiz · %d perguntas', $count ),
-			'h' => 'Testa o que aprendeste', 'intro' => 'Um mini-quiz rápido para fixar as ideias e concluir o capítulo.',
+			'h' => 'Testa o que aprendeste',
+			'intro' => 'Uma verificação rápida para fixar o capítulo — sem nota, só para ti.',
 			'check' => 'Verificar respostas', 'retry' => 'Tentar de novo',
-			'pass' => 'Boa! Capítulo concluído ✓',
+			'empty' => 'Escolhe uma resposta para cada pergunta.',
 			/* translators: 1: correct, 2: total. */
-			'fail' => '%1$d de %2$d certas — revê e tenta de novo.',
-			'pick' => 'Escolhe uma resposta em cada pergunta.',
-			'done_h' => 'Capítulo concluído', 'done_p' => 'Já passaste o quiz deste capítulo.',
+			'partial' => '%1$d de %2$d certas — revê e tenta de novo.',
+			'tag_correct' => 'Resposta certa', 'tag_your' => 'A tua resposta',
+			'complete_h' => 'Capítulo concluído',
+			'passed_sub' => 'Boa — fixaste este capítulo.',
+			'returning_sub' => 'Já concluíste este capítulo.',
+			'badge_kicker' => 'Progresso do crachá', 'badge_cue' => '+1 para o crachá do módulo',
+			'review' => 'Rever respostas', 'return_review' => 'Rever o quiz',
 		)
 		: array(
 			'eyebrow' => 'End of chapter',
 			'badge'   => 1 === $count ? 'Quiz · 1 question' : sprintf( 'Quiz · %d questions', $count ),
-			'h' => 'Test what you learned', 'intro' => 'A quick mini-quiz to lock in the ideas and complete the chapter.',
+			'h' => 'Test what you learned',
+			'intro' => 'A quick check to lock in this chapter — no grades, just for you.',
 			'check' => 'Check answers', 'retry' => 'Try again',
-			'pass' => 'Nice! Chapter complete ✓',
+			'empty' => 'Choose an answer for each question.',
 			/* translators: 1: correct, 2: total. */
-			'fail' => '%1$d of %2$d correct — review and try again.',
-			'pick' => 'Choose an answer for each question.',
-			'done_h' => 'Chapter complete', 'done_p' => 'You’ve passed this chapter’s quiz.',
+			'partial' => '%1$d of %2$d correct — review and try again.',
+			'tag_correct' => 'Correct answer', 'tag_your' => 'Your answer',
+			'complete_h' => 'Chapter complete',
+			'passed_sub' => 'Nice work — you’ve locked this chapter in.',
+			'returning_sub' => 'You’ve already completed this chapter.',
+			'badge_kicker' => 'Badge progress', 'badge_cue' => '+1 toward your module badge',
+			'review' => 'Review answers', 'return_review' => 'Review the quiz',
 		);
 
+	// Dynamic copy the JS state machine needs.
 	wp_localize_script(
 		'howtoinvest-learn',
 		'HTI_LEARN_QUIZ',
 		array(
-			'check' => $s['check'], 'retry' => $s['retry'], 'pass' => $s['pass'],
-			'fail' => $s['fail'], 'pick' => $s['pick'],
+			'check' => $s['check'], 'retry' => $s['retry'], 'empty' => $s['empty'],
+			'partial' => $s['partial'], 'tagCorrect' => $s['tag_correct'], 'tagYour' => $s['tag_your'],
+			'passedSub' => $s['passed_sub'], 'returningSub' => $s['returning_sub'],
+			'review' => $s['review'], 'returnReview' => $s['return_review'],
 		)
 	);
 
 	$slug = learn_canonical_slug( $post );
 
+	$mk_check = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+	$mk_cross = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
 	ob_start();
 	?>
 	<section class="hti-quiz" data-slug="<?php echo esc_attr( $slug ); ?>" aria-label="<?php echo esc_attr( $s['h'] ); ?>">
-		<div class="hti-quiz__done" hidden>
-			<span class="hti-quiz__done-ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-			<span><strong class="hti-quiz__done-h"><?php echo esc_html( $s['done_h'] ); ?></strong><span class="hti-quiz__done-p"><?php echo esc_html( $s['done_p'] ); ?></span></span>
+		<div class="hti-quiz__boundary" aria-hidden="true">
+			<span class="hti-quiz__dash"></span>
+			<span class="hti-quiz__seal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4l9 2.5L5 9M5 9l11 2.5"/></svg></span>
+			<span class="hti-quiz__dash"></span>
 		</div>
-		<div class="hti-quiz__live">
-			<div class="hti-quiz__top">
-				<span class="hti-quiz__badge"><span class="hti-quiz__badge-ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><?php echo esc_html( $s['badge'] ); ?></span>
-				<span class="hti-quiz__eyebrow"><?php echo esc_html( $s['eyebrow'] ); ?></span>
-			</div>
-			<h2 class="hti-quiz__h"><?php echo esc_html( $s['h'] ); ?></h2>
-			<p class="hti-quiz__intro"><?php echo esc_html( $s['intro'] ); ?></p>
-			<form class="hti-quiz__form" novalidate>
-				<?php foreach ( $quiz as $qi => $q ) : ?>
-					<fieldset class="hti-quiz__q" data-q="<?php echo (int) $qi; ?>">
-						<legend class="hti-quiz__legend"><?php echo (int) $qi + 1 . '. ' . esc_html( (string) ( $q['q'] ?? '' ) ); ?></legend>
-						<?php foreach ( (array) ( $q['options'] ?? array() ) as $oi => $o ) : ?>
-							<label class="hti-quiz__opt">
-								<input type="radio" name="q<?php echo (int) $qi; ?>" value="<?php echo (int) $oi; ?>" data-correct="<?php echo ! empty( $o['c'] ) ? '1' : '0'; ?>">
-								<span class="hti-quiz__opt-t"><?php echo esc_html( (string) ( $o['t'] ?? '' ) ); ?></span>
-							</label>
+
+		<div class="hti-quiz__card">
+			<div class="hti-quiz__accent"></div>
+			<div class="hti-quiz__pad">
+
+				<!-- Quiz view -->
+				<div class="hti-quiz__quizview">
+					<div class="hti-quiz__top">
+						<span class="hti-quiz__eyebrow"><?php echo esc_html( $s['eyebrow'] ); ?></span>
+						<span class="hti-quiz__badge"><span class="hti-quiz__badge-ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2"/><path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 12l2 2 3.5-3.5"/></svg></span><?php echo esc_html( $s['badge'] ); ?></span>
+					</div>
+					<h2 class="hti-quiz__h"><?php echo esc_html( $s['h'] ); ?></h2>
+					<p class="hti-quiz__intro"><?php echo esc_html( $s['intro'] ); ?></p>
+
+					<div class="hti-quiz__qs">
+						<?php foreach ( $quiz as $qi => $q ) : ?>
+							<div class="hti-quiz__q" data-q="<?php echo (int) $qi; ?>">
+								<div class="hti-quiz__qhead">
+									<span class="hti-quiz__qnum"><?php echo (int) $qi + 1; ?></span>
+									<span class="hti-quiz__qtext"><?php echo esc_html( (string) ( $q['q'] ?? '' ) ); ?></span>
+								</div>
+								<div class="hti-quiz__opts" role="radiogroup" aria-label="<?php echo esc_attr( (string) ( $q['q'] ?? '' ) ); ?>">
+									<?php foreach ( (array) ( $q['options'] ?? array() ) as $oi => $o ) : ?>
+										<div class="hti-quiz__opt" role="radio" aria-checked="false" tabindex="0" data-q="<?php echo (int) $qi; ?>" data-o="<?php echo (int) $oi; ?>" data-correct="<?php echo ! empty( $o['c'] ) ? '1' : '0'; ?>">
+											<span class="hti-quiz__marker" aria-hidden="true">
+												<span class="hti-quiz__m hti-quiz__m--empty"></span>
+												<span class="hti-quiz__m hti-quiz__m--filled"><span></span></span>
+												<span class="hti-quiz__m hti-quiz__m--check"><?php echo $mk_check; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+												<span class="hti-quiz__m hti-quiz__m--cross"><?php echo $mk_cross; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+											</span>
+											<span class="hti-quiz__opt-t"><?php echo esc_html( (string) ( $o['t'] ?? '' ) ); ?></span>
+											<span class="hti-quiz__tag"></span>
+										</div>
+									<?php endforeach; ?>
+								</div>
+							</div>
 						<?php endforeach; ?>
-					</fieldset>
-				<?php endforeach; ?>
-				<div class="hti-quiz__actions">
-					<button type="submit" class="hti-quiz__check"><?php echo esc_html( $s['check'] ); ?></button>
-					<p class="hti-quiz__result" role="status" aria-live="polite"></p>
+					</div>
+
+					<div class="hti-quiz__alert" role="alert" hidden>
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+						<span><?php echo esc_html( $s['empty'] ); ?></span>
+					</div>
+
+					<div class="hti-quiz__result" aria-live="polite" hidden>
+						<span class="hti-quiz__result-ic" aria-hidden="true"></span>
+						<span class="hti-quiz__result-txt"></span>
+					</div>
+
+					<button type="button" class="hti-quiz__primary"><?php echo esc_html( $s['check'] ); ?></button>
 				</div>
-			</form>
+
+				<!-- Complete view -->
+				<div class="hti-quiz__complete" hidden>
+					<span class="hti-quiz__medal hti-quiz__medal--celebrate" aria-hidden="true">
+						<span class="hti-quiz__confetti c1"></span><span class="hti-quiz__confetti c2"></span><span class="hti-quiz__confetti c3"></span><span class="hti-quiz__confetti c4"></span>
+						<span class="hti-quiz__medal-disc"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+					</span>
+					<span class="hti-quiz__medal hti-quiz__medal--returning" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0E9C84" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+					<h2 class="hti-quiz__ch"><?php echo esc_html( $s['complete_h'] ); ?></h2>
+					<p class="hti-quiz__csub"></p>
+					<div class="hti-quiz__badgecue">
+						<span class="hti-quiz__badgecue-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 7.7l5.4-.8z"/></svg></span>
+						<span class="hti-quiz__badgecue-tx"><span class="hti-quiz__badgecue-k"><?php echo esc_html( $s['badge_kicker'] ); ?></span><span class="hti-quiz__badgecue-c"><?php echo esc_html( $s['badge_cue'] ); ?></span></span>
+					</div>
+					<button type="button" class="hti-quiz__review"></button>
+				</div>
+
+			</div>
 		</div>
 	</section>
 	<?php

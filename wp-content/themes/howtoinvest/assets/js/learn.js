@@ -186,64 +186,142 @@
 		if ( dn ) { dn.textContent = String( d ); }
 	}
 
-	/* ---- end-of-chapter quiz ---- */
+	/* ---- end-of-chapter quiz (state machine, mirrors the Quiz Card design) ---- */
 	function wireQuiz() {
 		var quiz = document.querySelector( '.hti-quiz' );
 		if ( ! quiz ) { return; }
-		var QS = window.HTI_LEARN_QUIZ || {};
+		var Q = window.HTI_LEARN_QUIZ || {};
 		var slug = quiz.getAttribute( 'data-slug' );
-		var live = quiz.querySelector( '.hti-quiz__live' );
-		var doneEl = quiz.querySelector( '.hti-quiz__done' );
 
-		function showDone() {
-			if ( doneEl ) { doneEl.hidden = false; }
-			if ( live ) { live.hidden = true; }
+		var quizview = quiz.querySelector( '.hti-quiz__quizview' );
+		var complete = quiz.querySelector( '.hti-quiz__complete' );
+		var qEls = Array.prototype.slice.call( quiz.querySelectorAll( '.hti-quiz__q' ) );
+		var opts = Array.prototype.slice.call( quiz.querySelectorAll( '.hti-quiz__opt' ) );
+		var primary = quiz.querySelector( '.hti-quiz__primary' );
+		var review = quiz.querySelector( '.hti-quiz__review' );
+		var alertEl = quiz.querySelector( '.hti-quiz__alert' );
+		var resultEl = quiz.querySelector( '.hti-quiz__result' );
+		var resultIc = quiz.querySelector( '.hti-quiz__result-ic' );
+		var resultTx = quiz.querySelector( '.hti-quiz__result-txt' );
+		var csub = quiz.querySelector( '.hti-quiz__csub' );
+
+		var n = qEls.length;
+		var state = { sel: {}, checked: false, completed: false, returning: false, emptyErr: false };
+
+		var BAD_IC = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/></svg>';
+
+		// Returning reader who already passed → straight to the complete view.
+		if ( slug && load( KEY_PASS ).indexOf( slug ) >= 0 ) {
+			state.completed = true;
+			state.returning = true;
 		}
 
-		if ( slug && load( KEY_PASS ).indexOf( slug ) >= 0 ) { showDone(); return; }
-
-		var form = quiz.querySelector( '.hti-quiz__form' );
-		var btn = quiz.querySelector( '.hti-quiz__check' );
-		var result = quiz.querySelector( '.hti-quiz__result' );
-		if ( ! form ) { return; }
-
-		function setResult( msg, kind ) {
-			if ( ! result ) { return; }
-			result.textContent = msg || '';
-			result.className = 'hti-quiz__result' + ( kind ? ' is-' + kind : '' );
+		function correctCount() {
+			var c = 0;
+			for ( var i = 0; i < n; i++ ) {
+				var sel = state.sel[ i ];
+				if ( sel != null ) {
+					var el = quiz.querySelector( '.hti-quiz__opt[data-q="' + i + '"][data-o="' + sel + '"]' );
+					if ( el && el.getAttribute( 'data-correct' ) === '1' ) { c++; }
+				}
+			}
+			return c;
 		}
 
-		form.addEventListener( 'submit', function ( e ) {
-			e.preventDefault();
-			var qs = form.querySelectorAll( '.hti-quiz__q' );
-			var total = qs.length, correct = 0, answeredAll = true;
+		function render() {
+			if ( complete ) { complete.hidden = ! state.completed; complete.classList.toggle( 'is-returning', state.returning ); }
+			if ( quizview ) { quizview.hidden = state.completed; }
 
-			Array.prototype.forEach.call( qs, function ( fs ) {
-				Array.prototype.forEach.call( fs.querySelectorAll( '.hti-quiz__opt' ), function ( l ) {
-					l.classList.remove( 'is-correct', 'is-wrong' );
-				} );
-				var checked = fs.querySelector( 'input:checked' );
-				if ( ! checked ) { answeredAll = false; return; }
-				var isC = checked.getAttribute( 'data-correct' ) === '1';
-				if ( isC ) { correct++; }
-				checked.closest( '.hti-quiz__opt' ).classList.add( isC ? 'is-correct' : 'is-wrong' );
-				if ( ! isC ) {
-					var corr = fs.querySelector( 'input[data-correct="1"]' );
-					if ( corr ) { corr.closest( '.hti-quiz__opt' ).classList.add( 'is-correct' ); }
+			if ( state.completed ) {
+				if ( csub ) { csub.textContent = state.returning ? ( Q.returningSub || '' ) : ( Q.passedSub || '' ); }
+				if ( review ) { review.textContent = state.returning ? ( Q.returnReview || '' ) : ( Q.review || '' ); }
+				return;
+			}
+
+			// Options.
+			opts.forEach( function ( opt ) {
+				var qi = opt.getAttribute( 'data-q' );
+				var oi = opt.getAttribute( 'data-o' );
+				var chosen = String( state.sel[ qi ] ) === String( oi );
+				var isCorrect = opt.getAttribute( 'data-correct' ) === '1';
+				var tag = opt.querySelector( '.hti-quiz__tag' );
+				opt.classList.remove( 'is-chosen', 'is-correct', 'is-wrong', 'is-faded' );
+				opt.setAttribute( 'aria-checked', chosen ? 'true' : 'false' );
+				opt.setAttribute( 'tabindex', state.checked ? '-1' : '0' );
+				if ( tag ) { tag.textContent = ''; }
+
+				if ( ! state.checked ) {
+					if ( chosen ) { opt.classList.add( 'is-chosen' ); }
+				} else if ( isCorrect ) {
+					opt.classList.add( 'is-correct' );
+					if ( tag ) { tag.textContent = Q.tagCorrect || ''; }
+				} else if ( chosen ) {
+					opt.classList.add( 'is-wrong' );
+					if ( tag ) { tag.textContent = Q.tagYour || ''; }
+				} else {
+					opt.classList.add( 'is-faded' );
 				}
 			} );
 
-			if ( ! answeredAll ) { setResult( QS.pick, 'err' ); return; }
+			// Per-question "answer this" highlight.
+			qEls.forEach( function ( qel, i ) {
+				qel.classList.toggle( 'is-unanswered', state.emptyErr && state.sel[ i ] == null );
+			} );
 
-			if ( correct === total ) {
-				setResult( '', null );
-				if ( slug ) { addLocal( KEY_PASS, slug ); addLocal( KEY_DONE, slug ); postProgress( { done: [ slug ], passed: [ slug ] } ); }
-				showDone();
-			} else {
-				setResult( ( QS.fail || '%1$d / %2$d' ).replace( '%1$d', correct ).replace( '%2$d', total ), 'err' );
-				if ( btn && QS.retry ) { btn.textContent = QS.retry; }
+			if ( alertEl ) { alertEl.hidden = ! state.emptyErr; }
+
+			// Result line (only when checked and not all correct).
+			if ( resultEl ) {
+				if ( state.checked ) {
+					resultEl.hidden = false;
+					resultEl.className = 'hti-quiz__result is-bad';
+					if ( resultIc ) { resultIc.innerHTML = BAD_IC; }
+					if ( resultTx ) { resultTx.textContent = ( Q.partial || '%1$d / %2$d' ).replace( '%1$d', correctCount() ).replace( '%2$d', n ); }
+				} else {
+					resultEl.hidden = true;
+				}
 			}
+
+			if ( primary ) { primary.textContent = state.checked ? ( Q.retry || '' ) : ( Q.check || '' ); }
+		}
+
+		function pick( qi, oi ) {
+			if ( state.completed ) { return; }
+			state.sel[ qi ] = oi;
+			state.emptyErr = false;
+			state.checked = false;
+			render();
+		}
+
+		opts.forEach( function ( opt ) {
+			opt.addEventListener( 'click', function () { pick( opt.getAttribute( 'data-q' ), opt.getAttribute( 'data-o' ) ); } );
+			opt.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === ' ' || e.key === 'Enter' || e.key === 'Spacebar' ) { e.preventDefault(); pick( opt.getAttribute( 'data-q' ), opt.getAttribute( 'data-o' ) ); }
+			} );
 		} );
+
+		if ( primary ) {
+			primary.addEventListener( 'click', function () {
+				if ( state.checked ) { state.checked = false; state.emptyErr = false; render(); return; } // Try again
+				var answered = true;
+				for ( var i = 0; i < n; i++ ) { if ( state.sel[ i ] == null ) { answered = false; break; } }
+				if ( ! answered ) { state.emptyErr = true; render(); return; }
+				state.checked = true;
+				state.emptyErr = false;
+				if ( correctCount() === n ) {
+					state.completed = true;
+					state.returning = false;
+					if ( slug ) { addLocal( KEY_PASS, slug ); addLocal( KEY_DONE, slug ); postProgress( { done: [ slug ], passed: [ slug ] } ); }
+				}
+				render();
+			} );
+		}
+
+		if ( review ) {
+			review.addEventListener( 'click', function () { state.completed = false; state.checked = true; state.emptyErr = false; render(); } );
+		}
+
+		render();
 	}
 
 	/* ---- ebook lead-magnet ---- */
