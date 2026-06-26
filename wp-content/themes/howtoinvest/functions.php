@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.43';
+const VERSION = '0.8.44';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -438,6 +438,8 @@ function strings(): array {
 		'tab_home'             => array( 'en' => 'Home', 'pt' => 'Início' ),
 		'tab_nav'              => array( 'en' => 'Sections', 'pt' => 'Secções' ),
 		'nav_account'          => array( 'en' => 'Account', 'pt' => 'Conta' ),
+		'nav_login'            => array( 'en' => 'Sign in', 'pt' => 'Entrar' ),
+		'nav_my_account'       => array( 'en' => 'My account', 'pt' => 'A minha conta' ),
 		'menu_explore'         => array( 'en' => 'Explore', 'pt' => 'Explorar' ),
 		'menu_more'            => array( 'en' => 'More', 'pt' => 'Mais' ),
 		'menu_privacy_terms'   => array( 'en' => 'Privacy & terms', 'pt' => 'Privacidade e termos' ),
@@ -2852,9 +2854,27 @@ function render_lang_switcher(): string {
  * Language-aware header CTA button.
  */
 function render_header_cta(): string {
-	return '<div class="wp-block-buttons hti-cta"><div class="wp-block-button is-style-fill">'
+	$out = '<div class="hti-header__actions">';
+
+	if ( is_user_logged_in() ) {
+		// Logged-in: an account avatar showing the user's initial → My account.
+		$user    = wp_get_current_user();
+		$name    = $user->display_name ? $user->display_name : $user->user_login;
+		$initial = mb_strtoupper( mb_substr( wp_strip_all_tags( (string) $name ), 0, 1 ) );
+		$out    .= '<a class="hti-header__account" href="' . esc_url( account_url() ) . '" aria-label="' . esc_attr( t( 'nav_my_account' ) ) . '" title="' . esc_attr( t( 'nav_my_account' ) ) . '">'
+			. esc_html( '' !== $initial ? $initial : '·' ) . '</a>';
+	} else {
+		// Guest: a "Sign in" link (the account page handles authentication).
+		$out .= '<a class="hti-header__login" href="' . esc_url( account_url() ) . '">' . esc_html( t( 'nav_login' ) ) . '</a>';
+	}
+
+	// "Get started" CTA (always present).
+	$out .= '<div class="wp-block-buttons hti-cta"><div class="wp-block-button is-style-fill">'
 		. '<a class="wp-block-button__link wp-element-button" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '" data-hti-track="cta_click" data-htip-location="header">'
-		. esc_html( t( 'cta_get_started' ) ) . '</a></div></div>';
+		. esc_html( t( 'cta_get_started' ) ) . '</a></div>'
+		. '</div></div>';
+
+	return $out;
 }
 
 /**
