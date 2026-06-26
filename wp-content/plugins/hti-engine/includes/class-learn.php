@@ -32,33 +32,60 @@ class Learn {
 	private const MAX = 200;
 
 	/**
-	 * Current progress for a user.
+	 * Current progress for a user: chapters read (`done`) and quizzes passed
+	 * (`passed`).
 	 *
 	 * @param int $uid User id.
-	 * @return array{done:array<int,string>}
+	 * @return array{done:array<int,string>,passed:array<int,string>}
 	 */
 	public static function get( int $uid ): array {
-		$p    = get_user_meta( $uid, self::META, true );
-		$done = ( is_array( $p ) && isset( $p['done'] ) && is_array( $p['done'] ) ) ? $p['done'] : array();
-		return array( 'done' => array_values( array_unique( array_map( 'strval', $done ) ) ) );
+		$p = get_user_meta( $uid, self::META, true );
+		$p = is_array( $p ) ? $p : array();
+		return array(
+			'done'   => self::list_field( $p, 'done' ),
+			'passed' => self::list_field( $p, 'passed' ),
+		);
 	}
 
 	/**
-	 * Merge a set of completed slugs into the stored progress (union) and save.
+	 * Merge sets of read / passed slugs into the stored progress (union) and save.
 	 *
-	 * @param int               $uid   User id.
-	 * @param array<int,string> $slugs Completed chapter slugs to add.
-	 * @return array{done:array<int,string>}
+	 * @param int               $uid    User id.
+	 * @param array<int,string> $done   Read chapter slugs to add.
+	 * @param array<int,string> $passed Passed-quiz chapter slugs to add.
+	 * @return array{done:array<int,string>,passed:array<int,string>}
 	 */
-	public static function merge( int $uid, array $slugs ): array {
-		$add    = self::clean( $slugs );
-		$cur    = self::get( $uid )['done'];
-		$merged = array_values( array_unique( array_merge( $cur, $add ) ) );
-		if ( count( $merged ) > self::MAX ) {
-			$merged = array_slice( $merged, -self::MAX );
-		}
-		update_user_meta( $uid, self::META, array( 'done' => $merged, 'updated' => time() ) );
-		return array( 'done' => $merged );
+	public static function merge( int $uid, array $done, array $passed = array() ): array {
+		$cur    = self::get( $uid );
+		$merged = array(
+			'done'    => self::cap( array_values( array_unique( array_merge( $cur['done'], self::clean( $done ) ) ) ) ),
+			'passed'  => self::cap( array_values( array_unique( array_merge( $cur['passed'], self::clean( $passed ) ) ) ) ),
+			'updated' => time(),
+		);
+		update_user_meta( $uid, self::META, $merged );
+		return array( 'done' => $merged['done'], 'passed' => $merged['passed'] );
+	}
+
+	/**
+	 * Read a string-list field from a stored record.
+	 *
+	 * @param array<string,mixed> $p   Record.
+	 * @param string              $key Field.
+	 * @return array<int,string>
+	 */
+	private static function list_field( array $p, string $key ): array {
+		$v = ( isset( $p[ $key ] ) && is_array( $p[ $key ] ) ) ? $p[ $key ] : array();
+		return array_values( array_unique( array_map( 'strval', $v ) ) );
+	}
+
+	/**
+	 * Cap a list to the stored maximum (keep the most recent).
+	 *
+	 * @param array<int,string> $list List.
+	 * @return array<int,string>
+	 */
+	private static function cap( array $list ): array {
+		return count( $list ) > self::MAX ? array_slice( $list, -self::MAX ) : $list;
 	}
 
 	/**

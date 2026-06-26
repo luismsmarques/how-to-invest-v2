@@ -36,6 +36,16 @@ The real power shows up over years, not weeks, as gains build on earlier gains. 
 - Higher potential return is the reward for accepting some ups and downs.
 - Time and patience matter more than trying to time the market.
 
+## Quiz
+1. How do saving and investing differ?
+- [x] Saving keeps money safe; investing aims to grow it with some risk
+- [ ] Investing is always safer than saving
+- [ ] They are two words for the same thing
+2. When you invest, what do you actually hold?
+- [ ] Specific products chosen for you
+- [x] A slice of broad asset classes, like equities or bonds
+- [ ] A guaranteed return
+
 <!-- PT -->
 > Investir é pôr o dinheiro a trabalhar em ativos que podem crescer com o tempo — aceitando altos e baixos em troca dessa hipótese.
 
@@ -58,3 +68,13 @@ O verdadeiro poder aparece ao longo de anos, não de semanas, à medida que os g
 - Possuis classes de ativos amplas — ações, obrigações, liquidez — nunca produtos nomeados.
 - O maior retorno potencial é a recompensa por aceitar alguns altos e baixos.
 - O tempo e a paciência contam mais do que tentar acertar no momento do mercado.
+
+## Questionário
+1. Em que diferem poupar e investir?
+- [x] Poupar mantém o dinheiro seguro; investir procura fazê-lo crescer com algum risco
+- [ ] Investir é sempre mais seguro do que poupar
+- [ ] São duas palavras para a mesma coisa
+2. Quando investes, o que possuis de facto?
+- [ ] Produtos específicos escolhidos por ti
+- [x] Uma fatia de classes de ativos amplas, como ações ou obrigações
+- [ ] Um retorno garantido

@@ -33,6 +33,16 @@ The same force works against you when it comes to costs and inflation: high fees
 - Starting earlier often matters more than starting bigger.
 - Costs and inflation compound too, so they are worth keeping low and in mind.
 
+## Quiz
+1. What makes compound interest powerful over time?
+- [x] Past gains start earning gains of their own
+- [ ] It guarantees a fixed yearly return
+- [ ] It removes the ups and downs of markets
+2. Which ingredient does compounding need most?
+- [ ] A large starting amount
+- [x] Time
+- [ ] Frequent buying and selling
+
 <!-- PT -->
 > Os juros compostos são crescimento sobre o teu crescimento: com o tempo, o dinheiro pode fazer bola de neve porque os ganhos passados também passam a render.
 
@@ -52,3 +62,13 @@ A mesma força joga contra ti nos custos e na inflação: comissões altas e pre
 - O efeito cresce devagar e depois acelera — o tempo é o ingrediente-chave.
 - Começar mais cedo conta muitas vezes mais do que começar com mais.
 - Os custos e a inflação também compõem, por isso vale a pena mantê-los baixos e em mente.
+
+## Questionário
+1. O que torna os juros compostos poderosos com o tempo?
+- [x] Os ganhos passados começam a gerar ganhos próprios
+- [ ] Garantem um retorno anual fixo
+- [ ] Eliminam os altos e baixos dos mercados
+2. De que ingrediente os juros compostos mais precisam?
+- [ ] Um montante inicial grande
+- [x] Tempo
+- [ ] Comprar e vender com frequência

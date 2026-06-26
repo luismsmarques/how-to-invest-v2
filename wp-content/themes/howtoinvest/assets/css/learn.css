@@ -212,6 +212,28 @@
 	.hti-ln-card--empty { display: none; }
 }
 
+/* ===== End-of-chapter quiz ===== */
+.hti-quiz { margin-top: 32px; padding: 24px; background: #FBFAFD; border: 1px solid #EFE9FE; border-radius: 18px; }
+.hti-quiz__h { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 20px; margin: 0; color: #2A2438; }
+.hti-quiz__intro { color: #6E6680; font-size: 14px; margin: 6px 0 18px; }
+.hti-quiz__q { border: 0; padding: 0; margin: 0 0 18px; }
+.hti-quiz__legend { font: 600 16px 'Plus Jakarta Sans'; color: #2A2438; margin: 0 0 10px; padding: 0; line-height: 1.4; }
+.hti-quiz__opt { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border: 1px solid #E7DCFB; border-radius: 10px; margin-bottom: 8px; cursor: pointer; background: #fff; transition: border-color 0.15s, background 0.15s; }
+.hti-quiz__opt:hover { border-color: #7C5CFC; }
+.hti-quiz__opt input { accent-color: #7C5CFC; width: 18px; height: 18px; flex: none; }
+.hti-quiz__opt-t { font-size: 14.5px; color: #2B2840; }
+.hti-quiz__opt.is-correct { border-color: #22C3A6; background: #E6F7EF; }
+.hti-quiz__opt.is-wrong { border-color: #E0574A; background: #FCE9E6; }
+.hti-quiz__actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+.hti-quiz__check { background: #7C5CFC; color: #fff; border: none; cursor: pointer; border-radius: 11px; padding: 12px 22px; font: 600 15px 'Plus Jakarta Sans'; transition: background 0.15s; }
+.hti-quiz__check:hover { background: #6A48F0; }
+.hti-quiz__result { margin: 0; font: 600 13.5px 'Plus Jakarta Sans'; min-height: 1em; }
+.hti-quiz__result.is-err { color: #C0392B; }
+.hti-quiz__done { display: flex; align-items: center; gap: 14px; margin-top: 32px; padding: 20px 22px; background: linear-gradient(135deg, #E6F7EF, #EFE9FE); border: 1px solid #C8F0E2; border-radius: 18px; }
+.hti-quiz__done-ic { flex: none; width: 40px; height: 40px; border-radius: 50%; background: #22C3A6; display: flex; align-items: center; justify-content: center; }
+.hti-quiz__done-h { display: block; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 17px; color: #2A2438; }
+.hti-quiz__done-p { display: block; font: 500 14px 'Plus Jakarta Sans'; color: #6E6680; margin-top: 2px; }
+
 /* ===== Hub responsive ===== */
 @media (max-width: 900px) {
 	.hti-lh-grid { grid-template-columns: 1fr; gap: 28px; }

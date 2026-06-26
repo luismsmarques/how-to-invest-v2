@@ -33,6 +33,16 @@ The real engine is time. Money you leave invested for many years can grow on its
 - Growth is never guaranteed and comes with ups and downs.
 - It is a long game — the earlier you understand it, the more time works for you.
 
+## Quiz
+1. What does inflation slowly do to money left idle?
+- [x] Reduces what it can buy over time
+- [ ] Increases the number in your account
+- [ ] Makes it grow faster than investing
+2. Why might someone invest instead of only saving?
+- [ ] To remove all risk
+- [x] To give money a chance to outpace rising prices over the long run
+- [ ] To get rich within a few weeks
+
 <!-- PT -->
 > Poupar protege o teu dinheiro no dia a dia; investir dá-lhe a hipótese de crescer mais depressa do que os preços sobem ao longo do tempo.
 
@@ -52,3 +62,13 @@ O verdadeiro motor é o tempo. O dinheiro que deixas investido durante muitos an
 - Investir procura fazer o teu dinheiro crescer mais depressa do que os preços, a longo prazo.
 - O crescimento nunca é garantido e traz altos e baixos.
 - É um jogo de longo prazo — quanto mais cedo perceberes, mais o tempo trabalha por ti.
+
+## Questionário
+1. O que é que a inflação faz, devagar, ao dinheiro parado?
+- [x] Reduz o que ele consegue comprar ao longo do tempo
+- [ ] Aumenta o número na tua conta
+- [ ] Fá-lo crescer mais depressa do que investir
+2. Porque é que alguém investe em vez de só poupar?
+- [ ] Para eliminar todo o risco
+- [x] Para dar ao dinheiro a hipótese de ultrapassar a subida dos preços a longo prazo
+- [ ] Para enriquecer em poucas semanas

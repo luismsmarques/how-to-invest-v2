@@ -1,39 +1,43 @@
 /**
- * Learn course progress + ebook lead-magnet.
+ * Learn course progress + end-of-chapter quiz + ebook lead-magnet.
  *
- * Progress is a set of completed chapter slugs. Guests keep it in localStorage
- * (anonymous, RGPD-safe). Signed-in accounts also sync it to the server, so it
- * follows them across devices: on load we merge the browser set with the server
- * set (union) and push the union back. A chapter counts as done once its guide
- * is visited. Hydrates the hub path, the homepage path block and the single-
- * guide course nav; the ebook form posts to the newsletter subscribe endpoint.
+ * Progress is two sets of chapter slugs: "done" (a guide was visited) and
+ * "passed" (its quiz was answered all-correct). Guests keep both in
+ * localStorage (anonymous, RGPD-safe); signed-in accounts also sync to the
+ * server — on load we merge the browser sets with the server sets (union) and
+ * push the union back, so progress follows them across devices.
  */
 ( function () {
 	'use strict';
 
-	var KEY = 'hti_learn_done';
+	var KEY_DONE = 'hti_learn_done';
+	var KEY_PASS = 'hti_learn_passed';
 	var cfg = window.HTI_LEARN_CFG || {};
 
-	function load() {
-		try { return JSON.parse( window.localStorage.getItem( KEY ) || '[]' ) || []; }
+	function load( key ) {
+		try { return JSON.parse( window.localStorage.getItem( key ) || '[]' ) || []; }
 		catch ( e ) { return []; }
 	}
-	function save( arr ) {
-		try { window.localStorage.setItem( KEY, JSON.stringify( arr ) ); } catch ( e ) {}
+	function save( key, arr ) {
+		try { window.localStorage.setItem( key, JSON.stringify( arr ) ); } catch ( e ) {}
 	}
 	function union( a, b ) {
 		var seen = {}, out = [];
 		a.concat( b ).forEach( function ( s ) { if ( s && ! seen[ s ] ) { seen[ s ] = 1; out.push( s ); } } );
 		return out;
 	}
+	function addLocal( key, slug ) {
+		var arr = load( key );
+		if ( arr.indexOf( slug ) < 0 ) { arr.push( slug ); save( key, arr ); }
+	}
 
 	/* ---- account sync (signed-in only) ---- */
-	function postProgress( slugs ) {
+	function postProgress( patch ) {
 		if ( ! cfg.isLoggedIn || ! cfg.progressUrl ) { return Promise.resolve( null ); }
 		return fetch( cfg.progressUrl, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce },
-			body: JSON.stringify( { done: slugs } )
+			body: JSON.stringify( patch )
 		} ).then( function ( r ) { return r.ok ? r.json() : null; } ).catch( function () { return null; } );
 	}
 
@@ -42,10 +46,11 @@
 		fetch( cfg.progressUrl, { headers: { 'X-WP-Nonce': cfg.nonce } } )
 			.then( function ( r ) { return r.ok ? r.json() : null; } )
 			.then( function ( data ) {
-				var server = ( data && data.done ) || [];
-				var merged = union( load(), server );
-				save( merged );
-				return postProgress( merged );
+				var done = union( load( KEY_DONE ), ( data && data.done ) || [] );
+				var pass = union( load( KEY_PASS ), ( data && data.passed ) || [] );
+				save( KEY_DONE, done );
+				save( KEY_PASS, pass );
+				return postProgress( { done: done, passed: pass } );
 			} )
 			.catch( function () {} )
 			.then( function () { run(); } );
@@ -53,13 +58,11 @@
 
 	/* ---- main ---- */
 	function run() {
-		// Record a visit on a single Learn guide.
 		if ( window.HTI_LEARN_REC && window.HTI_LEARN_REC.slug ) {
-			var seen = load();
-			if ( seen.indexOf( window.HTI_LEARN_REC.slug ) < 0 ) {
-				seen.push( window.HTI_LEARN_REC.slug );
-				save( seen );
-				postProgress( [ window.HTI_LEARN_REC.slug ] );
+			var slug = window.HTI_LEARN_REC.slug;
+			if ( load( KEY_DONE ).indexOf( slug ) < 0 ) {
+				addLocal( KEY_DONE, slug );
+				postProgress( { done: [ slug ] } );
 			}
 		}
 
@@ -70,6 +73,7 @@
 		if ( hp ) { hydrateHome( hp ); }
 
 		hydrateNav();
+		wireQuiz();
 	}
 
 	syncThenRun( run );
@@ -77,7 +81,7 @@
 	/* ---- hub path ---- */
 	function hydrate( root ) {
 		var doneSet = {};
-		load().forEach( function ( s ) { doneSet[ s ] = 1; } );
+		load( KEY_DONE ).forEach( function ( s ) { doneSet[ s ] = 1; } );
 
 		var chaps = Array.prototype.slice.call( root.querySelectorAll( '.hti-lh-chap' ) );
 		var total = chaps.length, doneCount = 0;
@@ -125,7 +129,7 @@
 	/* ---- homepage path block ---- */
 	function hydrateHome( hp ) {
 		var doneSet = {};
-		load().forEach( function ( s ) { doneSet[ s ] = 1; } );
+		load( KEY_DONE ).forEach( function ( s ) { doneSet[ s ] = 1; } );
 
 		var data = [];
 		var node = hp.querySelector( '.hti-hp-data' );
@@ -172,7 +176,7 @@
 		var el = document.querySelector( '.hti-ln-modprog' );
 		if ( ! el ) { return; }
 		var doneSet = {};
-		load().forEach( function ( s ) { doneSet[ s ] = 1; } );
+		load( KEY_DONE ).forEach( function ( s ) { doneSet[ s ] = 1; } );
 		var slugs = ( el.getAttribute( 'data-slugs' ) || '' ).split( ',' ).filter( Boolean );
 		var d = slugs.filter( function ( s ) { return doneSet[ s ]; } ).length;
 		var pct = slugs.length ? Math.round( d / slugs.length * 100 ) : 0;
@@ -180,6 +184,66 @@
 		if ( fill ) { fill.style.width = pct + '%'; }
 		var dn = el.querySelector( '.hti-ln-modprog-done' );
 		if ( dn ) { dn.textContent = String( d ); }
+	}
+
+	/* ---- end-of-chapter quiz ---- */
+	function wireQuiz() {
+		var quiz = document.querySelector( '.hti-quiz' );
+		if ( ! quiz ) { return; }
+		var QS = window.HTI_LEARN_QUIZ || {};
+		var slug = quiz.getAttribute( 'data-slug' );
+		var live = quiz.querySelector( '.hti-quiz__live' );
+		var doneEl = quiz.querySelector( '.hti-quiz__done' );
+
+		function showDone() {
+			if ( doneEl ) { doneEl.hidden = false; }
+			if ( live ) { live.hidden = true; }
+		}
+
+		if ( slug && load( KEY_PASS ).indexOf( slug ) >= 0 ) { showDone(); return; }
+
+		var form = quiz.querySelector( '.hti-quiz__form' );
+		var btn = quiz.querySelector( '.hti-quiz__check' );
+		var result = quiz.querySelector( '.hti-quiz__result' );
+		if ( ! form ) { return; }
+
+		function setResult( msg, kind ) {
+			if ( ! result ) { return; }
+			result.textContent = msg || '';
+			result.className = 'hti-quiz__result' + ( kind ? ' is-' + kind : '' );
+		}
+
+		form.addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			var qs = form.querySelectorAll( '.hti-quiz__q' );
+			var total = qs.length, correct = 0, answeredAll = true;
+
+			Array.prototype.forEach.call( qs, function ( fs ) {
+				Array.prototype.forEach.call( fs.querySelectorAll( '.hti-quiz__opt' ), function ( l ) {
+					l.classList.remove( 'is-correct', 'is-wrong' );
+				} );
+				var checked = fs.querySelector( 'input:checked' );
+				if ( ! checked ) { answeredAll = false; return; }
+				var isC = checked.getAttribute( 'data-correct' ) === '1';
+				if ( isC ) { correct++; }
+				checked.closest( '.hti-quiz__opt' ).classList.add( isC ? 'is-correct' : 'is-wrong' );
+				if ( ! isC ) {
+					var corr = fs.querySelector( 'input[data-correct="1"]' );
+					if ( corr ) { corr.closest( '.hti-quiz__opt' ).classList.add( 'is-correct' ); }
+				}
+			} );
+
+			if ( ! answeredAll ) { setResult( QS.pick, 'err' ); return; }
+
+			if ( correct === total ) {
+				setResult( '', null );
+				if ( slug ) { addLocal( KEY_PASS, slug ); addLocal( KEY_DONE, slug ); postProgress( { done: [ slug ], passed: [ slug ] } ); }
+				showDone();
+			} else {
+				setResult( ( QS.fail || '%1$d / %2$d' ).replace( '%1$d', correct ).replace( '%2$d', total ), 'err' );
+				if ( btn && QS.retry ) { btn.textContent = QS.retry; }
+			}
+		} );
 	}
 
 	/* ---- ebook lead-magnet ---- */

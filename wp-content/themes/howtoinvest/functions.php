@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.32';
+const VERSION = '0.8.33';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -501,6 +501,15 @@ function register_dynamic_blocks(): void {
 			'category'        => 'theme',
 			'attributes'      => array( 'pos' => array( 'type' => 'string', 'default' => 'bottom' ) ),
 			'render_callback' => __NAMESPACE__ . '\\render_learn_nav',
+		)
+	);
+	register_block_type(
+		'howtoinvest/learn-quiz',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Learn quiz', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_learn_quiz',
 		)
 	);
 	register_block_type(
@@ -1366,6 +1375,112 @@ function render_learn_nav( array $attrs = array() ): string {
 			<?php echo $next_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		</div>
 	</nav>
+	<?php
+	return (string) ob_get_clean();
+}
+
+/**
+ * Canonical (English) slug for a learn post — the curriculum/progress key.
+ *
+ * @param \WP_Post $post Learn post.
+ * @return string
+ */
+function learn_canonical_slug( \WP_Post $post ): string {
+	$slug = $post->post_name;
+	if ( class_exists( '\\HTI\\Engine\\Content_Import' ) && function_exists( 'pll_get_post_language' ) ) {
+		$L = \HTI\Engine\Content_Import::lang_slugs();
+		if ( $L['pt'] === pll_get_post_language( (int) $post->ID, 'slug' ) ) {
+			$en = (int) pll_get_post( (int) $post->ID, $L['default'] );
+			if ( $en ) {
+				$slug = (string) get_post_field( 'post_name', $en );
+			}
+		}
+	}
+	return (string) $slug;
+}
+
+/**
+ * End-of-chapter quiz block: renders the questions stored on the post and lets
+ * the reader self-check. Passing (all correct) marks the chapter "completed"
+ * (learn.js records it, locally + to the account). Nothing renders when the
+ * chapter has no quiz.
+ *
+ * @return string
+ */
+function render_learn_quiz(): string {
+	if ( ! is_singular( 'learn' ) || ! class_exists( '\\HTI\\Engine\\Content_Import' ) ) {
+		return '';
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof \WP_Post ) {
+		return '';
+	}
+	$quiz = \HTI\Engine\Content_Import::get_quiz( (int) $post->ID );
+	if ( empty( $quiz ) ) {
+		return '';
+	}
+
+	$pt = 'pt' === current_lang();
+	$s  = $pt
+		? array(
+			'h' => 'Testa o que aprendeste', 'intro' => 'Responde para concluir o capítulo.',
+			'check' => 'Verificar respostas', 'retry' => 'Tentar de novo',
+			'pass' => 'Boa! Capítulo concluído ✓',
+			/* translators: 1: correct, 2: total. */
+			'fail' => '%1$d de %2$d certas — revê e tenta de novo.',
+			'pick' => 'Escolhe uma resposta em cada pergunta.',
+			'done_h' => 'Capítulo concluído', 'done_p' => 'Já passaste o quiz deste capítulo.',
+		)
+		: array(
+			'h' => 'Test what you learned', 'intro' => 'Answer to complete the chapter.',
+			'check' => 'Check answers', 'retry' => 'Try again',
+			'pass' => 'Nice! Chapter complete ✓',
+			/* translators: 1: correct, 2: total. */
+			'fail' => '%1$d of %2$d correct — review and try again.',
+			'pick' => 'Choose an answer for each question.',
+			'done_h' => 'Chapter complete', 'done_p' => 'You’ve passed this chapter’s quiz.',
+		);
+
+	wp_localize_script(
+		'howtoinvest-learn',
+		'HTI_LEARN_QUIZ',
+		array(
+			'check' => $s['check'], 'retry' => $s['retry'], 'pass' => $s['pass'],
+			'fail' => $s['fail'], 'pick' => $s['pick'],
+		)
+	);
+
+	$slug = learn_canonical_slug( $post );
+
+	ob_start();
+	?>
+	<section class="hti-quiz" data-slug="<?php echo esc_attr( $slug ); ?>" aria-label="<?php echo esc_attr( $s['h'] ); ?>">
+		<div class="hti-quiz__done" hidden>
+			<span class="hti-quiz__done-ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+			<span><strong class="hti-quiz__done-h"><?php echo esc_html( $s['done_h'] ); ?></strong><span class="hti-quiz__done-p"><?php echo esc_html( $s['done_p'] ); ?></span></span>
+		</div>
+		<div class="hti-quiz__live">
+			<h2 class="hti-quiz__h"><?php echo esc_html( $s['h'] ); ?></h2>
+			<p class="hti-quiz__intro"><?php echo esc_html( $s['intro'] ); ?></p>
+			<form class="hti-quiz__form" novalidate>
+				<?php foreach ( $quiz as $qi => $q ) : ?>
+					<fieldset class="hti-quiz__q" data-q="<?php echo (int) $qi; ?>">
+						<legend class="hti-quiz__legend"><?php echo (int) $qi + 1 . '. ' . esc_html( (string) ( $q['q'] ?? '' ) ); ?></legend>
+						<?php foreach ( (array) ( $q['options'] ?? array() ) as $oi => $o ) : ?>
+							<label class="hti-quiz__opt">
+								<input type="radio" name="q<?php echo (int) $qi; ?>" value="<?php echo (int) $oi; ?>" data-correct="<?php echo ! empty( $o['c'] ) ? '1' : '0'; ?>">
+								<span class="hti-quiz__opt-t"><?php echo esc_html( (string) ( $o['t'] ?? '' ) ); ?></span>
+							</label>
+						<?php endforeach; ?>
+					</fieldset>
+				<?php endforeach; ?>
+				<div class="hti-quiz__actions">
+					<button type="submit" class="hti-quiz__check"><?php echo esc_html( $s['check'] ); ?></button>
+					<p class="hti-quiz__result" role="status" aria-live="polite"></p>
+				</div>
+			</form>
+		</div>
+	</section>
 	<?php
 	return (string) ob_get_clean();
 }

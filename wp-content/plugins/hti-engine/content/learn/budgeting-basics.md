@@ -36,6 +36,16 @@ Money you may need within a year or two usually stays in cash. Money for far-off
 - Build the emergency cushion before investing, so a surprise never forces a sale.
 - Short-term money stays in cash; long-term money is where investing belongs.
 
+## Quiz
+1. What should usually come before investing?
+- [x] An emergency fund you can reach easily
+- [ ] Borrowing money to invest more
+- [ ] Picking the best-performing asset
+2. What is the "pay yourself first" habit?
+- [ ] Spending first, saving whatever is left
+- [x] Setting a little aside as soon as money comes in
+- [ ] Investing your whole income each month
+
 <!-- PT -->
 > Um orçamento simples — o que entra, o que sai, e algo de parte — é o que te liberta para investires mais tarde sem stress.
 
@@ -58,3 +68,13 @@ O dinheiro de que podes precisar dentro de um ano ou dois costuma ficar em liqui
 - Paga-te primeiro a ti — o hábito conta mais do que o valor.
 - Constrói o colchão de emergência antes de investir, para que um imprevisto nunca force uma venda.
 - O dinheiro de curto prazo fica em liquidez; o de longo prazo é onde o investimento pertence.
+
+## Questionário
+1. O que costuma vir antes de investir?
+- [x] Um fundo de emergência de fácil acesso
+- [ ] Pedir dinheiro emprestado para investir mais
+- [ ] Escolher o ativo com melhor desempenho
+2. O que é o hábito de "pagar-te primeiro a ti"?
+- [ ] Gastar primeiro e poupar o que sobrar
+- [x] Separar um pouco assim que o dinheiro entra
+- [ ] Investir todo o teu rendimento todos os meses

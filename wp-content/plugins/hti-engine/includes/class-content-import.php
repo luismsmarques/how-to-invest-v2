@@ -30,6 +30,11 @@ class Content_Import {
 	private const TYPE = 'learn';
 
 	/**
+	 * Post meta holding a chapter's end-of-chapter quiz (array of questions).
+	 */
+	public const META_QUIZ = 'hti_quiz';
+
+	/**
 	 * Directory holding the Markdown chapters (bundled with the plugin).
 	 */
 	public static function dir(): string {
@@ -391,6 +396,99 @@ class Content_Import {
 		return (string) $html;
 	}
 
+	/* ---------- quiz ---------- */
+
+	/**
+	 * Split a body into its prose and an optional `## Quiz` / `## Questionário`
+	 * section (parsed into questions). The quiz is removed from the prose.
+	 *
+	 * @param string $body Raw language body.
+	 * @return array{0:string,1:array<int,array<string,mixed>>}
+	 */
+	private static function split_quiz( string $body ): array {
+		if ( ! preg_match( '/^##\s+(quiz|question[aá]rio)\s*$/imu', $body, $m, PREG_OFFSET_CAPTURE ) ) {
+			return array( $body, array() );
+		}
+		$at      = (int) $m[0][1];
+		$prose   = rtrim( substr( $body, 0, $at ) );
+		$section = substr( $body, $at );
+		// Drop the heading line itself.
+		$section = (string) preg_replace( '/^##\s+.*$/m', '', $section, 1 );
+		return array( $prose, self::parse_quiz( $section ) );
+	}
+
+	/**
+	 * Parse a quiz section: numbered questions with `- [ ]` / `- [x]` options.
+	 *
+	 * @param string $text Quiz section text.
+	 * @return array<int,array{q:string,options:array<int,array{t:string,c:bool}>}>
+	 */
+	private static function parse_quiz( string $text ): array {
+		$quiz = array();
+		$cur  = null;
+		foreach ( explode( "\n", $text ) as $line ) {
+			$t = trim( $line );
+			if ( '' === $t ) {
+				continue;
+			}
+			if ( preg_match( '/^\d+[.)]\s+(.*)$/', $t, $m ) ) {
+				if ( $cur && ! empty( $cur['options'] ) ) {
+					$quiz[] = $cur;
+				}
+				$cur = array( 'q' => trim( $m[1] ), 'options' => array() );
+				continue;
+			}
+			if ( $cur && preg_match( '/^[-*]\s*\[([ xX])\]\s*(.*)$/', $t, $m ) ) {
+				$cur['options'][] = array( 't' => trim( $m[2] ), 'c' => 'x' === strtolower( $m[1] ) );
+			}
+		}
+		if ( $cur && ! empty( $cur['options'] ) ) {
+			$quiz[] = $cur;
+		}
+		// Keep only well-formed questions (≥2 options, exactly one correct).
+		return array_values(
+			array_filter(
+				$quiz,
+				static function ( $q ) {
+					$correct = array_filter( $q['options'], static fn( $o ) => $o['c'] );
+					return count( $q['options'] ) >= 2 && 1 === count( $correct );
+				}
+			)
+		);
+	}
+
+	/**
+	 * Store (or clear) a chapter's quiz on its post.
+	 *
+	 * @param int                          $post_id Post id (0 = skip).
+	 * @param array<int,array<string,mixed>> $quiz    Parsed quiz.
+	 */
+	private static function save_quiz( int $post_id, array $quiz ): void {
+		if ( ! $post_id ) {
+			return;
+		}
+		if ( empty( $quiz ) ) {
+			delete_post_meta( $post_id, self::META_QUIZ );
+			return;
+		}
+		update_post_meta( $post_id, self::META_QUIZ, wp_slash( wp_json_encode( $quiz ) ) );
+	}
+
+	/**
+	 * Read a chapter's quiz (decoded), or an empty array.
+	 *
+	 * @param int $post_id Post id.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function get_quiz( int $post_id ): array {
+		$raw = get_post_meta( $post_id, self::META_QUIZ, true );
+		if ( ! is_string( $raw ) || '' === $raw ) {
+			return array();
+		}
+		$data = json_decode( $raw, true );
+		return is_array( $data ) ? $data : array();
+	}
+
 	private static function block_paragraph( string $text ): string {
 		return '<!-- wp:paragraph --><p>' . self::inline( $text ) . '</p><!-- /wp:paragraph -->' . "\n\n";
 	}
@@ -506,10 +604,14 @@ class Content_Import {
 		$slug_pt = (string) ( $c['slug_pt'] ?? ( $slug . '-pt' ) );
 		$topic   = (string) ( $c['topic'] ?? 'concepts' );
 
-		$content_en = self::to_blocks( (string) $c['body_en'], 'In one line', array( 'Key takeaways' ) )
+		// Split the optional end-of-chapter quiz out of each body.
+		list( $body_en, $quiz_en ) = self::split_quiz( (string) $c['body_en'] );
+		list( $body_pt, $quiz_pt ) = self::split_quiz( (string) $c['body_pt'] );
+
+		$content_en = self::to_blocks( $body_en, 'In one line', array( 'Key takeaways' ) )
 			. self::related_blocks( $c, $chapters, 'en' )
 			. self::block_cta();
-		$content_pt = self::to_blocks( (string) $c['body_pt'], 'Em uma linha', array( 'Pontos-chave' ) )
+		$content_pt = self::to_blocks( $body_pt, 'Em uma linha', array( 'Pontos-chave' ) )
 			. self::related_blocks( $c, $chapters, 'pt' )
 			. self::block_cta();
 
@@ -518,6 +620,10 @@ class Content_Import {
 		if ( ! empty( $c['title_pt'] ) && ! empty( $c['body_pt'] ) ) {
 			$pt_id = self::upsert( $slug_pt, (string) $c['title_pt'], $content_pt, (string) ( $c['excerpt_pt'] ?? '' ) );
 		}
+
+		// Store / clear the quiz on each language's post.
+		self::save_quiz( $en_id, $quiz_en );
+		self::save_quiz( $pt_id, $quiz_pt );
 
 		// Language + translation linking (no-op without Polylang).
 		self::link_languages( $en_id, $pt_id );

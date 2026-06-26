@@ -36,6 +36,16 @@ A small, steady amount of inflation is a normal part of a healthy economy — th
 - Investing aims to outpace inflation over long periods — without guarantees.
 - A little inflation is normal; the point is to plan around it, not fear it.
 
+## Quiz
+1. What is inflation?
+- [x] A broad, gradual rise in prices over time
+- [ ] A sudden one-off jump in a single price
+- [ ] A fall in the value of investments only
+2. Why does inflation matter for long-term savers?
+- [x] Idle cash slowly loses purchasing power
+- [ ] It makes cash grow faster than shares
+- [ ] It has no effect on savings
+
 <!-- PT -->
 > A inflação é a subida lenta dos preços que reduz, em silêncio, o que o teu dinheiro compra — a principal razão para as poupanças de longo prazo crescerem.
 
@@ -58,3 +68,13 @@ Uma inflação pequena e estável é uma parte normal de uma economia saudável 
 - A liquidez parada mantém o número, mas perde o que consegue comprar.
 - Investir procura ultrapassar a inflação em períodos longos — sem garantias.
 - Alguma inflação é normal; a ideia é planear em torno dela, não temê-la.
+
+## Questionário
+1. O que é a inflação?
+- [x] Uma subida ampla e gradual dos preços ao longo do tempo
+- [ ] Um salto súbito e único num só preço
+- [ ] Uma queda apenas no valor dos investimentos
+2. Porque é que a inflação importa para quem poupa a longo prazo?
+- [x] A liquidez parada perde devagar poder de compra
+- [ ] Faz a liquidez crescer mais depressa do que as ações
+- [ ] Não tem qualquer efeito nas poupanças

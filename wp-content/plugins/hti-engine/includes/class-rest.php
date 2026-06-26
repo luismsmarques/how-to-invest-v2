@@ -410,8 +410,9 @@ class REST {
 	 * @return WP_REST_Response
 	 */
 	public static function save_learn_progress( WP_REST_Request $request ) {
-		$done = (array) $request->get_param( 'done' );
-		return new WP_REST_Response( Learn::merge( get_current_user_id(), $done ), 200 );
+		$done   = (array) $request->get_param( 'done' );
+		$passed = (array) $request->get_param( 'passed' );
+		return new WP_REST_Response( Learn::merge( get_current_user_id(), $done, $passed ), 200 );
 	}
 
 	/**

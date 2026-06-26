@@ -59,6 +59,14 @@ The seeder is install-only. Ongoing Learn content lives in the editorial pipelin
 2. **Author** one Markdown file per chapter at `wp-content/plugins/hti-engine/content/learn/<slug>.md`:
    - Frontmatter: `slug`, `slug_pt`, `module`, `order`, `topic`, `status`, `title_en`, `title_pt`, `excerpt_en`, `excerpt_pt`, `glossary` (comma list), `prev`, `next`.
    - Body split by `<!-- EN -->` / `<!-- PT -->`. Dialect: a leading `> ` line = the TL;DR callout; `## ` / `### ` headings; `- ` bullet lists; a `## Key takeaways` / `## Pontos-chave` heading whose list becomes the takeaways box; `**bold**`. The glossary "Learn more" line and the prev/next chapter nav are **auto-appended from frontmatter** — don't write them in the body. The questionnaire CTA is appended automatically too.
+   - **Optional end-of-chapter quiz**: an `## Quiz` (EN) / `## Questionário` (PT) heading at the very end of each language body, then numbered questions with `- [ ]` / `- [x]` options (exactly one `[x]` correct per question, ≥2 options). It is stripped from the article and stored as post meta; the single-guide renders it and passing all questions marks the chapter "completed". Derive 2–3 questions from the chapter's key takeaways; keep them educational and by asset class (never "which product to buy"). Example:
+     ```
+     ## Quiz
+     1. What does inflation slowly do to idle cash?
+     - [x] Reduces what it can buy over time
+     - [ ] Increases the number in your account
+     - [ ] Makes it grow faster than investing
+     ```
 3. **Import** with `wp hti import-learn` (or Tools → Learn content). It upserts both languages, idempotent by slug, links them via Polylang, files them under `learn_topic`, and sets the SEO description from the excerpt. New chapters are **published straight away** in both languages; an existing post keeps its current status (a re-sync never reverts an editor change).
 4. Update the `status` column in the sheet as chapters ship.
 
