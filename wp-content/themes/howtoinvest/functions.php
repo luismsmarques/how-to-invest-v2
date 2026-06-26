@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.36';
+const VERSION = '0.8.37';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -188,6 +188,56 @@ function enqueue_scripts(): void {
 	}
 }
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
+
+/**
+ * Strip legacy in-content blocks from a Learn chapter at render time.
+ *
+ * Earlier imports appended a trailing "Learn more: <glossary>" paragraph and
+ * the questionnaire CTA pattern to each chapter's stored content. These broke
+ * the reading flow before the quiz / course nav, so the importer no longer
+ * generates them — but the blocks remain in already-published posts until a
+ * re-sync. This filter removes them on output so they can never appear, even
+ * without a re-sync and regardless of post status.
+ *
+ * Hooked before core/blocks rendering (priority 8 < the 9 of do_blocks) so it
+ * operates on the raw block markup.
+ *
+ * @param string $content Post content (raw block markup at this priority).
+ * @return string
+ */
+function strip_legacy_learn_blocks( string $content ): string {
+	if ( ! is_singular( 'learn' ) || false === strpos( $content, '<!-- wp:' ) ) {
+		return $content;
+	}
+	$blocks  = parse_blocks( $content );
+	$changed = false;
+	$kept    = array();
+	foreach ( $blocks as $b ) {
+		$name = $b['blockName'] ?? '';
+		$html = (string) ( $b['innerHTML'] ?? '' );
+
+		// The questionnaire CTA, stored as a pattern reference.
+		if ( 'core/pattern' === $name && 'howtoinvest/cta-questionnaire' === ( $b['attrs']['slug'] ?? '' ) ) {
+			$changed = true;
+			continue;
+		}
+		// The questionnaire CTA, in case it was stored already expanded.
+		if ( 'core/group' === $name && false !== strpos( $html, 'has-primary-soft-background-color' )
+			&& ( false !== strpos( $html, '/investor-profile-quiz/' ) || false !== strpos( $html, 'cta-questionnaire' ) ) ) {
+			$changed = true;
+			continue;
+		}
+		// The trailing "Learn more: <glossary>" paragraph.
+		if ( 'core/paragraph' === $name && false !== strpos( $html, 'has-small-font-size' )
+			&& ( false !== strpos( $html, 'Learn more:' ) || false !== strpos( $html, 'Sabe mais:' ) ) ) {
+			$changed = true;
+			continue;
+		}
+		$kept[] = $b;
+	}
+	return $changed ? serialize_blocks( $kept ) : $content;
+}
+add_filter( 'the_content', __NAMESPACE__ . '\\strip_legacy_learn_blocks', 8 );
 
 /**
  * One-time: remove a stale Site-Editor customization of the "Home" template.
