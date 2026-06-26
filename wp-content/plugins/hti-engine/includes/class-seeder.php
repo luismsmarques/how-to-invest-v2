@@ -599,6 +599,8 @@ class Seeder {
 	 */
 	private static function learn_category_of( string $slug ): string {
 		$map = array(
+			'why-invest'                        => 'getting-started',
+			'how-compound-interest-works'       => 'concepts',
 			'what-is-an-investor-profile'       => 'getting-started',
 			'asset-classes-explained'           => 'concepts',
 			'why-your-time-horizon-matters'     => 'concepts',
@@ -2412,8 +2414,130 @@ class Seeder {
 	 */
 	public static function articles(): array {
 		$g = static fn( string $slug ): string => home_url( '/investing-glossary/' . $slug . '/' );
+		$l = static fn( string $slug ): string => home_url( '/learn/' . $slug . '/' );
 
 		$articles = array(
+			// ===== Module 0 — Mindset & money (the start of the path) =====
+			array(
+				'slug'    => 'why-invest',
+				'title'   => 'Why invest at all?',
+				'excerpt' => 'Saving keeps your money safe; investing gives it a chance to grow faster than prices rise over the long run.',
+				'content' => self::tldr( 'Saving protects your money day to day; investing gives it a chance to grow faster than prices rise over the long run.', 'In one line' )
+					. self::paragraph( 'If you have ever wondered why people bother investing instead of just saving, this is the place to start. The short answer: over long periods prices tend to rise, and money left sitting still slowly loses some of what it can buy.' )
+					. self::heading( 'The quiet problem: inflation' )
+					. self::paragraph( 'Inflation is the slow rise in the price of things over time. A note kept under the mattress does not shrink in number, but year after year it tends to buy a little less. That is the quiet cost of doing nothing with savings you will not need for a long time.' )
+					. self::heading( 'What investing adds' )
+					. self::paragraph( 'Investing puts money to work across broad asset classes — like global equities, bonds or cash — that have, over long periods, tended to grow. That growth is never guaranteed and always comes with ups and downs; the idea is to give your money a chance to outpace rising prices over many years, not to get rich quickly.' )
+					. self::heading( 'Time does the heavy lifting' )
+					. self::paragraph( 'The real engine is time. Money you leave invested for many years can grow on its own past growth — an effect called compound interest, which the next chapter unpacks. The earlier the idea clicks, the more time can work in your favour.' )
+					. self::takeaways(
+						array(
+							'Cash is safe day to day, but inflation slowly reduces what it can buy.',
+							'Investing aims to grow your money faster than prices over the long run.',
+							'Growth is never guaranteed and comes with ups and downs.',
+							'It is a long game — the earlier you understand it, the more time works for you.',
+						),
+						'Key takeaways'
+					)
+					. self::related(
+						array(
+							array( $g( 'inflation' ), 'Inflation' ),
+							array( $g( 'compound-interest' ), 'Compound interest' ),
+							array( $l( 'how-compound-interest-works' ), 'Next: How compound interest works' ),
+						)
+					)
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'Porque é que vale a pena investir?',
+					'excerpt' => 'Poupar mantém o teu dinheiro seguro; investir dá-lhe a hipótese de crescer mais depressa do que os preços sobem ao longo do tempo.',
+					'content' => self::tldr( 'Poupar protege o teu dinheiro no dia a dia; investir dá-lhe a hipótese de crescer mais depressa do que os preços sobem ao longo do tempo.', 'Em uma linha' )
+						. self::paragraph( 'Se alguma vez te perguntaste porque é que as pessoas investem em vez de só pouparem, este é o ponto de partida. A resposta curta: em períodos longos os preços tendem a subir, e o dinheiro parado vai perdendo, devagar, parte daquilo que consegue comprar.' )
+						. self::heading( 'O problema silencioso: a inflação' )
+						. self::paragraph( 'A inflação é a subida lenta do preço das coisas ao longo do tempo. Uma nota guardada debaixo do colchão não diminui em número, mas, ano após ano, tende a comprar um pouco menos. É esse o custo silencioso de não fazer nada com poupanças de que não vais precisar durante muito tempo.' )
+						. self::heading( 'O que o investimento acrescenta' )
+						. self::paragraph( 'Investir põe o dinheiro a trabalhar em classes de ativos amplas — como ações globais, obrigações ou liquidez — que, em períodos longos, tenderam a crescer. Esse crescimento nunca é garantido e traz sempre altos e baixos; a ideia é dar ao teu dinheiro a hipótese de acompanhar a subida dos preços ao longo de muitos anos, não enriquecer depressa.' )
+						. self::heading( 'O tempo faz o trabalho pesado' )
+						. self::paragraph( 'O verdadeiro motor é o tempo. O dinheiro que deixas investido durante muitos anos pode crescer sobre o seu próprio crescimento passado — um efeito chamado juros compostos, que o próximo capítulo explica. Quanto mais cedo a ideia encaixa, mais o tempo pode trabalhar a teu favor.' )
+						. self::takeaways(
+							array(
+								'A liquidez é segura no dia a dia, mas a inflação reduz devagar o que ela compra.',
+								'Investir procura fazer o teu dinheiro crescer mais depressa do que os preços, a longo prazo.',
+								'O crescimento nunca é garantido e traz altos e baixos.',
+								'É um jogo de longo prazo — quanto mais cedo perceberes, mais o tempo trabalha por ti.',
+							),
+							'Pontos-chave'
+						)
+						. self::related(
+							array(
+								array( $g( 'inflation' ), 'Inflação' ),
+								array( $g( 'compound-interest' ), 'Juros compostos' ),
+								array( $l( 'how-compound-interest-works' ), 'A seguir: Como funcionam os juros compostos' ),
+							)
+						)
+						. self::cta(),
+				),
+			),
+			array(
+				'slug'    => 'how-compound-interest-works',
+				'title'   => 'How compound interest works',
+				'excerpt' => 'Compound interest is growth on your growth — over time your money can snowball because past gains start earning too.',
+				'content' => self::tldr( 'Compound interest is growth on your growth: over time your money can snowball because past gains start earning too.', 'In one line' )
+					. self::paragraph( 'Compound interest is the single idea that makes long-term investing powerful. Once you see it, the value of starting early clicks into place.' )
+					. self::heading( 'Growth on top of growth' )
+					. self::paragraph( 'Imagine a small snowball rolling downhill. It picks up snow, gets bigger, and because it is bigger it picks up even more. Compounding works the same way: any growth your money earns can itself go on to earn more. Early on it feels slow; given enough time, it can build momentum.' )
+					. self::heading( 'Why time matters more than amount' )
+					. self::paragraph( 'Because the snowball feeds on itself, the length of the hill — your time horizon — often matters more than how big the snowball starts. Starting earlier with a little can, over many years, do more than starting later with a lot. There are no guarantees, but time is the ingredient compounding needs most.' )
+					. self::heading( 'It cuts both ways' )
+					. self::paragraph( 'The same force works against you when it comes to costs and inflation: high fees and rising prices also compound over time, quietly eating into growth. That is why long-term thinking tends to favour keeping costs low and staying patient.' )
+					. self::takeaways(
+						array(
+							'Compounding means your gains start earning gains of their own.',
+							'The effect builds slowly, then accelerates — time is the key ingredient.',
+							'Starting earlier often matters more than starting bigger.',
+							'Costs and inflation compound too, so they are worth keeping low and in mind.',
+						),
+						'Key takeaways'
+					)
+					. self::related(
+						array(
+							array( $g( 'compound-interest' ), 'Compound interest' ),
+							array( $g( 'interest-rate' ), 'Interest rate' ),
+							array( $l( 'why-invest' ), 'Previous: Why invest at all?' ),
+							array( $l( 'why-an-emergency-fund-comes-first' ), 'Next: Why an emergency fund comes first' ),
+						)
+					)
+					. self::cta(),
+				'pt'      => array(
+					'title'   => 'Como funcionam os juros compostos',
+					'excerpt' => 'Os juros compostos são crescimento sobre o teu crescimento — com o tempo, o dinheiro pode fazer bola de neve porque os ganhos passados também rendem.',
+					'content' => self::tldr( 'Os juros compostos são crescimento sobre o teu crescimento: com o tempo, o dinheiro pode fazer bola de neve porque os ganhos passados também passam a render.', 'Em uma linha' )
+						. self::paragraph( 'Os juros compostos são a ideia que torna o investimento de longo prazo tão poderoso. Quando a percebes, o valor de começar cedo encaixa de imediato.' )
+						. self::heading( 'Crescimento sobre crescimento' )
+						. self::paragraph( 'Imagina uma pequena bola de neve a descer uma encosta. Vai apanhando neve, fica maior e, por ser maior, apanha ainda mais. Os juros compostos funcionam da mesma forma: qualquer crescimento que o teu dinheiro gera pode, por sua vez, gerar mais. Ao início parece lento; com tempo suficiente, ganha balanço.' )
+						. self::heading( 'Porque o tempo conta mais do que o montante' )
+						. self::paragraph( 'Como a bola de neve se alimenta a si própria, o comprimento da encosta — o teu horizonte temporal — costuma contar mais do que o tamanho com que ela começa. Começar mais cedo com pouco pode, ao longo de muitos anos, fazer mais do que começar mais tarde com muito. Não há garantias, mas o tempo é o ingrediente de que os juros compostos mais precisam.' )
+						. self::heading( 'Funciona nos dois sentidos' )
+						. self::paragraph( 'A mesma força joga contra ti nos custos e na inflação: comissões altas e preços a subir também compõem ao longo do tempo, corroendo o crescimento em silêncio. É por isso que o pensamento de longo prazo tende a preferir manter os custos baixos e ter paciência.' )
+						. self::takeaways(
+							array(
+								'Os juros compostos fazem com que os teus ganhos passem a gerar ganhos próprios.',
+								'O efeito cresce devagar e depois acelera — o tempo é o ingrediente-chave.',
+								'Começar mais cedo conta muitas vezes mais do que começar com mais.',
+								'Os custos e a inflação também compõem, por isso vale a pena mantê-los baixos e em mente.',
+							),
+							'Pontos-chave'
+						)
+						. self::related(
+							array(
+								array( $g( 'compound-interest' ), 'Juros compostos' ),
+								array( $g( 'interest-rate' ), 'Taxa de juro' ),
+								array( $l( 'why-invest' ), 'Anterior: Porque é que vale a pena investir?' ),
+								array( $l( 'why-an-emergency-fund-comes-first' ), 'A seguir: Porque o fundo de emergência vem primeiro' ),
+							)
+						)
+						. self::cta(),
+				),
+			),
 			array(
 				'slug'    => 'what-is-an-investor-profile',
 				'title'   => 'What is an investor profile?',
@@ -2711,6 +2835,34 @@ class Seeder {
 		return '<!-- wp:paragraph {"backgroundColor":"caution-surface","textColor":"caution"} -->'
 			. '<p class="has-caution-color has-caution-surface-background-color has-text-color has-background"><strong>' . esc_html( $text ) . '</strong></p>'
 			. '<!-- /wp:paragraph -->' . "\n\n";
+	}
+
+	/**
+	 * A short "In one line" TL;DR callout at the top of a guide.
+	 *
+	 * @param string $text   Plain-text summary.
+	 * @param string $label  Localized "In one line" label.
+	 */
+	private static function tldr( string $text, string $label ): string {
+		return '<!-- wp:paragraph {"backgroundColor":"primary-soft","className":"hti-tldr"} -->'
+			. '<p class="hti-tldr has-primary-soft-background-color has-background">'
+			. '<strong>' . esc_html( $label ) . ':</strong> ' . esc_html( $text )
+			. '</p><!-- /wp:paragraph -->' . "\n\n";
+	}
+
+	/**
+	 * "Key takeaways" heading + bullet list near the end of a guide.
+	 *
+	 * @param array<int,string> $items Plain-text bullets.
+	 * @param string            $label Localized "Key takeaways" heading.
+	 */
+	private static function takeaways( array $items, string $label ): string {
+		$lis = '';
+		foreach ( $items as $item ) {
+			$lis .= '<!-- wp:list-item --><li>' . esc_html( $item ) . '</li><!-- /wp:list-item -->';
+		}
+		return self::heading( $label )
+			. '<!-- wp:list --><ul class="wp-block-list">' . $lis . '</ul><!-- /wp:list -->' . "\n\n";
 	}
 
 	/* ---------- wp-admin: Tools → Seed content ---------- */
