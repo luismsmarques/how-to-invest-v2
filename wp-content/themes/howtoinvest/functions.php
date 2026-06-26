@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.33';
+const VERSION = '0.8.34';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1420,10 +1420,13 @@ function render_learn_quiz(): string {
 		return '';
 	}
 
-	$pt = 'pt' === current_lang();
-	$s  = $pt
+	$pt    = 'pt' === current_lang();
+	$count = count( $quiz );
+	$s     = $pt
 		? array(
-			'h' => 'Testa o que aprendeste', 'intro' => 'Responde para concluir o capítulo.',
+			'eyebrow' => 'Fim do capítulo',
+			'badge'   => 1 === $count ? 'Quiz · 1 pergunta' : sprintf( 'Quiz · %d perguntas', $count ),
+			'h' => 'Testa o que aprendeste', 'intro' => 'Um mini-quiz rápido para fixar as ideias e concluir o capítulo.',
 			'check' => 'Verificar respostas', 'retry' => 'Tentar de novo',
 			'pass' => 'Boa! Capítulo concluído ✓',
 			/* translators: 1: correct, 2: total. */
@@ -1432,7 +1435,9 @@ function render_learn_quiz(): string {
 			'done_h' => 'Capítulo concluído', 'done_p' => 'Já passaste o quiz deste capítulo.',
 		)
 		: array(
-			'h' => 'Test what you learned', 'intro' => 'Answer to complete the chapter.',
+			'eyebrow' => 'End of chapter',
+			'badge'   => 1 === $count ? 'Quiz · 1 question' : sprintf( 'Quiz · %d questions', $count ),
+			'h' => 'Test what you learned', 'intro' => 'A quick mini-quiz to lock in the ideas and complete the chapter.',
 			'check' => 'Check answers', 'retry' => 'Try again',
 			'pass' => 'Nice! Chapter complete ✓',
 			/* translators: 1: correct, 2: total. */
@@ -1460,6 +1465,10 @@ function render_learn_quiz(): string {
 			<span><strong class="hti-quiz__done-h"><?php echo esc_html( $s['done_h'] ); ?></strong><span class="hti-quiz__done-p"><?php echo esc_html( $s['done_p'] ); ?></span></span>
 		</div>
 		<div class="hti-quiz__live">
+			<div class="hti-quiz__top">
+				<span class="hti-quiz__badge"><span class="hti-quiz__badge-ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><?php echo esc_html( $s['badge'] ); ?></span>
+				<span class="hti-quiz__eyebrow"><?php echo esc_html( $s['eyebrow'] ); ?></span>
+			</div>
 			<h2 class="hti-quiz__h"><?php echo esc_html( $s['h'] ); ?></h2>
 			<p class="hti-quiz__intro"><?php echo esc_html( $s['intro'] ); ?></p>
 			<form class="hti-quiz__form" novalidate>
