@@ -527,6 +527,15 @@ function register_dynamic_blocks(): void {
 		)
 	);
 	register_block_type(
+		'howtoinvest/logo',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Site logo', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_logo',
+		)
+	);
+	register_block_type(
 		'howtoinvest/header-cta',
 		array(
 			'api_version'     => 3,
@@ -2987,6 +2996,29 @@ function render_lang_switcher(): string {
 	}
 
 	return '<nav class="hti-lang" aria-label="' . esc_attr( t( 'lang_switch' ) ) . '">' . $items . '</nav>';
+}
+
+/**
+ * Site logo, linking to the home page in the current language.
+ *
+ * The logo previously used a hard-coded href="/", which always pointed at the
+ * EN home — so a visitor on a /pt/ page would be sent back to the EN site when
+ * clicking it. Rendering it as a dynamic block lets us resolve the language
+ * with pll_home_url() so the logo stays within the visitor's language.
+ *
+ * @return string Safe HTML.
+ */
+function render_logo(): string {
+	$pt    = 'pt' === current_lang();
+	$home  = ( $pt && function_exists( 'pll_home_url' ) ) ? pll_home_url( 'pt' ) : home_url( '/' );
+	$label = 'HowToInvest — ' . ( $pt ? 'início' : 'home' );
+
+	$svg = '<svg viewBox="0 0 64 64" width="32" height="32" fill="none" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="32" fill="#1E2147"/><circle cx="32" cy="32" r="29.3" stroke="#fff" stroke-opacity=".28" stroke-width=".8"/><path d="M32 12L50 17.5V32c0 10-7.5 16.6-18 20-10.5-3.4-18-10-18-20V17.5z" fill="#fff"/><g fill="#7C5CFC"><rect x="20.5" y="22" width="1" height="11"/><rect x="19.2" y="25.5" width="3.6" height="5" rx="1"/><rect x="25.6" y="20" width="1" height="12.5"/><rect x="24.3" y="23.5" width="3.6" height="5.5" rx="1"/><rect x="30.2" y="21.5" width="1" height="11"/><rect x="28.9" y="24.5" width="3.6" height="4.5" rx="1"/><rect x="35.6" y="18" width="1" height="12.5"/><rect x="34.3" y="21" width="3.6" height="5.8" rx="1"/><rect x="20.4" y="40" width="3.6" height="6" rx=".8"/><rect x="25.9" y="37.5" width="3.6" height="8.5" rx=".8"/><rect x="31.4" y="35" width="3.6" height="11" rx=".8"/><rect x="36.9" y="32.5" width="3.6" height="13.5" rx=".8"/></g></svg>';
+
+	return '<a class="hti-logo" href="' . esc_url( $home ) . '" aria-label="' . esc_attr( $label ) . '">'
+		. '<span class="hti-logo__mark">' . $svg . '</span>'
+		. '<span class="hti-logo__text">HowToInvest</span>'
+		. '</a>';
 }
 
 /**
