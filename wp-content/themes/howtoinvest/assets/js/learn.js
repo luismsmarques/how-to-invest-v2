@@ -67,7 +67,13 @@
 		}
 
 		var root = document.querySelector( '.hti-lh' );
-		if ( root && window.HTI_LEARN ) { hydrate( root ); wireEbook( root ); }
+		if ( root ) {
+			// Wire the ebook gate independently of progress hydration: a thrown
+			// error in hydrate() must never leave the form on its native submit
+			// (which would just reload the page — "nothing happens").
+			if ( window.HTI_LEARN ) { try { hydrate( root ); } catch ( e ) {} }
+			wireEbook( root );
+		}
 
 		var hp = document.querySelector( '.hti-hp-path' );
 		if ( hp ) { hydrateHome( hp ); }
@@ -420,7 +426,8 @@
 	function wireEbook( root ) {
 		var form = root.querySelector( '.hti-lh-ebook__form' );
 		if ( ! form ) { return; }
-		var S = window.HTI_LEARN.strings || {};
+		var cfg = window.HTI_LEARN || {};
+		var S = cfg.strings || {};
 		var status = form.querySelector( '.hti-lh-ebook__status' );
 
 		function set( msg, kind ) {
@@ -431,21 +438,25 @@
 
 		form.addEventListener( 'submit', function ( e ) {
 			e.preventDefault();
-			var email = ( form.querySelector( '.hti-lh-ebook__email' ).value || '' ).trim();
-			var consent = form.querySelector( '.hti-lh-ebook__cons' ).checked;
-			var hp = form.querySelector( '.hti-lh-ebook__hp' ).value;
+			var emailEl = form.querySelector( '.hti-lh-ebook__email' );
+			var consEl = form.querySelector( '.hti-lh-ebook__cons' );
+			var hpEl = form.querySelector( '.hti-lh-ebook__hp' );
+			var email = ( ( emailEl && emailEl.value ) || '' ).trim();
+			var consent = !! ( consEl && consEl.checked );
+			var hp = ( hpEl && hpEl.value ) || '';
 
-			if ( ! email || email.indexOf( '@' ) < 0 ) { set( S.err, 'err' ); return; }
+			if ( ! email || email.indexOf( '@' ) < 1 ) { set( S.err, 'err' ); return; }
 			if ( ! consent ) { set( S.consent, 'err' ); return; }
+			if ( ! cfg.subscribeUrl ) { set( S.err, 'err' ); return; }
 			set( '…', null );
 
-			fetch( window.HTI_LEARN.subscribeUrl, {
+			fetch( cfg.subscribeUrl, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': window.HTI_LEARN.nonce },
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce },
 				body: JSON.stringify( {
 					email: email,
 					consent: true,
-					locale: window.HTI_LEARN.locale,
+					locale: cfg.locale,
 					source: 'ebook-learn',
 					hti_hp: hp
 				} )
