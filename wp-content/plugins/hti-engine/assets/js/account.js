@@ -525,6 +525,36 @@
 		return null;
 	}
 
+	// Benefit panel shown next to the sign-in / create-account form for guests:
+	// "sell" the value of a free account (handoff_9 "Conta gratuita" aside).
+	function guestValuePanel() {
+		var aside = el( 'aside', { class: 'hti-acct-value', 'aria-label': s.acc_guest_title } );
+		aside.appendChild( el( 'span', { class: 'hti-acct-value__eyebrow' }, s.acc_guest_eyebrow ) );
+		aside.appendChild( el( 'h2', { class: 'hti-acct-value__h' }, s.acc_guest_title ) );
+		aside.appendChild( el( 'p', { class: 'hti-acct-value__intro' }, s.acc_guest_intro ) );
+
+		var rows = el( 'div', { class: 'hti-acct-value__rows' } );
+		var benefits = [
+			{ tone: 'coral', t: s.acc_guest_b1_t, d: s.acc_guest_b1_d, svg: '<path d="M12 21a9 9 0 1 0-9-9"/><path d="M12 12V3a9 9 0 0 1 9 9z"/>' },
+			{ tone: 'green', t: s.acc_guest_b2_t, d: s.acc_guest_b2_d, svg: '<circle cx="12" cy="9" r="6"/><path d="M9 14.5 8 22l4-2 4 2-1-7.5"/>' },
+			{ tone: 'purple', t: s.acc_guest_b3_t, d: s.acc_guest_b3_d, svg: '<path d="M21 12a9 9 0 0 1-9 9"/><path d="M3 12a9 9 0 0 1 9-9"/><path d="M21 5v4h-4M3 19v-4h4"/>' },
+			{ tone: 'blue', t: s.acc_guest_b4_t, d: s.acc_guest_b4_d, svg: '<path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6z"/>' }
+		];
+		benefits.forEach( function ( b ) {
+			var row = el( 'div', { class: 'hti-acct-value__row' } );
+			var ic = el( 'span', { class: 'hti-acct-value__ic is-' + b.tone, 'aria-hidden': 'true' } );
+			ic.innerHTML = '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + b.svg + '</svg>';
+			row.appendChild( ic );
+			var body = el( 'div', { class: 'hti-acct-value__txt' } );
+			body.appendChild( el( 'div', { class: 'hti-acct-value__t' }, b.t ) );
+			body.appendChild( el( 'div', { class: 'hti-acct-value__d' }, b.d ) );
+			row.appendChild( body );
+			rows.appendChild( row );
+		} );
+		aside.appendChild( rows );
+		return aside;
+	}
+
 	function renderDashboard( mount ) {
 		mount.innerHTML = '';
 		var root = el( 'div', { class: 'hti-account' } );
@@ -543,17 +573,24 @@
 		}
 
 		if ( ! loggedIn ) {
-			root.appendChild( el( 'h2', null, s.my_profiles ) );
-			root.appendChild( el( 'p', null, s.signin_to_view ) );
-			root.appendChild( authForm(
+			var guest = el( 'div', { class: 'hti-acct-guest' } );
+
+			var gAuth = el( 'div', { class: 'hti-acct-guest__form' } );
+			gAuth.appendChild( el( 'h2', { class: 'hti-acct-guest__h' }, s.my_profiles ) );
+			gAuth.appendChild( el( 'p', { class: 'hti-acct-guest__sub' }, s.signin_to_view ) );
+			gAuth.appendChild( authForm(
 				{
 					onLogin: function () { renderDashboard( mount ); },
 					onPending: function ( msg ) {
-						root.appendChild( el( 'p', { class: 'hti-save-done', role: 'status' }, msg || s.check_email ) );
+						gAuth.appendChild( el( 'p', { class: 'hti-save-done', role: 'status' }, msg || s.check_email ) );
 					}
 				},
 				{ locale: ctx.locale }
 			) );
+			guest.appendChild( gAuth );
+			guest.appendChild( guestValuePanel() );
+
+			root.appendChild( guest );
 			mount.appendChild( root );
 			return;
 		}

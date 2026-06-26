@@ -931,6 +931,27 @@
 	.hti-acct-pcard__row { gap: 18px; }
 }
 
+/* Guest entry: sign-in form + "value of an account" benefit panel. */
+.hti-acct-guest { display: grid; grid-template-columns: minmax( 0, 440px ) minmax( 0, 1fr ); gap: clamp( 28px, 4vw, 52px ); align-items: start; }
+.hti-acct-guest__h { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 24px, 3vw, 30px ); letter-spacing: -0.02em; margin: 0 0 6px; color: var( --hti-text ); }
+.hti-acct-guest__sub { color: var( --hti-muted ); font-size: 16px; margin: 0 0 22px; }
+.hti-acct-value { background: linear-gradient( 155deg, #FFF1ED, #F3EEFE ); border: 1px solid var( --hti-border ); border-radius: 24px; padding: clamp( 26px, 3vw, 38px ); }
+.hti-acct-value__eyebrow { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: var( --hti-purple, #7C5CFC ); font: 700 12px var( --hti-font-body ); padding: 6px 13px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+.hti-acct-value__h { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 22px, 2.4vw, 27px ); color: var( --hti-text ); margin: 16px 0 6px; line-height: 1.15; }
+.hti-acct-value__intro { margin: 0 0 24px; color: var( --hti-muted ); font-size: 15px; line-height: 1.5; }
+.hti-acct-value__rows { display: flex; flex-direction: column; gap: 18px; }
+.hti-acct-value__row { display: flex; gap: 14px; align-items: flex-start; }
+.hti-acct-value__ic { flex: none; width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; }
+.hti-acct-value__ic.is-coral { background: #FFEDE9; color: var( --hti-primary, #FF6B5E ); }
+.hti-acct-value__ic.is-green { background: #E6F7EF; color: #0E9C84; }
+.hti-acct-value__ic.is-purple { background: #EFE9FE; color: var( --hti-purple, #7C5CFC ); }
+.hti-acct-value__ic.is-blue { background: #EAF1FB; color: #3A8DDE; }
+.hti-acct-value__t { font: 600 16px var( --hti-font-body ); color: var( --hti-text ); }
+.hti-acct-value__d { font: 500 14px var( --hti-font-body ); color: var( --hti-muted ); margin-top: 2px; line-height: 1.4; }
+@media ( max-width: 760px ) {
+	.hti-acct-guest { grid-template-columns: 1fr; }
+}
+
 /* Dashboard section eyebrows + cards. */
 .hti-account > h2 { font: 600 12px var( --hti-font-body ); text-transform: uppercase; letter-spacing: 0.06em; color: var( --hti-muted-light ); margin: 0 0 12px; }
 .hti-account-list,

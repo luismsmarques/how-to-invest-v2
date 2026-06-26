@@ -384,6 +384,17 @@ class Frontend {
 				'acc_dc_ebook_t'   => 'Ebook grátis',
 				'acc_dc_ebook_d'   => 'As bases, num PDF para guardares.',
 				'acc_dc_open'      => 'Abrir →',
+				'acc_guest_eyebrow' => 'Conta gratuita',
+				'acc_guest_title'  => 'Cria uma conta gratuita para:',
+				'acc_guest_intro'  => 'O questionário e as leituras funcionam sem conta. A conta só guarda o que é teu — e podes apagá-la quando quiseres.',
+				'acc_guest_b1_t'   => 'Guardar o teu perfil de investidor',
+				'acc_guest_b1_d'   => 'O teu arquétipo e a carteira ilustrativa por classes, sempre à mão.',
+				'acc_guest_b2_t'   => 'Ganhar badges ao aprender',
+				'acc_guest_b2_d'   => 'Acompanha o progresso do curso, módulo a módulo.',
+				'acc_guest_b3_t'   => 'Sincronizar entre dispositivos',
+				'acc_guest_b3_d'   => 'Continua de onde ficaste, no telemóvel ou no portátil.',
+				'acc_guest_b4_t'   => 'Gerir os teus dados (RGPD)',
+				'acc_guest_b4_d'   => 'Exporta ou apaga tudo a qualquer momento, sem perguntas.',
 			);
 		}
 		return array(
@@ -481,6 +492,17 @@ class Frontend {
 			'acc_dc_ebook_t'   => 'Free ebook',
 			'acc_dc_ebook_d'   => 'The basics, in a PDF to keep.',
 			'acc_dc_open'      => 'Open →',
+			'acc_guest_eyebrow' => 'Free account',
+			'acc_guest_title'  => 'Create a free account to:',
+			'acc_guest_intro'  => 'The quiz and lessons work without an account. An account only saves what\'s yours — and you can delete it whenever you like.',
+			'acc_guest_b1_t'   => 'Save your investor profile',
+			'acc_guest_b1_d'   => 'Your archetype and illustrative portfolio by asset class, always at hand.',
+			'acc_guest_b2_t'   => 'Earn badges as you learn',
+			'acc_guest_b2_d'   => 'Track your course progress, module by module.',
+			'acc_guest_b3_t'   => 'Sync across devices',
+			'acc_guest_b3_d'   => 'Pick up where you left off, on phone or laptop.',
+			'acc_guest_b4_t'   => 'Manage your data (GDPR)',
+			'acc_guest_b4_d'   => 'Export or delete everything anytime, no questions asked.',
 		);
 	}
 
