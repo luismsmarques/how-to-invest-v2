@@ -35,6 +35,11 @@ class Content_Import {
 	public const META_QUIZ = 'hti_quiz';
 
 	/**
+	 * Post meta holding a chapter's related glossary slugs (from frontmatter).
+	 */
+	public const META_GLOSSARY = 'hti_glossary';
+
+	/**
 	 * Directory holding the Markdown chapters (bundled with the plugin).
 	 */
 	public static function dir(): string {
@@ -492,6 +497,60 @@ class Content_Import {
 		return is_array( $data ) ? $data : array();
 	}
 
+	/**
+	 * Store (or clear) a chapter's related glossary slugs on its post.
+	 *
+	 * @param int               $post_id Post id (0 = skip).
+	 * @param array<int,string> $slugs   Glossary slugs.
+	 */
+	private static function save_glossary( int $post_id, array $slugs ): void {
+		if ( ! $post_id ) {
+			return;
+		}
+		if ( empty( $slugs ) ) {
+			delete_post_meta( $post_id, self::META_GLOSSARY );
+			return;
+		}
+		update_post_meta( $post_id, self::META_GLOSSARY, $slugs );
+	}
+
+	/**
+	 * Resolve a chapter's related glossary terms to localized [url, title] links.
+	 * The slugs are language-neutral; each resolves to the term in the requested
+	 * language via Polylang when a translation exists.
+	 *
+	 * @param int    $post_id Learn post id.
+	 * @param string $lang    'en'|'pt'.
+	 * @return array<int,array{0:string,1:string}>
+	 */
+	public static function related_terms( int $post_id, string $lang ): array {
+		$slugs = get_post_meta( $post_id, self::META_GLOSSARY, true );
+		if ( ! is_array( $slugs ) || empty( $slugs ) ) {
+			return array();
+		}
+
+		$pt_slug = self::lang_slugs()['pt'];
+		$out     = array();
+		foreach ( $slugs as $slug ) {
+			$term = get_page_by_path( (string) $slug, OBJECT, 'glossary' );
+			if ( ! $term instanceof \WP_Post || 'publish' !== $term->post_status ) {
+				continue;
+			}
+			$id = (int) $term->ID;
+			if ( 'pt' === $lang && function_exists( 'pll_get_post' ) ) {
+				$tr = (int) pll_get_post( $id, $pt_slug );
+				if ( $tr ) {
+					$id = $tr;
+				}
+			}
+			$out[] = array( (string) get_permalink( $id ), wp_strip_all_tags( get_the_title( $id ) ) );
+			if ( count( $out ) >= 8 ) {
+				break;
+			}
+		}
+		return $out;
+	}
+
 	private static function block_paragraph( string $text ): string {
 		return '<!-- wp:paragraph --><p>' . self::inline( $text ) . '</p><!-- /wp:paragraph -->' . "\n\n";
 	}
@@ -577,6 +636,12 @@ class Content_Import {
 		// Store / clear the quiz on each language's post.
 		self::save_quiz( $en_id, $quiz_en );
 		self::save_quiz( $pt_id, $quiz_pt );
+
+		// Store the related glossary slugs (drives the chapter's "Related terms"
+		// rail — chapter→glossary internal links for SEO/topical clustering).
+		$gloss = array_values( array_filter( array_map( 'sanitize_title', (array) ( $c['glossary'] ?? array() ) ) ) );
+		self::save_glossary( $en_id, $gloss );
+		self::save_glossary( $pt_id, $gloss );
 
 		// Language + translation linking (no-op without Polylang).
 		self::link_languages( $en_id, $pt_id );

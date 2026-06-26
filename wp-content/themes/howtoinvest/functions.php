@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.40';
+const VERSION = '0.8.41';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -569,6 +569,24 @@ function register_dynamic_blocks(): void {
 			'title'           => __( 'Learn feed', 'howtoinvest' ),
 			'category'        => 'theme',
 			'render_callback' => __NAMESPACE__ . '\\render_learn_feed',
+		)
+	);
+	register_block_type(
+		'howtoinvest/learn-meta',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Learn byline', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_learn_meta',
+		)
+	);
+	register_block_type(
+		'howtoinvest/learn-related',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Learn related terms', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_learn_related',
 		)
 	);
 	register_block_type(
@@ -1332,6 +1350,81 @@ function learn_course_schema( array $curriculum, string $lang ): string {
 	);
 
 	return '<script type="application/ld+json">' . wp_json_encode( $course, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
+}
+
+/**
+ * Byline + dates for a Learn chapter (E-E-A-T + freshness). Shows the editorial
+ * brand (linked to the About page when present), the published date, and an
+ * "Updated" date when the chapter has been revised. Rendered as a block on the
+ * single-learn template, below the title.
+ *
+ * @return string
+ */
+function render_learn_meta(): string {
+	if ( ! is_singular( 'learn' ) ) {
+		return '';
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof \WP_Post ) {
+		return '';
+	}
+
+	$pt      = 'pt' === current_lang();
+	$by      = $pt ? 'Redação HowToInvest' : 'HowToInvest Editorial';
+	$about   = page_url( 'about' );
+	$pub_iso = get_the_date( DATE_W3C, $post );
+	$pub_h   = get_the_date( '', $post );
+	$updated = get_the_modified_date( 'Ymd', $post ) !== get_the_date( 'Ymd', $post );
+
+	$byline = '' !== $about
+		? '<a class="hti-learn-meta__by" href="' . esc_url( $about ) . '">' . esc_html( $by ) . '</a>'
+		: '<span class="hti-learn-meta__by">' . esc_html( $by ) . '</span>';
+
+	$out  = '<div class="hti-learn-meta">';
+	$out .= $byline;
+	$out .= '<span class="hti-learn-meta__sep" aria-hidden="true">·</span>';
+	$out .= '<time datetime="' . esc_attr( $pub_iso ) . '">' . esc_html( ( $pt ? 'Publicado a ' : 'Published ' ) . $pub_h ) . '</time>';
+	if ( $updated ) {
+		$out .= '<span class="hti-learn-meta__sep" aria-hidden="true">·</span>';
+		$out .= '<time datetime="' . esc_attr( get_the_modified_date( DATE_W3C, $post ) ) . '">' . esc_html( ( $pt ? 'Atualizado a ' : 'Updated ' ) . get_the_modified_date( '', $post ) ) . '</time>';
+	}
+	$out .= '</div>';
+
+	return $out;
+}
+
+/**
+ * "Related terms" rail for a Learn chapter: chapter→glossary internal links
+ * built from the chapter's frontmatter glossary list (stored as post meta by
+ * the importer, resolved to the localized term). Restores the topical-cluster
+ * crawl path without the old flow-breaking footer. Empty when the chapter has
+ * no related terms (e.g. before a content re-sync populates the meta).
+ *
+ * @return string
+ */
+function render_learn_related(): string {
+	if ( ! is_singular( 'learn' ) || ! class_exists( '\\HTI\\Engine\\Content_Import' ) ) {
+		return '';
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof \WP_Post ) {
+		return '';
+	}
+
+	$pt    = 'pt' === current_lang();
+	$links = \HTI\Engine\Content_Import::related_terms( (int) $post->ID, $pt ? 'pt' : 'en' );
+	if ( empty( $links ) ) {
+		return '';
+	}
+
+	$pills = '';
+	foreach ( $links as $l ) {
+		$pills .= '<a class="hti-related__pill" href="' . esc_url( $l[0] ) . '">' . esc_html( $l[1] ) . '</a>';
+	}
+
+	return '<aside class="hti-related hti-related--pills hti-learn-related"><h2 class="hti-related__title">'
+		. esc_html( $pt ? 'Termos relacionados' : 'Related terms' ) . '</h2>'
+		. '<div class="hti-related__pills">' . $pills . '</div></aside>';
 }
 
 /**

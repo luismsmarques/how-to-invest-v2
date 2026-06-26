@@ -651,6 +651,29 @@ a.hti-lang__item:hover {
 	color: var( --wp--preset--color--contrast );
 }
 
+/* ---------- Learn chapter byline + dates ---------- */
+.hti-learn-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0.5rem 0 0;
+	font-family: var( --wp--preset--font-family--body );
+	font-size: 0.875rem;
+	color: var( --wp--preset--color--muted-light );
+}
+.hti-learn-meta__by {
+	font-weight: 600;
+	color: var( --wp--preset--color--contrast );
+	text-decoration: none;
+}
+.hti-learn-meta__by:hover {
+	color: var( --wp--preset--color--primary-strong );
+}
+.hti-learn-meta__sep {
+	color: var( --wp--preset--color--border );
+}
+
 /* ---------- Header search icon ---------- */
 .hti-header__search {
 	display: flex;
