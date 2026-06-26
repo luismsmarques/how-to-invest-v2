@@ -341,163 +341,380 @@
 		return box;
 	}
 
-	/* ---------- email preferences section ---------- */
-
-	function prefsSection() {
-		var prefs = ctx.prefs || { newsletter: false, frequency: 'weekly', categories: [] };
-		var cats = ctx.categories || [];
-
-		var box = el( 'div', { class: 'hti-account-prefs' } );
-		box.appendChild( el( 'h3', null, s.preferences ) );
-		var form = el( 'form', { class: 'hti-account-prefs__form' } );
-
-		// Newsletter toggle.
-		var nlLabel = el( 'label', { class: 'hti-account-prefs__check' } );
-		var nl = el( 'input', { type: 'checkbox' } );
-		if ( prefs.newsletter ) { nl.checked = true; }
-		nlLabel.appendChild( nl );
-		nlLabel.appendChild( el( 'span', null, ' ' + s.pref_newsletter ) );
-		form.appendChild( nlLabel );
-
-		// Frequency.
-		var freqWrap = el( 'label', { class: 'hti-account-prefs__field' }, s.pref_frequency + ' ' );
-		var freq = el( 'select', null );
-		[ [ 'weekly', s.pref_weekly ], [ 'daily', s.pref_daily ] ].forEach( function ( o ) {
-			var opt = el( 'option', { value: o[ 0 ] }, o[ 1 ] );
-			if ( prefs.frequency === o[ 0 ] ) { opt.selected = true; }
-			freq.appendChild( opt );
-		} );
-		freqWrap.appendChild( freq );
-		form.appendChild( freqWrap );
-
-		// Categories.
-		var checks = [];
-		if ( cats.length ) {
-			var catWrap = el( 'fieldset', { class: 'hti-account-prefs__cats' } );
-			catWrap.appendChild( el( 'legend', null, s.pref_categories ) );
-			cats.forEach( function ( c ) {
-				var lab = el( 'label', { class: 'hti-account-prefs__check' } );
-				var cb = el( 'input', { type: 'checkbox', value: c.slug } );
-				if ( prefs.categories && prefs.categories.indexOf( c.slug ) > -1 ) { cb.checked = true; }
-				checks.push( cb );
-				lab.appendChild( cb );
-				lab.appendChild( el( 'span', null, ' ' + c.name ) );
-				catWrap.appendChild( lab );
-			} );
-			form.appendChild( catWrap );
-		}
-
-		var save = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-secondary' }, s.save );
-		form.appendChild( save );
-		var status = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
-		form.appendChild( status );
-
-		form.addEventListener( 'submit', function ( e ) {
-			e.preventDefault();
-			save.disabled = true;
-			status.textContent = s.working;
-			var selected = checks.filter( function ( c ) { return c.checked; } ).map( function ( c ) { return c.value; } );
-			request( '/preferences', 'POST', {
-				newsletter: nl.checked,
-				frequency: freq.value,
-				categories: selected
-			} ).then( function ( res ) {
-				status.textContent = res.ok ? s.prefs_saved : s.error;
-				save.disabled = false;
-			} ).catch( function () {
-				status.textContent = s.error;
-				save.disabled = false;
-			} );
-		} );
-
-		box.appendChild( form );
-		return box;
-	}
 
 	/* ---------- onboarding ---------- */
 
+	// Small "back to my account" button shared by the data sub-screens.
+	function backToAccount( mount ) {
+		var b = el( 'button', { type: 'button', class: 'hti-acct-sub__back' }, s.acct_back );
+		b.addEventListener( 'click', function () { renderDashboard( mount ); } );
+		return b;
+	}
+
 	function onboardingPanel( mount ) {
-		var box = el( 'div', { class: 'hti-onboarding' } );
-		box.appendChild( el( 'h2', { class: 'hti-onboarding__title' }, s.onb_title ) );
-		var form = el( 'form', { class: 'hti-onboarding__form' } );
+		var box = el( 'div', { class: 'hti-onb' } );
+		box.appendChild( el( 'span', { class: 'hti-onb__eyebrow' }, s.onb_eyebrow ) );
+		box.appendChild( el( 'h1', { class: 'hti-onb__title' }, s.onb_title ) );
+		box.appendChild( el( 'p', { class: 'hti-onb__sub' }, s.onb_lang ) );
 
-		// Language.
-		var langField = el( 'fieldset', { class: 'hti-onboarding__field' } );
-		langField.appendChild( el( 'legend', null, s.onb_lang ) );
-		var current = ( ctx.pageLocale === 'pt' ) ? 'pt' : 'en';
+		var chosenLang = ( ctx.pageLocale === 'pt' ) ? 'pt' : 'en';
+		var digest = true;
+
+		// --- Card 1: language toggle ---
+		var c1 = el( 'div', { class: 'hti-onb__card' } );
+		c1.appendChild( el( 'span', { class: 'hti-onb__label', id: 'hti-onb-lang' }, s.onb_lang_label ) );
+		var langGroup = el( 'div', { class: 'hti-onb__toggle', role: 'group', 'aria-labelledby': 'hti-onb-lang' } );
+		var langBtns = {};
 		[ [ 'en', s.onb_en ], [ 'pt', s.onb_pt ] ].forEach( function ( o ) {
-			var lab = el( 'label', { class: 'hti-onboarding__radio' } );
-			var r = el( 'input', { type: 'radio', name: 'hti_lang', value: o[ 0 ] } );
-			if ( o[ 0 ] === current ) { r.checked = true; }
-			lab.appendChild( r );
-			lab.appendChild( el( 'span', null, ' ' + o[ 1 ] ) );
-			langField.appendChild( lab );
+			var btn = el( 'button', { type: 'button', class: 'hti-onb__opt', 'aria-pressed': o[ 0 ] === chosenLang ? 'true' : 'false' }, o[ 1 ] );
+			btn.addEventListener( 'click', function () {
+				chosenLang = o[ 0 ];
+				Object.keys( langBtns ).forEach( function ( k ) {
+					langBtns[ k ].setAttribute( 'aria-pressed', k === chosenLang ? 'true' : 'false' );
+				} );
+			} );
+			langBtns[ o[ 0 ] ] = btn;
+			langGroup.appendChild( btn );
 		} );
-		form.appendChild( langField );
+		c1.appendChild( langGroup );
+		box.appendChild( c1 );
 
-		// Newsletter + frequency.
-		var nlLabel = el( 'label', { class: 'hti-onboarding__check' } );
-		var nl = el( 'input', { type: 'checkbox' } );
-		nl.checked = true;
-		nlLabel.appendChild( nl );
-		nlLabel.appendChild( el( 'span', null, ' ' + s.onb_nl ) );
-		form.appendChild( nlLabel );
-
-		var freqWrap = el( 'label', { class: 'hti-onboarding__field' }, s.pref_frequency + ' ' );
-		var freq = el( 'select', null );
-		[ [ 'weekly', s.pref_weekly ], [ 'daily', s.pref_daily ] ].forEach( function ( o ) {
-			freq.appendChild( el( 'option', { value: o[ 0 ] }, o[ 1 ] ) );
+		// --- Card 2: news digest switch ---
+		var c2 = el( 'div', { class: 'hti-onb__card hti-onb__card--row' } );
+		var c2txt = el( 'div' );
+		c2txt.appendChild( el( 'div', { class: 'hti-onb__label' }, s.onb_digest_t ) );
+		c2txt.appendChild( el( 'p', { class: 'hti-onb__hint' }, s.onb_digest_d ) );
+		c2.appendChild( c2txt );
+		var sw = el( 'button', { type: 'button', class: 'hti-switch is-on', role: 'switch', 'aria-checked': 'true', 'aria-label': s.onb_digest_t } );
+		sw.appendChild( el( 'span', { class: 'hti-switch__dot' } ) );
+		sw.addEventListener( 'click', function () {
+			digest = ! digest;
+			sw.classList.toggle( 'is-on', digest );
+			sw.setAttribute( 'aria-checked', digest ? 'true' : 'false' );
 		} );
-		freqWrap.appendChild( freq );
-		form.appendChild( freqWrap );
+		c2.appendChild( sw );
+		box.appendChild( c2 );
 
-		// Open question.
-		var qWrap = el( 'div', { class: 'hti-onboarding__field' } );
-		qWrap.appendChild( el( 'label', { for: 'hti-onb-q' }, s.onb_q_label ) );
-		var q = el( 'textarea', { id: 'hti-onb-q', rows: '3', placeholder: s.onb_q_ph } );
-		qWrap.appendChild( q );
-		form.appendChild( qWrap );
+		// --- Card 3: optional open question ---
+		var c3 = el( 'div', { class: 'hti-onb__card' } );
+		c3.appendChild( el( 'label', { class: 'hti-onb__label', for: 'hti-onb-q' }, s.onb_q_label ) );
+		c3.appendChild( el( 'p', { class: 'hti-onb__hint' }, s.onb_q_optional ) );
+		var q = el( 'textarea', { id: 'hti-onb-q', class: 'hti-onb__textarea', rows: '3', placeholder: s.onb_q_ph } );
+		c3.appendChild( q );
+		box.appendChild( c3 );
 
-		var save = el( 'button', { type: 'submit', class: 'hti-btn hti-btn-primary' }, s.onb_finish );
-		form.appendChild( save );
 		var status = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
-		form.appendChild( status );
 
-		form.addEventListener( 'submit', function ( e ) {
-			e.preventDefault();
-			save.disabled = true;
+		function submit( withDigest ) {
 			status.textContent = s.working;
-			var lang = ( form.querySelector( 'input[name="hti_lang"]:checked' ) || {} ).value || 'en';
 			request( '/onboarding', 'POST', {
-				language: lang,
-				newsletter: nl.checked,
-				frequency: freq.value,
+				language: chosenLang,
+				newsletter: withDigest,
+				frequency: 'weekly',
 				question: q.value
 			} ).then( function ( res ) {
 				if ( res.ok ) {
 					track( 'onboarding_complete', {
-						chosen_language: lang,
-						newsletter: nl.checked ? freq.value : 'none'
+						chosen_language: chosenLang,
+						newsletter: withDigest ? 'weekly' : 'none'
 					} );
 					ctx.onboarded = true;
 					var go = res.data && res.data.redirect;
-					if ( go && lang !== ctx.pageLocale ) {
+					if ( go && chosenLang !== ctx.pageLocale ) {
 						window.location.href = go;
 					} else {
 						renderDashboard( mount );
 					}
 				} else {
 					status.textContent = s.error;
-					save.disabled = false;
 				}
-			} ).catch( function () {
-				status.textContent = s.error;
-				save.disabled = false;
-			} );
-		} );
+			} ).catch( function () { status.textContent = s.error; } );
+		}
 
-		box.appendChild( form );
+		var acts = el( 'div', { class: 'hti-onb__acts' } );
+		var finish = el( 'button', { type: 'button', class: 'hti-acct-btn hti-acct-btn--primary hti-onb__finish' }, s.onb_finish_long );
+		finish.addEventListener( 'click', function () { submit( digest ); } );
+		var skip = el( 'button', { type: 'button', class: 'hti-onb__skip' }, s.onb_skip );
+		skip.addEventListener( 'click', function () { submit( false ); } );
+		acts.appendChild( finish );
+		acts.appendChild( skip );
+		box.appendChild( acts );
+		box.appendChild( status );
+		box.appendChild( el( 'p', { class: 'hti-onb__disclaimer' }, s.onb_disclaimer ) );
+
 		return box;
+	}
+
+	/* ---------- data sub-screens (export / delete / newsletter) ---------- */
+
+	// GDPR data export: dedicated screen with what's-included + download.
+	function screenExport( mount ) {
+		mount.innerHTML = '';
+		var root = el( 'div', { class: 'hti-account hti-acct-sub' } );
+		root.appendChild( backToAccount( mount ) );
+		root.appendChild( el( 'span', { class: 'hti-acct-sub__eyebrow is-purple' }, s.exp_eyebrow ) );
+		root.appendChild( el( 'h1', { class: 'hti-acct-sub__title' }, s.export_data ) );
+		root.appendChild( el( 'p', { class: 'hti-acct-sub__intro' }, s.exp_intro ) );
+
+		var card = el( 'div', { class: 'hti-acct-card hti-exp__card' } );
+		card.appendChild( el( 'span', { class: 'hti-exp__label' }, s.exp_included ) );
+		var list = el( 'div', { class: 'hti-exp__list' } );
+		[ [ s.exp_item1, '#FF6B5E' ], [ s.exp_item2, '#7C5CFC' ], [ s.exp_item3, '#D69A1E' ] ].forEach( function ( it ) {
+			var r = el( 'div', { class: 'hti-exp__item' } );
+			var dot = el( 'span', { class: 'hti-exp__dot', 'aria-hidden': 'true' } );
+			dot.style.background = it[ 1 ];
+			r.appendChild( dot );
+			r.appendChild( el( 'span', null, it[ 0 ] ) );
+			list.appendChild( r );
+		} );
+		card.appendChild( list );
+		root.appendChild( card );
+
+		var status = el( 'div', { class: 'hti-exp__status' } );
+		var btn = el( 'button', { type: 'button', class: 'hti-acct-btn hti-acct-btn--primary hti-exp__btn' } );
+		btn.innerHTML = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>';
+		btn.appendChild( document.createTextNode( s.exp_btn ) );
+		btn.addEventListener( 'click', function () {
+			btn.disabled = true;
+			request( '/export', 'GET' ).then( function ( res ) {
+				if ( ! res.ok ) { btn.disabled = false; return; }
+				var blob = new Blob( [ JSON.stringify( res.data, null, 2 ) ], { type: 'application/json' } );
+				var url = URL.createObjectURL( blob );
+				var a = el( 'a', { href: url, download: 'howtoinvest-data-export.json' } );
+				document.body.appendChild( a );
+				a.click();
+				document.body.removeChild( a );
+				URL.revokeObjectURL( url );
+				track( 'data_export', {} );
+				btn.remove();
+				var done = el( 'div', { class: 'hti-exp__done', role: 'status' } );
+				done.appendChild( el( 'span', { class: 'hti-exp__done-ic', 'aria-hidden': 'true' } ) );
+				var dt = el( 'div' );
+				dt.appendChild( el( 'p', { class: 'hti-exp__done-t' }, s.exp_done_t ) );
+				dt.appendChild( el( 'p', { class: 'hti-exp__done-b' }, s.exp_done_b ) );
+				done.appendChild( dt );
+				status.appendChild( done );
+			} ).catch( function () { btn.disabled = false; } );
+		} );
+		root.appendChild( btn );
+		root.appendChild( status );
+		mount.appendChild( root );
+		window.scrollTo( 0, 0 );
+	}
+
+	// Account deletion: cascade list + type-to-confirm, or the scheduled state.
+	function screenDelete( mount ) {
+		mount.innerHTML = '';
+		var root = el( 'div', { class: 'hti-account hti-acct-sub' } );
+		root.appendChild( backToAccount( mount ) );
+
+		function showScheduled( dateStr ) {
+			root.querySelectorAll( '.hti-del__idle, .hti-del__sched' ).forEach( function ( n ) { n.remove(); } );
+			var card = el( 'div', { class: 'hti-del__sched', role: 'status' } );
+			var head = el( 'div', { class: 'hti-del__sched-head' } );
+			var ic = el( 'span', { class: 'hti-del__sched-ic', 'aria-hidden': 'true' } );
+			ic.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+			head.appendChild( ic );
+			var ht = el( 'div' );
+			ht.appendChild( el( 'h1', { class: 'hti-del__sched-t' }, s.del_sched_t ) );
+			ht.appendChild( el( 'p', { class: 'hti-del__sched-b' }, dateStr ? s.delete_scheduled.replace( '%s', dateStr ) : s.del_sched_b ) );
+			head.appendChild( ht );
+			card.appendChild( head );
+			var acts = el( 'div', { class: 'hti-del__sched-acts' } );
+			var cancel = el( 'button', { type: 'button', class: 'hti-acct-btn hti-acct-btn--primary' }, s.cancel_deletion );
+			cancel.addEventListener( 'click', function () {
+				cancel.disabled = true;
+				request( '/cancel-deletion', 'POST', {} ).then( function ( res ) {
+					if ( res.ok ) { ctx.deleteAt = ''; renderDashboard( mount ); }
+					else { cancel.disabled = false; }
+				} );
+			} );
+			acts.appendChild( cancel );
+			var back = el( 'button', { type: 'button', class: 'hti-acct-btn hti-acct-btn--outline' }, s.nav_my_account || s.my_profiles );
+			back.addEventListener( 'click', function () { renderDashboard( mount ); } );
+			acts.appendChild( back );
+			card.appendChild( acts );
+			root.appendChild( card );
+		}
+
+		if ( ctx.deleteAt ) {
+			showScheduled( ctx.deleteAt );
+			mount.appendChild( root );
+			window.scrollTo( 0, 0 );
+			return;
+		}
+
+		var idle = el( 'div', { class: 'hti-del__idle' } );
+		var warn = el( 'span', { class: 'hti-del__warn', 'aria-hidden': 'true' } );
+		warn.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>';
+		idle.appendChild( warn );
+		idle.appendChild( el( 'h1', { class: 'hti-acct-sub__title' }, s.del_title ) );
+		idle.appendChild( el( 'p', { class: 'hti-del__perm' }, s.del_perm ) );
+
+		var casc = el( 'div', { class: 'hti-del__cascade' } );
+		[ s.del_c1, s.del_c2, s.del_c3 ].forEach( function ( txt ) {
+			var r = el( 'div', { class: 'hti-del__crow' } );
+			r.appendChild( el( 'span', { class: 'hti-del__x', 'aria-hidden': 'true' }, '✕' ) );
+			r.appendChild( el( 'span', null, txt ) );
+			casc.appendChild( r );
+		} );
+		idle.appendChild( casc );
+
+		var word = ( s.del_word || 'DELETE' );
+		var lbl = el( 'p', { class: 'hti-del__confirm-lbl' } );
+		var parts = ( s.del_confirm_lbl || 'Type %s' ).split( '%s' );
+		lbl.appendChild( document.createTextNode( parts[ 0 ] ) );
+		lbl.appendChild( el( 'strong', null, word ) );
+		if ( parts[ 1 ] ) { lbl.appendChild( document.createTextNode( parts[ 1 ] ) ); }
+		idle.appendChild( lbl );
+
+		var input = el( 'input', { type: 'text', class: 'hti-del__input', placeholder: word, 'aria-label': ( s.del_confirm_lbl || '' ).replace( '%s', word ) } );
+		idle.appendChild( input );
+
+		var acts = el( 'div', { class: 'hti-del__acts' } );
+		var del = el( 'button', { type: 'button', class: 'hti-del__go', disabled: 'disabled' }, s.del_btn );
+		var cancel = el( 'button', { type: 'button', class: 'hti-acct-btn hti-acct-btn--outline' }, s.cancel );
+		cancel.addEventListener( 'click', function () { renderDashboard( mount ); } );
+		input.addEventListener( 'input', function () {
+			var ok = ( input.value || '' ).trim().toUpperCase() === word.toUpperCase();
+			if ( ok ) { del.removeAttribute( 'disabled' ); } else { del.setAttribute( 'disabled', 'disabled' ); }
+		} );
+		del.addEventListener( 'click', function () {
+			if ( del.hasAttribute( 'disabled' ) ) { return; }
+			del.disabled = true;
+			request( '/account', 'DELETE', { confirm: true } ).then( function ( res ) {
+				if ( res.ok && res.data ) {
+					track( 'account_delete_request', {} );
+					ctx.deleteAt = res.data.date || '';
+					showScheduled( ctx.deleteAt );
+					window.scrollTo( 0, 0 );
+				} else {
+					del.disabled = false;
+				}
+			} ).catch( function () { del.disabled = false; } );
+		} );
+		acts.appendChild( del );
+		acts.appendChild( cancel );
+		idle.appendChild( acts );
+		root.appendChild( idle );
+
+		mount.appendChild( root );
+		window.scrollTo( 0, 0 );
+	}
+
+	// Newsletter management: frequency cards + topic checkboxes.
+	function screenNewsletter( mount ) {
+		mount.innerHTML = '';
+		var prefs = ctx.prefs || { newsletter: false, frequency: 'weekly', categories: [] };
+		var cats = ctx.categories || [];
+		var freq = prefs.frequency || 'weekly';
+
+		var root = el( 'div', { class: 'hti-account hti-acct-sub' } );
+		root.appendChild( backToAccount( mount ) );
+		root.appendChild( el( 'span', { class: 'hti-acct-sub__eyebrow is-coral' }, s.nl_eyebrow ) );
+		root.appendChild( el( 'h1', { class: 'hti-acct-sub__title' }, s.nl_title ) );
+		root.appendChild( el( 'p', { class: 'hti-acct-sub__intro' }, s.nl_intro ) );
+
+		// Email (read-only for a logged-in user).
+		var emailWrap = el( 'div', { class: 'hti-nl__block' } );
+		emailWrap.appendChild( el( 'span', { class: 'hti-nl__label' }, s.email ) );
+		var emailRow = el( 'div', { class: 'hti-nl__email' } );
+		var eic = el( 'span', { class: 'hti-nl__email-ic', 'aria-hidden': 'true' } );
+		eic.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF6B5E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>';
+		emailRow.appendChild( eic );
+		emailRow.appendChild( el( 'span', null, ctx.email || '' ) );
+		emailWrap.appendChild( emailRow );
+		root.appendChild( emailWrap );
+
+		// Frequency cards.
+		var freqWrap = el( 'div', { class: 'hti-nl__block' } );
+		freqWrap.appendChild( el( 'span', { class: 'hti-nl__label' }, s.pref_frequency ) );
+		var freqGrid = el( 'div', { class: 'hti-nl__freq', role: 'radiogroup', 'aria-label': s.pref_frequency } );
+		var freqCards = {};
+		[ [ 'daily', s.pref_daily, s.nl_daily_desc ], [ 'weekly', s.pref_weekly, s.nl_weekly_desc ] ].forEach( function ( o ) {
+			var c = el( 'button', { type: 'button', class: 'hti-nl__freq-c', role: 'radio', 'aria-checked': o[ 0 ] === freq ? 'true' : 'false' } );
+			var top = el( 'div', { class: 'hti-nl__freq-top' } );
+			top.appendChild( el( 'span', { class: 'hti-nl__freq-name' }, o[ 1 ] ) );
+			top.appendChild( el( 'span', { class: 'hti-nl__freq-radio', 'aria-hidden': 'true' } ) );
+			c.appendChild( top );
+			c.appendChild( el( 'span', { class: 'hti-nl__freq-desc' }, o[ 2 ] ) );
+			c.classList.toggle( 'is-on', o[ 0 ] === freq );
+			c.addEventListener( 'click', function () {
+				freq = o[ 0 ];
+				Object.keys( freqCards ).forEach( function ( k ) {
+					var on = k === freq;
+					freqCards[ k ].classList.toggle( 'is-on', on );
+					freqCards[ k ].setAttribute( 'aria-checked', on ? 'true' : 'false' );
+				} );
+			} );
+			freqCards[ o[ 0 ] ] = c;
+			freqGrid.appendChild( c );
+		} );
+		freqWrap.appendChild( freqGrid );
+		root.appendChild( freqWrap );
+
+		// Topic checkboxes.
+		var checks = [];
+		if ( cats.length ) {
+			var topicWrap = el( 'div', { class: 'hti-nl__block' } );
+			topicWrap.appendChild( el( 'span', { class: 'hti-nl__label' }, s.nl_topics_lbl ) );
+			var topicList = el( 'div', { class: 'hti-nl__topics' } );
+			cats.forEach( function ( c ) {
+				var on = prefs.categories && prefs.categories.indexOf( c.slug ) > -1;
+				var b = el( 'button', { type: 'button', class: 'hti-nl__topic' + ( on ? ' is-on' : '' ), role: 'checkbox', 'aria-checked': on ? 'true' : 'false' } );
+				b.appendChild( el( 'span', { class: 'hti-nl__topic-box', 'aria-hidden': 'true' } ) );
+				b.appendChild( el( 'span', { class: 'hti-nl__topic-name' }, c.name ) );
+				var st = { slug: c.slug, on: on };
+				b.addEventListener( 'click', function () {
+					st.on = ! st.on;
+					b.classList.toggle( 'is-on', st.on );
+					b.setAttribute( 'aria-checked', st.on ? 'true' : 'false' );
+				} );
+				checks.push( st );
+				topicList.appendChild( b );
+			} );
+			topicWrap.appendChild( topicList );
+			root.appendChild( topicWrap );
+		}
+
+		var actions = el( 'div', { class: 'hti-nl__acts' } );
+		var save = el( 'button', { type: 'button', class: 'hti-acct-btn hti-acct-btn--primary' }, s.nl_save );
+		var status = el( 'div', { class: 'hti-nl__status', role: 'status' } );
+		save.addEventListener( 'click', function () {
+			save.disabled = true;
+			status.textContent = s.working;
+			var selected = checks.filter( function ( c ) { return c.on; } ).map( function ( c ) { return c.slug; } );
+			request( '/preferences', 'POST', { newsletter: true, frequency: freq, categories: selected } ).then( function ( res ) {
+				save.disabled = false;
+				if ( res.ok ) {
+					ctx.prefs = { newsletter: true, frequency: freq, categories: selected };
+					status.innerHTML = '';
+					var ok = el( 'div', { class: 'hti-nl__saved' } );
+					ok.appendChild( el( 'span', { class: 'hti-nl__saved-ic', 'aria-hidden': 'true' } ) );
+					ok.appendChild( el( 'span', { class: 'hti-nl__saved-t' }, s.nl_saved_t ) );
+					status.appendChild( ok );
+				} else {
+					status.textContent = s.error;
+				}
+			} ).catch( function () { save.disabled = false; status.textContent = s.error; } );
+		} );
+		actions.appendChild( save );
+		var unsub = el( 'button', { type: 'button', class: 'hti-nl__unsub' }, s.nl_unsub );
+		unsub.addEventListener( 'click', function () {
+			unsub.disabled = true;
+			status.textContent = s.working;
+			var selected = checks.filter( function ( c ) { return c.on; } ).map( function ( c ) { return c.slug; } );
+			request( '/preferences', 'POST', { newsletter: false, frequency: freq, categories: selected } ).then( function ( res ) {
+				if ( res.ok ) { ctx.prefs = { newsletter: false, frequency: freq, categories: selected }; renderDashboard( mount ); }
+				else { unsub.disabled = false; status.textContent = s.error; }
+			} ).catch( function () { unsub.disabled = false; status.textContent = s.error; } );
+		} );
+		actions.appendChild( unsub );
+		root.appendChild( actions );
+		root.appendChild( status );
+
+		mount.appendChild( root );
+		window.scrollTo( 0, 0 );
 	}
 
 	/* ---------- dashboard ([hti_account]) ---------- */
@@ -781,78 +998,29 @@
 		var IC_SHIELD = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B5E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6z"/></svg>';
 		var IC_TRASH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0392B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M6 7l1 13h10l1-13"/></svg>';
 
-		// Newsletter — scrolls to the preferences card below.
+		// Newsletter -> dedicated management screen.
 		var nlRow = dataRow( 'button', { type: 'button' }, IC_MAIL, 'is-coral', s.preferences, s.pref_newsletter );
-		nlRow.addEventListener( 'click', function () {
-			var pc = root.querySelector( '.hti-account-prefs' );
-			if ( pc && pc.scrollIntoView ) { pc.scrollIntoView( { behavior: 'smooth', block: 'center' } ); }
-		} );
+		nlRow.addEventListener( 'click', function () { screenNewsletter( mount ); } );
 		rows.appendChild( nlRow );
 
-		// Export (download JSON).
+		// Export -> dedicated GDPR export screen.
 		var exportRow = dataRow( 'button', { type: 'button' }, IC_DL, 'is-purple', s.export_data, s.acc_export_sub );
-		exportRow.addEventListener( 'click', function () {
-			live.textContent = s.working;
-			request( '/export', 'GET' ).then( function ( res ) {
-				if ( ! res.ok ) { live.textContent = ''; return; }
-				var blob = new Blob( [ JSON.stringify( res.data, null, 2 ) ], { type: 'application/json' } );
-				var url = URL.createObjectURL( blob );
-				var a = el( 'a', { href: url, download: 'howtoinvest-data-export.json' } );
-				document.body.appendChild( a );
-				a.click();
-				document.body.removeChild( a );
-				URL.revokeObjectURL( url );
-				live.textContent = '';
-			} );
-		} );
+		exportRow.addEventListener( 'click', function () { screenExport( mount ); } );
 		rows.appendChild( exportRow );
 
 		if ( ctx.policiesUrl ) {
 			rows.appendChild( dataRow( 'a', { href: ctx.policiesUrl }, IC_SHIELD, 'is-coral', s.acc_privacy, s.acc_privacy_sub ) );
 		}
 
-		var deleteStatus = el( 'p', { class: 'hti-account-email__status', role: 'status' } );
-		var deleteRow = dataRow( 'button', { type: 'button' }, IC_TRASH, 'is-danger', s.delete_account, s.acc_delete_sub, 'is-danger' );
-
-		function renderDeletion( dateStr ) {
-			z4.querySelectorAll( '.hti-deletion' ).forEach( function ( n ) { n.remove(); } );
-			if ( dateStr ) {
-				var wrap = el( 'div', { class: 'hti-deletion' } );
-				wrap.appendChild( el( 'p', { class: 'hti-error', role: 'alert' }, s.delete_scheduled.replace( '%s', dateStr ) ) );
-				var cancelBtn = el( 'button', { type: 'button', class: 'hti-acct-btn hti-acct-btn--outline hti-deletion__cancel' }, s.cancel_deletion );
-				cancelBtn.addEventListener( 'click', function () {
-					cancelBtn.disabled = true;
-					request( '/cancel-deletion', 'POST', {} ).then( function ( res ) {
-						if ( res.ok ) { renderDeletion( '' ); deleteStatus.textContent = s.deletion_off; live.textContent = s.deletion_off; deleteRow.style.display = ''; }
-						else { cancelBtn.disabled = false; }
-					} );
-				} );
-				wrap.appendChild( cancelBtn );
-				z4.insertBefore( wrap, deleteStatus );
-				deleteRow.style.display = 'none';
-			}
-		}
-
-		deleteRow.addEventListener( 'click', function () {
-			if ( ! window.confirm( s.delete_confirm ) ) { return; }
-			request( '/account', 'DELETE', { confirm: true } ).then( function ( res ) {
-				if ( res.ok && res.data ) {
-					track( 'account_delete_request', {} );
-					deleteStatus.textContent = s.deletion_set;
-					live.textContent = s.deletion_set;
-					renderDeletion( res.data.date || '' );
-				}
-			} );
-		} );
+		// Delete -> dedicated type-to-confirm / scheduled screen.
+		var deleteRow = dataRow( 'button', { type: 'button' }, IC_TRASH, 'is-danger', s.delete_account, ctx.deleteAt ? s.del_sched_t : s.acc_delete_sub, 'is-danger' );
+		deleteRow.addEventListener( 'click', function () { screenDelete( mount ); } );
 		rows.appendChild( deleteRow );
 
 		z4.appendChild( rows );
-		z4.appendChild( deleteStatus );
-		if ( ctx.deleteAt ) { renderDeletion( ctx.deleteAt ); }
 
 		var settings = el( 'div', { class: 'hti-acct-settings' } );
 		settings.appendChild( emailSection() );
-		settings.appendChild( prefsSection() );
 		z4.appendChild( settings );
 
 		if ( ctx.logoutUrl ) {
