@@ -180,6 +180,9 @@ class Content_Import {
 				'title'     => $title,
 				'url'       => $url,
 				'published' => $published,
+				// Whether the chapter ships an end-of-chapter quiz, so the badge
+				// engine can require a pass (quizzed) vs a visit (un-quizzed).
+				'has_quiz'  => $published && $post instanceof \WP_Post && ! empty( self::get_quiz( (int) $post->ID ) ),
 				'mins'      => $mins > 0 ? $mins : 5,
 			);
 		}

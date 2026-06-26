@@ -34,6 +34,54 @@
 .hti-lh-prog__fill { height: 100%; background: linear-gradient(90deg, #FF6B5E, #7C5CFC); border-radius: 999px; transition: width 0.5s ease; }
 .hti-lh-hero__cta { display: flex; gap: 14px; flex-wrap: wrap; }
 
+/* Achievements: module + course badges */
+.hti-lh-ach { background: #fff; border: 1px solid #F2E4DD; border-radius: 28px; padding: clamp(22px, 3.5vw, 36px); box-shadow: 0 1px 2px rgba(42, 36, 56, 0.04); margin-top: clamp(20px, 3vw, 28px); }
+.hti-lh-ach__h { font: 800 22px 'Poppins', 'Plus Jakarta Sans'; color: #2A2438; margin: 0 0 6px; }
+.hti-lh-ach__sub { font: 400 15px 'Plus Jakarta Sans'; color: #6E6680; margin: 0 0 22px; max-width: 560px; line-height: 1.5; }
+.hti-lh-ach__row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 22px; }
+
+/* Course badge */
+.hti-lh-ach__course { display: flex; align-items: center; gap: 14px; padding: 14px 20px 14px 14px; border-radius: 18px; border: 1px solid #F2E4DD; background: #FFF6F1; }
+.hti-lh-ach__cmedal { width: 54px; height: 54px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex: none; background: #EFE9FE; color: #B9B2CC; transition: background 0.2s, color 0.2s; }
+.hti-lh-ach__course[data-state="progress"] .hti-lh-ach__cmedal { background: #EFE9FE; color: #7C5CFC; }
+.hti-lh-ach__course[data-state="earned"] .hti-lh-ach__cmedal { background: linear-gradient(135deg, #FF6B5E, #7C5CFC); color: #fff; box-shadow: 0 8px 20px rgba(124, 92, 252, 0.32); }
+.hti-lh-ach__ctext { display: flex; flex-direction: column; gap: 2px; }
+.hti-lh-ach__clabel { font: 700 15px 'Plus Jakarta Sans'; color: #2A2438; }
+.hti-lh-ach__cprog { font: 600 13px 'Plus Jakarta Sans'; color: #6E6680; }
+.hti-lh-ach__course[data-state="earned"] .hti-lh-ach__clabel { color: #7C5CFC; }
+
+/* Module badges */
+.hti-lh-ach__mods { display: flex; flex-wrap: wrap; gap: 16px; }
+.hti-lh-ach__mod { display: flex; flex-direction: column; align-items: center; gap: 7px; width: 84px; text-align: center; }
+.hti-lh-ach__medal { position: relative; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #F2E4DD; color: #B9B2CC; transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
+.hti-lh-ach__ribbon { font: 800 18px 'Poppins', 'Plus Jakarta Sans'; }
+.hti-lh-ach__lock, .hti-lh-ach__check { position: absolute; bottom: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 2px solid #fff; }
+.hti-lh-ach__lock { background: #EDE7F6; color: #9A8FB8; }
+.hti-lh-ach__check { background: #22C3A6; }
+/* locked (default): dim ribbon + lock pip */
+.hti-lh-ach__mod[data-state="locked"] .hti-lh-ach__lock { display: flex; }
+/* in progress: coral ring, ribbon visible */
+.hti-lh-ach__mod[data-state="progress"] .hti-lh-ach__medal { background: #FFEDE9; color: #FF6B5E; box-shadow: 0 0 0 3px #FFF6F1, 0 0 0 4px #FFD9D2; }
+/* earned: gradient + check pip */
+.hti-lh-ach__mod[data-state="earned"] .hti-lh-ach__medal { background: linear-gradient(135deg, #22C3A6, #7C5CFC); color: #fff; box-shadow: 0 8px 18px rgba(34, 195, 166, 0.32); }
+.hti-lh-ach__mod[data-state="earned"] .hti-lh-ach__check { display: flex; }
+.hti-lh-ach__mlabel { font: 600 12px 'Plus Jakarta Sans'; color: #2A2438; line-height: 1.2; }
+.hti-lh-ach__mstate { font: 600 10px 'Plus Jakarta Sans'; text-transform: uppercase; letter-spacing: 0.04em; color: #9A93A8; }
+.hti-lh-ach__mod[data-state="progress"] .hti-lh-ach__mstate { color: #FF6B5E; }
+.hti-lh-ach__mod[data-state="earned"] .hti-lh-ach__mstate { color: #1AA088; }
+
+/* Guest account nudge */
+.hti-lh-ach__nudge { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 22px; padding: 14px 18px; border-radius: 16px; background: #EFE9FE; border: 1px solid #E0D6FB; }
+.hti-lh-ach__nudge-ic { width: 34px; height: 34px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; background: #fff; color: #7C5CFC; }
+.hti-lh-ach__nudge-tx { flex: 1 1 220px; font: 500 14px 'Plus Jakarta Sans'; color: #4A4263; line-height: 1.4; }
+.hti-lh-ach__nudge-cta { flex: none; background: #7C5CFC; color: #fff; text-decoration: none; font: 600 14px 'Plus Jakarta Sans'; padding: 10px 18px; border-radius: 12px; transition: background 0.15s; }
+.hti-lh-ach__nudge-cta:hover { background: #6A48F0; }
+@media (max-width: 560px) {
+	.hti-lh-ach__course { width: 100%; }
+	.hti-lh-ach__mod { width: 72px; }
+	.hti-lh-ach__nudge-cta { width: 100%; text-align: center; }
+}
+
 /* Layout: stepper + rail */
 .hti-lh-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 330px); gap: 36px; align-items: start; margin-top: clamp(32px, 5vw, 56px); }
 .hti-lh-rail { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 18px; }

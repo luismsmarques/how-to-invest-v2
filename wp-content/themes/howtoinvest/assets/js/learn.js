@@ -114,6 +114,8 @@
 			m.setAttribute( 'data-state', all ? 'done' : ( anyCurrent ? 'current' : 'open' ) );
 		} );
 
+		hydrateBadges( root, doneSet, doneCount );
+
 		var pct = total ? Math.round( doneCount / total * 100 ) : 0;
 		var fill = root.querySelector( '.hti-lh-prog__fill' );
 		if ( fill ) { fill.style.width = pct + '%'; }
@@ -124,6 +126,58 @@
 		if ( cont && current && current.getAttribute( 'data-url' ) ) {
 			cont.setAttribute( 'href', current.getAttribute( 'data-url' ) );
 		}
+	}
+
+	/* ---- achievements: module + course badges ---- */
+	// A chapter is "mastered" when its quiz is passed; chapters without a quiz
+	// count as mastered once visited. A module badge is earned when every chapter
+	// in it is mastered; the course badge when every module is earned.
+	function hydrateBadges( root, doneSet, doneCount ) {
+		var ach = root.querySelector( '.hti-lh-ach' );
+		if ( ! ach ) { return; }
+
+		var passedSet = {};
+		load( KEY_PASS ).forEach( function ( s ) { passedSet[ s ] = 1; } );
+
+		var modState = {}, earned = 0;
+		Array.prototype.forEach.call( root.querySelectorAll( '.hti-lh-mod' ), function ( m ) {
+			var num = m.getAttribute( 'data-mod' );
+			var cs = m.querySelectorAll( '.hti-lh-chap' );
+			var totalC = cs.length, masteredC = 0;
+			Array.prototype.forEach.call( cs, function ( c ) {
+				var slug = c.getAttribute( 'data-slug' );
+				var hasQuiz = c.getAttribute( 'data-quiz' ) === '1';
+				if ( slug && ( passedSet[ slug ] || ( ! hasQuiz && doneSet[ slug ] ) ) ) { masteredC++; }
+			} );
+			var st = ( totalC > 0 && masteredC === totalC ) ? 'earned' : ( masteredC > 0 ? 'progress' : 'locked' );
+			if ( 'earned' === st ) { earned++; }
+			if ( num ) { modState[ num ] = st; }
+		} );
+
+		var L = {
+			earned: ach.getAttribute( 'data-l-earned' ) || '',
+			progress: ach.getAttribute( 'data-l-progress' ) || '',
+			locked: ach.getAttribute( 'data-l-locked' ) || ''
+		};
+		Array.prototype.forEach.call( ach.querySelectorAll( '.hti-lh-ach__mod' ), function ( el ) {
+			var st = modState[ el.getAttribute( 'data-mod' ) ] || 'locked';
+			el.setAttribute( 'data-state', st );
+			var lbl = el.querySelector( '.hti-lh-ach__mstate' );
+			if ( lbl ) { lbl.textContent = L[ st ] || ''; }
+		} );
+
+		var totalMods = parseInt( ach.getAttribute( 'data-total' ), 10 ) || 0;
+		var course = ach.querySelector( '.hti-lh-ach__course' );
+		if ( course ) {
+			course.setAttribute( 'data-state', ( earned > 0 && earned === totalMods ) ? 'earned' : ( earned > 0 ? 'progress' : 'locked' ) );
+		}
+		var en = ach.querySelector( '.hti-lh-ach-earned' );
+		if ( en ) { en.textContent = String( earned ); }
+
+		var nudge = ach.querySelector( '.hti-lh-ach__nudge' );
+		var isGuest = ! ( window.HTI_LEARN_CFG && window.HTI_LEARN_CFG.isLoggedIn );
+		var hasProgress = doneCount > 0 || Object.keys( passedSet ).length > 0;
+		if ( nudge && isGuest && hasProgress ) { nudge.hidden = false; }
 	}
 
 	/* ---- homepage path block ---- */

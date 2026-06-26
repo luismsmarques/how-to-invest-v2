@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.37';
+const VERSION = '0.8.38';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1067,6 +1067,81 @@ function render_learn_hub(): string {
 			</div>
 		</div>
 
+		<?php
+		// Achievements: a badge per module mastered, plus the full-course badge.
+		// JS computes each state from the visitor's progress (quizzes passed, or
+		// visits for un-quizzed chapters). Guests with progress see an account
+		// nudge — only when self-registration is actually open.
+		$ach = $pt
+			? array(
+				'title'    => 'As tuas conquistas',
+				'sub'      => 'Ganha um crachá por cada módulo que dominas e, no fim, o curso completo. O teu progresso fica guardado neste dispositivo.',
+				'course'   => 'Curso completo',
+				'modules'  => 'módulos',
+				'mod'      => 'Módulo',
+				'earned'   => 'Conquistado',
+				'progress' => 'Em progresso',
+				'locked'   => 'Por desbloquear',
+				'nudge'    => 'Cria uma conta gratuita para guardares os teus crachás em todos os dispositivos.',
+				'nudge_c'  => 'Guardar o meu progresso',
+			)
+			: array(
+				'title'    => 'Your achievements',
+				'sub'      => 'Earn a badge for each module you master, then the full course. Your progress is saved on this device.',
+				'course'   => 'Full course',
+				'modules'  => 'modules',
+				'mod'      => 'Module',
+				'earned'   => 'Earned',
+				'progress' => 'In progress',
+				'locked'   => 'Locked',
+				'nudge'    => 'Create a free account to keep your badges across every device.',
+				'nudge_c'  => 'Save my progress',
+			);
+		$reg_url = ( ! is_user_logged_in() && get_option( 'users_can_register' ) ) ? wp_registration_url() : '';
+		$mod_count = count( $curriculum );
+		?>
+		<section class="hti-lh-ach" data-total="<?php echo (int) $mod_count; ?>"
+			data-l-earned="<?php echo esc_attr( $ach['earned'] ); ?>"
+			data-l-progress="<?php echo esc_attr( $ach['progress'] ); ?>"
+			data-l-locked="<?php echo esc_attr( $ach['locked'] ); ?>"
+			aria-label="<?php echo esc_attr( $ach['title'] ); ?>">
+			<div class="hti-lh-ach__head">
+				<h2 class="hti-lh-ach__h"><?php echo esc_html( $ach['title'] ); ?></h2>
+				<p class="hti-lh-ach__sub"><?php echo esc_html( $ach['sub'] ); ?></p>
+			</div>
+			<div class="hti-lh-ach__row">
+				<div class="hti-lh-ach__course" data-state="locked">
+					<span class="hti-lh-ach__cmedal" aria-hidden="true">
+						<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></svg>
+					</span>
+					<span class="hti-lh-ach__ctext">
+						<span class="hti-lh-ach__clabel"><?php echo esc_html( $ach['course'] ); ?></span>
+						<span class="hti-lh-ach__cprog"><span class="hti-lh-ach-earned">0</span> / <?php echo (int) $mod_count; ?> <?php echo esc_html( $ach['modules'] ); ?></span>
+					</span>
+				</div>
+				<div class="hti-lh-ach__mods">
+					<?php foreach ( $curriculum as $m ) : ?>
+						<div class="hti-lh-ach__mod" data-mod="<?php echo esc_attr( (string) $m['num'] ); ?>" data-state="locked" title="<?php echo esc_attr( (string) $m['title'] ); ?>">
+							<span class="hti-lh-ach__medal" aria-hidden="true">
+								<span class="hti-lh-ach__ribbon"><?php echo esc_html( (string) $m['num'] ); ?></span>
+								<span class="hti-lh-ach__lock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+								<span class="hti-lh-ach__check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+							</span>
+							<span class="hti-lh-ach__mlabel"><?php echo esc_html( $ach['mod'] . ' ' . $m['num'] ); ?></span>
+							<span class="hti-lh-ach__mstate"></span>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+			<?php if ( '' !== $reg_url ) : ?>
+				<div class="hti-lh-ach__nudge" hidden>
+					<span class="hti-lh-ach__nudge-ic" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+					<span class="hti-lh-ach__nudge-tx"><?php echo esc_html( $ach['nudge'] ); ?></span>
+					<a class="hti-lh-ach__nudge-cta" href="<?php echo esc_url( $reg_url ); ?>"><?php echo esc_html( $ach['nudge_c'] ); ?></a>
+				</div>
+			<?php endif; ?>
+		</section>
+
 		<!-- Path (stepper) + rail -->
 		<div class="hti-lh-grid">
 			<div class="hti-lh-stepper">
@@ -1077,7 +1152,7 @@ function render_learn_hub(): string {
 					foreach ( $curriculum as $i => $m ) :
 						$state = 0 === $i ? 'current' : 'open';
 						?>
-						<div class="hti-lh-mod" data-state="<?php echo esc_attr( $state ); ?>">
+						<div class="hti-lh-mod" data-state="<?php echo esc_attr( $state ); ?>" data-mod="<?php echo esc_attr( (string) $m['num'] ); ?>">
 							<div class="hti-lh-mod__node">
 								<span class="hti-lh-node hti-lh-node--done"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
 								<span class="hti-lh-node hti-lh-node--current"><?php echo esc_html( (string) $m['num'] ); ?></span>
@@ -1097,7 +1172,7 @@ function render_learn_hub(): string {
 								<div class="hti-lh-chaps">
 									<?php foreach ( $m['chapters'] as $c ) : ?>
 										<?php $tag = $c['published'] ? 'a' : 'span'; ?>
-										<<?php echo esc_html( $tag ); ?> class="hti-lh-chap" data-state="open" data-slug="<?php echo esc_attr( (string) $c['slug'] ); ?>" data-url="<?php echo esc_url( (string) $c['url'] ); ?>"<?php echo $c['published'] ? ' href="' . esc_url( (string) $c['url'] ) . '"' : ''; ?>>
+										<<?php echo esc_html( $tag ); ?> class="hti-lh-chap" data-state="open" data-slug="<?php echo esc_attr( (string) $c['slug'] ); ?>" data-quiz="<?php echo ! empty( $c['has_quiz'] ) ? '1' : '0'; ?>" data-url="<?php echo esc_url( (string) $c['url'] ); ?>"<?php echo $c['published'] ? ' href="' . esc_url( (string) $c['url'] ) . '"' : ''; ?>>
 											<span class="hti-lh-chap__dot">
 												<span class="hti-lh-dot--done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
 												<span class="hti-lh-dot--current"></span>
