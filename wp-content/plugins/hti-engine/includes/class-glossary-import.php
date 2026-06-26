@@ -76,8 +76,10 @@ class Glossary_Import {
 		$slug_pt = (string) ( $t['slug_pt'] ?? $slug );
 		$topic   = (string) ( $t['topic'] ?? '' );
 
-		$content_en = Content_Import::to_blocks( (string) ( $t['body_en'] ?? '' ), 'In one line', array( 'Key takeaways' ) );
-		$content_pt = Content_Import::to_blocks( (string) ( $t['body_pt'] ?? '' ), 'Em uma linha', array( 'Pontos-chave' ) );
+		// "In plain words" leads the glossary term (E3 Termo design's coral box),
+		// vs "In one line" used for Learn guides.
+		$content_en = Content_Import::to_blocks( (string) ( $t['body_en'] ?? '' ), 'In plain words', array( 'Key takeaways' ) );
+		$content_pt = Content_Import::to_blocks( (string) ( $t['body_pt'] ?? '' ), 'Em palavras simples', array( 'Pontos-chave' ) );
 
 		// EN: match the existing seeded term by slug (or create).
 		$en_id = self::upsert_post(

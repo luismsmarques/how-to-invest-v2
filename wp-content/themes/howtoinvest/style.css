@@ -592,6 +592,25 @@ a.hti-lang__item:hover {
 	line-height: 1.5;
 	color: var( --wp--preset--color--body-alt );
 }
+/* Glossary "In plain words" callout (E3 Termo design): a filled coral box with
+   a block uppercase eyebrow, instead of the guide's left-border TL;DR. The
+   #FFEDE9 fill comes from the has-primary-soft-background-color class. */
+.hti-term .hti-prose .hti-tldr {
+	border-left: none;
+	border-radius: 14px;
+	padding: 20px 24px;
+	font-size: 17px;
+	color: #3A3450;
+}
+.hti-term .hti-prose .hti-tldr strong {
+	display: block;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	font-size: 12px;
+	font-weight: 600;
+	color: var( --wp--preset--color--primary, #FF6B5E );
+	margin-bottom: 8px;
+}
 .hti-news-cta {
 	background: var( --wp--preset--color--primary-soft );
 	border-radius: 14px;
