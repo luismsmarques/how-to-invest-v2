@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.53';
+const VERSION = '0.8.54';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1278,6 +1278,13 @@ function render_learn_hub(): string {
 	$lang = $pt ? 'pt' : 'en';
 	$s    = learn_hub_strings( $pt );
 
+	// Ebook gate config, surfaced on the form so it works from the cached HTML
+	// alone (no dependency on the external/deferred learn.js being fresh).
+	$eb_sub     = rest_url( 'htinvest/v1/subscribe' );
+	$eb_nonce   = wp_create_nonce( 'wp_rest' );
+	$eb_err     = $pt ? 'Não foi possível. Tenta novamente.' : 'Something went wrong. Please try again.';
+	$eb_consent = $pt ? 'Aceita receber os emails para continuar.' : 'Please accept the emails to continue.';
+
 	$curriculum = class_exists( '\\HTI\\Engine\\Content_Import' )
 		? \HTI\Engine\Content_Import::curriculum( $lang )
 		: array();
@@ -1523,7 +1530,13 @@ function render_learn_hub(): string {
 				<span class="hti-lh-ebook__tag"><?php echo esc_html( $s['ebook_tag'] ); ?></span>
 				<h2 class="hti-lh-ebook__h"><?php echo esc_html( $s['ebook_h'] ); ?></h2>
 				<p class="hti-lh-ebook__p"><?php echo esc_html( $s['ebook_p'] ); ?></p>
-				<form class="hti-lh-ebook__form" novalidate>
+				<form class="hti-lh-ebook__form" novalidate
+					data-sub="<?php echo esc_url( $eb_sub ); ?>"
+					data-nonce="<?php echo esc_attr( $eb_nonce ); ?>"
+					data-locale="<?php echo esc_attr( $lang ); ?>"
+					data-ok="<?php echo esc_attr( $s['ebook_ok'] ); ?>"
+					data-err="<?php echo esc_attr( $eb_err ); ?>"
+					data-consent="<?php echo esc_attr( $eb_consent ); ?>">
 					<div class="hti-lh-ebook__row">
 						<input class="hti-lh-ebook__email" type="email" autocomplete="email" placeholder="<?php echo esc_attr( $s['ebook_ph'] ); ?>" aria-label="Email" required>
 						<button class="hti-lh-btn" type="submit"><?php echo esc_html( $s['ebook_btn'] ); ?></button>
@@ -1532,6 +1545,39 @@ function render_learn_hub(): string {
 					<input type="text" class="hti-lh-ebook__hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
 					<p class="hti-lh-ebook__status" role="status" aria-live="polite"></p>
 				</form>
+				<script>
+				/* Self-contained ebook gate: reads config from the form's data-* so it
+				   works from the cached HTML even if learn.js is stale or deferred. */
+				( function () {
+					var f = document.querySelector( '.hti-lh-ebook__form' );
+					if ( ! f || f.getAttribute( 'data-wired' ) ) { return; }
+					f.setAttribute( 'data-wired', '1' );
+					var st = f.querySelector( '.hti-lh-ebook__status' );
+					function set( m, k ) { if ( st ) { st.textContent = m || ''; st.className = 'hti-lh-ebook__status' + ( k ? ' is-' + k : '' ); } }
+					f.addEventListener( 'submit', function ( e ) {
+						e.preventDefault();
+						var em = ( ( f.querySelector( '.hti-lh-ebook__email' ) || {} ).value || '' ).trim();
+						var ok = !! ( ( f.querySelector( '.hti-lh-ebook__cons' ) || {} ).checked );
+						var hp = ( f.querySelector( '.hti-lh-ebook__hp' ) || {} ).value || '';
+						if ( ! em || em.indexOf( '@' ) < 1 ) { set( f.getAttribute( 'data-err' ), 'err' ); return; }
+						if ( ! ok ) { set( f.getAttribute( 'data-consent' ), 'err' ); return; }
+						set( '…', null );
+						fetch( f.getAttribute( 'data-sub' ), {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': f.getAttribute( 'data-nonce' ) },
+							body: JSON.stringify( { email: em, consent: true, locale: f.getAttribute( 'data-locale' ), source: 'ebook-learn', hti_hp: hp } )
+						} ).then( function ( r ) { if ( ! r.ok ) { throw 0; } return r.json(); } )
+						.then( function () {
+							var row = f.querySelector( '.hti-lh-ebook__row' );
+							var c = f.querySelector( '.hti-lh-ebook__consent' );
+							if ( row ) { row.style.display = 'none'; }
+							if ( c ) { c.style.display = 'none'; }
+							set( f.getAttribute( 'data-ok' ), 'ok' );
+							if ( window.HTITrack ) { window.HTITrack.event( 'ebook_lead', { source: 'ebook-learn' } ); }
+						} ).catch( function () { set( f.getAttribute( 'data-err' ), 'err' ); } );
+					} );
+				}() );
+				</script>
 			</div>
 			<div class="hti-lh-ebook__cover" aria-hidden="true">
 				<div class="hti-lh-book">

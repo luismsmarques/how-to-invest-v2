@@ -425,7 +425,8 @@
 	/* ---- ebook lead-magnet ---- */
 	function wireEbook( root ) {
 		var form = root.querySelector( '.hti-lh-ebook__form' );
-		if ( ! form ) { return; }
+		if ( ! form || form.getAttribute( 'data-wired' ) ) { return; }
+		form.setAttribute( 'data-wired', '1' );
 		var cfg = window.HTI_LEARN || {};
 		var S = cfg.strings || {};
 		var status = form.querySelector( '.hti-lh-ebook__status' );
