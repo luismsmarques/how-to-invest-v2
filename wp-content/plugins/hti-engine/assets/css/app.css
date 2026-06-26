@@ -34,6 +34,12 @@
 	line-height: 1.55;
 }
 
+/* The account hub is a wider dashboard than the questionnaire (handoff_9: 960). */
+#hti-account.hti-app {
+	max-width: 960px;
+	min-height: 0;
+}
+
 .hti-app *:focus-visible {
 	outline: 2.5px solid var( --hti-primary );
 	outline-offset: 2px;

@@ -60,8 +60,17 @@
 		return tpl.replace( '%1$s', a ).replace( '%2$s', b );
 	}
 
+	// Full-screen takeover while the quiz steps show (E5): hides the site chrome
+	// via CSS. Removed before the result (E7), which keeps the header.
+	function setQuizFullscreen( on ) {
+		try {
+			document.documentElement.classList.toggle( 'hti-quiz-active', !! on );
+		} catch ( e ) {}
+	}
+
 	function renderStep() {
 		stopProcessing();
+		setQuizFullscreen( true );
 		var q = questions[ step ];
 		mount.innerHTML = '';
 
@@ -288,6 +297,7 @@
 					}
 					window.history.replaceState( {}, '', u.toString() );
 				} catch ( e ) {}
+				setQuizFullscreen( false );
 				window.HTIResult.render( mount, res, cfg.data );
 			} )
 			.catch( function () {
@@ -311,6 +321,7 @@
 			} )
 			.then( function ( res ) {
 				stopProcessing();
+				setQuizFullscreen( false );
 				window.HTIResult.render( mount, res, cfg.data );
 			} )
 			.catch( function () {

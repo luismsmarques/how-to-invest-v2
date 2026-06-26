@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.46';
+const VERSION = '0.8.47';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -2171,12 +2171,57 @@ function hide_duplicate_page_title( string $block_content, array $block ): strin
 		return $block_content;
 	}
 	$post = get_post();
-	if ( $post instanceof \WP_Post && has_shortcode( (string) $post->post_content, 'hti_depositos' ) ) {
+	if ( $post instanceof \WP_Post && is_tool_page( (string) $post->post_content ) ) {
 		return '';
 	}
 	return $block_content;
 }
 add_filter( 'render_block', __NAMESPACE__ . '\\hide_duplicate_page_title', 10, 2 );
+
+/**
+ * Whether a page body embeds one of our full-bleed shortcode "tools" that
+ * renders its own heading and controls its own width (questionnaire, account
+ * dashboard, deposit comparator). These need the template's page title hidden
+ * and the constrained content width lifted.
+ *
+ * @param string $content Page content.
+ * @return bool
+ */
+function is_tool_page( string $content ): bool {
+	return has_shortcode( $content, 'hti_questionnaire' )
+		|| has_shortcode( $content, 'hti_account' )
+		|| has_shortcode( $content, 'hti_depositos' );
+}
+
+/**
+ * Tag shortcode-tool pages with a body class so their content can break out of
+ * the theme's narrow constrained width and match the per-tool design width
+ * (the account hub, the questionnaire and the comparator each set their own).
+ *
+ * @param string[] $classes Body classes.
+ * @return string[]
+ */
+function tool_page_body_class( array $classes ): array {
+	if ( ! is_singular() ) {
+		return $classes;
+	}
+	$post = get_post();
+	if ( ! $post instanceof \WP_Post ) {
+		return $classes;
+	}
+	$content = (string) $post->post_content;
+	if ( has_shortcode( $content, 'hti_account' ) ) {
+		$classes[] = 'hti-page-account';
+	}
+	if ( has_shortcode( $content, 'hti_questionnaire' ) ) {
+		$classes[] = 'hti-page-quiz';
+	}
+	if ( has_shortcode( $content, 'hti_depositos' ) ) {
+		$classes[] = 'hti-page-tool';
+	}
+	return $classes;
+}
+add_filter( 'body_class', __NAMESPACE__ . '\\tool_page_body_class' );
 
 /**
  * Supply a meta description for our dynamic/shortcode pages when the SEO plugin
