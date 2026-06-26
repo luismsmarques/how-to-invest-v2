@@ -17,12 +17,12 @@ module,order,slug,title_en,title_pt,topic,status,glossary,prev,next,notes
 3,3,reading-an-example-portfolio,"How to read an example portfolio","Como ler um exemplo de carteira",concepts,written,portfolio,what-is-asset-allocation,what-is-rebalancing,
 3,4,what-is-rebalancing,"What is rebalancing?","O que é o rebalanceamento?",concepts,written,portfolio,reading-an-example-portfolio,understanding-account-types,
 4,1,understanding-account-types,"Understanding account types","Perceber os tipos de conta",getting-started,written,,what-is-rebalancing,costs-and-fees-explained,
-4,2,costs-and-fees-explained,"Costs and fees, explained simply","Custos e taxas, explicados de forma simples",getting-started,idea,,understanding-account-types,how-a-portfolio-is-built,
-4,3,how-a-portfolio-is-built,"How a portfolio is built (step by step)","Como se monta uma carteira (passo a passo)",getting-started,idea,portfolio;diversification,costs-and-fees-explained,what-is-periodic-investing,
-4,4,what-is-periodic-investing,"What is periodic investing (DCA)?","O que é o investimento periódico (DCA)?",getting-started,idea,volatility,how-a-portfolio-is-built,staying-calm-when-markets-fall,
+4,2,costs-and-fees-explained,"Costs and fees, explained simply","Custos e taxas, explicados de forma simples",getting-started,written,,understanding-account-types,how-a-portfolio-is-built,
+4,3,how-a-portfolio-is-built,"How a portfolio is built (step by step)","Como se monta uma carteira (passo a passo)",getting-started,written,portfolio;diversification,costs-and-fees-explained,what-is-periodic-investing,
+4,4,what-is-periodic-investing,"What is periodic investing (DCA)?","O que é o investimento periódico (DCA)?",getting-started,written,volatility,how-a-portfolio-is-built,staying-calm-when-markets-fall,
 5,1,staying-calm-when-markets-fall,"How to stay calm when markets fall","Como manter a calma quando os mercados caem",mindset,seeded-legacy,volatility;bear-market,what-is-periodic-investing,common-beginner-mistakes,Already seeded
-5,2,common-beginner-mistakes,"Common beginner mistakes to avoid","Erros comuns de quem começa",mindset,idea,,staying-calm-when-markets-fall,spotting-scams-and-red-flags,
-5,3,spotting-scams-and-red-flags,"Spotting scams and red flags","Reconhecer fraudes e sinais de alarme",mindset,idea,,common-beginner-mistakes,set-your-goals,
-6,1,set-your-goals,"Set your goals first","Define primeiro os teus objetivos",getting-started,idea,,spotting-scams-and-red-flags,what-is-an-investor-profile,
+5,2,common-beginner-mistakes,"Common beginner mistakes to avoid","Erros comuns de quem começa",mindset,written,,staying-calm-when-markets-fall,spotting-scams-and-red-flags,
+5,3,spotting-scams-and-red-flags,"Spotting scams and red flags","Reconhecer fraudes e sinais de alarme",mindset,written,,common-beginner-mistakes,set-your-goals,
+6,1,set-your-goals,"Set your goals first","Define primeiro os teus objetivos",getting-started,written,,spotting-scams-and-red-flags,what-is-an-investor-profile,
 6,2,what-is-an-investor-profile,"What is an investor profile?","O que é um perfil de investidor?",getting-started,seeded-legacy,,set-your-goals,your-next-steps,Already seeded
-6,3,your-next-steps,"Your next steps from here","Os teus próximos passos a partir daqui",getting-started,idea,,what-is-an-investor-profile,,Closes the path; links to questionnaire + ebook
+6,3,your-next-steps,"Your next steps from here","Os teus próximos passos a partir daqui",getting-started,written,,what-is-an-investor-profile,,Closes the path; links to questionnaire + ebook
