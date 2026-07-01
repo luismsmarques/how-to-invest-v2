@@ -119,6 +119,14 @@ class Metrics {
 		if ( is_string( $path ) && '' !== $path ) {
 			$params['path'] = self::norm_path( $path );
 		}
+		$lang = $request->get_param( 'lang' );
+		if ( is_string( $lang ) && '' !== $lang ) {
+			$params['lang'] = self::norm_lang( $lang );
+		}
+		$ref = $request->get_param( 'ref' );
+		if ( is_string( $ref ) && '' !== $ref ) {
+			$params['ref'] = self::norm_ref( $ref );
+		}
 
 		self::bump( $name, $params );
 
@@ -173,6 +181,22 @@ class Metrics {
 				$data[ $day ]['page']['_other'] = ( $data[ $day ]['page']['_other'] ?? 0 ) + 1;
 			}
 		}
+		if ( 'page_view' === $event && isset( $params['lang'] ) ) {
+			$lg = (string) $params['lang'];
+			$data[ $day ]['lang'][ $lg ] = ( $data[ $day ]['lang'][ $lg ] ?? 0 ) + 1;
+		}
+		if ( 'page_view' === $event && isset( $params['ref'] ) ) {
+			$rf = (string) $params['ref'];
+			if ( ! isset( $data[ $day ]['ref'] ) || ! is_array( $data[ $day ]['ref'] ) ) {
+				$data[ $day ]['ref'] = array();
+			}
+			// Bounded like the path map (overflow → "_other").
+			if ( isset( $data[ $day ]['ref'][ $rf ] ) || count( $data[ $day ]['ref'] ) < self::MAX_PATHS_PER_DAY ) {
+				$data[ $day ]['ref'][ $rf ] = ( $data[ $day ]['ref'][ $rf ] ?? 0 ) + 1;
+			} else {
+				$data[ $day ]['ref']['_other'] = ( $data[ $day ]['ref']['_other'] ?? 0 ) + 1;
+			}
+		}
 
 		// Keep only the most recent KEEP_DAYS days.
 		if ( count( $data ) > self::KEEP_DAYS ) {
@@ -210,10 +234,44 @@ class Metrics {
 	}
 
 	/**
+	 * Normalise a page language to a two-letter, lowercase code (e.g. "pt-PT"
+	 * → "pt"). Non-language input collapses to "other".
+	 *
+	 * @param string $lang Raw lang attribute.
+	 * @return string
+	 */
+	private static function norm_lang( string $lang ): string {
+		$lang = strtolower( substr( $lang, 0, 2 ) );
+		$lang = (string) preg_replace( '/[^a-z]/', '', $lang );
+		return 2 === strlen( $lang ) ? $lang : 'other';
+	}
+
+	/**
+	 * Normalise a referrer to its bare host (e.g. "www.Google.com" →
+	 * "google.com"). Keeps the sentinels "direct" and "internal". Carries no
+	 * personal data — a host only, never the referrer's path or query.
+	 *
+	 * @param string $ref Raw referrer host or sentinel.
+	 * @return string
+	 */
+	private static function norm_ref( string $ref ): string {
+		$ref = strtolower( $ref );
+		$ref = (string) preg_replace( '/^www\./', '', $ref );
+		$ref = (string) preg_replace( '/[^a-z0-9.\-]/', '', $ref );
+		if ( '' === $ref ) {
+			$ref = 'direct';
+		}
+		if ( strlen( $ref ) > 100 ) {
+			$ref = substr( $ref, 0, 100 );
+		}
+		return $ref;
+	}
+
+	/**
 	 * Aggregate the counters over the last $days days.
 	 *
 	 * @param int $days Window size in days.
-	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>,page:array<string,int>}
+	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>,page:array<string,int>,lang:array<string,int>,ref:array<string,int>}
 	 */
 	public static function totals( int $days ): array {
 		$data = get_option( self::OPTION, array() );
@@ -228,12 +286,14 @@ class Metrics {
 			'arch' => array(),
 			'cta'  => array(),
 			'page' => array(),
+			'lang' => array(),
+			'ref'  => array(),
 		);
 		foreach ( $data as $day => $buckets ) {
 			if ( (string) $day < $cutoff ) {
 				continue;
 			}
-			foreach ( array( 'e', 'step', 'arch', 'cta', 'page' ) as $group ) {
+			foreach ( array( 'e', 'step', 'arch', 'cta', 'page', 'lang', 'ref' ) as $group ) {
 				if ( empty( $buckets[ $group ] ) || ! is_array( $buckets[ $group ] ) ) {
 					continue;
 				}
@@ -321,6 +381,52 @@ class Metrics {
 			}
 			if ( $page_rows ) {
 				self::bar_table( $page_rows, $pv );
+			} else {
+				echo '<p>' . esc_html__( 'No data yet.', 'hti-engine' ) . '</p>';
+			}
+			?>
+
+			<h2><?php esc_html_e( 'Where visitors come from', 'hti-engine' ); ?></h2>
+			<p style="margin:.2em 0 1em;color:#646970;font-size:12px;">
+				<?php esc_html_e( 'Referrer host of each page view (internal navigation excluded). "direct" = typed/bookmarked or no referrer.', 'hti-engine' ); ?>
+			</p>
+			<?php
+			$refs = $t['ref'];
+			unset( $refs['internal'] ); // Internal navigation is not an acquisition source.
+			arsort( $refs );
+			$ref_total = array_sum( $refs );
+			$ref_rows  = array();
+			$shown     = 0;
+			foreach ( $refs as $host => $n ) {
+				if ( $shown >= 20 ) {
+					break;
+				}
+				++$shown;
+				$label      = '_other' === $host ? __( '(other sources)', 'hti-engine' ) : (string) $host;
+				$ref_rows[] = array( $label, (int) $n );
+			}
+			if ( $ref_rows ) {
+				self::bar_table( $ref_rows, $ref_total );
+			} else {
+				echo '<p>' . esc_html__( 'No data yet.', 'hti-engine' ) . '</p>';
+			}
+			?>
+
+			<h2><?php esc_html_e( 'Language', 'hti-engine' ); ?></h2>
+			<?php
+			$lang_labels = array(
+				'pt'    => __( 'Portuguese (PT)', 'hti-engine' ),
+				'en'    => __( 'English (EN)', 'hti-engine' ),
+				'other' => __( 'Other', 'hti-engine' ),
+			);
+			$langs = $t['lang'];
+			arsort( $langs );
+			$lang_rows = array();
+			foreach ( $langs as $code => $n ) {
+				$lang_rows[] = array( $lang_labels[ $code ] ?? (string) $code, (int) $n );
+			}
+			if ( $lang_rows ) {
+				self::bar_table( $lang_rows, (int) array_sum( $langs ) );
 			} else {
 				echo '<p>' . esc_html__( 'No data yet.', 'hti-engine' ) . '</p>';
 			}

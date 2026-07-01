@@ -43,6 +43,12 @@
 			if ( params.path != null ) {
 				body.path = params.path;
 			}
+			if ( params.lang != null ) {
+				body.lang = params.lang;
+			}
+			if ( params.ref != null ) {
+				body.ref = params.ref;
+			}
 		}
 		try {
 			window.fetch( cfg.beacon, {
@@ -135,6 +141,24 @@
 	( function () {
 		var path = '/';
 		try { path = window.location.pathname || '/'; } catch ( e ) {}
-		beacon( 'page_view', { path: path } );
+
+		// Page language (pt/en/…), from <html lang> — non-identifying.
+		var lang = '';
+		try { lang = document.documentElement.getAttribute( 'lang' ) || ''; } catch ( e ) {}
+
+		// Acquisition source: the referrer HOST only (never the full URL) — e.g.
+		// "google.com". Empty referrer → "direct"; same-site → "internal". Hosts
+		// are not personal data; the path/query of the referrer is dropped.
+		var ref = 'direct';
+		try {
+			if ( document.referrer ) {
+				var a = document.createElement( 'a' );
+				a.href = document.referrer;
+				ref = a.host || 'direct';
+				if ( ref === window.location.host ) { ref = 'internal'; }
+			}
+		} catch ( e ) {}
+
+		beacon( 'page_view', { path: path, lang: lang, ref: ref } );
 	}() );
 }() );
