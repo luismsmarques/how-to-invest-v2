@@ -13,6 +13,23 @@
 		return;
 	}
 
+	// Click-to-load YouTube (privacy-first): the embed only contacts Google
+	// after an explicit click, so nothing loads before consent.
+	var facade = art.querySelector( '.hti-art__video-facade' );
+	if ( facade ) {
+		facade.addEventListener( 'click', function () {
+			var src = facade.getAttribute( 'data-embed' );
+			if ( ! src ) { return; }
+			var iframe = document.createElement( 'iframe' );
+			iframe.src = src;
+			iframe.title = facade.getAttribute( 'data-title' ) || '';
+			iframe.setAttribute( 'referrerpolicy', 'strict-origin-when-cross-origin' );
+			iframe.setAttribute( 'allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share' );
+			iframe.setAttribute( 'allowfullscreen', '' );
+			facade.parentNode.replaceChild( iframe, facade );
+		} );
+	}
+
 	// Reading progress bar.
 	var bar = art.querySelector( '.hti-art__bar' );
 	if ( bar ) {

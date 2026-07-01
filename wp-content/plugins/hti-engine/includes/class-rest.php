@@ -939,13 +939,31 @@ class REST {
 			);
 		}
 
+		$prefs     = get_user_meta( $user->ID, 'hti_prefs', true );
+		$nps_score = get_user_meta( $user->ID, 'hti_nps_done', true );
+		$delete_at = get_user_meta( $user->ID, 'hti_delete_at', true );
+
 		$data = array(
 			'exported_at'     => gmdate( 'c' ),
 			'account'         => array(
-				'id'           => $user->ID,
-				'email'        => $user->user_email,
-				'display_name' => $user->display_name,
-				'registered'   => $user->user_registered,
+				'id'                    => $user->ID,
+				'email'                 => $user->user_email,
+				'display_name'          => $user->display_name,
+				'registered'            => $user->user_registered,
+				'preferred_locale'      => get_user_meta( $user->ID, 'hti_pref_locale', true ),
+				'onboarded'             => (bool) get_user_meta( $user->ID, 'hti_onboarded', true ),
+				'scheduled_deletion_at' => '' !== $delete_at ? gmdate( 'c', (int) $delete_at ) : null,
+			),
+			'onboarding'      => array(
+				'investing_question' => (string) get_user_meta( $user->ID, 'hti_invest_question', true ),
+			),
+			'newsletter'      => array(
+				// Preferences held on-site; the subscription itself is stored at
+				// the email processor (Brevo) and can be exported from there.
+				'preferences' => is_array( $prefs ) ? $prefs : array(),
+			),
+			'nps'             => array(
+				'score' => '' !== $nps_score ? (int) $nps_score : null,
 			),
 			'profiles'        => $profiles,
 			'learn_progress'  => Learn::get( $user->ID ),

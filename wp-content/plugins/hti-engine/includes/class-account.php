@@ -754,6 +754,9 @@ class Account {
 		}
 		require_once ABSPATH . 'wp-admin/includes/user.php';
 
+		$user  = get_userdata( $user_id );
+		$email = $user ? (string) $user->user_email : '';
+
 		$profiles = get_posts(
 			array(
 				'post_type'   => 'htinvest_profile',
@@ -766,7 +769,39 @@ class Account {
 		foreach ( $profiles as $id ) {
 			wp_delete_post( (int) $id, true );
 		}
+
+		// Newsletter processor (Brevo holds the email off-site): erase the
+		// contact entirely; if the API key lacks delete rights, at least remove
+		// it from every list. Never let this block the account deletion.
+		if ( '' !== $email && Brevo::configured() ) {
+			if ( ! Brevo::delete_contact( $email ) ) {
+				foreach ( Brevo::lists_by_language() as $list_id ) {
+					Brevo::remove_from_list( $email, (int) $list_id );
+				}
+			}
+		}
+
+		// Global options keyed by uid that wp_delete_user does NOT clear.
+		self::forget_questions( $user_id );
+		NPS::forget( $user_id );
+
 		wp_delete_user( $user_id );
+	}
+
+	/**
+	 * Drop a user's free-text onboarding answers from the research log option.
+	 *
+	 * @param int $user_id User id.
+	 */
+	private static function forget_questions( int $user_id ): void {
+		$log = get_option( self::OPTION_QUESTIONS, array() );
+		if ( ! is_array( $log ) ) {
+			return;
+		}
+		$filtered = array_values( array_filter( $log, static fn( $q ) => (int) ( $q['uid'] ?? 0 ) !== $user_id ) );
+		if ( count( $filtered ) !== count( $log ) ) {
+			update_option( self::OPTION_QUESTIONS, $filtered, false );
+		}
 	}
 
 	/**

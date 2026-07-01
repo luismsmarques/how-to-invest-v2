@@ -94,6 +94,26 @@ class Nps {
 		);
 	}
 
+	/**
+	 * Erase a user's stored NPS response (RGPD Art. 17). The user meta is
+	 * removed with the account; this drops the entry from the global option too.
+	 *
+	 * @param int $uid User id.
+	 */
+	public static function forget( int $uid ): void {
+		if ( $uid <= 0 ) {
+			return;
+		}
+		$responses = get_option( self::OPTION, array() );
+		if ( ! is_array( $responses ) ) {
+			return;
+		}
+		$filtered = array_values( array_filter( $responses, static fn( $r ) => (int) ( $r['uid'] ?? 0 ) !== $uid ) );
+		if ( count( $filtered ) !== count( $responses ) ) {
+			update_option( self::OPTION, $filtered, false );
+		}
+	}
+
 	/* ---------- sending ---------- */
 
 	/**

@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.54';
+const VERSION = '0.8.55';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -406,6 +406,7 @@ function strings(): array {
 		'art_video'        => array( 'en' => 'Video', 'pt' => 'Vídeo' ),
 		'art_watch'        => array( 'en' => 'Watch on YouTube', 'pt' => 'Ver no YouTube' ),
 		'art_video_intro'  => array( 'en' => 'Watch the video, then read the summary below.', 'pt' => 'Vê o vídeo e lê o resumo em baixo.' ),
+		'art_video_load'   => array( 'en' => 'Click to load the video — YouTube may set cookies.', 'pt' => 'Carrega para ver — o YouTube pode definir cookies.' ),
 		'art_share'        => array( 'en' => 'Share', 'pt' => 'Partilhar' ),
 		'art_copy'         => array( 'en' => 'Copy link', 'pt' => 'Copiar link' ),
 		'art_copied'       => array( 'en' => 'Copied!', 'pt' => 'Copiado!' ),
@@ -3007,10 +3008,22 @@ function render_news_article(): string {
 
 	// Hero: the embedded video (video format), else featured image, else gradient.
 	if ( $is_video ) {
-		$embed = 'https://www.youtube-nocookie.com/embed/' . rawurlencode( $video_id );
-		$watch = 'https://www.youtube.com/watch?v=' . rawurlencode( $video_id );
-		$out  .= '<figure class="hti-art__video">'
-			. '<div class="hti-art__video-frame"><iframe src="' . esc_url( $embed ) . '" title="' . esc_attr( $title ) . '" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>'
+		// Privacy-first click-to-load: nothing contacts YouTube/Google until the
+		// visitor clicks. The poster is the self-hosted featured image (the
+		// mirrored thumbnail), so the placeholder loads no third-party asset.
+		$embed  = 'https://www.youtube-nocookie.com/embed/' . rawurlencode( $video_id ) . '?autoplay=1';
+		$watch  = 'https://www.youtube.com/watch?v=' . rawurlencode( $video_id );
+		$poster = has_post_thumbnail( $post )
+			? get_the_post_thumbnail( $post, 'large', array( 'class' => 'hti-art__video-poster', 'alt' => '', 'loading' => 'lazy', 'decoding' => 'async' ) )
+			: '';
+		$play   = '<span class="hti-art__video-play" aria-hidden="true"><svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>';
+		$out   .= '<figure class="hti-art__video">'
+			. '<div class="hti-art__video-frame">'
+			. '<button type="button" class="hti-art__video-facade" data-embed="' . esc_url( $embed ) . '" data-title="' . esc_attr( $title ) . '" aria-label="' . esc_attr( t( 'art_watch' ) . ': ' . $title ) . '">'
+			. $poster . $play
+			. '<span class="hti-art__video-consent">' . esc_html( t( 'art_video_load' ) ) . '</span>'
+			. '</button>'
+			. '</div>'
 			. '<figcaption class="hti-art__video-cap"><span>' . esc_html( t( 'art_video_intro' ) ) . '</span>'
 			. '<a class="hti-art__video-link" href="' . esc_url( $watch ) . '" target="_blank" rel="noopener noreferrer nofollow">' . esc_html( t( 'art_watch' ) ) . ' ↗</a>'
 			. '</figcaption></figure>';
