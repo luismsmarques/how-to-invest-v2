@@ -23,6 +23,7 @@ class Plugin {
 		Admin::init();
 		Metabox::init();
 		Reels::init();
+		Script_Reel::init();
 		Logs_Page::init();
 	}
 

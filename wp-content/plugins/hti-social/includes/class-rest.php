@@ -57,6 +57,30 @@ class Rest {
 
 		register_rest_route(
 			self::NS,
+			'/tts',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'tts' ),
+				'permission_callback' => static function () {
+					return current_user_can( 'edit_posts' );
+				},
+				'args'                => array(
+					'text'  => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_textarea_field',
+					),
+					'voice' => array(
+						'type'              => 'string',
+						'default'           => 'Kore',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NS,
 			'/caption',
 			array(
 				'methods'             => 'POST',
@@ -155,6 +179,32 @@ class Rest {
 			),
 			200
 		);
+	}
+
+	/**
+	 * Narrate a line of script via Gemini TTS. Returns a base64 WAV the browser
+	 * decodes and schedules on the reel's audio timeline.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public static function tts( \WP_REST_Request $request ) {
+		$text = trim( (string) $request->get_param( 'text' ) );
+		if ( '' === $text ) {
+			return new \WP_Error( 'hti_social_tts_text', __( 'Nothing to narrate.', 'hti-social' ), array( 'status' => 400 ) );
+		}
+		if ( mb_strlen( $text ) > 600 ) {
+			$text = mb_substr( $text, 0, 600 );
+		}
+		if ( ! Gemini::is_configured() ) {
+			return new \WP_Error( 'hti_social_no_key', __( 'The Gemini API key is not configured on the server.', 'hti-social' ), array( 'status' => 503 ) );
+		}
+
+		$result = Gemini::tts( $text, (string) $request->get_param( 'voice' ) );
+		if ( is_wp_error( $result ) ) {
+			return new \WP_Error( 'hti_social_tts', $result->get_error_message(), array( 'status' => 502 ) );
+		}
+		return new \WP_REST_Response( $result, 200 );
 	}
 
 	/**

@@ -37,6 +37,20 @@ fonts embedded as base64) and drawn to a canvas.
     block a cross-origin Worker and its cross-origin core import. Falls back to
     WebM on failure. Source CDN URLs are filterable via `hti_social_ffmpeg_urls`.
 
+- **Script → Reel:** admin menu → **Social → Script → Reel**. Paste a timed
+  script (a **Hook**, timestamped lines like `0-1s:`, `2-5s:`, and a **Caption**)
+  and the browser renders a vertical **1080×1920** reel of **branded scenes**
+  (one per line) with an **AI voice-over**. The script is narrated segment by
+  segment via **server-side Gemini TTS** (`gemini-2.5-flash-preview-tts`; key
+  never reaches the browser) — the returned PCM is wrapped in a WAV
+  (`POST hti-social/v1/tts`), decoded with Web Audio, and each clip drives its
+  scene's length. Scenes are drawn to a canvas and captured with the narration
+  via `MediaRecorder` → **WebM** (optional **MP4** via ffmpeg.wasm), the same
+  engine as Reels — no uploaded footage. Pick a voice, optional end-card CTA;
+  the educational **disclaimer rides on the end card**. The parsed **Caption**
+  is offered with a Copy button for the post. Falls back to silent
+  (text-only, duration from line length) if no Gemini key is configured.
+
 - **Logs:** admin menu → **Social → Logs**. A capped activity log (server +
   browser) of everything the plugin does — AI caption calls, the ffmpeg mirror
   download, reel render start/done, MP4 conversion and any errors (with the real
@@ -46,6 +60,7 @@ fonts embedded as base64) and drawn to a canvas.
 ## REST
 - `POST hti-social/v1/caption` — `{ brief, lang }` → `{ title, caption,
   description, hashtags[] }`.
+- `POST hti-social/v1/tts` — `{ text, voice }` → `{ wav (base64), mime, rate }`.
 - `POST hti-social/v1/ffmpeg-assets` — mirrors the ffmpeg files; returns local
   URLs.
 - `POST hti-social/v1/log` — `{ level, event, message, context }` records a

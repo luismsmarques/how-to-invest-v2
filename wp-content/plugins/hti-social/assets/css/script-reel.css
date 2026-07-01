@@ -1,0 +1,38 @@
+/**
+ * Script → Reel editor chrome. The rendered scenes carry their own styling on
+ * the canvas; this is just the admin editor layout.
+ */
+.hti-sreel { margin-top: 12px; }
+.hti-sreel-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; }
+@media (max-width: 1100px) { .hti-sreel-grid { grid-template-columns: 1fr; } }
+
+.hti-sreel-lbl { display: block; font-weight: 600; margin: 14px 0 6px; }
+.hti-sreel-script,
+.hti-sreel-caption { width: 100%; font: 500 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 12px 14px; border: 1px solid #c3c4c7; border-radius: 8px; box-sizing: border-box; resize: vertical; }
+.hti-sreel-caption { font-family: inherit; background: #f6f7f7; }
+.hti-sreel-hint { color: #646970; font-size: 12px; margin: 6px 0 12px; }
+.hti-sreel-warn { color: #8a6310; background: #fcf3d6; border-radius: 6px; padding: 8px 12px; font-size: 13px; margin: 6px 0; }
+
+.hti-sreel-row { margin: 12px 0; }
+.hti-sreel-input { width: 100%; margin-top: 8px; padding: 8px 12px; border: 1px solid #c3c4c7; border-radius: 8px; box-sizing: border-box; }
+.hti-sreel-voice { min-width: 260px; }
+
+.hti-sreel-check { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-weight: 500; }
+.hti-sreel-check input { margin: 0; }
+
+.hti-sreel-scenes { margin: 12px 0; border: 1px solid #e0e0e2; border-radius: 10px; overflow: hidden; }
+.hti-sreel-scenes:empty { display: none; }
+.hti-sreel-sceneshead { background: #f6f7f7; padding: 8px 14px; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #50575e; }
+.hti-sreel-scene { display: grid; grid-template-columns: 34px 66px 1fr; gap: 10px; align-items: baseline; padding: 10px 14px; border-top: 1px solid #f0f0f1; }
+.hti-sreel-scene__n { font-variant-numeric: tabular-nums; color: #a7aaad; font-weight: 700; }
+.hti-sreel-scene__lbl { color: #7c5cfc; font-weight: 600; font-size: 12px; }
+.hti-sreel-scene__txt { color: #1d2327; font-size: 13.5px; line-height: 1.4; }
+
+.hti-sreel-actions { display: flex; gap: 10px; margin: 18px 0 8px; }
+.hti-sreel-status { min-height: 1.4em; font-weight: 600; font-size: 13px; color: #50575e; }
+.hti-sreel-status.is-ok { color: #0e9e6e; }
+.hti-sreel-status.is-err { color: #d63638; }
+.hti-sreel-status.is-work { color: #2271b1; }
+
+.hti-sreel-stagebox { background: #11131f; border-radius: 18px; padding: 14px; display: flex; justify-content: center; }
+.hti-sreel-canvas { width: 100%; max-width: 300px; aspect-ratio: 1080 / 1920; height: auto; border-radius: 10px; box-shadow: 0 20px 50px -20px rgba(0,0,0,.5); background: #141631; }
