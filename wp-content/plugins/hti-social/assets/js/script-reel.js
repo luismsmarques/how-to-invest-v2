@@ -350,11 +350,13 @@
 	function pad2( n ) { return ( n < 10 ? '0' : '' ) + n; }
 
 	/* ---- MediaRecorder + optional MP4 ------------------------------------ */
-	function pickMime() {
-		// Prefer WebM/Opus: native MP4 recording drops the WebAudio track on some
-		// Chrome builds. MP4 output is produced by the ffmpeg pass instead, which
-		// muxes the audio reliably.
-		var list = [ 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4' ];
+	function pickMime( preferMp4 ) {
+		// WebM/Opus is the reliable baseline. When the user wants MP4 and the
+		// browser can record it natively (Chrome 130+, Safari), record straight
+		// to MP4 with audio — far more reliable than the ffmpeg.wasm conversion.
+		var webm = [ 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm' ];
+		var mp4 = [ 'video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=h264,aac', 'video/mp4' ];
+		var list = preferMp4 ? mp4.concat( webm ) : webm.concat( mp4 );
 		for ( var i = 0; i < list.length; i++ ) {
 			if ( window.MediaRecorder && MediaRecorder.isTypeSupported( list[ i ] ) ) { return list[ i ]; }
 		}
@@ -479,7 +481,7 @@
 			var stream = canvas.captureStream( 30 );
 			dest.stream.getAudioTracks().forEach( function ( t ) { stream.addTrack( t ); } );
 
-			var mime = pickMime();
+			var mime = pickMime( opts.preferMp4 );
 			logEvent( 'info', 'sreel_tracks', 'Recording stream ready', {
 				audio: stream.getAudioTracks().length,
 				video: stream.getVideoTracks().length,
@@ -748,14 +750,22 @@
 				title: state.endTitle,
 				cta: state.endCta,
 				disclaimer: ( CFG.disclaimers && CFG.disclaimers[ L ] ) || '',
-				musicBuffer: state.musicBuffer
+				musicBuffer: state.musicBuffer,
+				preferMp4: state.toMp4
 			};
 
 			renderReel( canvas, state.scenes, opts, function ( t, g ) {
 				setStatus( ( T.rendering || 'Recording…' ) + ' ' + Math.round( t ) + 's / ' + Math.round( g ) + 's', 'work' );
 			} ).then( function ( out ) {
 				var stamp = new Date().toISOString().slice( 0, 10 );
-				if ( state.toMp4 && out.mime.indexOf( 'mp4' ) === -1 ) {
+				// Native MP4 (Chrome 130+/Safari): the recorder already produced an
+				// MP4 with audio — no conversion needed.
+				if ( out.mime.indexOf( 'mp4' ) !== -1 ) {
+					downloadBlob( out.blob, 'howtoinvest-reel-' + stamp + '.mp4' );
+					return { ok: true };
+				}
+				// Wanted MP4 but the browser can only record WebM → try ffmpeg.
+				if ( state.toMp4 ) {
 					setStatus( ( T.mp4_doing || 'Converting to MP4…' ) + ' 0%', 'work' );
 					return convertToMp4( out.blob, function ( p ) {
 						if ( p != null && p >= 0 && p <= 1 ) {
