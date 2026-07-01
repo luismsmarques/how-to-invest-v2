@@ -138,8 +138,11 @@
 	function delay( ms ) {
 		return new Promise( function ( r ) { setTimeout( r, ms ); } );
 	}
-	function ttsBuffer( text, voice, tries ) {
-		tries = tries == null ? 2 : tries;
+	// The server does ONE attempt (so it never pins a PHP worker); transient
+	// failures are retried here with non-blocking exponential backoff.
+	function ttsBuffer( text, voice, attempt ) {
+		attempt = attempt || 0;
+		var MAX = 3;
 		return fetch( CFG.restTts, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': CFG.nonce },
@@ -151,9 +154,9 @@
 			var buf = b64ToArrayBuffer( j.wav );
 			return audioCtx().decodeAudioData( buf );
 		} ).catch( function ( err ) {
-			// One more retry after a short pause (server already retries 5xx).
-			if ( tries > 0 ) {
-				return delay( 1200 ).then( function () { return ttsBuffer( text, voice, tries - 1 ); } );
+			if ( attempt < MAX ) {
+				var wait = 800 * Math.pow( 2, attempt ); // 800ms, 1.6s, 3.2s.
+				return delay( wait ).then( function () { return ttsBuffer( text, voice, attempt + 1 ); } );
 			}
 			throw err;
 		} );

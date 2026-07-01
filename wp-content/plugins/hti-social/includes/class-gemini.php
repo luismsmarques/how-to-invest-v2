@@ -163,46 +163,27 @@ class Gemini {
 		$started = microtime( true );
 		Logger::log( 'info', 'tts_request', 'Calling Gemini TTS', array( 'model' => self::tts_model(), 'voice' => $voice, 'chars' => strlen( $text ) ) );
 
-		// The preview TTS model returns transient 429/5xx sporadically. Retry a
-		// few times with backoff so one flaky segment doesn't kill the batch.
-		$res      = null;
-		$code     = 0;
-		$attempts = 0;
-		$max      = 3;
-		while ( $attempts < $max ) {
-			++$attempts;
-			$res  = wp_remote_post(
-				$url,
-				array(
-					'timeout' => 60,
-					'headers' => array( 'Content-Type' => 'application/json' ),
-					'body'    => wp_json_encode( $body ),
-				)
-			);
-			$code = is_wp_error( $res ) ? 0 : (int) wp_remote_retrieve_response_code( $res );
-			if ( ! is_wp_error( $res ) && 200 === $code ) {
-				break;
-			}
-			$transient = is_wp_error( $res ) || in_array( $code, array( 429, 500, 502, 503, 504 ), true );
-			if ( ! $transient || $attempts >= $max ) {
-				break;
-			}
-			Logger::log(
-				'info',
-				'tts_retry',
-				sprintf( 'TTS retry %d/%d', $attempts, $max ),
-				array( 'reason' => is_wp_error( $res ) ? $res->get_error_message() : ( 'HTTP ' . $code ) )
-			);
-			sleep( $attempts ); // 1s, then 2s.
-		}
+		// Single, non-blocking attempt: the request handler must free the
+		// PHP-FPM worker quickly. Transient 429/5xx are retried by the browser
+		// (script-reel.js) with its own backoff — never with sleep() here, which
+		// would pin a worker for the full timeout on every retry.
+		$res  = wp_remote_post(
+			$url,
+			array(
+				'timeout' => 45,
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => wp_json_encode( $body ),
+			)
+		);
 
 		if ( is_wp_error( $res ) ) {
 			Logger::log( 'error', 'tts_error', $res->get_error_message() );
 			return $res;
 		}
-		if ( 200 !== (int) $code ) {
-			Logger::log( 'error', 'tts_http', sprintf( 'Gemini TTS HTTP %d', (int) $code ), array( 'body' => substr( (string) wp_remote_retrieve_body( $res ), 0, 300 ) ) );
-			return new \WP_Error( 'hti_social_http', sprintf( 'Gemini TTS HTTP %d', (int) $code ) );
+		$code = (int) wp_remote_retrieve_response_code( $res );
+		if ( 200 !== $code ) {
+			Logger::log( 'error', 'tts_http', sprintf( 'Gemini TTS HTTP %d', $code ), array( 'body' => substr( (string) wp_remote_retrieve_body( $res ), 0, 300 ) ) );
+			return new \WP_Error( 'hti_social_http', sprintf( 'Gemini TTS HTTP %d', $code ), array( 'status' => $code ) );
 		}
 
 		$data   = json_decode( wp_remote_retrieve_body( $res ), true );
