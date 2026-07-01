@@ -31,12 +31,19 @@ class Metrics {
 	private const KEEP_DAYS = 120;
 
 	/**
+	 * Cap on distinct page paths tracked per day (keeps the option bounded on
+	 * large content sites). Beyond this, extra new paths fold into "_other".
+	 */
+	private const MAX_PATHS_PER_DAY = 300;
+
+	/**
 	 * Countable events (anything else is ignored).
 	 *
 	 * @return array<int,string>
 	 */
 	public static function events(): array {
 		return array(
+			'page_view',
 			'quiz_start',
 			'quiz_step_complete',
 			'quiz_submit',
@@ -108,6 +115,10 @@ class Metrics {
 		if ( is_string( $loc ) && '' !== $loc ) {
 			$params['location'] = sanitize_key( $loc );
 		}
+		$path = $request->get_param( 'path' );
+		if ( is_string( $path ) && '' !== $path ) {
+			$params['path'] = self::norm_path( $path );
+		}
 
 		self::bump( $name, $params );
 
@@ -149,6 +160,19 @@ class Metrics {
 			$loc = (string) $params['location'];
 			$data[ $day ]['cta'][ $loc ] = ( $data[ $day ]['cta'][ $loc ] ?? 0 ) + 1;
 		}
+		if ( 'page_view' === $event && isset( $params['path'] ) ) {
+			$path = (string) $params['path'];
+			if ( ! isset( $data[ $day ]['page'] ) || ! is_array( $data[ $day ]['page'] ) ) {
+				$data[ $day ]['page'] = array();
+			}
+			// Keep the per-day path map bounded: new paths beyond the cap fold
+			// into "_other" so counts stay complete without unbounded growth.
+			if ( isset( $data[ $day ]['page'][ $path ] ) || count( $data[ $day ]['page'] ) < self::MAX_PATHS_PER_DAY ) {
+				$data[ $day ]['page'][ $path ] = ( $data[ $day ]['page'][ $path ] ?? 0 ) + 1;
+			} else {
+				$data[ $day ]['page']['_other'] = ( $data[ $day ]['page']['_other'] ?? 0 ) + 1;
+			}
+		}
 
 		// Keep only the most recent KEEP_DAYS days.
 		if ( count( $data ) > self::KEEP_DAYS ) {
@@ -160,10 +184,36 @@ class Metrics {
 	}
 
 	/**
+	 * Normalise a page path to an anonymous, low-cardinality, storage-safe key:
+	 * drops the query string/fragment, lowercases, strips anything outside a
+	 * safe URL-path charset, removes the trailing slash (root stays "/") and
+	 * caps the length. Carries no personal data — a public page URL only.
+	 *
+	 * @param string $path Raw pathname from the client.
+	 * @return string
+	 */
+	private static function norm_path( string $path ): string {
+		$path = (string) preg_replace( '/[?#].*$/', '', $path );
+		$path = rawurldecode( $path );
+		$path = strtolower( $path );
+		$path = (string) preg_replace( '#[^a-z0-9\-_/]#', '', $path );
+		if ( strlen( $path ) > 1 ) {
+			$path = rtrim( $path, '/' );
+		}
+		if ( '' === $path ) {
+			$path = '/';
+		}
+		if ( strlen( $path ) > 120 ) {
+			$path = substr( $path, 0, 120 );
+		}
+		return $path;
+	}
+
+	/**
 	 * Aggregate the counters over the last $days days.
 	 *
 	 * @param int $days Window size in days.
-	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>}
+	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>,page:array<string,int>}
 	 */
 	public static function totals( int $days ): array {
 		$data = get_option( self::OPTION, array() );
@@ -177,12 +227,13 @@ class Metrics {
 			'step' => array(),
 			'arch' => array(),
 			'cta'  => array(),
+			'page' => array(),
 		);
 		foreach ( $data as $day => $buckets ) {
 			if ( (string) $day < $cutoff ) {
 				continue;
 			}
-			foreach ( array( 'e', 'step', 'arch', 'cta' ) as $group ) {
+			foreach ( array( 'e', 'step', 'arch', 'cta', 'page' ) as $group ) {
 				if ( empty( $buckets[ $group ] ) || ! is_array( $buckets[ $group ] ) ) {
 					continue;
 				}
@@ -245,6 +296,35 @@ class Metrics {
 					<?php endif; ?>
 				<?php endforeach; ?>
 			</p>
+
+			<h2><?php esc_html_e( 'Traffic (page views)', 'hti-engine' ); ?></h2>
+			<?php
+			$pv = (int) ( $e['page_view'] ?? 0 );
+			?>
+			<p style="margin:.2em 0 1em;">
+				<span style="font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;"><?php echo esc_html( number_format_i18n( $pv ) ); ?></span>
+				<span style="color:#646970;">&nbsp;<?php esc_html_e( 'page views in this window (anonymous, cookieless)', 'hti-engine' ); ?></span>
+			</p>
+			<h3 style="margin:.5em 0;"><?php esc_html_e( 'Top pages', 'hti-engine' ); ?></h3>
+			<?php
+			$page_rows = array();
+			$pages     = $t['page'];
+			arsort( $pages );
+			$shown = 0;
+			foreach ( $pages as $path => $n ) {
+				if ( $shown >= 25 ) {
+					break;
+				}
+				++$shown;
+				$label       = '_other' === $path ? __( '(other pages)', 'hti-engine' ) : (string) $path;
+				$page_rows[] = array( $label, (int) $n );
+			}
+			if ( $page_rows ) {
+				self::bar_table( $page_rows, $pv );
+			} else {
+				echo '<p>' . esc_html__( 'No data yet.', 'hti-engine' ) . '</p>';
+			}
+			?>
 
 			<h2><?php esc_html_e( 'Activation funnel', 'hti-engine' ); ?></h2>
 			<?php

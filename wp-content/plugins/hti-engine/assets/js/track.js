@@ -40,6 +40,9 @@
 			if ( params.location != null ) {
 				body.location = params.location;
 			}
+			if ( params.path != null ) {
+				body.path = params.path;
+			}
 		}
 		try {
 			window.fetch( cfg.beacon, {
@@ -123,4 +126,15 @@
 		}
 		event( name, params );
 	}, true );
+
+	// Anonymous first-party page view — fired on every load, always, cookieless.
+	// Routed straight to the beacon (not through event()): GA already records its
+	// own page_view via `gtag('config', …)`, so sending it there too would
+	// double-count. Only the pathname is sent (no query string, no referrer, no
+	// identifiers); the server normalises and aggregates it.
+	( function () {
+		var path = '/';
+		try { path = window.location.pathname || '/'; } catch ( e ) {}
+		beacon( 'page_view', { path: path } );
+	}() );
 }() );
