@@ -242,10 +242,11 @@
 			ctx.textBaseline = 'middle';
 			ctx.fillText( 'MYTH', 128, kickY );
 		} else {
+			// A small accent bar (not the script timecode — that stays in the
+			// editor only, never burned onto the video).
 			ctx.fillStyle = pal.accent;
-			ctx.font = "700 30px 'Plus Jakarta Sans'";
-			ctx.textBaseline = 'middle';
-			ctx.fillText( scene.label, 100, kickY );
+			roundRect( ctx, 96, kickY - 5, 88, 10, 5 );
+			ctx.fill();
 		}
 		ctx.restore();
 
@@ -350,7 +351,10 @@
 
 	/* ---- MediaRecorder + optional MP4 ------------------------------------ */
 	function pickMime() {
-		var list = [ 'video/mp4;codecs=h264,aac', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm' ];
+		// Prefer WebM/Opus: native MP4 recording drops the WebAudio track on some
+		// Chrome builds. MP4 output is produced by the ffmpeg pass instead, which
+		// muxes the audio reliably.
+		var list = [ 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4' ];
 		for ( var i = 0; i < list.length; i++ ) {
 			if ( window.MediaRecorder && MediaRecorder.isTypeSupported( list[ i ] ) ) { return list[ i ]; }
 		}
@@ -421,9 +425,11 @@
 	/* ---- render + record ------------------------------------------------- */
 	// scenes must already carry `buffer` (AudioBuffer|null) and `dur` (s).
 	function renderReel( canvas, scenes, opts, onStatus ) {
+		var actx = audioCtx();
 		return ensureFonts().then( function () {
+			return actx.resume().catch( function () {} ); // Must be running before we schedule/record.
+		} ).then( function () {
 			var ctx = canvas.getContext( '2d' );
-			var actx = audioCtx();
 			var dest = actx.createMediaStreamDestination();
 
 			// Timeline offsets.
@@ -461,6 +467,12 @@
 			dest.stream.getAudioTracks().forEach( function ( t ) { stream.addTrack( t ); } );
 
 			var mime = pickMime();
+			logEvent( 'info', 'sreel_tracks', 'Recording stream ready', {
+				audio: stream.getAudioTracks().length,
+				video: stream.getVideoTracks().length,
+				state: actx.state,
+				mime: mime
+			} );
 			if ( ! window.MediaRecorder ) { return Promise.reject( new Error( 'no MediaRecorder' ) ); }
 			var rec = new MediaRecorder( stream, mime ? { mimeType: mime, videoBitsPerSecond: 9000000 } : undefined );
 			var chunks = [];
