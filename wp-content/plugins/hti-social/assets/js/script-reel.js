@@ -393,11 +393,21 @@
 						var FFmpeg = window.FFmpegWASM && window.FFmpegWASM.FFmpeg;
 						var util = window.FFmpegUtil;
 						if ( ! FFmpeg ) { throw new Error( 'FFmpegWASM global missing' ); }
-						if ( ! util || ! util.fetchFile ) { throw new Error( 'FFmpegUtil global missing' ); }
-						var ff = new FFmpeg();
-						var cfg = { coreURL: local.core, wasmURL: local.wasm };
-						if ( local.worker ) { cfg.classWorkerURL = local.worker; }
-						return ff.load( cfg ).then( function () { return { ff: ff, util: util }; } );
+						if ( ! util || ! util.fetchFile || ! util.toBlobURL ) { throw new Error( 'FFmpegUtil global missing' ); }
+						// Convert the (same-origin) mirrored files to blob URLs. A
+						// classic Worker cannot importScripts a plain URL core — blob
+						// URLs are what make importScripts succeed. Passing raw URLs is
+						// exactly what triggers "failed to import ffmpeg-core.js".
+						return Promise.all( [
+							util.toBlobURL( local.core, 'text/javascript' ),
+							util.toBlobURL( local.wasm, 'application/wasm' ),
+							local.worker ? util.toBlobURL( local.worker, 'text/javascript' ) : Promise.resolve( '' )
+						] ).then( function ( b ) {
+							var ff = new FFmpeg();
+							var cfg = { coreURL: b[ 0 ], wasmURL: b[ 1 ] };
+							if ( b[ 2 ] ) { cfg.classWorkerURL = b[ 2 ]; }
+							return ff.load( cfg ).then( function () { return { ff: ff, util: util }; } );
+						} );
 					} );
 			} );
 		ffmpegReady = p;
@@ -407,9 +417,12 @@
 		} );
 		return p;
 	}
-	function convertToMp4( webmBlob ) {
+	function convertToMp4( webmBlob, onProgress ) {
 		return getFfmpeg().then( function ( o ) {
 			var ff = o.ff, util = o.util;
+			if ( onProgress && ff.on ) {
+				ff.on( 'progress', function ( e ) { onProgress( e && e.progress ); } );
+			}
 			return util.fetchFile( webmBlob ).then( function ( data ) {
 				return ff.writeFile( 'in.webm', data );
 			} ).then( function () {
@@ -743,18 +756,29 @@
 			} ).then( function ( out ) {
 				var stamp = new Date().toISOString().slice( 0, 10 );
 				if ( state.toMp4 && out.mime.indexOf( 'mp4' ) === -1 ) {
-					setStatus( 'MP4…', 'work' );
-					return convertToMp4( out.blob ).then( function ( mp4 ) {
+					setStatus( ( T.mp4_doing || 'Converting to MP4…' ) + ' 0%', 'work' );
+					return convertToMp4( out.blob, function ( p ) {
+						if ( p != null && p >= 0 && p <= 1 ) {
+							setStatus( ( T.mp4_doing || 'Converting to MP4…' ) + ' ' + Math.round( p * 100 ) + '%', 'work' );
+						}
+					} ).then( function ( mp4 ) {
 						downloadBlob( mp4, 'howtoinvest-reel-' + stamp + '.mp4' );
+						return { ok: true };
 					} ).catch( function ( err ) {
-						logEvent( 'error', 'sreel_mp4', err && err.message ? err.message : String( err ) );
+						// Surface the real reason (don't fall back silently), then
+						// still hand over the WebM so the work isn't lost.
+						var msg = err && err.message ? err.message : String( err );
+						logEvent( 'error', 'sreel_mp4', msg );
+						setStatus( ( T.mp4_fail || 'MP4 conversion failed — saved WebM instead.' ) + ' (' + msg + ')', 'err' );
 						downloadBlob( out.blob, 'howtoinvest-reel-' + stamp + '.webm' );
+						return { ok: false };
 					} );
 				}
 				var ext = out.mime.indexOf( 'mp4' ) !== -1 ? 'mp4' : 'webm';
 				downloadBlob( out.blob, 'howtoinvest-reel-' + stamp + '.' + ext );
-			} ).then( function () {
-				setStatus( '✓', 'ok' );
+				return { ok: true };
+			} ).then( function ( r ) {
+				if ( r && r.ok ) { setStatus( '✓', 'ok' ); }
 				renderBtn.disabled = false;
 				voiceBtn.disabled = false;
 				logEvent( 'info', 'sreel_render_done', 'Script reel done' );

@@ -119,6 +119,8 @@ class Script_Reel {
 				'rendering'   => $pt ? 'A gravar em tempo real…' : 'Recording in real time…',
 				'render_hint' => $pt ? 'A gravação corre em tempo real (a duração do reel) — mantém este separador à frente.' : 'Recording runs in real time (the reel length) — keep this tab focused.',
 				'mp4'         => $pt ? 'Exportar em MP4' : 'Export as MP4',
+				'mp4_doing'   => $pt ? 'A converter para MP4…' : 'Converting to MP4…',
+				'mp4_fail'    => $pt ? 'A conversão para MP4 falhou — guardei o WebM.' : 'MP4 conversion failed — saved the WebM instead.',
 				'endcard'     => $pt ? 'Cartão final (CTA)' : 'End card (CTA)',
 				'end_title'   => $pt ? 'Título do cartão final' : 'End-card title',
 				'end_cta'     => $pt ? 'Botão do cartão final' : 'End-card button',
