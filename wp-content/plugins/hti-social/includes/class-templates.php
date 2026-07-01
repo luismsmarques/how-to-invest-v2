@@ -29,6 +29,7 @@ class Templates {
 			'cta'       => 'Quiz CTA',
 			'og'        => 'og:image',
 			'editorial' => 'Editorial',
+			'carousel'  => 'Carousel',
 		);
 	}
 

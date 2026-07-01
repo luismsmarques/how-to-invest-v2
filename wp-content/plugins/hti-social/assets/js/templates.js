@@ -17,6 +17,23 @@ window.HTI_SOCIAL_TEMPLATES = ( function () {
 	var POPPINS = "Poppins,sans-serif";
 	var JAKARTA = "'Plus Jakarta Sans',sans-serif";
 
+	// Two logo treatments used by the Myth carousel (handoff 10): the shield
+	// inverts for dark vs light backgrounds. The purple bar-chart stays constant.
+	var LOGO_BARS = '<g fill="#7C5CFC"><rect x="20.4" y="40" width="3.6" height="6" rx=".8"/><rect x="25.9" y="37.5" width="3.6" height="8.5" rx=".8"/><rect x="31.4" y="35" width="3.6" height="11" rx=".8"/><rect x="36.9" y="32.5" width="3.6" height="13.5" rx=".8"/></g>';
+	// White disc + navy shield → for dark backgrounds.
+	var LOGO_DARK = '<svg viewBox="0 0 64 64" width="100%" height="100%" fill="none"><circle cx="32" cy="32" r="32" fill="#fff"/><path d="M32 12L50 17.5V32c0 10-7.5 16.6-18 20-10.5-3.4-18-10-18-20V17.5z" fill="#1E2147"/>' + LOGO_BARS + '</svg>';
+	// Navy disc + white shield → for light / coral backgrounds.
+	var LOGO_LIGHT = '<svg viewBox="0 0 64 64" width="100%" height="100%" fill="none"><circle cx="32" cy="32" r="32" fill="#1E2147"/><path d="M32 12L50 17.5V32c0 10-7.5 16.6-18 20-10.5-3.4-18-10-18-20V17.5z" fill="#fff"/>' + LOGO_BARS + '</svg>';
+
+	// One "zero-minimum broker" checklist row for the Myth · 04 Proof slide.
+	function mythBrokerRow( name, note, min ) {
+		return '<div style="display:flex;align-items:center;gap:28px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:28px;padding:34px 40px;">' +
+			'<span style="flex:none;width:76px;height:76px;border-radius:50%;background:#22C3A6;display:flex;align-items:center;justify-content:center;"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#0E2A24" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>' +
+			'<div style="flex:1;"><div style="font:700 48px ' + POPPINS + ';letter-spacing:-.02em;">' + name + '</div><div style="font:500 24px ' + JAKARTA + ';color:#A9A4C4;">' + note + '</div></div>' +
+			'<span style="font:700 26px ' + JAKARTA + ';color:#3FE0BF;">' + min + '</span>' +
+		'</div>';
+	}
+
 	// --- News · Square 1080×1080 -------------------------------------------
 	var newsSquare = {
 		id: 'news-square',
@@ -717,12 +734,276 @@ window.HTI_SOCIAL_TEMPLATES = ( function () {
 			'</div>'
 	};
 
+	/* =====================================================================
+	 * Myth carousel (handoff 10 — "10k Myth Carousel"). Five 1080×1350 (4:5)
+	 * slides; export each as its own PNG and post them as an Instagram carousel.
+	 * Educational framing only — by design it names no financial instruments;
+	 * the slide-4 broker names ship as generic, editable placeholders so the
+	 * template itself carries no named companies (project invariant).
+	 * ===================================================================== */
+
+	// --- Myth · 01 Hook (dark) ---------------------------------------------
+	var mythHook = {
+		id: 'myth-hook',
+		category: 'carousel',
+		label: { en: 'Myth · 01 Hook', pt: 'Mito · 01 Gancho' },
+		w: 1080,
+		h: 1350,
+		fields: [
+			{ key: 'tag', label: { en: 'Myth tag', pt: 'Etiqueta mito' }, type: 'text', default: 'MYTH' },
+			{ key: 'pre', label: { en: 'Before amount', pt: 'Antes do valor' }, type: 'text', default: 'You need' },
+			{ key: 'amount', label: { en: 'Amount (highlight)', pt: 'Valor (destaque)' }, type: 'text', default: '$10,000' },
+			{ key: 'post', label: { en: 'After amount', pt: 'Depois do valor' }, type: 'text', default: 'to start investing' },
+			{ key: 'swipe', label: { en: 'Swipe label', pt: 'Texto de deslize' }, type: 'text', default: 'Swipe for the truth' }
+		],
+		html:
+			'<div style="width:1080px;height:1350px;background:#141631;position:relative;overflow:hidden;color:#fff;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<div style="position:absolute;right:-260px;top:-260px;width:720px;height:720px;border-radius:50%;background:radial-gradient(circle at 50% 50%,rgba(124,92,252,.30) 0%,rgba(20,22,49,0) 70%);"></div>' +
+				'<div style="position:absolute;left:-220px;bottom:-260px;width:680px;height:680px;border-radius:50%;background:radial-gradient(circle at 50% 50%,rgba(255,107,94,.20) 0%,rgba(20,22,49,0) 70%);"></div>' +
+				'<div style="position:absolute;top:64px;left:72px;display:flex;align-items:center;gap:14px;">' +
+					'<span style="width:46px;height:46px;display:flex;">' + LOGO_DARK + '</span>' +
+					'<span style="font:600 26px ' + JAKARTA + ';letter-spacing:-.02em;">HowToInvest</span>' +
+				'</div>' +
+				'<div style="position:absolute;top:300px;left:72px;">' +
+					'<span style="display:inline-flex;align-items:center;gap:14px;background:#FF3B30;color:#fff;font:700 30px ' + POPPINS + ';letter-spacing:.22em;padding:14px 30px;border-radius:999px;box-shadow:0 12px 40px rgba(255,59,48,.4);">' +
+						'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>{{tag}}' +
+					'</span>' +
+				'</div>' +
+				'<div style="position:absolute;top:404px;left:72px;right:72px;">' +
+					'<h1 style="font:800 118px ' + POPPINS + ';line-height:.98;letter-spacing:-.035em;margin:0;position:relative;display:inline-block;">' +
+						'{{pre}} <span style="color:#FF6B5E;">{{amount}}</span> {{post}}' +
+						'<svg viewBox="0 0 940 560" style="position:absolute;left:-20px;top:-20px;width:calc(100% + 40px);height:calc(100% + 40px);pointer-events:none;" fill="none" preserveAspectRatio="none"><path d="M40 70 L900 500" stroke="#FF3B30" stroke-width="26" stroke-linecap="round"/></svg>' +
+					'</h1>' +
+				'</div>' +
+				'<div style="position:absolute;bottom:96px;left:72px;right:72px;display:flex;align-items:center;gap:22px;">' +
+					'<div style="flex:1;height:2px;background:rgba(255,255,255,.16);"></div>' +
+					'<span style="font:600 30px ' + JAKARTA + ';color:#A9A4C4;">{{swipe}}</span>' +
+					'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FF6B5E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>' +
+				'</div>' +
+			'</div>'
+	};
+
+	// --- Myth · 02 Reality (cream, phone) ----------------------------------
+	var mythReality = {
+		id: 'myth-reality',
+		category: 'carousel',
+		label: { en: 'Myth · 02 Reality', pt: 'Mito · 02 Realidade' },
+		w: 1080,
+		h: 1350,
+		fields: [
+			{ key: 'tag', label: { en: 'Tag', pt: 'Etiqueta' }, type: 'text', default: 'Reality' },
+			{ key: 'pre', label: { en: 'Before amount', pt: 'Antes do valor' }, type: 'text', default: 'You can start with' },
+			{ key: 'amount', label: { en: 'Amount (highlight)', pt: 'Valor (destaque)' }, type: 'text', default: '$5' },
+			{ key: 'sub', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'textarea', default: 'The price of a coffee. No minimums, no excuses.' },
+			{ key: 'balance', label: { en: 'Phone balance', pt: 'Saldo no telemóvel' }, type: 'text', default: '$5.00' }
+		],
+		html:
+			'<div style="width:1080px;height:1350px;background:#FFF6F1;position:relative;overflow:hidden;color:#2A2438;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<div style="position:absolute;right:-200px;top:-200px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#FFE7DF 0%,rgba(255,246,241,0) 70%);"></div>' +
+				'<div style="position:absolute;top:64px;left:72px;display:flex;align-items:center;gap:14px;">' +
+					'<span style="width:44px;height:44px;display:flex;">' + LOGO_LIGHT + '</span>' +
+					'<span style="font:600 24px ' + JAKARTA + ';letter-spacing:-.02em;">HowToInvest</span>' +
+				'</div>' +
+				'<div style="position:absolute;top:230px;left:72px;right:520px;">' +
+					'<span style="display:inline-flex;align-items:center;gap:10px;background:#E3F7F1;color:#0E9E82;font:700 20px ' + JAKARTA + ';letter-spacing:.14em;text-transform:uppercase;padding:11px 22px;border-radius:999px;">{{tag}}</span>' +
+					'<h1 style="font:800 96px ' + POPPINS + ';line-height:1.0;letter-spacing:-.035em;margin:34px 0 0;">{{pre}} <span style="color:#FF6B5E;">{{amount}}</span></h1>' +
+					'<p style="font:400 32px ' + JAKARTA + ';line-height:1.5;color:#6E6680;margin:34px 0 0;max-width:20ch;">{{sub}}</p>' +
+				'</div>' +
+				'<div style="position:absolute;top:300px;right:96px;">' +
+					'<div style="width:372px;height:760px;background:#1E2147;border-radius:52px;padding:16px;box-shadow:0 44px 90px -30px rgba(30,33,71,.55);">' +
+						'<div style="width:100%;height:100%;background:#F4F1FB;border-radius:38px;overflow:hidden;position:relative;">' +
+							'<div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);width:120px;height:28px;background:#1E2147;border-radius:999px;"></div>' +
+							'<div style="padding:58px 26px 0;display:flex;align-items:center;justify-content:space-between;">' +
+								'<span style="font:600 17px ' + JAKARTA + ';color:#6E6680;">My account</span>' +
+								'<span style="width:34px;height:34px;border-radius:50%;background:#EDE7FB;display:flex;align-items:center;justify-content:center;"><span style="width:14px;height:14px;border-radius:50%;background:#7C5CFC;"></span></span>' +
+							'</div>' +
+							'<div style="margin:22px 20px 0;background:#fff;border-radius:26px;padding:30px 26px;box-shadow:0 12px 30px -14px rgba(30,33,71,.2);">' +
+								'<span style="font:600 15px ' + JAKARTA + ';color:#A89FB5;letter-spacing:.03em;">Available balance</span>' +
+								'<div style="font:700 62px ' + POPPINS + ';letter-spacing:-.03em;color:#1E2147;margin-top:8px;">{{balance}}</div>' +
+								'<div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><span style="display:inline-flex;align-items:center;gap:5px;background:#E3F7F1;color:#0E9E82;font:700 14px ' + JAKARTA + ';padding:5px 12px;border-radius:999px;">▲ ready to invest</span></div>' +
+								'<div style="margin-top:22px;width:100%;background:#FF6B5E;color:#fff;font:600 19px ' + POPPINS + ';padding:16px;border-radius:16px;text-align:center;">Invest now</div>' +
+							'</div>' +
+							'<div style="margin:20px 20px 0;display:flex;flex-direction:column;gap:12px;">' +
+								'<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:15px 16px;">' +
+									'<span style="width:38px;height:38px;border-radius:11px;background:#EDE7FB;display:flex;align-items:center;justify-content:center;color:#7C5CFC;font:700 15px ' + JAKARTA + ';">ETF</span>' +
+									'<div style="flex:1;"><div style="font:600 16px ' + JAKARTA + ';color:#2A2438;">Global index</div><div style="font:500 13px ' + JAKARTA + ';color:#A89FB5;">fractions from $1</div></div>' +
+									'<span style="font:700 15px ' + JAKARTA + ';color:#0E9E82;">+0,4%</span>' +
+								'</div>' +
+								'<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:15px 16px;">' +
+									'<span style="width:38px;height:38px;border-radius:11px;background:#FFEDE9;display:flex;align-items:center;justify-content:center;color:#FF6B5E;font:700 15px ' + JAKARTA + ';">A</span>' +
+									'<div style="flex:1;"><div style="font:600 16px ' + JAKARTA + ';color:#2A2438;">Fractional shares</div><div style="font:500 13px ' + JAKARTA + ';color:#A89FB5;">buy $5 of any stock</div></div>' +
+									'<span style="font:700 15px ' + JAKARTA + ';color:#0E9E82;">+1,2%</span>' +
+								'</div>' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+				'<div style="position:absolute;bottom:70px;left:72px;"><span style="font:600 22px ' + JAKARTA + ';color:#A89FB5;">02 / 05</span></div>' +
+			'</div>'
+	};
+
+	// --- Myth · 03 How (cream, fractional) ---------------------------------
+	var mythHow = {
+		id: 'myth-how',
+		category: 'carousel',
+		label: { en: 'Myth · 03 How', pt: 'Mito · 03 Como' },
+		w: 1080,
+		h: 1350,
+		fields: [
+			{ key: 'kicker', label: { en: 'Kicker', pt: 'Antetítulo' }, type: 'text', default: 'HOW?' },
+			{ key: 'title1', label: { en: 'Title', pt: 'Título' }, type: 'text', default: 'Fractional' },
+			{ key: 'title2', label: { en: 'Title (highlight)', pt: 'Título (destaque)' }, type: 'text', default: 'shares' },
+			{ key: 'sub', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'textarea', default: "You don't buy the whole share. You buy a slice of it." },
+			{ key: 'sharePrice', label: { en: 'Whole share price', pt: 'Preço da ação inteira' }, type: 'text', default: '≈ $210' },
+			{ key: 'slice', label: { en: 'Slice amount', pt: 'Valor da fração' }, type: 'text', default: '$5' },
+			{ key: 'note', label: { en: 'Note', pt: 'Nota' }, type: 'textarea', default: 'Your $5 slice still counts. It grows at the same rate.' }
+		],
+		html:
+			'<div style="width:1080px;height:1350px;background:#FFF6F1;position:relative;overflow:hidden;color:#2A2438;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<div style="position:absolute;left:-200px;bottom:-200px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#EFE9FE 0%,rgba(255,246,241,0) 70%);"></div>' +
+				'<div style="position:absolute;top:64px;left:72px;display:flex;align-items:center;gap:14px;">' +
+					'<span style="width:44px;height:44px;display:flex;">' + LOGO_LIGHT + '</span>' +
+					'<span style="font:600 24px ' + JAKARTA + ';letter-spacing:-.02em;">HowToInvest</span>' +
+				'</div>' +
+				'<div style="position:absolute;top:210px;left:72px;right:72px;">' +
+					'<span style="font:700 24px ' + JAKARTA + ';color:#7C5CFC;letter-spacing:.04em;">{{kicker}}</span>' +
+					'<h1 style="font:800 100px ' + POPPINS + ';line-height:.98;letter-spacing:-.035em;margin:14px 0 0;">{{title1}} <span style="color:#FF6B5E;">{{title2}}</span></h1>' +
+					'<p style="font:400 32px ' + JAKARTA + ';line-height:1.5;color:#6E6680;margin:26px 0 0;max-width:30ch;">{{sub}}</p>' +
+				'</div>' +
+				'<div style="position:absolute;top:640px;left:72px;right:72px;">' +
+					'<div style="display:flex;align-items:center;gap:36px;">' +
+						'<div style="text-align:center;">' +
+							'<div style="width:250px;height:250px;border-radius:40px;background:#1E2147;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;box-shadow:0 30px 60px -26px rgba(30,33,71,.5);">' +
+								'<svg width="86" height="106" viewBox="0 0 24 24" fill="#fff"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>' +
+								'<span style="font:700 24px ' + POPPINS + ';color:#fff;">1 share</span>' +
+								'<span style="font:600 20px ' + JAKARTA + ';color:#A9A4C4;">{{sharePrice}}</span>' +
+							'</div>' +
+						'</div>' +
+						'<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#C9362C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M5 12h14M13 6l6 6-6 6"/></svg>' +
+						'<div style="flex:1;">' +
+							'<div style="display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:1fr;gap:10px;">' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#FF6B5E;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 30px -14px rgba(255,107,94,.55);"><span style="font:700 26px ' + POPPINS + ';color:#fff;">{{slice}}</span></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#FFD9D2;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#EDE7FB;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#FFD9D2;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#EDE7FB;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#FFD9D2;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#EDE7FB;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#FFD9D2;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#EDE7FB;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#FFD9D2;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#EDE7FB;"></div>' +
+								'<div style="aspect-ratio:1;border-radius:16px;background:#FFD9D2;"></div>' +
+							'</div>' +
+							'<p style="font:600 24px ' + JAKARTA + ';color:#6E6680;margin:22px 0 0;">{{note}}</p>' +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+				'<div style="position:absolute;bottom:70px;left:72px;"><span style="font:600 22px ' + JAKARTA + ';color:#A89FB5;">03 / 05</span></div>' +
+			'</div>'
+	};
+
+	// --- Myth · 04 Proof (dark, checklist) ---------------------------------
+	// Broker names ship as generic placeholders (Broker A/B/C) — the template
+	// carries no named companies. Edit them if your policy allows.
+	var mythProof = {
+		id: 'myth-proof',
+		category: 'carousel',
+		label: { en: 'Myth · 04 Proof', pt: 'Mito · 04 Prova' },
+		w: 1080,
+		h: 1350,
+		fields: [
+			{ key: 'tag', label: { en: 'Tag', pt: 'Etiqueta' }, type: 'text', default: 'Zero minimum · 2026' },
+			{ key: 'title1', label: { en: 'Title', pt: 'Título' }, type: 'text', default: 'Zero-minimum' },
+			{ key: 'title2', label: { en: 'Title (highlight)', pt: 'Título (destaque)' }, type: 'text', default: 'brokers' },
+			{ key: 'b1name', label: { en: 'Broker 1', pt: 'Corretora 1' }, type: 'text', default: 'Broker A' },
+			{ key: 'b1note', label: { en: 'Broker 1 note', pt: 'Nota 1' }, type: 'text', default: 'fractional shares from $1' },
+			{ key: 'b2name', label: { en: 'Broker 2', pt: 'Corretora 2' }, type: 'text', default: 'Broker B' },
+			{ key: 'b2note', label: { en: 'Broker 2 note', pt: 'Nota 2' }, type: 'text', default: 'stock slices from $5' },
+			{ key: 'b3name', label: { en: 'Broker 3', pt: 'Corretora 3' }, type: 'text', default: 'Broker C' },
+			{ key: 'b3note', label: { en: 'Broker 3 note', pt: 'Nota 3' }, type: 'text', default: 'commission-free ETFs' },
+			{ key: 'minLabel', label: { en: 'Minimum label', pt: 'Etiqueta mínimo' }, type: 'text', default: '$0 min.' },
+			{ key: 'note', label: { en: 'Footer note', pt: 'Nota de rodapé' }, type: 'textarea', default: 'Illustrative examples of zero-minimum brokers. Always check terms and availability in your country.' }
+		],
+		html:
+			'<div style="width:1080px;height:1350px;background:#141631;position:relative;overflow:hidden;color:#fff;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<div style="position:absolute;right:-240px;bottom:-240px;width:640px;height:640px;border-radius:50%;background:radial-gradient(circle at 50% 50%,rgba(34,195,166,.22) 0%,rgba(20,22,49,0) 70%);"></div>' +
+				'<div style="position:absolute;top:64px;left:72px;display:flex;align-items:center;gap:14px;">' +
+					'<span style="width:44px;height:44px;display:flex;">' + LOGO_DARK + '</span>' +
+					'<span style="font:600 24px ' + JAKARTA + ';letter-spacing:-.02em;">HowToInvest</span>' +
+				'</div>' +
+				'<div style="position:absolute;top:220px;left:72px;right:72px;">' +
+					'<span style="display:inline-flex;align-items:center;gap:10px;background:rgba(34,195,166,.15);color:#3FE0BF;font:700 20px ' + JAKARTA + ';letter-spacing:.12em;text-transform:uppercase;padding:11px 22px;border-radius:999px;">{{tag}}</span>' +
+					'<h1 style="font:800 84px ' + POPPINS + ';line-height:1.0;letter-spacing:-.035em;margin:30px 0 0;">{{title1}} <span style="color:#FF6B5E;">{{title2}}</span></h1>' +
+				'</div>' +
+				'<div style="position:absolute;top:520px;left:72px;right:72px;display:flex;flex-direction:column;gap:26px;">' +
+					mythBrokerRow( '{{b1name}}', '{{b1note}}', '{{minLabel}}' ) +
+					mythBrokerRow( '{{b2name}}', '{{b2note}}', '{{minLabel}}' ) +
+					mythBrokerRow( '{{b3name}}', '{{b3note}}', '{{minLabel}}' ) +
+				'</div>' +
+				'<p style="position:absolute;bottom:64px;left:72px;right:72px;font:500 20px ' + JAKARTA + ';color:#787498;line-height:1.5;">{{note}} · 04 / 05</p>' +
+			'</div>'
+	};
+
+	// --- Myth · 05 CTA (coral) ---------------------------------------------
+	var mythCta = {
+		id: 'myth-cta',
+		category: 'carousel',
+		label: { en: 'Myth · 05 CTA', pt: 'Mito · 05 CTA' },
+		w: 1080,
+		h: 1350,
+		fields: [
+			{ key: 'pre', label: { en: 'Before highlight', pt: 'Antes do destaque' }, type: 'text', default: 'What was your' },
+			{ key: 'hi', label: { en: 'Highlight (navy)', pt: 'Destaque (navy)' }, type: 'text', default: 'FIRST' },
+			{ key: 'post', label: { en: 'After highlight', pt: 'Depois do destaque' }, type: 'text', default: 'investment?' },
+			{ key: 'sub', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'textarea', default: '$5? $50? Tell us — comment below 👇' },
+			{ key: 'follow', label: { en: 'Follow line', pt: 'Linha de seguir' }, type: 'text', default: 'Follow @HowToInvest for more' }
+		],
+		html:
+			'<div style="width:1080px;height:1350px;background:#FF6B5E;position:relative;overflow:hidden;color:#fff;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<div style="position:absolute;left:-200px;top:-200px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.18) 0%,rgba(255,107,94,0) 70%);"></div>' +
+				'<div style="position:absolute;right:-220px;bottom:-220px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle at 50% 50%,rgba(30,33,71,.22) 0%,rgba(255,107,94,0) 70%);"></div>' +
+				'<div style="position:absolute;top:64px;left:72px;display:flex;align-items:center;gap:14px;">' +
+					'<span style="width:44px;height:44px;display:flex;">' + LOGO_LIGHT + '</span>' +
+					'<span style="font:600 24px ' + JAKARTA + ';letter-spacing:-.02em;color:#fff;">HowToInvest</span>' +
+				'</div>' +
+				'<div style="position:absolute;top:210px;left:72px;right:72px;">' +
+					'<h1 style="font:800 104px ' + POPPINS + ';line-height:.98;letter-spacing:-.035em;margin:0;">{{pre}} <span style="color:#1E2147;">{{hi}}</span> {{post}}</h1>' +
+					'<p style="font:500 36px ' + JAKARTA + ';line-height:1.45;color:rgba(255,255,255,.92);margin:30px 0 0;max-width:22ch;">{{sub}}</p>' +
+				'</div>' +
+				'<div style="position:absolute;bottom:210px;left:72px;right:72px;">' +
+					'<div style="display:flex;align-items:flex-end;gap:26px;height:340px;">' +
+						'<div style="flex:none;display:flex;flex-direction:column;align-items:center;gap:16px;">' +
+							'<div style="width:210px;height:210px;border-radius:44px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 30px 60px -26px rgba(30,33,71,.5);">' +
+								'<svg width="120" height="120" viewBox="0 0 24 24" fill="#FF6B5E"><path d="M19.5 9.5c-.06 0-.11 0-.17.01A6.98 6.98 0 0 0 13 5H9a7 7 0 0 0-6.9 5.8L1 12v3.5h1.5A3.5 3.5 0 0 0 5 18.9V21h3v-1.5h3V21h3v-2.06a5.02 5.02 0 0 0 2.42-2.44H21v-3.5A2.5 2.5 0 0 0 19.5 9.5zM16 12a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM7 9a3 3 0 0 1 0-.02L11 8v1.4A8.9 8.9 0 0 0 7 9z"/></svg>' +
+							'</div>' +
+							'<span style="font:700 26px ' + POPPINS + ';color:#1E2147;">$5</span>' +
+						'</div>' +
+						'<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#1E2147" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-bottom:120px;"><path d="M5 12h14M13 6l6 6-6 6"/></svg>' +
+						'<div style="flex:1;display:flex;align-items:flex-end;gap:20px;height:100%;">' +
+							'<div style="flex:1;height:34%;background:#FFD1CB;border-radius:16px 16px 0 0;"></div>' +
+							'<div style="flex:1;height:52%;background:#FFC0B8;border-radius:16px 16px 0 0;"></div>' +
+							'<div style="flex:1;height:70%;background:#1E2147;border-radius:16px 16px 0 0;"></div>' +
+							'<div style="flex:1;height:100%;background:#22C3A6;border-radius:16px 16px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:16px;"><span style="font:700 24px ' + POPPINS + ';color:#0E2A24;">📈</span></div>' +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+				'<div style="position:absolute;bottom:78px;left:72px;right:72px;display:flex;align-items:center;gap:18px;">' +
+					'<span style="font:600 26px ' + JAKARTA + ';color:rgba(255,255,255,.9);">{{follow}}</span>' +
+					'<div style="flex:1;height:2px;background:rgba(255,255,255,.28);"></div>' +
+					'<span style="font:600 22px ' + JAKARTA + ';color:rgba(255,255,255,.8);">05 / 05</span>' +
+				'</div>' +
+				'{{#legal}}<p style="position:absolute;bottom:34px;left:72px;right:72px;font:400 14px ' + JAKARTA + ';color:rgba(255,255,255,.72);line-height:1.4;">{{disclaimer}}</p>{{/legal}}' +
+			'</div>'
+	};
+
 	return [
 		newsSquare, newsStory, newsX,
 		glossaryFb, glossaryFeed, glossaryStory,
 		factGreen, factPurple, factStory,
 		ctaSquare, ctaStory, ctaX,
 		ogPhoto, ogSplit,
-		edNews, edEcon, edPromo, edInfographic, edRecap
+		edNews, edEcon, edPromo, edInfographic, edRecap,
+		mythHook, mythReality, mythHow, mythProof, mythCta
 	];
 }() );
