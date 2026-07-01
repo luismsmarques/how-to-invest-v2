@@ -135,7 +135,11 @@
 		for ( var i = 0; i < len; i++ ) { bytes[ i ] = bin.charCodeAt( i ); }
 		return bytes.buffer;
 	}
-	function ttsBuffer( text, voice ) {
+	function delay( ms ) {
+		return new Promise( function ( r ) { setTimeout( r, ms ); } );
+	}
+	function ttsBuffer( text, voice, tries ) {
+		tries = tries == null ? 2 : tries;
 		return fetch( CFG.restTts, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': CFG.nonce },
@@ -146,6 +150,12 @@
 		} ).then( function ( j ) {
 			var buf = b64ToArrayBuffer( j.wav );
 			return audioCtx().decodeAudioData( buf );
+		} ).catch( function ( err ) {
+			// One more retry after a short pause (server already retries 5xx).
+			if ( tries > 0 ) {
+				return delay( 1200 ).then( function () { return ttsBuffer( text, voice, tries - 1 ); } );
+			}
+			throw err;
 		} );
 	}
 
@@ -666,9 +676,12 @@
 			var seq = Promise.resolve();
 			var i = 0;
 			setStatus( ( T.voice_wait || 'Generating voice…' ) + ' 0/' + state.scenes.length );
-			state.scenes.forEach( function ( sc ) {
+			state.scenes.forEach( function ( sc, si ) {
 				seq = seq.then( function () {
-					return ttsBuffer( sc.narrate, state.voice ).then( function ( buf ) {
+					// Small gap between calls eases the preview model's rate limit.
+					return ( si > 0 ? delay( 500 ) : Promise.resolve() ).then( function () {
+						return ttsBuffer( sc.narrate, state.voice );
+					} ).then( function ( buf ) {
 						sc.buffer = buf;
 						sc.dur = buf.duration + PAD;
 						i++;
