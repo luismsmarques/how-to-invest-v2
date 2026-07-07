@@ -181,12 +181,11 @@ class Account {
 	}
 
 	/**
-	 * Best-effort client IP (filterable, mirrors the rate limiter).
+	 * Resolved client IP — single trustworthy, proxy-aware source shared with
+	 * the rate limiter (never a raw, spoofable REMOTE_ADDR/X-Forwarded-For).
 	 */
 	private static function client_ip(): string {
-		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
-		/** This filter is documented in includes/class-rate-limit.php */
-		return (string) apply_filters( 'hti_client_ip', $ip );
+		return RateLimit::client_ip();
 	}
 
 	/**
