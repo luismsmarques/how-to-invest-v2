@@ -264,21 +264,68 @@ class Subscribe {
 		// form ("ebook-…").
 		$source = sanitize_key( (string) $request->get_param( 'source' ) );
 		if ( str_starts_with( $source, 'ebook' ) ) {
-			set_transient( self::ebook_pending_key( $email ), 1, WEEK_IN_SECONDS );
+			self::ebook_pending_set( $email );
 		}
 
 		return new \WP_REST_Response( array( 'sent' => true ), 200 );
 	}
 
 	/**
-	 * Transient key flagging that this email is awaiting the ebook (set on the
-	 * ebook gate, consumed when the opt-in is confirmed).
+	 * Durable option holding "these emails are owed the ebook" as
+	 * hash => expiry. Kept in the DB (not a transient) so a persistent object
+	 * cache under memory pressure can't evict the flag between opt-in and
+	 * confirmation and silently downgrade the subscriber to the plain welcome.
+	 */
+	private const EBOOK_PENDING_OPTION = 'hti_ebook_pending';
+
+	/**
+	 * Per-email hash used as the durable-store key.
 	 *
 	 * @param string $email Email.
 	 * @return string
 	 */
-	private static function ebook_pending_key( string $email ): string {
-		return 'hti_eb_' . md5( strtolower( $email ) );
+	private static function ebook_pending_hash( string $email ): string {
+		return md5( strtolower( trim( $email ) ) );
+	}
+
+	/**
+	 * Flag that this email is awaiting the ebook (set on the ebook gate).
+	 * Prunes expired entries on write so the option stays small.
+	 *
+	 * @param string $email Email.
+	 */
+	private static function ebook_pending_set( string $email ): void {
+		$store = get_option( self::EBOOK_PENDING_OPTION, array() );
+		$store = is_array( $store ) ? $store : array();
+		$now   = time();
+		foreach ( $store as $h => $exp ) {
+			if ( (int) $exp < $now ) {
+				unset( $store[ $h ] );
+			}
+		}
+		$store[ self::ebook_pending_hash( $email ) ] = $now + WEEK_IN_SECONDS;
+		update_option( self::EBOOK_PENDING_OPTION, $store, false );
+	}
+
+	/**
+	 * Consume the pending-ebook flag: returns whether it was set (and still
+	 * valid), removing it either way.
+	 *
+	 * @param string $email Email.
+	 * @return bool
+	 */
+	private static function ebook_pending_take( string $email ): bool {
+		$store = get_option( self::EBOOK_PENDING_OPTION, array() );
+		if ( ! is_array( $store ) ) {
+			return false;
+		}
+		$hash  = self::ebook_pending_hash( $email );
+		$valid = isset( $store[ $hash ] ) && (int) $store[ $hash ] >= time();
+		if ( isset( $store[ $hash ] ) ) {
+			unset( $store[ $hash ] );
+			update_option( self::EBOOK_PENDING_OPTION, $store, false );
+		}
+		return $valid;
 	}
 
 	/**
@@ -322,9 +369,7 @@ class Subscribe {
 				// Now that the subscription is confirmed, deliver the ebook to
 				// those who came via the lead-magnet gate; everyone else gets the
 				// plain welcome.
-				$eb_key = self::ebook_pending_key( $email );
-				if ( get_transient( $eb_key ) ) {
-					delete_transient( $eb_key );
+				if ( self::ebook_pending_take( $email ) ) {
 					self::send_ebook_email( $email, $locale );
 				} else {
 					self::send_confirmed_email( $email, $locale );

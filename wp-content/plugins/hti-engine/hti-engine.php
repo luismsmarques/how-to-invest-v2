@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.8.48
+ * Version:           0.8.49
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.48';
+const VERSION = '0.8.49';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -201,6 +201,27 @@ Metrics::init();
  * PDF export of a saved result (admin-post handler).
  */
 PdfExport::init();
+
+/**
+ * Baseline security headers on front-end responses. A full CSP is intentionally
+ * omitted — the site relies on inline scripts (the GA loader, consent, the
+ * ebook gate) that a strict CSP would break without per-request nonces. HSTS is
+ * opt-in via the `hti_enable_hsts` filter so it is only enabled once HTTPS is
+ * confirmed forced (enabling it prematurely can lock users out).
+ */
+function send_security_headers(): void {
+	if ( is_admin() || headers_sent() ) {
+		return;
+	}
+	header( 'X-Content-Type-Options: nosniff' );
+	header( 'X-Frame-Options: SAMEORIGIN' );
+	header( 'Referrer-Policy: strict-origin-when-cross-origin' );
+	header( 'Permissions-Policy: geolocation=(), microphone=(), camera=()' );
+	if ( is_ssl() && (bool) apply_filters( 'hti_enable_hsts', false ) ) {
+		header( 'Strict-Transport-Security: max-age=15552000; includeSubDomains' );
+	}
+}
+add_action( 'send_headers', __NAMESPACE__ . '\\send_security_headers' );
 
 /**
  * Daily pruning of stale anonymous profiles (RGPD minimization).
