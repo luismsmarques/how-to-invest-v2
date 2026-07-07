@@ -34,6 +34,27 @@ window.HTI_SOCIAL_TEMPLATES = ( function () {
 		'</div>';
 	}
 
+	// Calendar grid for the DCA infographic (handoff: "DCA Infographic").
+	// Faithful port of the design's DCLogic loop: weekday header, a month that
+	// starts on a Wednesday (2 leading blanks), 26 day cells, the pay day
+	// rendered as a coral "$" cell.
+	function dcaCalendar( payDay ) {
+		var head = [ 'M', 'T', 'W', 'T', 'F', 'S', 'S' ];
+		var out = '';
+		var i, d, hit;
+		for ( i = 0; i < head.length; i++ ) {
+			out += '<span style="font:600 12px ' + JAKARTA + ';color:#A89FB5;text-align:center;">' + head[ i ] + '</span>';
+		}
+		for ( i = 0; i < 2; i++ ) {
+			out += '<span style="aspect-ratio:1;"></span>';
+		}
+		for ( d = 1; d <= 26; d++ ) {
+			hit = d === payDay;
+			out += '<span style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:10px;font:600 14px ' + JAKARTA + ';color:' + ( hit ? '#fff' : '#6E6680' ) + ';background:' + ( hit ? '#FF6B5E' : '#F7F4FC' ) + ';' + ( hit ? 'box-shadow:0 8px 18px -6px rgba(255,107,94,.7);' : '' ) + '">' + ( hit ? '$' : d ) + '</span>';
+		}
+		return out;
+	}
+
 	// --- News · Square 1080×1080 -------------------------------------------
 	var newsSquare = {
 		id: 'news-square',
@@ -997,13 +1018,151 @@ window.HTI_SOCIAL_TEMPLATES = ( function () {
 			'</div>'
 	};
 
+	// --- Editorial · DCA infographic 4:5 -------------------------------------
+	// Faithful to "HowToInvest DCA Infographic" (handoff): cream 1080×1350 with
+	// the calendar card (pay-day "$" cell), the same-amount/different-prices
+	// chart (bigger dots when cheap), three benefit cards and the dark
+	// engagement-CTA footer. Educational: explains the DCA *concept* only.
+	var edDca = {
+		id: 'ed-dca',
+		category: 'editorial',
+		label: { en: 'Editorial · DCA infographic', pt: 'Editorial · Infografia DCA' },
+		w: 1080,
+		h: 1350,
+		fields: [
+			{ key: 'badge', label: { en: 'Badge', pt: 'Etiqueta' }, type: 'text', default: 'Beginner basics' },
+			{ key: 'title1', label: { en: 'Title (before highlight)', pt: 'Título (antes do destaque)' }, type: 'text', default: 'DCA = Invest' },
+			{ key: 'title2', label: { en: 'Title (highlight)', pt: 'Título (destaque)' }, type: 'text', default: 'same amount' },
+			{ key: 'title3', label: { en: 'Title (after highlight)', pt: 'Título (depois do destaque)' }, type: 'text', default: ', every month' },
+			{ key: 'sub', label: { en: 'Subtitle', pt: 'Subtítulo' }, type: 'textarea', default: 'Dollar-Cost Averaging. Set it, forget it, repeat it.' },
+			{ key: 'calTitle', label: { en: 'Calendar title', pt: 'Título do calendário' }, type: 'text', default: 'Every month' },
+			{ key: 'dayPill', label: { en: 'Day pill', pt: 'Etiqueta do dia' }, type: 'text', default: 'day 5' },
+			{ key: 'amount', label: { en: 'Monthly amount (number)', pt: 'Valor mensal (número)' }, type: 'text', default: '200' },
+			{ key: 'autoLabel', label: { en: 'Auto-invest label', pt: 'Nota de investimento automático' }, type: 'text', default: 'auto-invested' },
+			{ key: 'chartLegend', label: { en: 'Chart legend', pt: 'Legenda do gráfico' }, type: 'text', default: 'your monthly buy' },
+			{ key: 'avgLabel', label: { en: 'Average-price label', pt: 'Etiqueta preço médio' }, type: 'text', default: 'your average price' },
+			{ key: 'cheapLabel', label: { en: 'Cheap callout', pt: 'Nota "barato"' }, type: 'text', default: 'cheap → more shares' },
+			{ key: 'priceyLabel', label: { en: 'Pricey callout', pt: 'Nota "caro"' }, type: 'text', default: 'pricey → fewer shares' },
+			{ key: 'takeaway1', label: { en: 'Takeaway (buy more)', pt: 'Conclusão (compra mais)' }, type: 'text', default: 'more' },
+			{ key: 'takeaway2', label: { en: 'Takeaway (buy less)', pt: 'Conclusão (compra menos)' }, type: 'text', default: 'less' },
+			{ key: 'b1t', label: { en: 'Benefit 1 title', pt: 'Benefício 1 — título' }, type: 'text', default: 'Kills emotion' },
+			{ key: 'b1p', label: { en: 'Benefit 1 text', pt: 'Benefício 1 — texto' }, type: 'textarea', default: 'No panic-selling, no FOMO-buying. The rule decides.' },
+			{ key: 'b2t', label: { en: 'Benefit 2 title', pt: 'Benefício 2 — título' }, type: 'text', default: 'No timing needed' },
+			{ key: 'b2p', label: { en: 'Benefit 2 text', pt: 'Benefício 2 — texto' }, type: 'textarea', default: 'You never have to guess the "perfect" day. Every day works.' },
+			{ key: 'b3t', label: { en: 'Benefit 3 title', pt: 'Benefício 3 — título' }, type: 'text', default: 'Builds wealth slowly' },
+			{ key: 'b3p', label: { en: 'Benefit 3 text', pt: 'Benefício 3 — texto' }, type: 'textarea', default: 'Small amounts + time + compounding = the whole game.' },
+			{ key: 'ctaPre', label: { en: 'CTA (before)', pt: 'CTA (antes)' }, type: 'text', default: 'Team' },
+			{ key: 'ctaA', label: { en: 'CTA option A (coral)', pt: 'CTA opção A (coral)' }, type: 'text', default: 'DCA' },
+			{ key: 'ctaB', label: { en: 'CTA option B (teal)', pt: 'CTA opção B (verde)' }, type: 'text', default: 'Lump Sum' },
+			{ key: 'ctaNote', label: { en: 'CTA note', pt: 'Nota do CTA' }, type: 'text', default: 'Comment below 👇' }
+		],
+		html:
+			'<div style="width:1080px;height:1350px;background:#FFF6F1;position:relative;overflow:hidden;color:#2A2438;font-family:' + JAKARTA + ';box-sizing:border-box;">' +
+				'<div style="position:absolute;right:-220px;top:-220px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#EFE9FE 0%,rgba(255,246,241,0) 70%);"></div>' +
+
+				// Top: brand + badge.
+				'<div style="position:absolute;top:56px;left:72px;right:72px;display:flex;align-items:center;gap:14px;">' +
+					'<span style="width:44px;height:44px;display:flex;">' + LOGO_LIGHT + '</span>' +
+					'<span style="font:600 24px ' + JAKARTA + ';letter-spacing:-.02em;">HowToInvest</span>' +
+					'<div style="flex:1;"></div>' +
+					'<span style="background:#EDE7FB;color:#7C5CFC;font:700 18px ' + JAKARTA + ';letter-spacing:.14em;text-transform:uppercase;padding:10px 20px;border-radius:999px;">{{badge}}</span>' +
+				'</div>' +
+
+				// Title block.
+				'<div style="position:absolute;top:150px;left:72px;right:400px;">' +
+					'<h1 style="font-family:' + POPPINS + ';font-weight:800;font-size:66px;line-height:1.04;letter-spacing:-.03em;margin:0;">{{title1}} <span style="color:#FF6B5E;">{{title2}}</span>{{title3}}</h1>' +
+					'<p style="font-size:26px;line-height:1.5;color:#6E6680;margin:20px 0 0;max-width:26ch;">{{sub}}</p>' +
+				'</div>' +
+
+				// Calendar card.
+				'<div style="position:absolute;top:150px;right:72px;width:290px;background:#fff;border-radius:26px;padding:22px 24px 20px;box-shadow:0 24px 50px -24px rgba(30,33,71,.28);">' +
+					'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">' +
+						'<span style="font:700 17px ' + JAKARTA + ';color:#1E2147;">{{calTitle}}</span>' +
+						'<span style="background:#FFEDE9;color:#FF6B5E;font:700 15px ' + JAKARTA + ';padding:5px 12px;border-radius:999px;">{{dayPill}}</span>' +
+					'</div>' +
+					'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">' + dcaCalendar( 5 ) + '</div>' +
+					'<div style="margin-top:14px;display:flex;align-items:center;gap:10px;background:#F4F1FB;border-radius:14px;padding:10px 14px;">' +
+						'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1v4M7 1v4M3 8h18M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>' +
+						'<span style="font:600 15px ' + JAKARTA + ';color:#6E6680;"><strong style="color:#1E2147;">${{amount}}</strong> {{autoLabel}}</span>' +
+					'</div>' +
+				'</div>' +
+
+				// Middle: chart card.
+				'<div style="position:absolute;top:452px;left:72px;right:72px;">' +
+					'<div style="background:#fff;border-radius:30px;padding:34px 38px 26px;box-shadow:0 24px 50px -24px rgba(30,33,71,.22);">' +
+						'<div style="display:flex;align-items:baseline;justify-content:space-between;">' +
+							'<span style="font:700 24px ' + JAKARTA + ';color:#1E2147;">Same ${{amount}}, different prices</span>' +
+							'<span style="display:inline-flex;align-items:center;gap:8px;font:600 17px ' + JAKARTA + ';color:#6E6680;"><span style="width:14px;height:14px;border-radius:50%;background:#FF6B5E;display:inline-block;"></span>{{chartLegend}}</span>' +
+						'</div>' +
+						'<svg viewBox="0 0 936 330" style="width:100%;display:block;margin-top:10px;" fill="none">' +
+							'<line x1="20" y1="160" x2="916" y2="160" stroke="#7C5CFC" stroke-width="2.5" stroke-dasharray="8 8" opacity=".65"/>' +
+							'<path d="M30 140 L110 180 L190 110 L270 210 L350 100 L430 165 L510 230 L590 130 L670 185 L750 115 L830 205 L910 150" stroke="#1E2147" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' +
+							'<rect x="680" y="136" width="216" height="38" rx="19" fill="#EDE7FB"/>' +
+							'<text x="788" y="161" text-anchor="middle" font-family="Plus Jakarta Sans" font-weight="700" font-size="18" fill="#7C5CFC">{{avgLabel}}</text>' +
+							'<circle cx="30" cy="140" r="10" fill="#FF6B5E"/>' +
+							'<circle cx="110" cy="180" r="12" fill="#FF6B5E"/>' +
+							'<circle cx="190" cy="110" r="9" fill="#FF6B5E"/>' +
+							'<circle cx="270" cy="210" r="14" fill="#FF6B5E"/>' +
+							'<circle cx="350" cy="100" r="8.5" fill="#FF6B5E"/>' +
+							'<circle cx="430" cy="165" r="11" fill="#FF6B5E"/>' +
+							'<circle cx="510" cy="230" r="16" fill="#FF6B5E"/>' +
+							'<circle cx="590" cy="130" r="9.5" fill="#FF6B5E"/>' +
+							'<circle cx="670" cy="185" r="12" fill="#FF6B5E"/>' +
+							'<circle cx="750" cy="115" r="9" fill="#FF6B5E"/>' +
+							'<circle cx="830" cy="205" r="13.5" fill="#FF6B5E"/>' +
+							'<circle cx="910" cy="150" r="10.5" fill="#FF6B5E"/>' +
+							'<rect x="404" y="266" width="212" height="40" rx="20" fill="#E3F7F1"/>' +
+							'<text x="510" y="292" text-anchor="middle" font-family="Plus Jakarta Sans" font-weight="700" font-size="19" fill="#0E9E82">{{cheapLabel}}</text>' +
+							'<line x1="510" y1="248" x2="510" y2="264" stroke="#0E9E82" stroke-width="2.5" stroke-linecap="round"/>' +
+							'<rect x="250" y="34" width="204" height="40" rx="20" fill="#FFEDE9"/>' +
+							'<text x="352" y="60" text-anchor="middle" font-family="Plus Jakarta Sans" font-weight="700" font-size="19" fill="#C9362C">{{priceyLabel}}</text>' +
+							'<line x1="350" y1="76" x2="350" y2="90" stroke="#C9362C" stroke-width="2.5" stroke-linecap="round"/>' +
+							'<g font-family="Plus Jakarta Sans" font-weight="600" font-size="16" fill="#A89FB5" text-anchor="middle">' +
+								'<text x="30" y="326">J</text><text x="110" y="326">F</text><text x="190" y="326">M</text><text x="270" y="326">A</text><text x="350" y="326">M</text><text x="430" y="326">J</text><text x="510" y="326">J</text><text x="590" y="326">A</text><text x="670" y="326">S</text><text x="750" y="326">O</text><text x="830" y="326">N</text><text x="910" y="326">D</text>' +
+							'</g>' +
+						'</svg>' +
+					'</div>' +
+					'<p style="font:600 26px ' + JAKARTA + ';color:#6E6680;margin:22px 0 0;text-align:center;">Buy <strong style="color:#0E9E82;">{{takeaway1}}</strong> when cheap. Buy <strong style="color:#C9362C;">{{takeaway2}}</strong> when expensive. <strong style="color:#7C5CFC;">= average price</strong></p>' +
+				'</div>' +
+
+				// Bottom: 3 benefit cards.
+				'<div style="position:absolute;top:938px;left:72px;right:72px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;">' +
+					'<div style="background:#fff;border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 40px -22px rgba(30,33,71,.2);">' +
+						'<span style="width:52px;height:52px;border-radius:14px;background:#FFEDE9;display:flex;align-items:center;justify-content:center;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FF6B5E" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.5-1.5 2-3.2 2-5a5 5 0 0 0-9-3 5 5 0 0 0-9 3c0 6 9 11 9 11s1.2-.67 2.7-1.8"/><path d="M4 4l16 16"/></svg></span>' +
+						'<span style="font-family:' + POPPINS + ';font-weight:700;font-size:25px;letter-spacing:-.02em;color:#1E2147;">{{b1t}}</span>' +
+						'<span style="font:500 19px ' + JAKARTA + ';line-height:1.4;color:#6E6680;">{{b1p}}</span>' +
+					'</div>' +
+					'<div style="background:#fff;border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 40px -22px rgba(30,33,71,.2);">' +
+						'<span style="width:52px;height:52px;border-radius:14px;background:#EDE7FB;display:flex;align-items:center;justify-content:center;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7C5CFC" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>' +
+						'<span style="font-family:' + POPPINS + ';font-weight:700;font-size:25px;letter-spacing:-.02em;color:#1E2147;">{{b2t}}</span>' +
+						'<span style="font:500 19px ' + JAKARTA + ';line-height:1.4;color:#6E6680;">{{b2p}}</span>' +
+					'</div>' +
+					'<div style="background:#fff;border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 40px -22px rgba(30,33,71,.2);">' +
+						'<span style="width:52px;height:52px;border-radius:14px;background:#E3F7F1;display:flex;align-items:center;justify-content:center;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0E9E82" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-8"/><path d="M12 13c0-4 3-6 7-6 0 4-3 6-7 6z"/><path d="M12 13c0-3-2.5-5-6-5 0 3.5 2.5 5 6 5z"/></svg></span>' +
+						'<span style="font-family:' + POPPINS + ';font-weight:700;font-size:25px;letter-spacing:-.02em;color:#1E2147;">{{b3t}}</span>' +
+						'<span style="font:500 19px ' + JAKARTA + ';line-height:1.4;color:#6E6680;">{{b3p}}</span>' +
+					'</div>' +
+				'</div>' +
+
+				// Footer engagement CTA.
+				'<div style="position:absolute;bottom:56px;left:72px;right:72px;background:#141631;border-radius:24px;padding:24px 32px;display:flex;align-items:center;gap:24px;color:#fff;overflow:hidden;">' +
+					'<div style="position:absolute;right:-120px;top:-120px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle at 50% 50%,rgba(124,92,252,.35) 0%,rgba(20,22,49,0) 70%);"></div>' +
+					'<span style="font-family:' + POPPINS + ';font-weight:700;font-size:30px;letter-spacing:-.02em;position:relative;white-space:nowrap;">{{ctaPre}} <span style="color:#FF6B5E;">{{ctaA}}</span> or <span style="color:#3FE0BF;">{{ctaB}}</span>?</span>' +
+					'<div style="flex:1;"></div>' +
+					'<span style="font:600 22px ' + JAKARTA + ';color:#A9A4C4;position:relative;">{{ctaNote}} · @{{handle}}</span>' +
+				'</div>' +
+
+				'{{#legal}}<p style="position:absolute;bottom:14px;left:72px;right:72px;font:400 13px ' + JAKARTA + ';color:#A89FB5;line-height:1.35;text-align:center;margin:0;">{{disclaimer}}</p>{{/legal}}' +
+			'</div>'
+	};
+
 	return [
 		newsSquare, newsStory, newsX,
 		glossaryFb, glossaryFeed, glossaryStory,
 		factGreen, factPurple, factStory,
 		ctaSquare, ctaStory, ctaX,
 		ogPhoto, ogSplit,
-		edNews, edEcon, edPromo, edInfographic, edRecap,
+		edNews, edEcon, edPromo, edInfographic, edRecap, edDca,
 		mythHook, mythReality, mythHow, mythProof, mythCta
 	];
 }() );
