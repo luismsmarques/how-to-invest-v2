@@ -92,7 +92,11 @@ class Settings {
 	 */
 	public static function post_status(): string {
 		$status = (string) self::get( 'post_status', 'pending' );
-		return in_array( $status, array( 'pending', 'draft', 'publish' ), true ) ? $status : 'pending';
+		// Auto-publish is deliberately not allowed: this is a YMYL (finance)
+		// site, so every AI-generated article must pass a human review gate
+		// (Google scaled-content / site-reputation policy + factual liability).
+		// A legacy 'publish' value in the DB safely degrades to 'pending'.
+		return in_array( $status, array( 'pending', 'draft' ), true ) ? $status : 'pending';
 	}
 
 	/**
@@ -236,7 +240,7 @@ class Settings {
 			'image_base_model'     => isset( $input['image_base_model'] ) ? sanitize_text_field( $input['image_base_model'] ) : 'gemini-2.5-flash-image',
 			'target_post_type'     => isset( $input['target_post_type'] ) ? sanitize_key( $input['target_post_type'] ) : '',
 			'target_taxonomy'      => isset( $input['target_taxonomy'] ) ? sanitize_key( $input['target_taxonomy'] ) : '',
-			'post_status'          => in_array( $input['post_status'] ?? '', array( 'pending', 'draft', 'publish' ), true ) ? $input['post_status'] : 'pending',
+			'post_status'          => in_array( $input['post_status'] ?? '', array( 'pending', 'draft' ), true ) ? $input['post_status'] : 'pending',
 			'languages'            => isset( $input['languages'] ) ? sanitize_text_field( $input['languages'] ) : '',
 			'house_style'          => isset( $input['house_style'] ) ? sanitize_textarea_field( $input['house_style'] ) : '',
 			'disclaimer'           => isset( $input['disclaimer'] ) ? sanitize_textarea_field( $input['disclaimer'] ) : '',
@@ -321,11 +325,11 @@ class Settings {
 						<th scope="row"><label for="rssai_post_status"><?php echo esc_html__( 'Create as', 'hti-rss-ai' ); ?></label></th>
 						<td>
 							<select name="<?php echo esc_attr( self::OPTION ); ?>[post_status]" id="rssai_post_status">
-								<?php foreach ( array( 'pending' => __( 'Pending review', 'hti-rss-ai' ), 'draft' => __( 'Draft', 'hti-rss-ai' ), 'publish' => __( 'Published', 'hti-rss-ai' ) ) as $val => $lbl ) : ?>
+								<?php foreach ( array( 'pending' => __( 'Pending review', 'hti-rss-ai' ), 'draft' => __( 'Draft', 'hti-rss-ai' ) ) as $val => $lbl ) : ?>
 									<option value="<?php echo esc_attr( $val ); ?>"<?php selected( $s['post_status'], $val ); ?>><?php echo esc_html( $lbl ); ?></option>
 								<?php endforeach; ?>
 							</select>
-							<p class="description"><?php echo esc_html__( 'Keep “Pending review” to always have a human approve before it goes live.', 'hti-rss-ai' ); ?></p>
+							<p class="description"><?php echo esc_html__( 'AI articles never auto-publish on this finance site — they always require a human to review and publish (Pending review), or start as Draft.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
 					<tr>

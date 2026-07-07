@@ -165,6 +165,13 @@ class YouTube_Generator {
 		if ( '' === $url || has_post_thumbnail( $post_id ) ) {
 			return;
 		}
+		// SSRF guard: download_url() does not validate the target, so reject any
+		// URL that resolves to a private/reserved IP, a non-http(s) scheme or an
+		// odd port before fetching it (the URL originates from the YouTube API,
+		// but we validate defensively all the same).
+		if ( ! wp_http_validate_url( $url ) ) {
+			return;
+		}
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
