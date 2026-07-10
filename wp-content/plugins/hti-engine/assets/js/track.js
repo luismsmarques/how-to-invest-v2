@@ -81,13 +81,48 @@
 	}
 
 	function flush() {
-		if ( ! consentOk() || ! ready() ) {
+		if ( ! consentOk() ) {
 			return;
 		}
-		while ( buffer.length ) {
-			var e = buffer.shift();
-			emit( e.n, e.p );
+		// Push any pre-consent buffered events to GTM's dataLayer (once each,
+		// marked with _dl), regardless of whether HTI's own gtag is ready.
+		for ( var i = 0; i < buffer.length; i++ ) {
+			if ( ! buffer[ i ]._dl ) {
+				pushDataLayer( buffer[ i ].n, buffer[ i ].p );
+				buffer[ i ]._dl = true;
+			}
 		}
+		// Drain to HTI's own gtag only once it has loaded; otherwise keep them
+		// buffered (already dataLayer-sent) for the later hti-ga-ready flush.
+		if ( ready() ) {
+			while ( buffer.length ) {
+				var e = buffer.shift();
+				emit( e.n, e.p );
+			}
+		}
+	}
+
+	// GTM-friendly dataLayer push. A GTM "Custom Event" trigger fires on a push
+	// shaped like { event: 'name', … } — which gtag('event', …) does NOT create —
+	// so we push it explicitly. Consent-gated (only after analytics consent), so
+	// GTM's GA4 tags fire only when allowed. Independent of HTI's own gtag, so it
+	// still works when GA4 is managed entirely by GTM (ga_id left blank here).
+	function pushDataLayer( name, params ) {
+		if ( ! consentOk() ) {
+			return;
+		}
+		try {
+			window.dataLayer = window.dataLayer || [];
+			var o = { event: name };
+			if ( params ) {
+				for ( var k in params ) {
+					if ( Object.prototype.hasOwnProperty.call( params, k ) ) {
+						o[ k ] = params[ k ];
+					}
+				}
+			}
+			window.dataLayer.push( o );
+		} catch ( e ) {}
 	}
 
 	function event( name, params ) {
@@ -96,6 +131,9 @@
 		}
 		// Anonymous first-party count (always), independent of GA consent.
 		beacon( name, params );
+
+		// GTM (consent-gated). Fires whether or not HTI loads its own gtag.
+		pushDataLayer( name, params );
 
 		if ( consentOk() && ready() ) {
 			emit( name, params );

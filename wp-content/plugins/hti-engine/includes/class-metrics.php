@@ -59,6 +59,7 @@ class Metrics {
 			'newsletter_subscribe_submit',
 			'newsletter_confirmed',
 			'newsletter_unsubscribe',
+			'ebook_lead',
 			'contact_submit',
 			'account_delete_request',
 			'cta_click',
@@ -431,6 +432,40 @@ class Metrics {
 				echo '<p>' . esc_html__( 'No data yet.', 'hti-engine' ) . '</p>';
 			}
 			?>
+
+			<h2><?php esc_html_e( 'Newsletter & lead funnel', 'hti-engine' ); ?></h2>
+			<p style="margin:.2em 0 1em;color:#646970;font-size:12px;">
+				<?php esc_html_e( 'First-party, cookieless — the complete newsletter funnel without depending on GA4. Confirmations are counted on the double-opt-in landing page.', 'hti-engine' ); ?>
+			</p>
+			<?php
+			$nl_submit  = (int) ( $e['newsletter_subscribe_submit'] ?? 0 );
+			$nl_ebook   = (int) ( $e['ebook_lead'] ?? 0 );
+			$nl_leads   = $nl_submit + $nl_ebook;
+			$nl_confirm = (int) ( $e['newsletter_confirmed'] ?? 0 );
+			$nl_unsub   = (int) ( $e['newsletter_unsubscribe'] ?? 0 );
+			// Funnel from traffic → leads → confirmed subscribers. The bar_table's
+			// second column shows each step as a % of the first (page views).
+			$nl_steps = array(
+				array( __( 'Page views', 'hti-engine' ), $pv ),
+				array( __( 'Newsletter form submits', 'hti-engine' ), $nl_submit ),
+				array( __( 'Ebook-gate leads', 'hti-engine' ), $nl_ebook ),
+				array( __( 'Confirmed (double opt-in)', 'hti-engine' ), $nl_confirm ),
+			);
+			self::bar_table( $nl_steps, $pv > 0 ? $pv : max( 1, $nl_leads ) );
+			$confirm_rate = $nl_leads > 0 ? round( $nl_confirm / $nl_leads * 100, 1 ) : null;
+			?>
+			<p style="margin:.6em 0 0;color:#1d2327;">
+				<?php
+				printf(
+					/* translators: 1: confirmed count, 2: total leads, 3: confirm rate, 4: unsubscribes. */
+					esc_html__( 'Confirmed %1$s of %2$s leads%3$s · %4$s unsubscribed in this window.', 'hti-engine' ),
+					'<strong>' . esc_html( number_format_i18n( $nl_confirm ) ) . '</strong>',
+					'<strong>' . esc_html( number_format_i18n( $nl_leads ) ) . '</strong>',
+					null !== $confirm_rate ? ' (<strong>' . esc_html( (string) $confirm_rate ) . '%</strong>)' : '',
+					'<strong>' . esc_html( number_format_i18n( $nl_unsub ) ) . '</strong>'
+				);
+				?>
+			</p>
 
 			<h2><?php esc_html_e( 'Activation funnel', 'hti-engine' ); ?></h2>
 			<?php
