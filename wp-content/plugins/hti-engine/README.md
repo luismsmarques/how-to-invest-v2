@@ -131,7 +131,7 @@ Banner próprio, sem dependências, **privacy-first**:
 - Gate **client-side**: `window.HTIConsent.get()/open()` + evento `hti-consent-changed`. O questionário já envia o `consent.analytics` real (do cookie) ao `/recommend`.
 
 ### Google Analytics (GA4 — `class-analytics.php` + `analytics.js`)
-O `gtag.js` **não** carrega até o utilizador aceitar a analítica no banner (invariante RGPD: nada de trackers antes do consentimento). O `analytics.js` injeta o GA só quando o consentimento é dado e reage ao evento `hti-consent-changed` (carrega de imediato ao aceitar, sem reload). ID configurável em **Settings → Analytics** ou pelo filtro `hti_ga_id` (default `G-QWST7PZNBT`); vazio desativa. `anonymize_ip` ativo.
+O `gtag.js` **não** carrega até o utilizador aceitar a analítica no banner (invariante RGPD: nada de trackers antes do consentimento). O `analytics.js` injeta o GA só quando o consentimento é dado e reage ao evento `hti-consent-changed` (carrega de imediato ao aceitar, sem reload). ID configurável em **Settings → Analytics** ou pelo filtro `hti_ga_id` (sem default — **vazio desativa** o gtag próprio do HTI, para usar quando o GA4 é gerido pelo Google Tag Manager). `anonymize_ip` ativo.
 
 ## Export PDF (`class-pdf.php`)
 

@@ -23,11 +23,6 @@ defined( 'ABSPATH' ) || exit;
 class Analytics {
 
 	/**
-	 * Default GA4 measurement ID (override in Settings or via the filter).
-	 */
-	private const DEFAULT_ID = 'G-QWST7PZNBT';
-
-	/**
 	 * Hook front-end asset loading.
 	 */
 	public static function init(): void {
@@ -35,14 +30,18 @@ class Analytics {
 	}
 
 	/**
-	 * The configured GA4 measurement ID (settings → default → filter).
+	 * The configured GA4 measurement ID, or '' when analytics is disabled.
+	 *
+	 * Config-only: there is NO hardcoded default. An empty Settings field means
+	 * HTI does not load its own gtag at all — which is exactly what you want when
+	 * GA4 is managed by Google Tag Manager instead (leaving both would double up).
 	 */
 	public static function measurement_id(): string {
 		$settings = function_exists( 'get_option' ) ? get_option( 'htinvest_settings' ) : array();
-		$id       = is_array( $settings ) && ! empty( $settings['ga_id'] ) ? (string) $settings['ga_id'] : self::DEFAULT_ID;
+		$id       = is_array( $settings ) && ! empty( $settings['ga_id'] ) ? trim( (string) $settings['ga_id'] ) : '';
 
 		/**
-		 * Filter the GA4 measurement ID (empty disables analytics).
+		 * Filter the GA4 measurement ID (empty disables HTI's own gtag).
 		 *
 		 * @param string $id Measurement ID.
 		 */

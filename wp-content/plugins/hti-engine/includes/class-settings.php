@@ -462,8 +462,21 @@ class Settings {
 						<th scope="row"><label for="hti-ga"><?php echo esc_html__( 'GA4 Measurement ID', 'hti-engine' ); ?></label></th>
 						<td><input name="htinvest_settings[ga_id]" id="hti-ga" type="text" class="regular-text"
 							value="<?php echo esc_attr( $settings['ga_id'] ?? '' ); ?>"
-							placeholder="<?php echo esc_attr( Analytics::measurement_id() ); ?>" />
-							<p class="description"><?php echo esc_html__( 'Loaded only after the visitor accepts analytics in the consent banner. Leave blank to disable.', 'hti-engine' ); ?></p></td>
+							placeholder="G-XXXXXXXXXX" />
+							<p class="description">
+								<?php echo esc_html__( 'Loaded only after the visitor accepts analytics in the consent banner.', 'hti-engine' ); ?><br>
+								<strong><?php echo esc_html__( 'Leave blank to disable HTI’s own Google Analytics', 'hti-engine' ); ?></strong>
+								<?php echo esc_html__( '— do this if GA4 is managed by Google Tag Manager instead (otherwise both load and events double up).', 'hti-engine' ); ?>
+								<?php
+								$ga = trim( (string) ( $settings['ga_id'] ?? '' ) );
+								if ( '' === $ga ) {
+									echo ' <strong style="color:#0e7c3f;">' . esc_html__( 'Currently: disabled ✓', 'hti-engine' ) . '</strong>';
+								} else {
+									/* translators: %s: the configured GA4 ID. */
+									echo ' <strong style="color:#b26a00;">' . esc_html( sprintf( __( 'Currently: HTI loads GA4 %s', 'hti-engine' ), $ga ) ) . '</strong>';
+								}
+								?>
+							</p></td>
 					</tr>
 				</table>
 
