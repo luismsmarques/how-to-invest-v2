@@ -365,22 +365,25 @@ class Subscribe {
 				array( 'LANGUAGE' => strtoupper( $locale ), 'OPTIN_AT' => gmdate( 'Y-m-d' ) ),
 				array_filter( array( Brevo::list_id( $locale ) ) )
 			);
+			$source = 'newsletter';
 			if ( $ok ) {
 				// Now that the subscription is confirmed, deliver the ebook to
 				// those who came via the lead-magnet gate; everyone else gets the
-				// plain welcome.
+				// plain welcome. The source is carried into the redirect so the
+				// analytics event can attribute the confirmation (ebook vs plain).
 				if ( self::ebook_pending_take( $email ) ) {
+					$source = 'ebook';
 					self::send_ebook_email( $email, $locale );
 				} else {
 					self::send_confirmed_email( $email, $locale );
 				}
 			}
-			self::redirect_result( $ok ? 'confirmed' : 'error', $locale );
+			self::redirect_result( $ok ? 'confirmed' : 'error', $locale, $source );
 		}
 
 		// Unsubscribe from the language list they subscribed via.
 		$ok = Brevo::remove_from_list( $email, Brevo::list_id( $locale ) );
-		self::redirect_result( $ok ? 'unsubscribed' : 'error', $locale );
+		self::redirect_result( $ok ? 'unsubscribed' : 'error', $locale, 'newsletter' );
 	}
 
 	/**
@@ -389,8 +392,12 @@ class Subscribe {
 	 * @param string $state  Result state.
 	 * @param string $locale Locale.
 	 */
-	private static function redirect_result( string $state, string $locale ): void {
-		wp_safe_redirect( add_query_arg( array( 'hti_sub_done' => $state, 'l' => $locale ), home_url( '/' ) ) );
+	private static function redirect_result( string $state, string $locale, string $source = '' ): void {
+		$args = array( 'hti_sub_done' => $state, 'l' => $locale );
+		if ( '' !== $source ) {
+			$args['src'] = $source;
+		}
+		wp_safe_redirect( add_query_arg( $args, home_url( '/' ) ) );
 		exit;
 	}
 
@@ -419,16 +426,24 @@ class Subscribe {
 			esc_html( $msg )
 		);
 
-		// Report the (no-JS) confirm / unsubscribe outcome to analytics, once the
-		// tracking helper has loaded (deferred scripts run before DOMContentLoaded).
+		// Report the confirm / unsubscribe outcome to analytics (first-party +
+		// GTM dataLayer), once the tracking helper has loaded. Carries source
+		// (ebook vs newsletter) and status so the GA4 event can attribute it.
 		$event = array(
 			'confirmed'    => 'newsletter_confirmed',
 			'unsubscribed' => 'newsletter_unsubscribe',
 		)[ $state ] ?? '';
 		if ( '' !== $event ) {
+			$status  = 'confirmed' === $state ? 'confirmed' : 'unsubscribed';
+			$src     = isset( $_GET['src'] ) ? sanitize_key( wp_unslash( $_GET['src'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$payload = array( 'status' => $status );
+			if ( '' !== $src ) {
+				$payload['source'] = $src;
+			}
 			printf(
-				'<script>document.addEventListener("DOMContentLoaded",function(){if(window.HTITrack){window.HTITrack.event(%s);}});</script>',
-				wp_json_encode( $event )
+				'<script>document.addEventListener("DOMContentLoaded",function(){if(window.HTITrack){window.HTITrack.event(%s,%s);}});</script>',
+				wp_json_encode( $event ),
+				wp_json_encode( $payload )
 			);
 		}
 	}

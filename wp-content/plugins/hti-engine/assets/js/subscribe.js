@@ -61,7 +61,8 @@
 					form.reset();
 					setStatus( strings.sent, 'success' );
 					track( 'newsletter_subscribe_submit', {
-						variant: cfg.variant || 'inline',
+						source: cfg.variant || 'newsletter',
+						status: 'submitted',
 						locale: cfg.locale || 'en'
 					} );
 					return;

@@ -53,7 +53,7 @@
 			if ( row ) { row.style.display = 'none'; }
 			if ( cons ) { cons.style.display = 'none'; }
 			set( S.ok, 'ok' );
-			if ( window.HTITrack ) { window.HTITrack.event( 'ebook_lead', { source: 'ebook-page' } ); }
+			if ( window.HTITrack ) { window.HTITrack.event( 'ebook_lead', { source: 'ebook-page', status: 'submitted' } ); }
 		} ).catch( function () {
 			set( S.err, 'err' );
 		} );

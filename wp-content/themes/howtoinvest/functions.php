@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.55';
+const VERSION = '0.8.56';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -1574,7 +1574,7 @@ function render_learn_hub(): string {
 							if ( row ) { row.style.display = 'none'; }
 							if ( c ) { c.style.display = 'none'; }
 							set( f.getAttribute( 'data-ok' ), 'ok' );
-							if ( window.HTITrack ) { window.HTITrack.event( 'ebook_lead', { source: 'ebook-learn' } ); }
+							if ( window.HTITrack ) { window.HTITrack.event( 'ebook_lead', { source: 'ebook-learn', status: 'submitted' } ); }
 						} ).catch( function () { set( f.getAttribute( 'data-err' ), 'err' ); } );
 					} );
 				}() );
