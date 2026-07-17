@@ -255,6 +255,37 @@ class Groups_Page {
 	}
 
 	/**
+	 * Format a group's item date range, with a warning when the items span more
+	 * than the configured max — so a temporally incoherent group is easy to spot.
+	 *
+	 * @param int  $group_id Group id.
+	 * @param bool $detailed Add a second-line note on the detail screen.
+	 */
+	private static function render_date_range( int $group_id, bool $detailed = false ): string {
+		$range = Groups::date_range( $group_id );
+		if ( '' === $range['max'] ) {
+			return '<span style="color:#a7aaad">—</span>';
+		}
+		$fmt    = (string) ( get_option( 'date_format' ) ?: 'M j, Y' );
+		$min_ts = strtotime( $range['min'] );
+		$max_ts = strtotime( $range['max'] );
+		$min_s  = $min_ts ? date_i18n( $fmt, $min_ts ) : '';
+		$max_s  = $max_ts ? date_i18n( $fmt, $max_ts ) : '';
+		$same   = $min_ts && $max_ts && gmdate( 'Y-m-d', $min_ts ) === gmdate( 'Y-m-d', $max_ts );
+		$label  = $same ? esc_html( $max_s ) : esc_html( $min_s . ' → ' . $max_s );
+
+		$span_days = max( 1, (int) Settings::get( 'group_max_span_days', 3 ) );
+		if ( $min_ts && $max_ts && ( $max_ts - $min_ts ) > $span_days * DAY_IN_SECONDS ) {
+			$title  = esc_attr( sprintf( /* translators: %d: days. */ __( 'Items span more than %d days — check this group mixes recent and older news.', 'hti-rss-ai' ), $span_days ) );
+			$label .= ' <span title="' . $title . '" style="color:#bd8600">&#9888;</span>';
+			if ( $detailed ) {
+				$label .= '<br /><span style="color:#bd8600;font-size:12px">' . esc_html( sprintf( /* translators: %d: days. */ __( 'Spans more than %d days.', 'hti-rss-ai' ), $span_days ) ) . '</span>';
+			}
+		}
+		return $label;
+	}
+
+	/**
 	 * Render language filter tabs (only when more than one language).
 	 *
 	 * @param array<int,object> $groups  All open groups.
@@ -304,6 +335,7 @@ class Groups_Page {
 					<tr>
 						<th><?php echo esc_html__( 'Topic', 'hti-rss-ai' ); ?></th>
 						<th style="width:80px"><?php echo esc_html__( 'Items', 'hti-rss-ai' ); ?></th>
+						<th style="width:190px"><?php echo esc_html__( 'Dates', 'hti-rss-ai' ); ?></th>
 						<th style="width:70px"><?php echo esc_html__( 'Lang', 'hti-rss-ai' ); ?></th>
 						<th style="width:90px"><?php echo esc_html__( 'Score', 'hti-rss-ai' ); ?></th>
 						<th style="width:160px"><?php echo esc_html__( 'Actions', 'hti-rss-ai' ); ?></th>
@@ -311,7 +343,7 @@ class Groups_Page {
 				</thead>
 				<tbody>
 					<?php if ( ! $groups ) : ?>
-						<tr><td colspan="5"><?php echo esc_html__( 'No groups yet. Fetch drafts, then “Group now”.', 'hti-rss-ai' ); ?></td></tr>
+						<tr><td colspan="6"><?php echo esc_html__( 'No groups yet. Fetch drafts, then “Group now”.', 'hti-rss-ai' ); ?></td></tr>
 					<?php endif; ?>
 					<?php foreach ( $groups as $group ) : ?>
 						<?php
@@ -328,6 +360,7 @@ class Groups_Page {
 						<tr>
 							<td><strong><a href="<?php echo esc_url( $view ); ?>"><?php echo esc_html( $group->label ); ?></a></strong></td>
 							<td><?php echo (int) $group->size; ?></td>
+							<td><?php echo wp_kses_post( self::render_date_range( (int) $group->id ) ); ?></td>
 							<td><?php echo esc_html( strtoupper( (string) $group->lang ) ); ?></td>
 							<td><?php echo esc_html( number_format( (float) $group->score, 2 ) ); ?></td>
 							<td>
@@ -363,6 +396,7 @@ class Groups_Page {
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ); ?>">&larr; <?php echo esc_html__( 'Back to groups', 'hti-rss-ai' ); ?></a>
 				&nbsp;·&nbsp;
 				<?php echo esc_html( sprintf( /* translators: 1: count, 2: language. */ __( '%1$d items · %2$s', 'hti-rss-ai' ), count( $items ), strtoupper( (string) $group->lang ) ) ); ?>
+					&nbsp;&middot;&nbsp;<?php echo wp_kses_post( self::render_date_range( $id, true ) ); ?>
 			</p>
 			<?php if ( 'open' === $group->status ) : ?>
 				<?php self::render_manage_box( $group, $targets ); ?>

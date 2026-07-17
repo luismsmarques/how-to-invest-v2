@@ -41,6 +41,7 @@ class Settings {
 			'gemini_model'         => 'gemini-2.5-flash',
 			'fetch_interval'       => 'hourly',
 			'similarity_threshold' => 0.4,
+			'group_max_span_days'  => 3,
 			'enable_embeddings'    => 0,
 			'embedding_model'      => 'text-embedding-004',
 			'embedding_threshold'  => 0.82,
@@ -246,6 +247,7 @@ class Settings {
 			'gemini_model'         => isset( $input['gemini_model'] ) ? sanitize_text_field( $input['gemini_model'] ) : 'gemini-2.5-flash',
 			'fetch_interval'       => in_array( $input['fetch_interval'] ?? '', $intervals, true ) ? $input['fetch_interval'] : 'hourly',
 			'similarity_threshold' => $threshold,
+			'group_max_span_days'  => max( 1, min( 30, absint( $input['group_max_span_days'] ?? 3 ) ) ),
 			'enable_embeddings'    => empty( $input['enable_embeddings'] ) ? 0 : 1,
 			'embedding_model'      => isset( $input['embedding_model'] ) ? sanitize_text_field( $input['embedding_model'] ) : 'text-embedding-004',
 			'embedding_threshold'  => $emb_threshold,
@@ -414,6 +416,12 @@ class Settings {
 						<th scope="row"><label for="rssai_open_max_days"><?php echo esc_html__( 'Keep stories open for (days)', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[open_max_days]" id="rssai_open_max_days" type="number" min="1" max="90" class="small-text" value="<?php echo esc_attr( (string) $s['open_max_days'] ); ?>" />
 							<p class="description"><?php echo esc_html__( 'A new item can still join an existing open group within this window (avoids duplicate groups for a developing story). After this, an open group with no new activity is considered abandoned and cleaned up.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_group_max_span_days"><?php echo esc_html__( 'Max date span in a group (days)', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[group_max_span_days]" id="rssai_group_max_span_days" type="number" min="1" max="30" class="small-text" value="<?php echo esc_attr( (string) $s['group_max_span_days'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'An item only joins a group when its publish date is within this many days of the group’s most recent item — so old news never gets grouped with recent news, even when the wording matches.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
 					<tr>

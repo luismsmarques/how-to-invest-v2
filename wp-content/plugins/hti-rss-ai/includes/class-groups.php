@@ -115,6 +115,24 @@ class Groups {
 	}
 
 	/**
+	 * Published-date range of a group's items (to confirm it is temporally
+	 * coherent — recent news together, not old mixed with new).
+	 *
+	 * @param int $id Group id.
+	 * @return array{min:string,max:string,count:int}
+	 */
+	public static function date_range( int $id ): array {
+		global $wpdb;
+		$items = Items::table();
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT MIN(published_at) AS min, MAX(published_at) AS max, COUNT(*) AS c FROM `$items` WHERE group_id = %d", $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return array(
+			'min'   => (string) ( $row->min ?? '' ),
+			'max'   => (string) ( $row->max ?? '' ),
+			'count' => (int) ( $row->c ?? 0 ),
+		);
+	}
+
+	/**
 	 * Recount the live number of items in a group and persist it as `size`.
 	 * The stored `size` was frozen at creation; this keeps it honest after
 	 * items are added, removed or pruned.

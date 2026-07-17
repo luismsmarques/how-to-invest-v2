@@ -42,6 +42,7 @@ class Grouping {
 		$open_days = max( 1, (int) Settings::get( 'open_max_days', 14 ) );
 		$use_emb   = ! empty( Settings::get( 'enable_embeddings', 0 ) );
 		$emb_thr   = (float) Settings::get( 'embedding_threshold', 0.82 );
+		$span_secs = (float) ( max( 1, (int) Settings::get( 'group_max_span_days', 3 ) ) * DAY_IN_SECONDS );
 		$report    = array(
 			'groups' => 0,
 			'items'  => 0,
@@ -68,10 +69,12 @@ class Grouping {
 
 			$tokens = array();
 			$vecs   = array();
+			$times  = array();
 			foreach ( $items as $item ) {
 				$id            = (int) $item->id;
 				$tokens[ $id ] = self::tokenize( $item->title . ' ' . $item->description );
 				$vecs[ $id ]   = $use_emb ? self::decode_vector( $item->embedding ?? '' ) : null;
+				$times[ $id ]  = self::ts( (string) ( $item->published_at ?? '' ) );
 			}
 
 			// Existing recent open groups for this language and their member token
@@ -99,18 +102,23 @@ class Grouping {
 					continue;
 				}
 				$match = $existing
-					? self::best_group_hybrid( $set, $vecs[ $id ], $existing, $idf, $threshold, $emb_thr )
+					? self::best_group_hybrid( $set, $vecs[ $id ], $existing, $idf, $threshold, $emb_thr, $times[ $id ], $span_secs )
 					: array(
 						'index'     => -1,
 						'sim'       => 0.0,
 						'qualifies' => false,
 					);
 				if ( $match['qualifies'] && $match['index'] >= 0 ) {
-					$gid             = (int) $existing[ $match['index'] ]['gid'];
+					$idx             = $match['index'];
+					$gid             = (int) $existing[ $idx ]['gid'];
 					$joins[ $gid ][] = $id;
-					// Let later items in this batch also match on this item.
-					$existing[ $match['index'] ]['members'][] = $set;
-					$existing[ $match['index'] ]['vecs'][]    = $vecs[ $id ];
+					// Let later items in this batch also match on this item, and
+					// slide the group's newest date forward as it grows.
+					$existing[ $idx ]['members'][] = $set;
+					$existing[ $idx ]['vecs'][]    = $vecs[ $id ];
+					if ( null !== $times[ $id ] && ( null === $existing[ $idx ]['newest_ts'] || $times[ $id ] > $existing[ $idx ]['newest_ts'] ) ) {
+						$existing[ $idx ]['newest_ts'] = $times[ $id ];
+					}
 				} else {
 					$unmatched[] = $item;
 				}
@@ -135,24 +143,30 @@ class Grouping {
 					continue;
 				}
 				$vec   = $vecs[ $id ];
+				$cts   = $times[ $id ];
 				$match = $clusters
-					? self::best_group_hybrid( $set, $vec, $clusters, $idf, $threshold, $emb_thr )
+					? self::best_group_hybrid( $set, $vec, $clusters, $idf, $threshold, $emb_thr, $cts, $span_secs )
 					: array(
 						'index'     => -1,
 						'sim'       => 0.0,
 						'qualifies' => false,
 					);
 				if ( $match['qualifies'] && $match['index'] >= 0 ) {
-					$clusters[ $match['index'] ]['ids'][]     = $id;
-					$clusters[ $match['index'] ]['members'][] = $set;
-					$clusters[ $match['index'] ]['vecs'][]    = $vec;
-					$clusters[ $match['index'] ]['sims'][]    = $match['sim'];
+					$idx = $match['index'];
+					$clusters[ $idx ]['ids'][]     = $id;
+					$clusters[ $idx ]['members'][] = $set;
+					$clusters[ $idx ]['vecs'][]    = $vec;
+					$clusters[ $idx ]['sims'][]    = $match['sim'];
+					if ( null !== $cts && ( null === $clusters[ $idx ]['newest_ts'] || $cts > $clusters[ $idx ]['newest_ts'] ) ) {
+						$clusters[ $idx ]['newest_ts'] = $cts;
+					}
 				} else {
 					$clusters[] = array(
-						'ids'     => array( $id ),
-						'members' => array( $set ),
-						'vecs'    => array( $vec ),
-						'sims'    => array(),
+						'ids'       => array( $id ),
+						'members'   => array( $set ),
+						'vecs'      => array( $vec ),
+						'sims'      => array(),
+						'newest_ts' => $cts,
 					);
 				}
 			}
@@ -202,6 +216,22 @@ class Grouping {
 	}
 
 	/**
+	 * Parse a datetime string to a Unix timestamp, or null when unparseable.
+	 * Pure; testable.
+	 *
+	 * @param string $datetime MySQL datetime.
+	 * @return int|null
+	 */
+	public static function ts( string $datetime ): ?int {
+		$datetime = trim( $datetime );
+		if ( '' === $datetime || str_starts_with( $datetime, '0000' ) ) {
+			return null;
+		}
+		$t = strtotime( $datetime );
+		return false === $t ? null : $t;
+	}
+
+	/**
 	 * Load recent open groups for a language with their member token sets, so
 	 * the grouper can compare a new item against in-progress stories.
 	 *
@@ -214,20 +244,26 @@ class Grouping {
 		$groups = Groups::open_recent( $lang, $open_days );
 		$out    = array();
 		foreach ( $groups as $group ) {
-			$members = array();
-			$vecs    = array();
+			$members  = array();
+			$vecs     = array();
+			$newest   = null;
 			foreach ( Groups::items( (int) $group->id ) as $member ) {
 				$set = self::tokenize( $member->title . ' ' . $member->description );
 				if ( $set ) {
 					$members[] = $set;
 					$vecs[]    = $with_vecs ? self::decode_vector( $member->embedding ?? '' ) : null;
+					$mts       = self::ts( (string) ( $member->published_at ?? '' ) );
+					if ( null !== $mts && ( null === $newest || $mts > $newest ) ) {
+						$newest = $mts;
+					}
 				}
 			}
 			if ( $members ) {
 				$out[] = array(
-					'gid'     => (int) $group->id,
-					'members' => $members,
-					'vecs'    => $vecs,
+					'gid'       => (int) $group->id,
+					'members'   => $members,
+					'vecs'      => $vecs,
+					'newest_ts' => $newest,
 				);
 			}
 		}
@@ -278,13 +314,21 @@ class Grouping {
 	 * @param array<string,float>                                                                     $idf          Token weights.
 	 * @param float                                                                                   $threshold    Lexical join threshold.
 	 * @param float                                                                                   $emb_threshold Cosine join threshold.
+	 * @param int|null                                                                                $cand_ts      Candidate publish timestamp (for the recency gate), or null to disable it.
+	 * @param float                                                                                   $span_secs    Max allowed distance in seconds between the candidate and a group's newest item (0 = no gate).
 	 * @return array{index:int,sim:float,qualifies:bool}
 	 */
-	public static function best_group_hybrid( array $set, ?array $vec, array $groups, array $idf, float $threshold, float $emb_threshold ): array {
+	public static function best_group_hybrid( array $set, ?array $vec, array $groups, array $idf, float $threshold, float $emb_threshold, ?int $cand_ts = null, float $span_secs = 0 ): array {
 		$best      = -1;
 		$best_rank = -1.0;
 		$qualifies = false;
 		foreach ( $groups as $index => $group ) {
+			// Recency gate: never join a group whose newest item is more than the
+			// allowed span away in time — keeps old news out of a recent story.
+			if ( $span_secs > 0 && null !== $cand_ts && isset( $group['newest_ts'] ) && null !== $group['newest_ts']
+				&& abs( $cand_ts - (int) $group['newest_ts'] ) > $span_secs ) {
+				continue;
+			}
 			$group_rank = -1.0;
 			$group_qual = false;
 			$mvecs      = $group['vecs'] ?? array();

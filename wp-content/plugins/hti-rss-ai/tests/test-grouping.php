@@ -128,4 +128,33 @@ rssai_ok( $hs['qualifies'] && 0 === $hs['index'], 'hybrid: semantic (cosine) mat
 $hn = Grouping::best_group_hybrid( array( 'unrelated' => true ), array( 0.0, 1.0, 0.0 ), $g_sem, $idf_empty, 0.4, 0.82 );
 rssai_ok( ! $hn['qualifies'], 'hybrid: no lexical overlap and low cosine → no join' );
 
+// ts() (P4): parse datetimes, reject empty/zero.
+rssai_ok( is_int( Grouping::ts( '2024-01-02 03:04:05' ) ), 'ts parses a datetime to an int' );
+rssai_ok( null === Grouping::ts( '' ), 'ts empty → null' );
+rssai_ok( null === Grouping::ts( '0000-00-00 00:00:00' ), 'ts zero date → null' );
+
+// Recency gate (P4): same topic, but the date decides which group an item joins.
+$idf_d = Grouping::idf( array( 1 => array( 'merger' => true, 'deal' => true ) ) );
+$day   = 86400;
+$now   = 1000000000; // fixed epoch literal (no clock calls in tests).
+$dated = array(
+	// index 0: OLD coverage of the topic.
+	array( 'members' => array( array( 'merger' => true, 'deal' => true ) ), 'vecs' => array( null ), 'newest_ts' => $now - 30 * $day ),
+	// index 1: RECENT coverage of the topic.
+	array( 'members' => array( array( 'merger' => true, 'deal' => true ) ), 'vecs' => array( null ), 'newest_ts' => $now ),
+);
+$cand = array( 'merger' => true, 'deal' => true );
+
+$r1 = Grouping::best_group_hybrid( $cand, null, $dated, $idf_d, 0.4, 0.82, $now, 3 * $day );
+rssai_ok( $r1['qualifies'] && 1 === $r1['index'], 'recency gate: a recent item joins the recent group, not the old one' );
+
+$r2 = Grouping::best_group_hybrid( $cand, null, $dated, $idf_d, 0.4, 0.82, $now - 30 * $day, 3 * $day );
+rssai_ok( $r2['qualifies'] && 0 === $r2['index'], 'recency gate: an old item joins the old group, not the recent one' );
+
+$r3 = Grouping::best_group_hybrid( $cand, null, $dated, $idf_d, 0.4, 0.82, $now - 15 * $day, 3 * $day );
+rssai_ok( ! $r3['qualifies'], 'recency gate: an item far in time from every group joins none' );
+
+$r4 = Grouping::best_group_hybrid( $cand, null, $dated, $idf_d, 0.4, 0.82, null, 0 );
+rssai_ok( $r4['qualifies'], 'gate disabled (span 0 / no timestamp) → dates ignored, still matches' );
+
 rssai_done( 'grouping' );
