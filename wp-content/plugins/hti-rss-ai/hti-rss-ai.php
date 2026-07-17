@@ -59,6 +59,7 @@ require_once RSSAI_PATH . 'includes/class-featured-image.php';
 require_once RSSAI_PATH . 'includes/class-generator.php';
 require_once RSSAI_PATH . 'includes/class-youtube-generator.php';
 require_once RSSAI_PATH . 'includes/class-admin.php';
+require_once RSSAI_PATH . 'includes/class-dashboard-page.php';
 require_once RSSAI_PATH . 'includes/class-drafts.php';
 require_once RSSAI_PATH . 'includes/class-groups-page.php';
 require_once RSSAI_PATH . 'includes/class-review.php';
@@ -85,6 +86,7 @@ add_action( 'plugins_loaded', array( Activator::class, 'maybe_upgrade' ) );
  */
 Settings::init();
 Admin::init();
+Dashboard_Page::init();
 Drafts::init();
 Groups_Page::init();
 Review::init();

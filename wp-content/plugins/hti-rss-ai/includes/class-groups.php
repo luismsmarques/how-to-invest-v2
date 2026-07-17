@@ -138,6 +138,17 @@ class Groups {
 	}
 
 	/**
+	 * Rename a group (and mark it active).
+	 *
+	 * @param int    $id    Group id.
+	 * @param string $label New label.
+	 */
+	public static function set_label( int $id, string $label ): void {
+		global $wpdb;
+		$wpdb->update( self::table(), array( 'label' => $label, 'updated_at' => current_time( 'mysql' ) ), array( 'id' => $id ), array( '%s', '%s' ), array( '%d' ) );
+	}
+
+	/**
 	 * Mark a group as recently active (updates updated_at).
 	 *
 	 * @param int $id Group id.

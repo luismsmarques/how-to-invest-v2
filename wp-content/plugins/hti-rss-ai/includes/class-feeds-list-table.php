@@ -49,11 +49,50 @@ class Feeds_List_Table extends \WP_List_Table {
 	}
 
 	/**
-	 * Load rows.
+	 * Load rows (optionally filtered by language).
 	 */
 	public function prepare_items(): void {
 		$this->_column_headers = array( $this->get_columns(), array(), array() );
-		$this->items           = Feeds::all();
+		$feeds                 = Feeds::all();
+		$lang                  = self::current_lang();
+		if ( '' !== $lang ) {
+			$feeds = array_values( array_filter( $feeds, static fn( $feed ) => (string) $feed->lang === $lang ) );
+		}
+		$this->items = $feeds;
+	}
+
+	/**
+	 * The language filter currently applied ('' = all).
+	 */
+	private static function current_lang(): string {
+		$lang = isset( $_GET['flang'] ) ? preg_replace( '/[^a-z]/', '', strtolower( (string) wp_unslash( $_GET['flang'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return in_array( $lang, Settings::languages(), true ) ? $lang : '';
+	}
+
+	/**
+	 * Language tabs above the table (only when more than one language).
+	 *
+	 * @return array<string,string>
+	 */
+	protected function get_views(): array {
+		$langs = Settings::languages();
+		if ( count( $langs ) < 2 ) {
+			return array();
+		}
+		$feeds   = Feeds::all();
+		$current = self::current_lang();
+		$base    = admin_url( 'admin.php?page=' . Admin::PAGE );
+
+		$views = array();
+		$all   = '' === $current ? 'current' : '';
+		$views['all'] = sprintf( '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>', esc_url( $base ), esc_attr( $all ), esc_html__( 'All', 'hti-rss-ai' ), count( $feeds ) );
+		foreach ( $langs as $code ) {
+			$count   = count( array_filter( $feeds, static fn( $feed ) => (string) $feed->lang === $code ) );
+			$class   = $current === $code ? 'current' : '';
+			$url     = add_query_arg( 'flang', $code, $base );
+			$views[ $code ] = sprintf( '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>', esc_url( $url ), esc_attr( $class ), esc_html( strtoupper( $code ) ), $count );
+		}
+		return $views;
 	}
 
 	/**

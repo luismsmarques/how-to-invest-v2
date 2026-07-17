@@ -79,6 +79,7 @@ class Items_List_Table extends \WP_List_Table {
 		return array(
 			'feed_id' => isset( $_GET['feed_id'] ) ? absint( wp_unslash( $_GET['feed_id'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'status'  => isset( $_GET['fstatus'] ) ? sanitize_key( wp_unslash( $_GET['fstatus'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'lang'    => isset( $_GET['flang'] ) ? preg_replace( '/[^a-z]/', '', strtolower( (string) wp_unslash( $_GET['flang'] ) ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		);
 	}
 
@@ -189,6 +190,15 @@ class Items_List_Table extends \WP_List_Table {
 			printf( '<option value="%1$s"%2$s>%1$s</option>', esc_attr( $status ), selected( $filters['status'], $status, false ) );
 		}
 		echo '</select> ';
+
+		$langs = Settings::languages();
+		if ( count( $langs ) > 1 ) {
+			echo '<select name="flang"><option value="">' . esc_html__( 'All languages', 'hti-rss-ai' ) . '</option>';
+			foreach ( $langs as $code ) {
+				printf( '<option value="%1$s"%2$s>%3$s</option>', esc_attr( $code ), selected( $filters['lang'], $code, false ), esc_html( strtoupper( $code ) ) );
+			}
+			echo '</select> ';
+		}
 
 		submit_button( __( 'Filter', 'hti-rss-ai' ), '', 'filter_action', false );
 		echo '</div>';
