@@ -34,6 +34,49 @@ class Items {
 	}
 
 	/**
+	 * Whether a near-identical item (same normalized-title fingerprint and
+	 * language) was already ingested recently — catches the same story
+	 * syndicated across feeds under a different guid.
+	 *
+	 * @param string $fingerprint Normalized-title signature (sha1).
+	 * @param string $lang        Language code.
+	 * @param string $since       MySQL datetime lower bound (fetched_at >= this).
+	 */
+	public static function fingerprint_exists( string $fingerprint, string $lang, string $since ): bool {
+		global $wpdb;
+		if ( '' === $fingerprint ) {
+			return false;
+		}
+		$table = self::table();
+		$id    = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM `$table` WHERE fingerprint = %s AND lang = %s AND fetched_at >= %s LIMIT 1", $fingerprint, $lang, $since ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return (bool) $id;
+	}
+
+	/**
+	 * Ungrouped items of a language that still lack an embedding.
+	 *
+	 * @param string $lang  Language code.
+	 * @param int    $limit Max rows.
+	 * @return array<int,object>
+	 */
+	public static function needing_embeddings( string $lang, int $limit ): array {
+		global $wpdb;
+		$table = self::table();
+		$limit = max( 1, $limit );
+		return (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `$table` WHERE status = 'new' AND lang = %s AND ( embedding IS NULL OR embedding = '' ) ORDER BY id ASC LIMIT %d", $lang, $limit ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/**
+	 * Store an item's embedding vector (JSON-encoded).
+	 *
+	 * @param int    $id   Item id.
+	 * @param string $json JSON array of floats.
+	 */
+	public static function set_embedding( int $id, string $json ): void {
+		self::update( $id, array( 'embedding' => $json ) );
+	}
+
+	/**
 	 * Fetch a single item row by id.
 	 *
 	 * @param int $id Item id.
@@ -54,9 +97,11 @@ class Items {
 	public static function update( int $id, array $data ): void {
 		global $wpdb;
 		$allowed = array(
-			'transcript' => '%s',
-			'status'     => '%s',
-			'group_id'   => '%d',
+			'transcript'  => '%s',
+			'status'      => '%s',
+			'group_id'    => '%d',
+			'fingerprint' => '%s',
+			'embedding'   => '%s',
 		);
 		$set     = array();
 		$formats = array();
@@ -93,9 +138,10 @@ class Items {
 				'link'         => (string) ( $data['link'] ?? '' ),
 				'published_at' => (string) ( $data['published_at'] ?? current_time( 'mysql' ) ),
 				'lang'         => (string) ( $data['lang'] ?? 'en' ),
+				'fingerprint'  => (string) ( $data['fingerprint'] ?? '' ),
 				'status'       => (string) ( $data['status'] ?? 'new' ),
 			),
-			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		return $ok ? (int) $wpdb->insert_id : 0;
 	}

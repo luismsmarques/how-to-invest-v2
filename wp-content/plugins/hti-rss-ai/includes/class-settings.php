@@ -41,6 +41,11 @@ class Settings {
 			'gemini_model'         => 'gemini-2.5-flash',
 			'fetch_interval'       => 'hourly',
 			'similarity_threshold' => 0.4,
+			'enable_embeddings'    => 0,
+			'embedding_model'      => 'text-embedding-004',
+			'embedding_threshold'  => 0.82,
+			'embed_max_per_run'    => 200,
+			'feed_max_errors'      => 5,
 			'max_per_fetch'        => 50,
 			'max_generations_day'  => 10,
 			'default_lang'         => 'en',
@@ -223,6 +228,9 @@ class Settings {
 		$threshold = isset( $input['similarity_threshold'] ) ? (float) $input['similarity_threshold'] : 0.4;
 		$threshold = max( 0.0, min( 1.0, $threshold ) );
 
+		$emb_threshold = isset( $input['embedding_threshold'] ) ? (float) $input['embedding_threshold'] : 0.82;
+		$emb_threshold = max( 0.0, min( 1.0, $emb_threshold ) );
+
 		// Keep existing API keys when the field is submitted blank.
 		$existing  = (array) get_option( self::OPTION, array() );
 		$yt_key    = isset( $input['youtube_api_key'] ) ? trim( sanitize_text_field( $input['youtube_api_key'] ) ) : '';
@@ -238,6 +246,11 @@ class Settings {
 			'gemini_model'         => isset( $input['gemini_model'] ) ? sanitize_text_field( $input['gemini_model'] ) : 'gemini-2.5-flash',
 			'fetch_interval'       => in_array( $input['fetch_interval'] ?? '', $intervals, true ) ? $input['fetch_interval'] : 'hourly',
 			'similarity_threshold' => $threshold,
+			'enable_embeddings'    => empty( $input['enable_embeddings'] ) ? 0 : 1,
+			'embedding_model'      => isset( $input['embedding_model'] ) ? sanitize_text_field( $input['embedding_model'] ) : 'text-embedding-004',
+			'embedding_threshold'  => $emb_threshold,
+			'embed_max_per_run'    => max( 1, min( 2000, absint( $input['embed_max_per_run'] ?? 200 ) ) ),
+			'feed_max_errors'      => max( 1, min( 100, absint( $input['feed_max_errors'] ?? 5 ) ) ),
 			'max_per_fetch'        => max( 1, absint( $input['max_per_fetch'] ?? 50 ) ),
 			'max_generations_day'  => max( 1, absint( $input['max_generations_day'] ?? 10 ) ),
 			'default_lang'         => isset( $input['default_lang'] ) ? preg_replace( '/[^a-z]/', '', strtolower( (string) $input['default_lang'] ) ) : 'en',
@@ -404,8 +417,42 @@ class Settings {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><?php echo esc_html__( 'Semantic grouping', 'hti-rss-ai' ); ?></th>
+						<td>
+							<label>
+								<input name="<?php echo esc_attr( self::OPTION ); ?>[enable_embeddings]" type="checkbox" value="1" <?php checked( ! empty( $s['enable_embeddings'] ) ); ?> />
+								<?php echo esc_html__( 'Use AI embeddings to also group stories that mean the same thing but share few words', 'hti-rss-ai' ); ?>
+							</label>
+							<p class="description"><?php echo esc_html__( 'Adds a semantic signal on top of the word-overlap match (an item joins a group when it is close either way). Runs server-side and is cached per item. If the key or quota is unavailable, grouping falls back to word-overlap only. Only matches within the same language.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_embedding_model"><?php echo esc_html__( 'Embedding model', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[embedding_model]" id="rssai_embedding_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['embedding_model'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Gemini embeddings model, e.g. text-embedding-004.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_embedding_threshold"><?php echo esc_html__( 'Semantic threshold', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[embedding_threshold]" id="rssai_embedding_threshold" type="number" step="0.01" min="0" max="1" value="<?php echo esc_attr( (string) $s['embedding_threshold'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'How semantically alike two items must be to group (cosine 0–1). Higher = stricter. Default 0.82.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_embed_max"><?php echo esc_html__( 'Max embeddings per run', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[embed_max_per_run]" id="rssai_embed_max" type="number" min="1" max="2000" class="small-text" value="<?php echo esc_attr( (string) $s['embed_max_per_run'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Caps how many new items get embedded each fetch (cost control).', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="rssai_maxfetch"><?php echo esc_html__( 'Max items per fetch', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[max_per_fetch]" id="rssai_maxfetch" type="number" min="1" value="<?php echo esc_attr( (string) $s['max_per_fetch'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_feed_max_errors"><?php echo esc_html__( 'Auto-pause feed after N errors', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[feed_max_errors]" id="rssai_feed_max_errors" type="number" min="1" max="100" class="small-text" value="<?php echo esc_attr( (string) $s['feed_max_errors'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'A feed that keeps failing is retried with a growing back-off, then paused after this many consecutive errors. Re-enable it any time from the Feeds screen.', 'hti-rss-ai' ); ?></p>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="rssai_maxgen"><?php echo esc_html__( 'Max generations per day', 'hti-rss-ai' ); ?></label></th>

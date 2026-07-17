@@ -21,7 +21,7 @@ class Activator {
 	/**
 	 * Bump when a table schema changes.
 	 */
-	private const DB_VERSION = '3';
+	private const DB_VERSION = '4';
 
 	/**
 	 * Option storing the installed schema version.
@@ -104,6 +104,7 @@ class Activator {
 				lang varchar(5) NOT NULL DEFAULT 'en',
 				status tinyint(1) NOT NULL DEFAULT 1,
 				last_fetched datetime DEFAULT NULL,
+				last_error datetime DEFAULT NULL,
 				error_count int(11) NOT NULL DEFAULT 0,
 				created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				PRIMARY KEY  (id),
@@ -125,7 +126,8 @@ class Activator {
 				link text NULL,
 				published_at datetime DEFAULT NULL,
 				lang varchar(5) NOT NULL DEFAULT 'en',
-				fingerprint longtext NULL,
+				fingerprint varchar(40) NOT NULL DEFAULT '',
+				embedding longtext NULL,
 				group_id bigint(20) unsigned DEFAULT NULL,
 				status varchar(20) NOT NULL DEFAULT 'new',
 				fetched_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -133,7 +135,8 @@ class Activator {
 				UNIQUE KEY guid_hash (guid_hash),
 				KEY feed_id (feed_id),
 				KEY status (status),
-				KEY group_id (group_id)
+				KEY group_id (group_id),
+				KEY fingerprint (fingerprint)
 			) $charset;"
 		);
 

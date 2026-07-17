@@ -178,6 +178,59 @@ class Gemini_Client {
 	}
 
 	/**
+	 * Batch text embeddings. Server-side only (the key never reaches the
+	 * browser). Returns one numeric vector per input text, in the same order.
+	 *
+	 * @param array<int,string> $texts Texts to embed.
+	 * @return array<int,array<int,float>>|\WP_Error
+	 */
+	public static function embed( array $texts ) {
+		$texts = array_values( $texts );
+		if ( ! $texts ) {
+			return array();
+		}
+		$key = self::api_key();
+		if ( '' === $key ) {
+			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
+		}
+		$model = (string) Settings::get( 'embedding_model', 'text-embedding-004' );
+		$path  = 'models/' . $model;
+		$url   = 'https://generativelanguage.googleapis.com/v1beta/' . $path . ':batchEmbedContents?key=' . rawurlencode( $key );
+
+		$requests = array();
+		foreach ( $texts as $text ) {
+			$requests[] = array(
+				'model'   => $path,
+				'content' => array( 'parts' => array( array( 'text' => (string) $text ) ) ),
+			);
+		}
+
+		$response = wp_remote_post(
+			$url,
+			array(
+				'timeout' => 60,
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => wp_json_encode( array( 'requests' => $requests ) ),
+			)
+		);
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$json = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		if ( $code < 200 || $code >= 300 ) {
+			$message = is_array( $json ) && isset( $json['error']['message'] ) ? $json['error']['message'] : 'HTTP ' . $code;
+			return new \WP_Error( 'rssai_api', $message );
+		}
+
+		$out = array();
+		foreach ( (array) ( $json['embeddings'] ?? array() ) as $embedding ) {
+			$out[] = array_map( 'floatval', (array) ( $embedding['values'] ?? array() ) );
+		}
+		return $out;
+	}
+
+	/**
 	 * Extract the first JSON object from a text blob (tolerant of code fences).
 	 *
 	 * @param string $text Model text.

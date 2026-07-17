@@ -49,6 +49,7 @@ require_once RSSAI_PATH . 'includes/class-groups.php';
 require_once RSSAI_PATH . 'includes/class-fetcher.php';
 require_once RSSAI_PATH . 'includes/class-grouping.php';
 require_once RSSAI_PATH . 'includes/class-gemini-client.php';
+require_once RSSAI_PATH . 'includes/class-embeddings.php';
 require_once RSSAI_PATH . 'includes/class-youtube.php';
 require_once RSSAI_PATH . 'includes/class-supadata.php';
 require_once RSSAI_PATH . 'includes/class-image-client.php';

@@ -40,6 +40,8 @@ class Grouping {
 	public static function run(): array {
 		$threshold = (float) Settings::get( 'similarity_threshold', 0.4 );
 		$open_days = max( 1, (int) Settings::get( 'open_max_days', 14 ) );
+		$use_emb   = ! empty( Settings::get( 'enable_embeddings', 0 ) );
+		$emb_thr   = (float) Settings::get( 'embedding_threshold', 0.82 );
 		$report    = array(
 			'groups' => 0,
 			'items'  => 0,
@@ -47,6 +49,11 @@ class Grouping {
 		);
 
 		foreach ( Settings::languages() as $lang ) {
+			// Make sure new items in this language have embeddings before we group.
+			if ( $use_emb && class_exists( __NAMESPACE__ . '\\Embeddings' ) ) {
+				Embeddings::backfill( $lang, (int) Settings::get( 'embed_max_per_run', 200 ) );
+			}
+
 			$items = Items::query(
 				array(
 					'status'   => 'new',
@@ -60,13 +67,16 @@ class Grouping {
 			}
 
 			$tokens = array();
+			$vecs   = array();
 			foreach ( $items as $item ) {
-				$tokens[ (int) $item->id ] = self::tokenize( $item->title . ' ' . $item->description );
+				$id            = (int) $item->id;
+				$tokens[ $id ] = self::tokenize( $item->title . ' ' . $item->description );
+				$vecs[ $id ]   = $use_emb ? self::decode_vector( $item->embedding ?? '' ) : null;
 			}
 
 			// Existing recent open groups for this language and their member token
-			// sets, so new items can attach to an in-progress story.
-			$existing = self::load_open_groups( $lang, $open_days );
+			// sets (and vectors), so new items can attach to an in-progress story.
+			$existing = self::load_open_groups( $lang, $open_days, $use_emb );
 
 			// IDF weighting over BOTH existing members and the new batch, so token
 			// weights are stable whether an item matches an old group or a new one.
@@ -78,7 +88,8 @@ class Grouping {
 			}
 			$idf = self::idf( $docs );
 
-			// Stage 1 — attach new items to an existing open group when close enough.
+			// Stage 1 — attach new items to an existing open group when close enough
+			// (lexically OR semantically).
 			$joins     = array();
 			$unmatched = array();
 			foreach ( $items as $item ) {
@@ -87,15 +98,19 @@ class Grouping {
 				if ( ! $set ) {
 					continue;
 				}
-				$match = $existing ? self::best_group( $set, $existing, $idf ) : array(
-					'index' => -1,
-					'sim'   => 0.0,
-				);
-				if ( $match['index'] >= 0 && $match['sim'] >= $threshold ) {
-					$gid            = (int) $existing[ $match['index'] ]['gid'];
+				$match = $existing
+					? self::best_group_hybrid( $set, $vecs[ $id ], $existing, $idf, $threshold, $emb_thr )
+					: array(
+						'index'     => -1,
+						'sim'       => 0.0,
+						'qualifies' => false,
+					);
+				if ( $match['qualifies'] && $match['index'] >= 0 ) {
+					$gid             = (int) $existing[ $match['index'] ]['gid'];
 					$joins[ $gid ][] = $id;
 					// Let later items in this batch also match on this item.
 					$existing[ $match['index'] ]['members'][] = $set;
+					$existing[ $match['index'] ]['vecs'][]    = $vecs[ $id ];
 				} else {
 					$unmatched[] = $item;
 				}
@@ -119,29 +134,24 @@ class Grouping {
 				if ( ! $set ) {
 					continue;
 				}
-				$best     = -1;
-				$best_sim = 0.0;
-				foreach ( $clusters as $index => $cluster ) {
-					$sim = 0.0;
-					foreach ( $cluster['members'] as $member ) {
-						$s = self::weighted_sim( $set, $member, $idf );
-						if ( $s > $sim ) {
-							$sim = $s;
-						}
-					}
-					if ( $sim > $best_sim ) {
-						$best_sim = $sim;
-						$best     = $index;
-					}
-				}
-				if ( $best >= 0 && $best_sim >= $threshold ) {
-					$clusters[ $best ]['ids'][]     = $id;
-					$clusters[ $best ]['members'][] = $set;
-					$clusters[ $best ]['sims'][]    = $best_sim;
+				$vec   = $vecs[ $id ];
+				$match = $clusters
+					? self::best_group_hybrid( $set, $vec, $clusters, $idf, $threshold, $emb_thr )
+					: array(
+						'index'     => -1,
+						'sim'       => 0.0,
+						'qualifies' => false,
+					);
+				if ( $match['qualifies'] && $match['index'] >= 0 ) {
+					$clusters[ $match['index'] ]['ids'][]     = $id;
+					$clusters[ $match['index'] ]['members'][] = $set;
+					$clusters[ $match['index'] ]['vecs'][]    = $vec;
+					$clusters[ $match['index'] ]['sims'][]    = $match['sim'];
 				} else {
 					$clusters[] = array(
 						'ids'     => array( $id ),
 						'members' => array( $set ),
+						'vecs'    => array( $vec ),
 						'sims'    => array(),
 					);
 				}
@@ -174,28 +184,50 @@ class Grouping {
 	}
 
 	/**
+	 * Decode a stored embedding (JSON array of floats) to a numeric vector, or
+	 * null when absent/invalid.
+	 *
+	 * @param string $json Stored embedding.
+	 * @return array<int,float>|null
+	 */
+	private static function decode_vector( string $json ): ?array {
+		if ( '' === $json ) {
+			return null;
+		}
+		$vec = json_decode( $json, true );
+		if ( ! is_array( $vec ) || ! $vec ) {
+			return null;
+		}
+		return array_map( 'floatval', array_values( $vec ) );
+	}
+
+	/**
 	 * Load recent open groups for a language with their member token sets, so
 	 * the grouper can compare a new item against in-progress stories.
 	 *
 	 * @param string $lang      Language code.
 	 * @param int    $open_days Recency window in days.
-	 * @return array<int,array{gid:int,members:array<int,array<string,bool>>}>
+	 * @param bool   $with_vecs Also load member embedding vectors.
+	 * @return array<int,array{gid:int,members:array<int,array<string,bool>>,vecs:array<int,array<int,float>|null>}>
 	 */
-	private static function load_open_groups( string $lang, int $open_days ): array {
+	private static function load_open_groups( string $lang, int $open_days, bool $with_vecs = false ): array {
 		$groups = Groups::open_recent( $lang, $open_days );
 		$out    = array();
 		foreach ( $groups as $group ) {
 			$members = array();
+			$vecs    = array();
 			foreach ( Groups::items( (int) $group->id ) as $member ) {
 				$set = self::tokenize( $member->title . ' ' . $member->description );
 				if ( $set ) {
 					$members[] = $set;
+					$vecs[]    = $with_vecs ? self::decode_vector( $member->embedding ?? '' ) : null;
 				}
 			}
 			if ( $members ) {
 				$out[] = array(
 					'gid'     => (int) $group->id,
 					'members' => $members,
+					'vecs'    => $vecs,
 				);
 			}
 		}
@@ -231,6 +263,99 @@ class Grouping {
 			'index' => $best,
 			'sim'   => $best_sim,
 		);
+	}
+
+	/**
+	 * Best-matching group using both signals: a group qualifies when any member
+	 * is close enough lexically (weighted Jaccard ≥ $threshold) OR semantically
+	 * (cosine of embeddings ≥ $emb_threshold). Among qualifying groups the one
+	 * with the highest combined rank wins. Reduces to the lexical matcher when
+	 * no vectors are supplied. Pure; testable.
+	 *
+	 * @param array<string,bool>                                                                     $set          Candidate token set.
+	 * @param array<int,float>|null                                                                  $vec          Candidate embedding, or null.
+	 * @param array<int,array{gid?:int,members:array<int,array<string,bool>>,vecs?:array<int,mixed>}> $groups       Groups with member tokens/vecs.
+	 * @param array<string,float>                                                                     $idf          Token weights.
+	 * @param float                                                                                   $threshold    Lexical join threshold.
+	 * @param float                                                                                   $emb_threshold Cosine join threshold.
+	 * @return array{index:int,sim:float,qualifies:bool}
+	 */
+	public static function best_group_hybrid( array $set, ?array $vec, array $groups, array $idf, float $threshold, float $emb_threshold ): array {
+		$best      = -1;
+		$best_rank = -1.0;
+		$qualifies = false;
+		foreach ( $groups as $index => $group ) {
+			$group_rank = -1.0;
+			$group_qual = false;
+			$mvecs      = $group['vecs'] ?? array();
+			foreach ( $group['members'] as $mi => $member ) {
+				$lex     = self::weighted_sim( $set, $member, $idf );
+				$has_cos = is_array( $vec ) && isset( $mvecs[ $mi ] ) && is_array( $mvecs[ $mi ] );
+				$cos     = $has_cos ? self::cosine( $vec, $mvecs[ $mi ] ) : 0.0;
+				$rank    = max( $lex, $has_cos ? $cos : 0.0 );
+				if ( $rank > $group_rank ) {
+					$group_rank = $rank;
+				}
+				if ( $lex >= $threshold || ( $has_cos && $cos >= $emb_threshold ) ) {
+					$group_qual = true;
+				}
+			}
+			if ( $group_qual && $group_rank > $best_rank ) {
+				$best_rank = $group_rank;
+				$best      = (int) $index;
+				$qualifies = true;
+			}
+		}
+		return array(
+			'index'     => $best,
+			'sim'       => $best_rank < 0 ? 0.0 : $best_rank,
+			'qualifies' => $qualifies,
+		);
+	}
+
+	/**
+	 * Cosine similarity of two equal-length numeric vectors. Pure; testable.
+	 *
+	 * @param array<int,float> $a First vector.
+	 * @param array<int,float> $b Second vector.
+	 */
+	public static function cosine( array $a, array $b ): float {
+		$a = array_values( $a );
+		$b = array_values( $b );
+		$n = min( count( $a ), count( $b ) );
+		if ( 0 === $n ) {
+			return 0.0;
+		}
+		$dot = 0.0;
+		$na  = 0.0;
+		$nb  = 0.0;
+		for ( $i = 0; $i < $n; $i++ ) {
+			$x    = (float) $a[ $i ];
+			$y    = (float) $b[ $i ];
+			$dot += $x * $y;
+			$na  += $x * $x;
+			$nb  += $y * $y;
+		}
+		if ( $na <= 0.0 || $nb <= 0.0 ) {
+			return 0.0;
+		}
+		return $dot / ( sqrt( $na ) * sqrt( $nb ) );
+	}
+
+	/**
+	 * Normalized-title signature: significant tokens, sorted, hashed. Two
+	 * headlines that differ only in case, order or punctuation share a
+	 * fingerprint; genuinely different stories do not. Pure; testable.
+	 *
+	 * @param string $title Item title.
+	 */
+	public static function fingerprint( string $title ): string {
+		$set = array_keys( self::tokenize( $title ) );
+		if ( ! $set ) {
+			return '';
+		}
+		sort( $set );
+		return sha1( implode( ' ', $set ) );
 	}
 
 	/**

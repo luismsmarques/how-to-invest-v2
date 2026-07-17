@@ -80,4 +80,52 @@ rssai_ok( -1 === $no_match['index'] && 0.0 === $no_match['sim'], 'best_group ret
 
 rssai_ok( array( 'index' => -1, 'sim' => 0.0 ) === Grouping::best_group( $new, array(), $idf2 ), 'best_group with no existing groups returns no match' );
 
+// cosine (P1.2).
+$vec = array( 1.0, 0.0, 0.0 );
+rssai_ok( abs( Grouping::cosine( $vec, $vec ) - 1.0 ) < 1e-9, 'cosine identical = 1' );
+rssai_ok( 0.0 === Grouping::cosine( array( 1.0, 0.0 ), array( 0.0, 1.0 ) ), 'cosine orthogonal = 0' );
+$partial = Grouping::cosine( array( 1.0, 1.0 ), array( 1.0, 0.0 ) );
+rssai_ok( $partial > 0.0 && $partial < 1.0, 'cosine partial overlap in (0,1)' );
+rssai_ok( 0.0 === Grouping::cosine( array(), array( 1.0 ) ), 'cosine empty = 0' );
+
+// fingerprint (P1.3): case/order/punctuation-invariant title signature.
+$fp_a = Grouping::fingerprint( 'Fed raises interest rates in 2024' );
+$fp_b = Grouping::fingerprint( 'RATES interest, raises fed — 2024!' );
+rssai_ok( '' !== $fp_a && $fp_a === $fp_b, 'fingerprint ignores case/order/punctuation' );
+rssai_ok( $fp_a !== Grouping::fingerprint( 'Oil prices tumble on demand fears' ), 'different stories → different fingerprint' );
+rssai_ok( '' === Grouping::fingerprint( 'the and for' ), 'stopwords-only title → empty fingerprint' );
+
+// best_group_hybrid (P1.2): lexical OR semantic join.
+$idf3    = Grouping::idf(
+	array(
+		1 => array( 'fed' => true, 'rates' => true ),
+		2 => array( 'oil' => true, 'prices' => true ),
+	)
+);
+$g_lex   = array(
+	array(
+		'members' => array( array( 'fed' => true, 'rates' => true ) ),
+		'vecs'    => array( null ),
+	),
+	array(
+		'members' => array( array( 'oil' => true, 'prices' => true ) ),
+		'vecs'    => array( null ),
+	),
+);
+$hl = Grouping::best_group_hybrid( array( 'fed' => true, 'rates' => true ), null, $g_lex, $idf3, 0.4, 0.82 );
+rssai_ok( $hl['qualifies'] && 0 === $hl['index'], 'hybrid: lexical match joins the right group (no vectors)' );
+
+$g_sem = array(
+	array(
+		'members' => array( array( 'completely' => true, 'different' => true ) ),
+		'vecs'    => array( array( 1.0, 0.0, 0.0 ) ),
+	),
+);
+$idf_empty = Grouping::idf( array( 1 => array( 'x' => true ) ) );
+$hs        = Grouping::best_group_hybrid( array( 'unrelated' => true, 'words' => true ), array( 1.0, 0.0, 0.0 ), $g_sem, $idf_empty, 0.4, 0.82 );
+rssai_ok( $hs['qualifies'] && 0 === $hs['index'], 'hybrid: semantic (cosine) match joins despite no shared words' );
+
+$hn = Grouping::best_group_hybrid( array( 'unrelated' => true ), array( 0.0, 1.0, 0.0 ), $g_sem, $idf_empty, 0.4, 0.82 );
+rssai_ok( ! $hn['qualifies'], 'hybrid: no lexical overlap and low cosine → no join' );
+
 rssai_done( 'grouping' );

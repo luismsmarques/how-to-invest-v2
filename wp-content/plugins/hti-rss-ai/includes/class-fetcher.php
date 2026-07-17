@@ -46,13 +46,20 @@ class Fetcher {
 	 */
 	public static function run(): array {
 		$report = array(
-			'feeds'  => 0,
-			'items'  => 0,
-			'dupes'  => 0,
-			'errors' => 0,
+			'feeds'     => 0,
+			'items'     => 0,
+			'dupes'     => 0,
+			'neardupes' => 0,
+			'errors'    => 0,
+			'skipped'   => 0,
 		);
 		foreach ( Feeds::all() as $feed ) {
 			if ( empty( $feed->status ) ) {
+				continue;
+			}
+			// Don't hammer a feed that just failed — let its back-off elapse first.
+			if ( self::in_backoff( $feed ) ) {
+				++$report['skipped'];
 				continue;
 			}
 			++$report['feeds'];
@@ -61,15 +68,56 @@ class Fetcher {
 				++$report['errors'];
 				continue;
 			}
-			$report['items'] += $result['items'];
-			$report['dupes'] += $result['dupes'];
+			$report['items']     += $result['items'];
+			$report['dupes']     += $result['dupes'];
+			$report['neardupes'] += $result['neardupes'] ?? 0;
 		}
 
 		Logger::log(
 			'fetch',
-			sprintf( 'feeds=%d new=%d dupes=%d errors=%d', $report['feeds'], $report['items'], $report['dupes'], $report['errors'] )
+			sprintf( 'feeds=%d new=%d dupes=%d neardupes=%d errors=%d skipped=%d', $report['feeds'], $report['items'], $report['dupes'], $report['neardupes'], $report['errors'], $report['skipped'] )
 		);
+
+		// Auto-group freshly ingested items so nothing waits for a manual click.
+		if ( $report['items'] > 0 ) {
+			$grouped = Grouping::run();
+			Logger::log( 'fetch', sprintf( 'auto-group: groups=%d joined=%d items=%d', $grouped['groups'], $grouped['joined'], $grouped['items'] ) );
+		}
 		return $report;
+	}
+
+	/**
+	 * Growing back-off between retries of a failing feed: 5 min × 2^errors,
+	 * capped at a day. Pure; testable.
+	 *
+	 * @param int $error_count Consecutive error count.
+	 */
+	public static function backoff_seconds( int $error_count ): int {
+		$n    = max( 0, $error_count );
+		$day  = defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400;
+		$secs = 300 * ( 2 ** min( $n, 12 ) );
+		return (int) min( $secs, $day );
+	}
+
+	/**
+	 * Whether a feed is still within its error back-off window.
+	 *
+	 * @param object $feed Feed row.
+	 */
+	private static function in_backoff( object $feed ): bool {
+		$errors = (int) ( $feed->error_count ?? 0 );
+		if ( $errors < 1 ) {
+			return false;
+		}
+		$last = (string) ( $feed->last_error ?? '' );
+		if ( '' === $last || str_starts_with( $last, '0000' ) ) {
+			return false;
+		}
+		$ts = strtotime( $last . ' UTC' );
+		if ( ! $ts ) {
+			return false;
+		}
+		return ( time() - $ts ) < self::backoff_seconds( $errors );
 	}
 
 	/**
@@ -90,10 +138,12 @@ class Fetcher {
 			return null;
 		}
 
-		$max     = $rss->get_item_quantity( (int) Settings::get( 'max_per_fetch', 50 ) );
-		$items   = $rss->get_items( 0, $max );
-		$created = 0;
-		$dupes   = 0;
+		$max       = $rss->get_item_quantity( (int) Settings::get( 'max_per_fetch', 50 ) );
+		$items     = $rss->get_items( 0, $max );
+		$created   = 0;
+		$dupes     = 0;
+		$neardupes = 0;
+		$since     = gmdate( 'Y-m-d H:i:s', time() - ( 3 * DAY_IN_SECONDS ) );
 
 		foreach ( $items as $item ) {
 			$guid = (string) ( $item->get_id() ?: $item->get_permalink() );
@@ -110,6 +160,13 @@ class Fetcher {
 				continue;
 			}
 
+			// Suppress the same story syndicated across feeds under a new guid.
+			$fingerprint = Grouping::fingerprint( $title );
+			if ( '' !== $fingerprint && Items::fingerprint_exists( $fingerprint, (string) $feed->lang, $since ) ) {
+				++$neardupes;
+				continue;
+			}
+
 			$source = $item->get_feed() ? (string) $item->get_feed()->get_title() : '';
 			$id     = Items::insert(
 				array(
@@ -122,6 +179,7 @@ class Fetcher {
 					'link'         => esc_url_raw( (string) $item->get_permalink() ),
 					'published_at' => $item->get_date( 'Y-m-d H:i:s' ) ?: current_time( 'mysql' ),
 					'lang'         => $feed->lang,
+					'fingerprint'  => $fingerprint,
 					'status'       => 'new',
 				)
 			);
@@ -134,8 +192,9 @@ class Fetcher {
 
 		self::record_fetched( (int) $feed->id );
 		return array(
-			'items' => $created,
-			'dupes' => $dupes,
+			'items'     => $created,
+			'dupes'     => $dupes,
+			'neardupes' => $neardupes,
 		);
 	}
 
@@ -159,8 +218,10 @@ class Fetcher {
 			return null;
 		}
 
-		$created = 0;
-		$dupes   = 0;
+		$created   = 0;
+		$dupes     = 0;
+		$neardupes = 0;
+		$since     = gmdate( 'Y-m-d H:i:s', time() - ( 3 * DAY_IN_SECONDS ) );
 		foreach ( $videos as $v ) {
 			$hash = sha1( 'yt:' . $v['video_id'] );
 			if ( Items::exists( $hash ) ) {
@@ -169,6 +230,11 @@ class Fetcher {
 			}
 			$title = sanitize_text_field( (string) $v['title'] );
 			if ( '' === $title ) {
+				continue;
+			}
+			$fingerprint = Grouping::fingerprint( $title );
+			if ( '' !== $fingerprint && Items::fingerprint_exists( $fingerprint, (string) $feed->lang, $since ) ) {
+				++$neardupes;
 				continue;
 			}
 			$ts  = '' !== $v['published_at'] ? strtotime( (string) $v['published_at'] ) : false;
@@ -186,6 +252,7 @@ class Fetcher {
 					'link'         => esc_url_raw( (string) $v['url'] ),
 					'published_at' => $pub,
 					'lang'         => $feed->lang,
+					'fingerprint'  => $fingerprint,
 					'status'       => 'new',
 				)
 			);
@@ -198,8 +265,9 @@ class Fetcher {
 
 		self::record_fetched( (int) $feed->id );
 		return array(
-			'items' => $created,
-			'dupes' => $dupes,
+			'items'     => $created,
+			'dupes'     => $dupes,
+			'neardupes' => $neardupes,
 		);
 	}
 
@@ -262,26 +330,27 @@ class Fetcher {
 	 */
 	private static function record_fetched( int $feed_id ): void {
 		global $wpdb;
-		$wpdb->update(
-			Feeds::table(),
-			array(
-				'last_fetched' => current_time( 'mysql' ),
-				'error_count'  => 0,
-			),
-			array( 'id' => $feed_id ),
-			array( '%s', '%d' ),
-			array( '%d' )
-		);
+		$table = Feeds::table();
+		// Clear the error counter and back-off marker on a clean fetch.
+		$wpdb->query( $wpdb->prepare( "UPDATE `$table` SET last_fetched = %s, error_count = 0, last_error = NULL WHERE id = %d", current_time( 'mysql' ), $feed_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
-	 * Increment a feed's error counter.
+	 * Record a feed read error: bump the counter, stamp the back-off marker,
+	 * and auto-pause the feed once it has failed too many times in a row.
 	 *
 	 * @param int $feed_id Feed id.
 	 */
 	private static function record_error( int $feed_id ): void {
 		global $wpdb;
 		$table = Feeds::table();
-		$wpdb->query( $wpdb->prepare( "UPDATE `$table` SET error_count = error_count + 1 WHERE id = %d", $feed_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( $wpdb->prepare( "UPDATE `$table` SET error_count = error_count + 1, last_error = %s WHERE id = %d", gmdate( 'Y-m-d H:i:s' ), $feed_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$max  = max( 1, (int) Settings::get( 'feed_max_errors', 5 ) );
+		$feed = Feeds::get( $feed_id );
+		if ( $feed && ! empty( $feed->status ) && (int) $feed->error_count >= $max ) {
+			$wpdb->update( $table, array( 'status' => 0 ), array( 'id' => $feed_id ), array( '%d' ), array( '%d' ) );
+			Logger::log( 'fetch', sprintf( 'Auto-paused feed #%d "%s" after %d consecutive errors', $feed_id, (string) ( $feed->name ?? '' ), (int) $feed->error_count ) );
+		}
 	}
 }
