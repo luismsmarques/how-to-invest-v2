@@ -48,6 +48,10 @@ class Groups_Page {
 		if ( $gid && ! $remaining ) {
 			Groups::dismiss( $gid );
 		} else {
+			if ( $gid ) {
+				// Keep the stored size honest after a manual removal.
+				Groups::recount( $gid, true );
+			}
 			$args['action'] = 'view';
 			$args['id']     = $gid;
 		}

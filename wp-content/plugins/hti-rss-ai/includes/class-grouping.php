@@ -29,13 +29,21 @@ class Grouping {
 	/**
 	 * Cluster ungrouped items.
 	 *
-	 * @return array{groups:int,items:int}
+	 * Two-stage, per language: (1) each "new" item first tries to join a
+	 * recently-active *existing* open group (so a story that keeps getting
+	 * coverage across fetch cycles grows one group instead of spawning
+	 * duplicates); (2) items that match no existing group are single-link
+	 * clustered among themselves, and clusters of 2+ become new groups.
+	 *
+	 * @return array{groups:int,items:int,joined:int}
 	 */
 	public static function run(): array {
-		$threshold = (float) Settings::get( 'similarity_threshold', 0.5 );
+		$threshold = (float) Settings::get( 'similarity_threshold', 0.4 );
+		$open_days = max( 1, (int) Settings::get( 'open_max_days', 14 ) );
 		$report    = array(
 			'groups' => 0,
 			'items'  => 0,
+			'joined' => 0,
 		);
 
 		foreach ( Settings::languages() as $lang ) {
@@ -47,7 +55,7 @@ class Grouping {
 					'offset'   => 0,
 				)
 			);
-			if ( count( $items ) < 2 ) {
+			if ( count( $items ) < 1 ) {
 				continue;
 			}
 
@@ -56,14 +64,56 @@ class Grouping {
 				$tokens[ (int) $item->id ] = self::tokenize( $item->title . ' ' . $item->description );
 			}
 
-			// IDF weighting: rare tokens (a name, a number) carry more signal than
-			// common ones, so two stories sharing them count as more similar.
-			$idf = self::idf( $tokens );
+			// Existing recent open groups for this language and their member token
+			// sets, so new items can attach to an in-progress story.
+			$existing = self::load_open_groups( $lang, $open_days );
 
-			// Single-link clustering: an item joins the cluster it is most similar
-			// to (best similarity to ANY member, not the diluted token union).
-			$clusters = array();
+			// IDF weighting over BOTH existing members and the new batch, so token
+			// weights are stable whether an item matches an old group or a new one.
+			$docs = $tokens;
+			foreach ( $existing as $group ) {
+				foreach ( $group['members'] as $member ) {
+					$docs[] = $member;
+				}
+			}
+			$idf = self::idf( $docs );
+
+			// Stage 1 — attach new items to an existing open group when close enough.
+			$joins     = array();
+			$unmatched = array();
 			foreach ( $items as $item ) {
+				$id  = (int) $item->id;
+				$set = $tokens[ $id ];
+				if ( ! $set ) {
+					continue;
+				}
+				$match = $existing ? self::best_group( $set, $existing, $idf ) : array(
+					'index' => -1,
+					'sim'   => 0.0,
+				);
+				if ( $match['index'] >= 0 && $match['sim'] >= $threshold ) {
+					$gid            = (int) $existing[ $match['index'] ]['gid'];
+					$joins[ $gid ][] = $id;
+					// Let later items in this batch also match on this item.
+					$existing[ $match['index'] ]['members'][] = $set;
+				} else {
+					$unmatched[] = $item;
+				}
+			}
+
+			foreach ( $joins as $gid => $ids ) {
+				Items::set_group( $ids, (int) $gid );
+				Groups::recount( (int) $gid, true );
+				$report['joined'] += count( $ids );
+				$report['items']  += count( $ids );
+			}
+
+			// Stage 2 — single-link clustering over the still-unmatched items.
+			if ( count( $unmatched ) < 2 ) {
+				continue;
+			}
+			$clusters = array();
+			foreach ( $unmatched as $item ) {
 				$id  = (int) $item->id;
 				$set = $tokens[ $id ];
 				if ( ! $set ) {
@@ -119,8 +169,68 @@ class Grouping {
 			}
 		}
 
-		Logger::log( 'group', sprintf( 'groups=%d items=%d', $report['groups'], $report['items'] ) );
+		Logger::log( 'group', sprintf( 'groups=%d joined=%d items=%d', $report['groups'], $report['joined'], $report['items'] ) );
 		return $report;
+	}
+
+	/**
+	 * Load recent open groups for a language with their member token sets, so
+	 * the grouper can compare a new item against in-progress stories.
+	 *
+	 * @param string $lang      Language code.
+	 * @param int    $open_days Recency window in days.
+	 * @return array<int,array{gid:int,members:array<int,array<string,bool>>}>
+	 */
+	private static function load_open_groups( string $lang, int $open_days ): array {
+		$groups = Groups::open_recent( $lang, $open_days );
+		$out    = array();
+		foreach ( $groups as $group ) {
+			$members = array();
+			foreach ( Groups::items( (int) $group->id ) as $member ) {
+				$set = self::tokenize( $member->title . ' ' . $member->description );
+				if ( $set ) {
+					$members[] = $set;
+				}
+			}
+			if ( $members ) {
+				$out[] = array(
+					'gid'     => (int) $group->id,
+					'members' => $members,
+				);
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Best-matching group for a token set: the group whose closest member has
+	 * the highest weighted similarity. Pure; testable.
+	 *
+	 * @param array<string,bool>                                                  $set    Candidate token set.
+	 * @param array<int,array{gid:int,members:array<int,array<string,bool>>}>      $groups Groups with member token sets.
+	 * @param array<string,float>                                                  $idf    Token weights.
+	 * @return array{index:int,sim:float} Index into $groups (-1 if none) and its similarity.
+	 */
+	public static function best_group( array $set, array $groups, array $idf ): array {
+		$best     = -1;
+		$best_sim = 0.0;
+		foreach ( $groups as $index => $group ) {
+			$sim = 0.0;
+			foreach ( $group['members'] as $member ) {
+				$s = self::weighted_sim( $set, $member, $idf );
+				if ( $s > $sim ) {
+					$sim = $s;
+				}
+			}
+			if ( $sim > $best_sim ) {
+				$best_sim = $sim;
+				$best     = (int) $index;
+			}
+		}
+		return array(
+			'index' => $best,
+			'sim'   => $best_sim,
+		);
 	}
 
 	/**

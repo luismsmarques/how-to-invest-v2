@@ -21,7 +21,7 @@ class Activator {
 	/**
 	 * Bump when a table schema changes.
 	 */
-	private const DB_VERSION = '2';
+	private const DB_VERSION = '3';
 
 	/**
 	 * Option storing the installed schema version.
@@ -146,8 +146,10 @@ class Activator {
 				score float NOT NULL DEFAULT 0,
 				size int(11) NOT NULL DEFAULT 0,
 				created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				PRIMARY KEY  (id),
-				KEY status (status)
+				KEY status (status),
+				KEY updated_at (updated_at)
 			) $charset;"
 		);
 	}

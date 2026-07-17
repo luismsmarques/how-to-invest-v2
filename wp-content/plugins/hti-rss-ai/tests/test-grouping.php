@@ -45,4 +45,39 @@ $s = Grouping::weighted_sim( $x, $y, $idf );
 rssai_ok( $s > 0.0 && $s < 1.0, 'weighted sim partial overlap in (0,1)' );
 rssai_ok( 0.0 === Grouping::weighted_sim( $x, array( 'zzz' => true ), $idf ), 'weighted sim disjoint = 0' );
 
+// best_group: a new item joins the existing open group its closest member matches.
+$idf2   = Grouping::idf(
+	array(
+		1 => array( 'barings' => true, 'leeson' => true, 'bank' => true ),
+		2 => array( 'barings' => true, 'trader' => true ),
+		3 => array( 'weather' => true, 'storm' => true ),
+	)
+);
+$groups = array(
+	// index 0: the Barings story.
+	array(
+		'gid'     => 10,
+		'members' => array(
+			array( 'barings' => true, 'leeson' => true, 'bank' => true ),
+			array( 'barings' => true, 'trader' => true ),
+		),
+	),
+	// index 1: an unrelated weather story.
+	array(
+		'gid'     => 20,
+		'members' => array( array( 'weather' => true, 'storm' => true ) ),
+	),
+);
+
+$new   = array( 'barings' => true, 'leeson' => true );
+$match = Grouping::best_group( $new, $groups, $idf2 );
+rssai_ok( 0 === $match['index'], 'best_group picks the matching existing group (index 0 → gid 10)' );
+rssai_ok( $match['sim'] > 0.0, 'best_group reports a positive similarity for a real match' );
+
+$off      = array( 'unrelated' => true, 'token' => true );
+$no_match = Grouping::best_group( $off, $groups, $idf2 );
+rssai_ok( -1 === $no_match['index'] && 0.0 === $no_match['sim'], 'best_group returns no match (index -1, sim 0) for a disjoint item' );
+
+rssai_ok( array( 'index' => -1, 'sim' => 0.0 ) === Grouping::best_group( $new, array(), $idf2 ), 'best_group with no existing groups returns no match' );
+
 rssai_done( 'grouping' );

@@ -50,6 +50,9 @@ class Settings {
 			'youtube_api_key'      => '',
 			'supadata_api_key'     => '',
 			'cleanup_days'         => 30,
+			'open_max_days'        => 14,
+			'enable_post_cleanup'  => 1,
+			'post_cleanup_days'    => 45,
 			'target_post_type'     => '',
 			'target_taxonomy'      => '',
 			'post_status'          => 'pending',
@@ -217,7 +220,7 @@ class Settings {
 		$input     = is_array( $input ) ? $input : array();
 		$intervals = array( 'hourly', 'twicedaily', 'daily' );
 
-		$threshold = isset( $input['similarity_threshold'] ) ? (float) $input['similarity_threshold'] : 0.5;
+		$threshold = isset( $input['similarity_threshold'] ) ? (float) $input['similarity_threshold'] : 0.4;
 		$threshold = max( 0.0, min( 1.0, $threshold ) );
 
 		// Keep existing API keys when the field is submitted blank.
@@ -229,6 +232,9 @@ class Settings {
 			'youtube_api_key'      => '' !== $yt_key ? $yt_key : (string) ( $existing['youtube_api_key'] ?? '' ),
 			'supadata_api_key'     => '' !== $supa_key ? $supa_key : (string) ( $existing['supadata_api_key'] ?? '' ),
 			'cleanup_days'         => max( 1, min( 365, absint( $input['cleanup_days'] ?? 30 ) ) ),
+			'open_max_days'        => max( 1, min( 90, absint( $input['open_max_days'] ?? 14 ) ) ),
+			'enable_post_cleanup'  => empty( $input['enable_post_cleanup'] ) ? 0 : 1,
+			'post_cleanup_days'    => max( 1, min( 365, absint( $input['post_cleanup_days'] ?? 45 ) ) ),
 			'gemini_model'         => isset( $input['gemini_model'] ) ? sanitize_text_field( $input['gemini_model'] ) : 'gemini-2.5-flash',
 			'fetch_interval'       => in_array( $input['fetch_interval'] ?? '', $intervals, true ) ? $input['fetch_interval'] : 'hourly',
 			'similarity_threshold' => $threshold,
@@ -267,11 +273,12 @@ class Settings {
 					'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 					esc_html(
 						sprintf(
-							/* translators: 1: items, 2: groups, 3: logs removed. */
-							__( 'Cleanup done — removed %1$d drafts, %2$d groups and %3$d log entries.', 'hti-rss-ai' ),
+							/* translators: 1: items, 2: groups, 3: logs removed, 4: stale drafts trashed. */
+							__( 'Cleanup done — removed %1$d drafts, %2$d groups, %3$d log entries and trashed %4$d stale AI posts.', 'hti-rss-ai' ),
 							isset( $_GET['ci'] ) ? absint( wp_unslash( $_GET['ci'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 							isset( $_GET['cg'] ) ? absint( wp_unslash( $_GET['cg'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-							isset( $_GET['cl'] ) ? absint( wp_unslash( $_GET['cl'] ) ) : 0 // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+							isset( $_GET['cl'] ) ? absint( wp_unslash( $_GET['cl'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+							isset( $_GET['cp'] ) ? absint( wp_unslash( $_GET['cp'] ) ) : 0 // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 						)
 					)
 				);
@@ -391,6 +398,12 @@ class Settings {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><label for="rssai_open_max_days"><?php echo esc_html__( 'Keep stories open for (days)', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[open_max_days]" id="rssai_open_max_days" type="number" min="1" max="90" class="small-text" value="<?php echo esc_attr( (string) $s['open_max_days'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'A new item can still join an existing open group within this window (avoids duplicate groups for a developing story). After this, an open group with no new activity is considered abandoned and cleaned up.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="rssai_maxfetch"><?php echo esc_html__( 'Max items per fetch', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[max_per_fetch]" id="rssai_maxfetch" type="number" min="1" value="<?php echo esc_attr( (string) $s['max_per_fetch'] ); ?>" /></td>
 					</tr>
@@ -445,7 +458,21 @@ class Settings {
 					<tr>
 						<th scope="row"><label for="rssai_cleanup_days"><?php echo esc_html__( 'Cleanup after (days)', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[cleanup_days]" id="rssai_cleanup_days" type="number" min="1" max="365" class="small-text" value="<?php echo esc_attr( (string) $s['cleanup_days'] ); ?>" />
-							<p class="description"><?php echo esc_html__( 'A daily routine deletes draft items and log entries older than this. Generated news posts are never touched.', 'hti-rss-ai' ); ?></p>
+							<p class="description"><?php echo esc_html__( 'A daily routine deletes draft items and log entries older than this, and keeps groups tidy (empty/abandoned groups removed).', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Trash stale AI drafts', 'hti-rss-ai' ); ?></th>
+						<td>
+							<label>
+								<input name="<?php echo esc_attr( self::OPTION ); ?>[enable_post_cleanup]" type="checkbox" value="1" <?php checked( ! empty( $s['enable_post_cleanup'] ) ); ?> />
+								<?php echo esc_html__( 'Move never-reviewed AI drafts to Trash after the period below', 'hti-rss-ai' ); ?>
+							</label>
+							<p>
+								<input name="<?php echo esc_attr( self::OPTION ); ?>[post_cleanup_days]" id="rssai_post_cleanup_days" type="number" min="1" max="365" class="small-text" value="<?php echo esc_attr( (string) $s['post_cleanup_days'] ); ?>" />
+								<label for="rssai_post_cleanup_days"><?php echo esc_html__( 'days', 'hti-rss-ai' ); ?></label>
+							</p>
+							<p class="description"><?php echo esc_html__( 'Only AI-generated posts still in Pending/Draft are trashed — PUBLISHED news is never removed (kept for SEO). Trash is reversible.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
 				</table>
