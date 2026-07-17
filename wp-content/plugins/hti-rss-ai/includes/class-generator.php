@@ -76,6 +76,143 @@ class Generator {
 	}
 
 	/**
+	 * Generate an article of a chosen format from a SINGLE draft item (any
+	 * item, not only a group). Video items keep their transcript-based path;
+	 * every other item is written from its headline + summary, grounded with
+	 * web search so real sources are gathered and cited.
+	 *
+	 * @param int    $item_id Item id.
+	 * @param string $type    news|quote|tutorial|summary.
+	 * @return int|\WP_Error New post id, or error.
+	 */
+	public static function generate_from_item( int $item_id, string $type ) {
+		$type = array_key_exists( $type, Prompt::content_types() ) ? $type : 'news';
+
+		if ( ! post_type_exists( Settings::post_type() ) ) {
+			return new \WP_Error( 'rssai_no_type', __( 'The configured target post type does not exist — pick one in Settings.', 'hti-rss-ai' ) );
+		}
+		if ( ! Gemini_Client::available() ) {
+			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
+		}
+		if ( self::over_daily_limit() ) {
+			return new \WP_Error( 'rssai_limit', __( 'Daily generation limit reached.', 'hti-rss-ai' ) );
+		}
+
+		$item = Items::get( $item_id );
+		if ( ! $item ) {
+			return new \WP_Error( 'rssai_no_item', __( 'Item not found.', 'hti-rss-ai' ) );
+		}
+
+		// A YouTube video is best written from its transcript.
+		if ( ! empty( $item->video_id ) ) {
+			return YouTube_Generator::generate( $item_id, $type );
+		}
+
+		$lang = Settings::valid_lang( (string) $item->lang );
+
+		$result = Gemini_Client::generate_grounded( Prompt::item_system( $lang, $type ), Prompt::item_user( $item, $type ) );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$data = Gemini_Client::extract_json( $result['text'] );
+		if ( null === $data ) {
+			return new \WP_Error( 'rssai_parse', __( 'Could not parse the model output as JSON.', 'hti-rss-ai' ) );
+		}
+		if ( empty( $data['sources'] ) && ! empty( $result['sources'] ) ) {
+			$data['sources'] = $result['sources'];
+		}
+
+		// Always attribute the original item (and guarantee a non-empty list).
+		$existing = isset( $data['sources'] ) && is_array( $data['sources'] ) ? $data['sources'] : array();
+		if ( '' !== (string) $item->link ) {
+			array_unshift(
+				$existing,
+				array(
+					'title' => trim( ( (string) $item->source ) . ' — ' . (string) $item->title ),
+					'url'   => (string) $item->link,
+				)
+			);
+		}
+		$data['sources'] = $existing;
+
+		$valid = Validator::validate( $data );
+		if ( is_wp_error( $valid ) ) {
+			return $valid;
+		}
+
+		$post_id = self::create_news_from_item( $item, $data, $lang, $type );
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+
+		// Featured image: best-effort (AI illustration), never blocks the article.
+		Featured_Image::maybe_generate( $post_id, $data, null, $lang );
+
+		Items::update( $item_id, array( 'status' => 'used' ) );
+		self::bump_daily();
+
+		return $post_id;
+	}
+
+	/**
+	 * Create the pending `news` post from a single item + generated data.
+	 *
+	 * @param object              $item Item row.
+	 * @param array<string,mixed> $data Validated article.
+	 * @param string              $lang Language slug.
+	 * @param string              $type Content type.
+	 * @return int|\WP_Error
+	 */
+	private static function create_news_from_item( object $item, array $data, string $lang, string $type ) {
+		$content  = self::blocks_to_html( (array) $data['body_blocks'] );
+		$content .= self::sources_html( (array) ( $data['sources'] ?? array() ), $lang );
+		$content .= self::disclaimer_html( $lang );
+
+		$post_id = wp_insert_post(
+			wp_slash(
+				array(
+					'post_type'    => Settings::post_type(),
+					'post_status'  => Settings::post_status(),
+					'post_title'   => sanitize_text_field( (string) $data['headline'] ),
+					'post_name'    => sanitize_title( (string) ( $data['slug'] ?? $data['headline'] ) ),
+					'post_content' => $content,
+					'post_excerpt' => sanitize_text_field( (string) ( $data['dek'] ?? $data['meta_description'] ?? '' ) ),
+				)
+			),
+			true
+		);
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+		$post_id = (int) $post_id;
+
+		update_post_meta( $post_id, 'rssai_source_kind', 'rss' );
+		update_post_meta( $post_id, 'rssai_content_type', $type );
+		update_post_meta( $post_id, 'rssai_source_url', (string) $item->link );
+		update_post_meta( $post_id, 'rssai_lang', $lang );
+		update_post_meta( $post_id, 'rssai_sources', array_values( (array) ( $data['sources'] ?? array() ) ) );
+		update_post_meta( $post_id, 'rssai_model', (string) Settings::get( 'gemini_model', '' ) );
+		update_post_meta( $post_id, 'rssai_generated_at', current_time( 'mysql' ) );
+		update_post_meta( $post_id, '_rssai_meta_description', sanitize_text_field( (string) ( $data['meta_description'] ?? '' ) ) );
+
+		$taxonomy = Settings::taxonomy();
+		if ( ! empty( $data['suggested_category'] ) && '' !== $taxonomy ) {
+			$term = get_term_by( 'name', sanitize_text_field( (string) $data['suggested_category'] ), $taxonomy );
+			if ( $term instanceof \WP_Term ) {
+				wp_set_object_terms( $post_id, array( (int) $term->term_id ), $taxonomy );
+			}
+		}
+
+		if ( function_exists( 'pll_set_post_language' ) ) {
+			pll_set_post_language( $post_id, $lang );
+		}
+
+		Logger::log( 'generate', sprintf( 'Item %s → post %d: %s', $type, $post_id, (string) $data['headline'] ) );
+		return $post_id;
+	}
+
+	/**
 	 * Create the pending `news` post.
 	 *
 	 * @param object               $group Group row.

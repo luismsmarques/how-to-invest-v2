@@ -156,12 +156,37 @@ class Prompt {
 	 * @return array<string,string>
 	 */
 	public static function youtube_types(): array {
+		return self::content_types();
+	}
+
+	/**
+	 * The article formats offered for single-item generation (any draft).
+	 *
+	 * @return array<string,string>
+	 */
+	public static function content_types(): array {
 		return array(
 			'news'     => 'News',
 			'quote'    => 'Quote',
 			'tutorial' => 'Tutorial',
 			'summary'  => 'Summary',
 		);
+	}
+
+	/**
+	 * The per-type intent line, phrased around a generic "topic/source" so it
+	 * works for both a video transcript and a text news item.
+	 *
+	 * @param string $type news|quote|tutorial|summary.
+	 */
+	private static function type_intent( string $type ): string {
+		$intent = array(
+			'news'     => 'Write ONE original, neutral news-style article about the topic. Synthesise the key facts; do not copy the source wording.',
+			'quote'    => 'Highlight the single most important point. Include a short, faithful quote (a sentence or two) clearly attributed to its source, then 2-4 short paragraphs of neutral context in plain language.',
+			'tutorial' => 'Write an explainer that teaches the CONCEPTS behind the story, structured with clear subheadings and short sections. Explain ideas; never give instructions to buy or sell anything.',
+			'summary'  => 'Write a concise summary followed by the key takeaways as short, scannable points (use heading + paragraph blocks). Neutral and clear.',
+		);
+		return $intent[ $type ] ?? $intent['news'];
 	}
 
 	/**
@@ -247,6 +272,82 @@ class Prompt {
 			. "Video URL: {$link}\n\n"
 			. "Transcript:\n\"\"\"\n{$transcript}\n\"\"\"\n\n"
 			. 'Write the article exactly as specified in the system instruction, and include this video in "sources".';
+	}
+
+	/**
+	 * System prompt for generating an article from a SINGLE news item (any
+	 * draft), grounded with web search. Transcript-agnostic.
+	 *
+	 * @param string $lang Language slug.
+	 * @param string $type news|quote|tutorial|summary.
+	 */
+	public static function item_system( string $lang, string $type ): string {
+		$language = self::language_name( $lang );
+		$today    = self::today();
+		$cats     = self::category_rule( $lang );
+
+		$lines = array(
+			self::identity_line() . ' You are given a single source news item (its headline and summary) and can use web search to research the topic.',
+			self::type_intent( $type ),
+			'',
+			"TODAY'S DATE IS {$today}.",
+			'',
+			'STRICT RULES:',
+			"- Write in {$language}.",
+			'- Research the topic using reliable, recent sources; base every fact, number, quote, date and name ONLY on the provided source item and the search results. Do not invent anything.',
+			'- Original wording. Except for a clearly-marked short quote (quote type only), never copy the source verbatim — rewrite in your own words.',
+			'- Always attribute your sources: put the URLs you actually used in "sources", and ALWAYS include the original source item there too.',
+			'- Neutral and impartial.',
+		);
+		foreach ( self::guard_lines() as $g ) {
+			$lines[] = $g;
+		}
+		$lines = array_merge(
+			$lines,
+			array(
+				'- SEO friendly: a clear factual headline; a concise meta description (max 155 characters); a short lead (dek); well-structured short paragraphs with the occasional subheading.',
+				'- The provided source item MUST appear in "sources".',
+				$cats,
+				'',
+				'OUTPUT: respond with ONLY a JSON object (no markdown, no commentary) of this exact shape:',
+				'{',
+				'  "headline": string,',
+				'  "slug": string (kebab-case, no accents),',
+				'  "meta_description": string (<=155 chars),',
+				'  "dek": string (1-2 sentence lead),',
+				'  "body_blocks": [ { "type": "paragraph" | "heading", "text": string } ],',
+				'  "suggested_category": string,',
+				'  "tags": [string],',
+				'  "sources": [ { "title": string, "url": string } ],',
+				'  "lang": "' . $lang . '"',
+				'}',
+			)
+		);
+
+		return implode( "\n", $lines );
+	}
+
+	/**
+	 * User prompt: the single item's metadata + summary as the seed to research.
+	 *
+	 * @param object $item Item row (title, source, link, description).
+	 * @param string $type Content type.
+	 */
+	public static function item_user( object $item, string $type ): string {
+		$title   = (string) ( $item->title ?? '' );
+		$source  = (string) ( $item->source ?? '' );
+		$link    = (string) ( $item->link ?? '' );
+		$summary = trim( (string) ( $item->description ?? '' ) );
+		if ( strlen( $summary ) > 4000 ) {
+			$summary = substr( $summary, 0, 4000 ) . ' […]';
+		}
+
+		return "Content type: {$type}\n"
+			. "Source headline: {$title}\n"
+			. "Publisher: {$source}\n"
+			. "Source URL: {$link}\n\n"
+			. "Source summary:\n\"\"\"\n{$summary}\n\"\"\"\n\n"
+			. 'Research this topic with web search and write the article exactly as specified in the system instruction. Include the source URL in "sources".';
 	}
 
 	/**

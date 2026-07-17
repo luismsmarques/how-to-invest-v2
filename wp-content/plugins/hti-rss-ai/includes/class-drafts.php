@@ -23,6 +23,7 @@ class Drafts {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 12 );
 		add_action( 'admin_post_rssai_fetch_now', array( __CLASS__, 'handle_fetch_now' ) );
 		add_action( 'admin_post_rssai_gen_video', array( __CLASS__, 'handle_gen_video' ) );
+		add_action( 'admin_post_rssai_gen_item', array( __CLASS__, 'handle_gen_item' ) );
 	}
 
 	/**
@@ -81,6 +82,31 @@ class Drafts {
 		check_admin_referer( 'rssai_gen_video_' . $item );
 
 		$result = YouTube_Generator::generate( $item, $type );
+
+		$args = array( 'page' => self::PAGE );
+		if ( is_wp_error( $result ) ) {
+			$args['rssai_gen'] = 'err';
+			$args['rssai_msg'] = rawurlencode( $result->get_error_message() );
+		} else {
+			$args['rssai_gen']  = 'ok';
+			$args['rssai_post'] = (int) $result;
+		}
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+		exit;
+	}
+
+	/**
+	 * Generate an article of a chosen format from any single draft item.
+	 */
+	public static function handle_gen_item(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Not allowed.', 'hti-rss-ai' ) );
+		}
+		$item = isset( $_GET['item'] ) ? absint( wp_unslash( $_GET['item'] ) ) : 0;
+		$type = isset( $_GET['type'] ) ? sanitize_key( wp_unslash( $_GET['type'] ) ) : 'news';
+		check_admin_referer( 'rssai_gen_item_' . $item );
+
+		$result = Generator::generate_from_item( $item, $type );
 
 		$args = array( 'page' => self::PAGE );
 		if ( is_wp_error( $result ) ) {
