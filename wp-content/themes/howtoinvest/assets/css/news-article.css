@@ -120,7 +120,10 @@
 
 /* author box */
 .hti-art__author { margin-top: 24px; background: var( --art-white ); border: 1px solid var( --art-border ); border-radius: 16px; padding: 22px; display: flex; gap: 16px; align-items: flex-start; }
+.hti-art__author-role { margin: 2px 0 0; font: 600 13px var( --art-bodyf ); color: var( --art-accent, #F2503F ); }
 .hti-art__author-bio { margin: 6px 0 0; color: var( --art-muted ); font-size: 14.5px; line-height: 1.55; }
+.hti-art__author-link { display: inline-block; margin-top: 8px; font: 600 13.5px var( --art-bodyf ); color: var( --art-accent, #F2503F ); text-decoration: none; }
+.hti-art__author-link:hover, .hti-art__author-link:focus-visible { text-decoration: underline; }
 
 /* CTA */
 .hti-art__cta { margin-top: 16px; background: var( --art-soft ); border-radius: 14px; padding: 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }

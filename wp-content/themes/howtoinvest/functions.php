@@ -403,7 +403,9 @@ function strings(): array {
 		'news_min'         => array( 'en' => 'min', 'pt' => 'min' ),
 		'news_empty'       => array( 'en' => 'No news in this category yet.', 'pt' => 'Ainda não há notícias nesta categoria.' ),
 		// Single news article.
-		'art_byline'       => array( 'en' => 'HowToInvest Editorial', 'pt' => 'Redação HowToInvest' ),
+		'art_byline'       => array( 'en' => 'Luis Marques', 'pt' => 'Luis Marques' ),
+		'art_author_role'  => array( 'en' => 'Investor for 10+ years · Builder of HowToInvest', 'pt' => 'Investidor há mais de 10 anos · Criador do HowToInvest' ),
+		'art_author_link'  => array( 'en' => 'Connect on LinkedIn', 'pt' => 'Ligar no LinkedIn' ),
 		'art_min_read'     => array( 'en' => 'min read', 'pt' => 'min de leitura' ),
 		'art_illustration' => array( 'en' => 'Editorial illustration', 'pt' => 'Ilustração editorial' ),
 		'art_video'        => array( 'en' => 'Video', 'pt' => 'Vídeo' ),
@@ -413,7 +415,7 @@ function strings(): array {
 		'art_share'        => array( 'en' => 'Share', 'pt' => 'Partilhar' ),
 		'art_copy'         => array( 'en' => 'Copy link', 'pt' => 'Copiar link' ),
 		'art_copied'       => array( 'en' => 'Copied!', 'pt' => 'Copiado!' ),
-		'art_author_bio'   => array( 'en' => 'We write educational content about personal finance — jargon-free, with nothing to sell, reviewed by the team. Everything here is illustrative and never advice.', 'pt' => 'Escrevemos conteúdo educativo sobre finanças pessoais — sem jargão, sem vender nada e revisto pela equipa. Tudo o que lês é ilustrativo e nunca aconselhamento.' ),
+		'art_author_bio'   => array( 'en' => 'Investor for over 10 years. I build and run HowToInvest to turn a decade of hands-on experience into clear, jargon-free education — with nothing to sell. Everything here is illustrative and never advice.', 'pt' => 'Investidor há mais de 10 anos. Crio e mantenho o HowToInvest para transformar uma década de experiência prática em educação clara e sem jargão — sem nada para vender. Tudo o que lês é ilustrativo e nunca aconselhamento.' ),
 		'sub_glossary'     => array( 'en' => 'The essential terms, explained without jargon.', 'pt' => 'Os termos essenciais, explicados sem jargão.' ),
 		'sub_news'         => array( 'en' => "Calm reads on what's happening in the markets — and what it means for you.", 'pt' => 'Leituras calmas do que acontece nos mercados — e do que isso significa para ti.' ),
 		'back_learn'       => array( 'en' => '← Learn', 'pt' => '← Aprender' ),
@@ -483,8 +485,8 @@ function strings(): array {
 		'about_why_p2'     => array( 'en' => 'Friends constantly ask me: "Where should I invest?", "How do I start?", "What\'s my risk profile?". On Reddit and other communities, I see the same questions over and over. It was the perfect problem to solve while exploring AI technologies.', 'pt' => 'Os amigos perguntam-me constantemente: "Onde devo investir?", "Como começo?", "Qual é o meu perfil de risco?". No Reddit e noutras comunidades, vejo as mesmas perguntas repetidamente. Era o problema perfeito para resolver enquanto explorava tecnologias de IA.' ),
 		'about_why_p3'     => array( 'en' => 'The result? A fully functional application that genuinely helps people understand the financial world better and make more informed decisions about their investments.', 'pt' => 'O resultado? Uma aplicação totalmente funcional que ajuda mesmo as pessoas a compreender melhor o mundo financeiro e a tomar decisões mais informadas sobre os seus investimentos.' ),
 		'about_founder_name' => array( 'en' => 'Luis Marques', 'pt' => 'Luis Marques' ),
-		'about_founder_role' => array( 'en' => 'Founder & developer', 'pt' => 'Fundador & programador' ),
-		'about_founder_bio'  => array( 'en' => '12+ years in iGaming, specializing in programming and automation. Now focused on helping others solve problems with code.', 'pt' => 'Mais de 12 anos em iGaming, especializado em programação e automação. Agora focado em ajudar os outros a resolver problemas com código.' ),
+		'about_founder_role' => array( 'en' => 'Webmaster & Builder · Investor for 10+ years', 'pt' => 'Webmaster & Builder · Investidor há mais de 10 anos' ),
+		'about_founder_bio'  => array( 'en' => 'Investing for over 10 years, with a background in programming and automation. I build and run HowToInvest to turn a decade of hands-on experience into clear, jargon-free education — with nothing to sell and nothing to advise.', 'pt' => 'A investir há mais de 10 anos, com um percurso em programação e automação. Crio e mantenho o HowToInvest para transformar uma década de experiência prática em educação clara e sem jargão — sem nada para vender e sem aconselhar.' ),
 		'about_linkedin'   => array( 'en' => 'LinkedIn', 'pt' => 'LinkedIn' ),
 		'about_coffee'     => array( 'en' => 'Buy me a coffee', 'pt' => 'Compra-me um café' ),
 		'about_goals_h'    => array( 'en' => 'Project goals', 'pt' => 'Objetivos do projeto' ),
@@ -737,6 +739,61 @@ function register_dynamic_blocks(): void {
 	);
 }
 add_action( 'init', __NAMESPACE__ . '\\register_dynamic_blocks' );
+
+/**
+ * Named author for E-E-A-T. Finance is a "Your Money or Your Life" topic where
+ * Google weighs identified authorship and real experience. Replace the default
+ * Organization byline in article/chapter schema (hti_schema_author) with a real
+ * Person — credentials, LinkedIn (sameAs), knowsAbout topics — linked to the
+ * About (author) page. Kept in sync with the visible byline/author box.
+ *
+ * @param array<string,mixed> $author Default author node (ignored).
+ * @param \WP_Post            $post   The post being described.
+ * @return array<string,mixed> Person node.
+ */
+function schema_author_person( array $author, \WP_Post $post ): array {
+	unset( $author );
+	$pt = 'pt' === current_lang();
+
+	// Author page = the About page, resolved to the current language.
+	$about_id = 0;
+	$about    = get_page_by_path( 'about' );
+	if ( $about instanceof \WP_Post ) {
+		$about_id = (int) $about->ID;
+		if ( function_exists( 'pll_get_post' ) ) {
+			$translated = pll_get_post( $about_id );
+			if ( $translated ) {
+				$about_id = (int) $translated;
+			}
+		}
+	}
+	$url = $about_id ? (string) get_permalink( $about_id ) : home_url( '/about/' );
+
+	$person = array(
+		'@type'       => 'Person',
+		'@id'         => home_url( '/' ) . '#person-luis-marques',
+		'name'        => 'Luis Marques',
+		'url'         => $url,
+		'jobTitle'    => 'Webmaster and Builder',
+		'description' => $pt ? 'Investidor há mais de 10 anos.' : 'Investor for over 10 years.',
+		'knowsAbout'  => $pt
+			? array( 'Investimento', 'Finanças pessoais', 'Alocação de ativos', 'Diversificação de carteira', 'Literacia financeira' )
+			: array( 'Investing', 'Personal finance', 'Asset allocation', 'Portfolio diversification', 'Financial literacy' ),
+		'sameAs'      => array( 'https://www.linkedin.com/in/luismsmarques/' ),
+		'worksFor'    => array( '@id' => \HTI\Engine\SEO::org_id() ),
+	);
+
+	// Author photo: the About page featured image, when set.
+	if ( $about_id && has_post_thumbnail( $about_id ) ) {
+		$src = wp_get_attachment_image_src( (int) get_post_thumbnail_id( $about_id ), 'medium' );
+		if ( is_array( $src ) && ! empty( $src[0] ) ) {
+			$person['image'] = array( '@type' => 'ImageObject', 'url' => (string) $src[0] );
+		}
+	}
+
+	return $person;
+}
+add_filter( 'hti_schema_author', __NAMESPACE__ . '\\schema_author_person', 10, 2 );
 
 /**
  * The rich mobile hamburger drawer (matches the Claude Design handoff): a
@@ -3133,8 +3190,13 @@ function render_news_article(): string {
 	// Preferred source on Google (reader is engaged at the article foot).
 	$out .= render_preferred_source( 'banner' );
 
-	// Author box.
-	$out .= '<div class="hti-art__author"><span class="hti-art__avatar hti-art__avatar--lg">' . $logo . '</span><div><div class="hti-art__by">' . esc_html( t( 'art_byline' ) ) . '</div><p class="hti-art__author-bio">' . esc_html( t( 'art_author_bio' ) ) . '</p></div></div>';
+	// Author box (named author for E-E-A-T; kept in sync with the Person schema).
+	$out .= '<div class="hti-art__author"><span class="hti-art__avatar hti-art__avatar--lg">' . $logo . '</span>'
+		. '<div><div class="hti-art__by">' . esc_html( t( 'art_byline' ) ) . '</div>'
+		. '<div class="hti-art__author-role">' . esc_html( t( 'art_author_role' ) ) . '</div>'
+		. '<p class="hti-art__author-bio">' . esc_html( t( 'art_author_bio' ) ) . '</p>'
+		. '<a class="hti-art__author-link" href="https://www.linkedin.com/in/luismsmarques/" target="_blank" rel="noopener noreferrer nofollow me">' . esc_html( t( 'art_author_link' ) ) . ' ↗</a>'
+		. '</div></div>';
 
 	// CTA.
 	$out .= '<div class="hti-art__cta"><span class="hti-art__cta-q">' . esc_html( t( 'news_cta_q' ) ) . '</span><a class="hti-art__cta-btn" href="' . esc_url( page_url( 'investor-profile-quiz' ) ) . '" data-hti-track="cta_click" data-htip-location="news_article">' . esc_html( t( 'news_cta_btn' ) ) . '</a></div>';
