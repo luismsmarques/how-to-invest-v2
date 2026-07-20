@@ -1718,8 +1718,6 @@ class Seeder {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public static function pages(): array {
-		$legal_notice = self::notice( 'Placeholder content — replace with legally reviewed text before launch.' );
-
 		$pages = array(
 			array(
 				'slug'    => 'investor-profile-quiz',
@@ -1782,19 +1780,19 @@ class Seeder {
 			array(
 				'slug'    => 'privacy-policy',
 				'title'   => 'Privacy Policy',
-				'content' => $legal_notice . self::paragraph( 'This page describes how HowToInvest handles personal data, including anonymous questionnaire sessions, account data, consent for non-essential analytics, and your rights to access, export and delete your data (GDPR).' ),
+				'content' => self::legal_privacy( false ),
 				'pt'      => array(
 					'title'   => 'Política de Privacidade',
-					'content' => self::notice( 'Conteúdo provisório — substituir por texto com revisão jurídica antes do lançamento.' ) . self::paragraph( 'Esta página descreve como a HowToInvest trata dados pessoais, incluindo sessões anónimas do questionário, dados de conta, consentimento para analítica não-essencial, e os teus direitos de acesso, exportação e eliminação de dados (RGPD).' ),
+					'content' => self::legal_privacy( true ),
 				),
 			),
 			array(
 				'slug'    => 'terms-and-conditions',
 				'title'   => 'Terms & Conditions',
-				'content' => $legal_notice . self::paragraph( 'These terms govern your use of HowToInvest. The platform is educational and does not provide financial, investment, tax or legal advice.' ),
+				'content' => self::legal_terms( false ),
 				'pt'      => array(
 					'title'   => 'Termos e Condições',
-					'content' => self::notice( 'Conteúdo provisório — substituir por texto com revisão jurídica antes do lançamento.' ) . self::paragraph( 'Estes termos regem a utilização da HowToInvest. A plataforma é educativa e não presta aconselhamento financeiro, de investimento, fiscal ou jurídico.' ),
+					'content' => self::legal_terms( true ),
 				),
 			),
 		);
@@ -1802,6 +1800,225 @@ class Seeder {
 		// Children (archetypes + asset classes + tools) come before the hubs so
 		// the hub→child links can be localized once the PT children exist.
 		return array_merge( $pages, self::explainer_pages(), self::tool_pages() );
+	}
+
+	/**
+	 * A plain (non-link) bullet list block from an array of strings.
+	 *
+	 * @param array<int,string> $items Items.
+	 */
+	private static function legal_list( array $items ): string {
+		$lis = '';
+		foreach ( $items as $item ) {
+			$lis .= '<li>' . esc_html( (string) $item ) . '</li>';
+		}
+		return '<!-- wp:list --><ul class="wp-block-list">' . $lis . '</ul><!-- /wp:list -->' . "\n\n";
+	}
+
+	/**
+	 * Privacy Policy draft. A working template grounded in how the platform
+	 * actually handles data (anonymous sessions, optional account, consent-gated
+	 * analytics, GDPR export/delete). NOT final legal text — a professional must
+	 * review and complete the [●] items before launch.
+	 *
+	 * @param bool $pt European Portuguese when true, English otherwise.
+	 */
+	private static function legal_privacy( bool $pt ): string {
+		$updated = gmdate( 'Y-m-d' );
+
+		if ( $pt ) {
+			return self::notice( 'Rascunho para revisão jurídica — modelo de trabalho baseado no funcionamento real da plataforma, não um texto legal final. Um profissional deve rever e completar os pontos marcados [●] antes do lançamento.' )
+				. self::paragraph( 'Esta Política de Privacidade explica que dados pessoais a HowToInvest recolhe, porquê, com quem os partilha e que direitos tens. Aplica-se ao site e ao questionário de perfil de investidor.' )
+				. self::heading( 'Quem somos' )
+				. self::paragraph( 'A HowToInvest ("nós") é uma plataforma educativa de literacia financeira, operada por [● entidade legal / nome], com sede em [● morada], contactável em [● email de contacto]. Somos o responsável pelo tratamento dos dados descritos nesta política.' )
+				. self::heading( 'Que dados recolhemos' )
+				. self::legal_list(
+					array(
+						'Sessões anónimas do questionário: as tuas respostas e o perfil resultante são guardados associados a um código de sessão aleatório, sem nome nem conta. Não retemos dados identificáveis em sessões anónimas.',
+						'Dados de conta (opcional): se criares conta para guardar um perfil, guardamos o teu email e os dados de autenticação, e ligamos os perfis guardados à conta.',
+						'Newsletter / ebook (opcional): se subscreveres, guardamos o teu email e o registo do consentimento, através do nosso fornecedor de email.',
+						'Mensagens de contacto: o que nos envias pelo formulário de contacto.',
+						'Analítica (com consentimento): se aceitares a analítica não-essencial, recolhemos eventos de utilização anónimos (páginas vistas, passos do funil) para melhorar o site.',
+						'Dados técnicos: registos de servidor habituais (por exemplo, endereço IP) necessários para operar e proteger o site.',
+					)
+				)
+				. self::heading( 'Porque usamos os dados (bases legais)' )
+				. self::legal_list(
+					array(
+						'Fornecer o questionário e os resultados — prestação do serviço / interesse legítimo.',
+						'Gerir a tua conta — execução do contrato contigo.',
+						'Enviar a newsletter — o teu consentimento.',
+						'Analítica — o teu consentimento.',
+						'Segurança e cumprimento legal — obrigação legal / interesse legítimo.',
+					)
+				)
+				. self::heading( 'Conteúdo gerado por IA' )
+				. self::paragraph( 'A explicação educativa do teu exemplo de alocação é gerada por um serviço de IA de terceiros (Google Gemini), a partir das tuas respostas (não identificáveis) ao questionário, do lado do servidor. Os números em si são decididos pelas nossas regras determinísticas, não pela IA. Não é enviado nenhum dado de conta ou identificável para este efeito.' )
+				. self::heading( 'Com quem partilhamos' )
+				. self::legal_list(
+					array(
+						'Fornecedor de alojamento [●], para operar o site.',
+						'Google — geração de conteúdo por IA (Gemini) e, se consentires, Google Analytics.',
+						'[● fornecedor de email, por exemplo Brevo] — envio da newsletter.',
+					)
+				)
+				. self::paragraph( 'Não vendemos os teus dados.' )
+				. self::heading( 'Cookies e consentimento' )
+				. self::paragraph( 'Usamos cookies/armazenamento essenciais para fazer funcionar o questionário e recordar as tuas escolhas. A analítica não-essencial só carrega depois de a aceitares no banner de consentimento; podes mudar a tua escolha a qualquer momento.' )
+				. self::heading( 'Durante quanto tempo guardamos' )
+				. self::legal_list(
+					array(
+						'Sessões/perfis anónimos: guardados apenas por um período limitado e depois eliminados automaticamente.',
+						'Dados de conta: até eliminares a conta. Na eliminação, aplicamos um período de tolerância de 30 dias e depois apagamos os teus perfis, registos de respostas e dados relacionados, e removemos-te do fornecedor de newsletter.',
+						'Analítica: contagens agregadas guardadas até [● por exemplo, 120] dias.',
+					)
+				)
+				. self::heading( 'Os teus direitos (RGPD)' )
+				. self::paragraph( 'Tens o direito de aceder, exportar e eliminar os teus dados, retirar o consentimento e opor-te ao tratamento.' )
+				. self::legal_list(
+					array(
+						'Acesso e exportação: no painel da tua conta ("Exportar"), podes descarregar a conta, os perfis e as preferências.',
+						'Eliminação: "Apagar conta" elimina os teus dados após um período de tolerância de 30 dias (com link para cancelar).',
+						'Consentimento: podes retirar o consentimento da analítica a qualquer momento no banner.',
+						'Reclamação: podes apresentar reclamação à autoridade de controlo ([● por exemplo, CNPD em Portugal]).',
+					)
+				)
+				. self::heading( 'Transferências internacionais' )
+				. self::paragraph( 'Alguns fornecedores (por exemplo, a Google) podem tratar dados fora do EEE, ao abrigo de salvaguardas adequadas ([● por exemplo, cláusulas contratuais-tipo]).' )
+				. self::heading( 'Menores' )
+				. self::paragraph( 'O serviço destina-se a adultos ([● por exemplo, 18+]); não recolhemos intencionalmente dados de menores.' )
+				. self::heading( 'Alterações' )
+				. self::paragraph( 'Podemos atualizar esta política; a data abaixo indica a última alteração.' )
+				. self::heading( 'Contacto' )
+				. self::paragraph( 'Questões sobre privacidade? Contacta-nos em [● email de contacto].' )
+				. self::paragraph( 'Última atualização: ' . $updated . '.' );
+		}
+
+		return self::notice( 'Draft for legal review — a working template based on how the platform actually handles data, not final legal text. A qualified professional should review and complete the items marked [●] before launch.' )
+			. self::paragraph( 'This Privacy Policy explains what personal data HowToInvest collects, why, who we share it with, and your rights. It covers this website and the investor-profile questionnaire.' )
+			. self::heading( 'Who we are' )
+			. self::paragraph( 'HowToInvest ("we") is an educational financial-literacy platform operated by [● legal entity / name], based at [● address], contactable at [● contact email]. We are the controller of the personal data described in this policy.' )
+			. self::heading( 'The data we collect' )
+			. self::legal_list(
+				array(
+					'Anonymous questionnaire sessions: your answers and the resulting profile are stored against a random session token, with no name or account. We do not retain identifying data for anonymous sessions.',
+					'Account data (optional): if you create an account to save a profile, we store your email address and authentication details, and link your saved profiles to it.',
+					'Newsletter / ebook (optional): if you subscribe, we store your email and a record of your consent, via our email provider.',
+					'Contact messages: whatever you send us through the contact form.',
+					'Analytics (with consent): if you accept non-essential analytics, we collect anonymous usage events (pages viewed, funnel steps) to improve the site.',
+					'Technical data: standard server logs (for example, IP address) needed to run and secure the site.',
+				)
+			)
+			. self::heading( 'Why we use it (legal bases)' )
+			. self::legal_list(
+				array(
+					'Providing the questionnaire and results — service provision / legitimate interest.',
+					'Running your account — performance of our contract with you.',
+					'Sending the newsletter — your consent.',
+					'Analytics — your consent.',
+					'Security and legal compliance — legal obligation / legitimate interest.',
+				)
+			)
+			. self::heading( 'AI-generated content' )
+			. self::paragraph( 'The educational explanation of your example allocation is generated by a third-party AI service (Google Gemini) from your (non-identifying) questionnaire answers, server-side. The numbers themselves are decided by our own deterministic rules, not by the AI. No account or identifying data is sent for this.' )
+			. self::heading( 'Who we share it with' )
+			. self::legal_list(
+				array(
+					'Hosting provider [●], to run the site.',
+					'Google — AI content generation (Gemini) and, if you consent, Google Analytics.',
+					'[● email provider, for example Brevo] — newsletter delivery.',
+				)
+			)
+			. self::paragraph( 'We do not sell your data.' )
+			. self::heading( 'Cookies and consent' )
+			. self::paragraph( 'We use essential cookies/storage to run the questionnaire and remember your choices. Non-essential analytics load only after you accept them in the consent banner; you can change your choice at any time.' )
+			. self::heading( 'How long we keep it' )
+			. self::legal_list(
+				array(
+					'Anonymous sessions/profiles: kept only for a limited period, then deleted automatically.',
+					'Account data: until you delete your account. On deletion we apply a 30-day grace period, then erase your profiles, question logs and related data, and remove you from the newsletter provider.',
+					'Analytics: aggregated counts kept for up to [● e.g., 120] days.',
+				)
+			)
+			. self::heading( 'Your rights (GDPR)' )
+			. self::paragraph( 'You have the right to access, export and delete your data, withdraw consent and object to processing.' )
+			. self::legal_list(
+				array(
+					'Access and export: from your account dashboard ("Export"), you can download your account, profiles and preferences.',
+					'Deletion: "Delete account" erases your data after a 30-day grace period (with a cancel link).',
+					'Consent: you can withdraw analytics consent at any time in the banner.',
+					'Complaint: you may lodge a complaint with your supervisory authority ([● e.g., CNPD in Portugal]).',
+				)
+			)
+			. self::heading( 'International transfers' )
+			. self::paragraph( 'Some providers (for example, Google) may process data outside the EEA under appropriate safeguards ([● e.g., standard contractual clauses]).' )
+			. self::heading( 'Children' )
+			. self::paragraph( 'The service is intended for adults ([● e.g., 18+]); we do not knowingly collect data from children.' )
+			. self::heading( 'Changes' )
+			. self::paragraph( 'We may update this policy; the date below shows the last change.' )
+			. self::heading( 'Contact' )
+			. self::paragraph( 'Questions about privacy? Contact us at [● contact email].' )
+			. self::paragraph( 'Last updated: ' . $updated . '.' );
+	}
+
+	/**
+	 * Terms & Conditions draft. Working template — NOT final legal text; a
+	 * professional must review and complete the [●] items before launch.
+	 *
+	 * @param bool $pt European Portuguese when true, English otherwise.
+	 */
+	private static function legal_terms( bool $pt ): string {
+		$updated = gmdate( 'Y-m-d' );
+
+		if ( $pt ) {
+			return self::notice( 'Rascunho para revisão jurídica — modelo de trabalho, não um texto legal final. Um profissional deve rever e completar os pontos marcados [●] antes do lançamento.' )
+				. self::paragraph( 'Estes Termos e Condições regem a utilização da HowToInvest. Ao usar o site, aceitas estes termos.' )
+				. self::heading( 'Finalidade educativa — não é aconselhamento' )
+				. self::paragraph( 'A HowToInvest é uma plataforma educativa de literacia financeira. Nada no site constitui aconselhamento financeiro, de investimento, fiscal ou jurídico, nem uma recomendação de compra ou venda de qualquer ativo. Todos os exemplos de carteira são ilustrativos, ao nível das classes de ativos, e nunca nomeiam produtos específicos. As decisões são da tua responsabilidade; considera consultar um profissional qualificado.' )
+				. self::heading( 'Elegibilidade' )
+				. self::paragraph( 'O serviço destina-se a adultos ([● por exemplo, 18+]). Ao usá-lo, declaras ter idade legal para o fazer.' )
+				. self::heading( 'Contas' )
+				. self::paragraph( 'Se criares conta, és responsável por manter as tuas credenciais seguras e por toda a atividade na conta. Podes eliminar a conta a qualquer momento a partir do teu painel.' )
+				. self::heading( 'Utilização aceitável' )
+				. self::paragraph( 'Concordas em não usar indevidamente o serviço — incluindo tentativas de o atacar, sobrecarregar, extrair dados em massa (scraping) ou interromper o seu funcionamento.' )
+				. self::heading( 'Propriedade intelectual' )
+				. self::paragraph( 'O conteúdo do site é nosso ou usado sob licença, e destina-se a uso pessoal e não-comercial de aprendizagem. Não o reproduzas nem redistribuas sem autorização.' )
+				. self::heading( 'Ligações e serviços de terceiros' )
+				. self::paragraph( 'O site pode conter ligações a sites de terceiros. Não somos responsáveis pelo conteúdo nem pelas práticas desses sites.' )
+				. self::heading( 'Isenção de garantias e limitação de responsabilidade' )
+				. self::paragraph( 'O serviço é fornecido "tal como está", sem garantias. Na medida permitida por lei, não somos responsáveis por quaisquer decisões tomadas com base no conteúdo educativo. [● o profissional deve adaptar os limites de responsabilidade à jurisdição aplicável.]' )
+				. self::heading( 'Alterações' )
+				. self::paragraph( 'Podemos alterar o serviço ou estes termos. A utilização continuada após alterações significa a aceitação das mesmas.' )
+				. self::heading( 'Lei aplicável' )
+				. self::paragraph( 'Estes termos regem-se pela lei de [● por exemplo, Portugal], sem prejuízo dos direitos dos consumidores previstos na lei.' )
+				. self::heading( 'Contacto' )
+				. self::paragraph( 'Questões sobre estes termos? Contacta-nos em [● email de contacto].' )
+				. self::paragraph( 'Última atualização: ' . $updated . '.' );
+		}
+
+		return self::notice( 'Draft for legal review — a working template, not final legal text. A qualified professional should review and complete the items marked [●] before launch.' )
+			. self::paragraph( 'These Terms & Conditions govern your use of HowToInvest. By using the site, you accept these terms.' )
+			. self::heading( 'Educational purpose — not advice' )
+			. self::paragraph( 'HowToInvest is an educational financial-literacy platform. Nothing on the site is financial, investment, tax or legal advice, nor a recommendation to buy or sell any asset. All portfolio examples are illustrative, at the asset-class level, and never name specific products. Decisions are your own responsibility; consider consulting a qualified professional.' )
+			. self::heading( 'Eligibility' )
+			. self::paragraph( 'The service is intended for adults ([● e.g., 18+]). By using it, you confirm you are of legal age to do so.' )
+			. self::heading( 'Accounts' )
+			. self::paragraph( 'If you create an account, you are responsible for keeping your credentials safe and for all activity on the account. You can delete your account at any time from your dashboard.' )
+			. self::heading( 'Acceptable use' )
+			. self::paragraph( 'You agree not to misuse the service — including attempts to attack, overload, scrape in bulk, or disrupt its operation.' )
+			. self::heading( 'Intellectual property' )
+			. self::paragraph( 'The content on the site is ours or used under licence, and is intended for personal, non-commercial learning use. Do not reproduce or redistribute it without permission.' )
+			. self::heading( 'Third-party links and services' )
+			. self::paragraph( 'The site may link to third-party websites. We are not responsible for the content or practices of those sites.' )
+			. self::heading( 'Disclaimer and limitation of liability' )
+			. self::paragraph( 'The service is provided "as is", without warranties. To the extent permitted by law, we are not liable for any decisions made based on the educational content. [● a professional should tailor liability limits to the applicable jurisdiction.]' )
+			. self::heading( 'Changes' )
+			. self::paragraph( 'We may change the service or these terms. Continued use after changes means you accept them.' )
+			. self::heading( 'Governing law' )
+			. self::paragraph( 'These terms are governed by the law of [● e.g., Portugal], without prejudice to mandatory consumer-protection rights.' )
+			. self::heading( 'Contact' )
+			. self::paragraph( 'Questions about these terms? Contact us at [● contact email].' )
+			. self::paragraph( 'Last updated: ' . $updated . '.' );
 	}
 
 	/**
