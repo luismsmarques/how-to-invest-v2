@@ -62,8 +62,9 @@ class PdfExport {
 			wp_die( esc_html__( 'You are not allowed to export this result.', 'hti-engine' ), '', array( 'response' => 403 ) );
 		}
 
-		$html = self::build_html( $profile_id );
-		self::stream( $html, 'howtoinvest-profile-' . $profile_id );
+		$html   = self::build_html( $profile_id );
+		$locale = str_starts_with( strtolower( (string) get_post_meta( $profile_id, 'hti_locale', true ) ), 'pt' ) ? 'pt' : 'en';
+		self::stream( $html, 'howtoinvest-profile-' . $profile_id, $locale );
 	}
 
 	/**
@@ -162,8 +163,9 @@ class PdfExport {
 	 *
 	 * @param string $html     Document HTML.
 	 * @param string $filename Base filename (no extension).
+	 * @param string $locale   Language for the fallback hint (en|pt).
 	 */
-	private static function stream( string $html, string $filename ): void {
+	private static function stream( string $html, string $filename, string $locale = 'en' ): void {
 		if ( class_exists( '\\Dompdf\\Dompdf' ) ) {
 			$dompdf = new \Dompdf\Dompdf( array( 'isRemoteEnabled' => false ) );
 			$dompdf->loadHtml( $html );
@@ -173,10 +175,43 @@ class PdfExport {
 			exit;
 		}
 
-		// Fallback: printable HTML (Print → Save as PDF).
+		// Fallback (Dompdf not installed): serve printable HTML, auto-open the
+		// print dialog, and show a hint that is itself hidden from the print
+		// output — so the user still gets a clean PDF via "Save as PDF".
+		$html = self::with_print_fallback( $html, $locale );
+
 		nocache_headers();
 		header( 'Content-Type: text/html; charset=utf-8' );
 		echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fully escaped while building.
 		exit;
+	}
+
+	/**
+	 * Wrap the document with a print hint + auto-print for the HTML fallback.
+	 *
+	 * @param string $html   Document HTML (from build_html).
+	 * @param string $locale Language (en|pt).
+	 */
+	private static function with_print_fallback( string $html, string $locale ): string {
+		$pt   = str_starts_with( strtolower( $locale ), 'pt' );
+		$hint = $pt
+			? 'Para guardar em PDF: no diálogo de impressão, escolhe “Guardar como PDF”.'
+			: 'To save as PDF: in the print dialog, choose “Save as PDF”.';
+		$btn  = $pt ? 'Imprimir / Guardar PDF' : 'Print / Save PDF';
+
+		$inject = '<style>@media print{.hti-pdf-hint{display:none !important;}}'
+			. '.hti-pdf-hint{font-family:DejaVu Sans,Arial,sans-serif;background:#FFF3D6;border:1px solid #D69A1E;'
+			. 'border-radius:6px;padding:10px 12px;margin:0 0 14px;font-size:12px;color:#5c4a12;}'
+			. '.hti-pdf-hint button{margin-left:10px;padding:5px 12px;border:0;border-radius:5px;background:#2A2438;color:#fff;cursor:pointer;font:inherit;}</style>'
+			. '<div class="hti-pdf-hint">' . esc_html( $hint )
+			. '<button type="button" onclick="window.print()">' . esc_html( $btn ) . '</button></div>';
+
+		$html = preg_replace( '/<body>/', '<body>' . $inject, $html, 1 );
+		$html = str_replace(
+			'</body>',
+			'<script>window.addEventListener("load",function(){setTimeout(function(){try{window.print();}catch(e){}},350);});</script></body>',
+			$html
+		);
+		return $html;
 	}
 }
