@@ -480,6 +480,10 @@ class REST {
 			return self::too_many();
 		}
 
+		// Start the time-to-result timer (KPI: p95 < 8s). Excludes rate-limited
+		// requests, which never reach the engine.
+		$t0 = microtime( true );
+
 		$locale  = self::locale( (string) $request->get_param( 'locale' ) );
 		$answers = self::sanitize_answers( (array) $request->get_param( 'answers' ) );
 
@@ -487,8 +491,10 @@ class REST {
 		try {
 			$result = Engine::recommend( $answers );
 		} catch ( \InvalidArgumentException $e ) {
+			Metrics::record_recommend( 'error', (int) round( ( microtime( true ) - $t0 ) * 1000 ) );
 			return new WP_Error( 'hti_invalid_answers', __( 'Some answers are missing or invalid.', 'hti-engine' ), array( 'status' => 422 ) );
 		} catch ( \Throwable $e ) {
+			Metrics::record_recommend( 'error', (int) round( ( microtime( true ) - $t0 ) * 1000 ) );
 			return new WP_Error( 'hti_engine_error', __( 'Could not produce a recommendation.', 'hti-engine' ), array( 'status' => 500 ) );
 		}
 
@@ -519,8 +525,15 @@ class REST {
 
 		$profile_id = self::store_profile( $result, $answers, $explained, $locale, $label, $session_token, $consent );
 		if ( is_wp_error( $profile_id ) ) {
+			Metrics::record_recommend( 'error', (int) round( ( microtime( true ) - $t0 ) * 1000 ) );
 			return new WP_Error( 'hti_persist_error', __( 'Could not save the profile.', 'hti-engine' ), array( 'status' => 500 ) );
 		}
+
+		// KPI: engine-success-rate (llm vs fallback) + time-to-result.
+		Metrics::record_recommend(
+			'llm' === ( $explained['source'] ?? '' ) ? 'ok_llm' : 'ok_fallback',
+			(int) round( ( microtime( true ) - $t0 ) * 1000 )
+		);
 
 		return new WP_REST_Response(
 			array(

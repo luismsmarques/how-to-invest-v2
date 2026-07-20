@@ -37,6 +37,14 @@ class Metrics {
 	private const MAX_PATHS_PER_DAY = 300;
 
 	/**
+	 * Ordered latency histogram buckets (seconds) for /recommend timing, so a
+	 * p95 can be estimated from cumulative counts without storing samples.
+	 *
+	 * @var array<int,string>
+	 */
+	private const LAT_BUCKETS = array( '0-1', '1-2', '2-4', '4-8', '8-16', '16+' );
+
+	/**
 	 * Countable events (anything else is ignored).
 	 *
 	 * @return array<int,string>
@@ -63,6 +71,11 @@ class Metrics {
 			'contact_submit',
 			'account_delete_request',
 			'cta_click',
+			'feedback_widget_open',
+			'feedback_submitted',
+			'feedback_invite_click',
+			'data_export',
+			'preferred_source_click',
 		);
 	}
 
@@ -209,6 +222,89 @@ class Metrics {
 	}
 
 	/**
+	 * Record a /recommend outcome + latency (PRD §7 KPIs: engine-success-rate
+	 * and time-to-result p95). Counts only — the latency histogram lets us
+	 * estimate a percentile without storing individual samples.
+	 *
+	 * @param string $outcome ok_llm|ok_fallback|error.
+	 * @param int    $ms      Wall-clock duration in milliseconds.
+	 */
+	public static function record_recommend( string $outcome, int $ms ): void {
+		$outcome = in_array( $outcome, array( 'ok_llm', 'ok_fallback', 'error' ), true ) ? $outcome : 'error';
+
+		$data = get_option( self::OPTION, array() );
+		if ( ! is_array( $data ) ) {
+			$data = array();
+		}
+
+		$day = gmdate( 'Y-m-d' );
+		if ( ! isset( $data[ $day ] ) || ! is_array( $data[ $day ] ) ) {
+			$data[ $day ] = array();
+		}
+
+		$data[ $day ]['rec'][ $outcome ] = ( $data[ $day ]['rec'][ $outcome ] ?? 0 ) + 1;
+
+		$bucket                          = self::latency_bucket( $ms );
+		$data[ $day ]['lat'][ $bucket ]  = ( $data[ $day ]['lat'][ $bucket ] ?? 0 ) + 1;
+
+		if ( count( $data ) > self::KEEP_DAYS ) {
+			ksort( $data );
+			$data = array_slice( $data, -self::KEEP_DAYS, null, true );
+		}
+
+		update_option( self::OPTION, $data, false );
+	}
+
+	/**
+	 * Histogram bucket key for a latency in milliseconds.
+	 *
+	 * @param int $ms Milliseconds.
+	 */
+	private static function latency_bucket( int $ms ): string {
+		if ( $ms < 1000 ) {
+			return '0-1';
+		}
+		if ( $ms < 2000 ) {
+			return '1-2';
+		}
+		if ( $ms < 4000 ) {
+			return '2-4';
+		}
+		if ( $ms < 8000 ) {
+			return '4-8';
+		}
+		if ( $ms < 16000 ) {
+			return '8-16';
+		}
+		return '16+';
+	}
+
+	/**
+	 * Estimate the p95 latency bucket label from a histogram (bucket => count),
+	 * or null when there is no data.
+	 *
+	 * @param array<string,int> $lat Latency histogram.
+	 */
+	public static function latency_p95( array $lat ): ?string {
+		$total = 0;
+		foreach ( $lat as $n ) {
+			$total += (int) $n;
+		}
+		if ( $total <= 0 ) {
+			return null;
+		}
+		$threshold = $total * 0.95;
+		$cum       = 0;
+		foreach ( self::LAT_BUCKETS as $bucket ) {
+			$cum += (int) ( $lat[ $bucket ] ?? 0 );
+			if ( $cum >= $threshold ) {
+				return $bucket;
+			}
+		}
+		return self::LAT_BUCKETS[ count( self::LAT_BUCKETS ) - 1 ];
+	}
+
+	/**
 	 * Normalise a page path to an anonymous, low-cardinality, storage-safe key:
 	 * drops the query string/fragment, lowercases, strips anything outside a
 	 * safe URL-path charset, removes the trailing slash (root stays "/") and
@@ -272,7 +368,7 @@ class Metrics {
 	 * Aggregate the counters over the last $days days.
 	 *
 	 * @param int $days Window size in days.
-	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>,page:array<string,int>,lang:array<string,int>,ref:array<string,int>}
+	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>,page:array<string,int>,lang:array<string,int>,ref:array<string,int>,rec:array<string,int>,lat:array<string,int>}
 	 */
 	public static function totals( int $days ): array {
 		$data = get_option( self::OPTION, array() );
@@ -289,12 +385,14 @@ class Metrics {
 			'page' => array(),
 			'lang' => array(),
 			'ref'  => array(),
+			'rec'  => array(),
+			'lat'  => array(),
 		);
 		foreach ( $data as $day => $buckets ) {
 			if ( (string) $day < $cutoff ) {
 				continue;
 			}
-			foreach ( array( 'e', 'step', 'arch', 'cta', 'page', 'lang', 'ref' ) as $group ) {
+			foreach ( array( 'e', 'step', 'arch', 'cta', 'page', 'lang', 'ref', 'rec', 'lat' ) as $group ) {
 				if ( empty( $buckets[ $group ] ) || ! is_array( $buckets[ $group ] ) ) {
 					continue;
 				}
@@ -478,6 +576,41 @@ class Metrics {
 				array( __( 'Emailed result', 'hti-engine' ), (int) ( $e['result_email_request'] ?? 0 ) ),
 			);
 			self::bar_table( $steps, $starts );
+			?>
+
+			<h2><?php esc_html_e( 'Engine health (KPIs)', 'hti-engine' ); ?></h2>
+			<?php
+			$rec       = is_array( $t['rec'] ?? null ) ? $t['rec'] : array();
+			$ok_llm    = (int) ( $rec['ok_llm'] ?? 0 );
+			$ok_fb     = (int) ( $rec['ok_fallback'] ?? 0 );
+			$rec_err   = (int) ( $rec['error'] ?? 0 );
+			$rec_ok    = $ok_llm + $ok_fb;
+			$rec_total = $rec_ok + $rec_err;
+			$flow_rate = $rec_total > 0 ? round( $rec_ok / $rec_total * 100, 1 ) : null;
+			$llm_rate  = $rec_ok > 0 ? round( $ok_llm / $rec_ok * 100, 1 ) : null;
+			$p95       = self::latency_p95( is_array( $t['lat'] ?? null ) ? $t['lat'] : array() );
+
+			if ( $rec_total < 1 ) {
+				echo '<p style="color:#646970;">' . esc_html__( 'No recommendations recorded in this window yet.', 'hti-engine' ) . '</p>';
+			} else {
+				printf(
+					'<p style="margin:.6em 0 0;color:#1d2327;">%1$s <strong>%2$s%%</strong> (%3$s) &middot; %4$s <strong>%5$s%%</strong> &middot; %6$s <strong>%7$s</strong> &middot; %8$s <strong>%9$s</strong></p>',
+					esc_html__( 'Engine success (flow, target ≥98%):', 'hti-engine' ),
+					esc_html( null !== $flow_rate ? (string) $flow_rate : '—' ),
+					esc_html( sprintf( /* translators: %s: number of recommendations. */ __( '%s recommendations', 'hti-engine' ), number_format_i18n( $rec_total ) ) ),
+					esc_html__( 'LLM-explained:', 'hti-engine' ),
+					esc_html( null !== $llm_rate ? (string) $llm_rate : '—' ),
+					esc_html__( 'fallback:', 'hti-engine' ),
+					esc_html( number_format_i18n( $ok_fb ) ),
+					esc_html__( 'errors:', 'hti-engine' ),
+					esc_html( number_format_i18n( $rec_err ) )
+				);
+				printf(
+					'<p style="margin:.3em 0 0;color:#1d2327;">%1$s <strong>%2$s</strong></p>',
+					esc_html__( 'Time-to-result p95 (target <8s):', 'hti-engine' ),
+					esc_html( null !== $p95 ? $p95 . 's' : '—' )
+				);
+			}
 			?>
 
 			<h2><?php esc_html_e( 'Drop-off by question', 'hti-engine' ); ?></h2>

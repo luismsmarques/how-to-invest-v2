@@ -1135,7 +1135,9 @@ function render_ebook_landing(): string {
 
 	// Register + enqueue the tiny form handler, with the REST route + nonce.
 	if ( ! wp_script_is( 'howtoinvest-ebook', 'registered' ) ) {
-		wp_register_script( 'howtoinvest-ebook', get_stylesheet_directory_uri() . '/assets/js/ebook.js', array(), VERSION, array( 'in_footer' => true, 'strategy' => 'defer' ) );
+		// Depend on hti-track so window.HTITrack is defined before ebook.js runs
+		// (the ebook_lead first-party event was otherwise a no-op by load order).
+		wp_register_script( 'howtoinvest-ebook', get_stylesheet_directory_uri() . '/assets/js/ebook.js', array( 'hti-track' ), VERSION, array( 'in_footer' => true, 'strategy' => 'defer' ) );
 	}
 	wp_enqueue_script( 'howtoinvest-ebook' );
 	wp_localize_script(

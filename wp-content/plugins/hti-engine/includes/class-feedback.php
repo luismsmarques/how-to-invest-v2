@@ -246,7 +246,7 @@ class Feedback {
 		wp_register_script(
 			'hti-feedback',
 			HTI_ENGINE_URL . 'assets/js/feedback.js',
-			array(),
+			array( 'hti-track' ),
 			VERSION,
 			array(
 				'in_footer' => true,
