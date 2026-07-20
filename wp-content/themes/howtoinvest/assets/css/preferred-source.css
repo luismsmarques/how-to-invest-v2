@@ -1,0 +1,87 @@
+/*
+ * "Preferred source on Google" prompt.
+ *
+ * A reader who clicks and selects HowToInvest sees more of our articles in
+ * Top Stories, AI Overviews and AI Mode. Two variants: a card on the article
+ * foot (`--banner`) and a compact, subtle link sitewide (`--footer`).
+ */
+.hti-psrc {
+	--psrc-coral: #F2503F;
+	--psrc-navy: #1E2147;
+	--psrc-line: #dfe2ec;
+}
+
+.hti-psrc__btn {
+	display: inline-flex;
+	align-items: center;
+	gap: .5rem;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+	border-radius: 999px;
+	background: #fff;
+	color: var(--psrc-navy);
+	border: 1px solid var(--psrc-line);
+	transition: border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+.hti-psrc__btn:hover,
+.hti-psrc__btn:focus-visible {
+	border-color: var(--psrc-coral);
+	color: var(--psrc-coral);
+}
+
+.hti-psrc__btn:focus-visible {
+	outline: 2px solid var(--psrc-coral);
+	outline-offset: 2px;
+}
+
+.hti-psrc__g {
+	display: inline-flex;
+	flex: 0 0 auto;
+}
+
+/* Banner variant — article foot. */
+.hti-psrc--banner {
+	margin: 1.75rem 0;
+	padding: 1rem 1.15rem;
+	border: 1px solid #e7e9f0;
+	border-radius: 16px;
+	background: #fafbff;
+}
+
+.hti-psrc--banner .hti-psrc__body {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: .75rem 1rem;
+}
+
+.hti-psrc--banner .hti-psrc__txt {
+	margin: 0;
+	max-width: 46ch;
+	font-size: .95rem;
+	color: #3a3f5c;
+}
+
+.hti-psrc--banner .hti-psrc__btn {
+	padding: .6rem 1.05rem;
+	white-space: nowrap;
+}
+
+/* Footer variant — subtle, sitewide. */
+.hti-psrc--footer {
+	margin-top: 1rem;
+}
+
+.hti-psrc--footer .hti-psrc__btn {
+	padding: .5rem .9rem;
+	font-size: .85rem;
+}
+
+@media (max-width: 600px) {
+	.hti-psrc--banner .hti-psrc__body {
+		justify-content: flex-start;
+	}
+}

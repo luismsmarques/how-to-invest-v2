@@ -146,6 +146,9 @@ function enqueue_scripts(): void {
 		array( 'strategy' => 'defer', 'in_footer' => true )
 	);
 
+	// "Preferred source on Google" prompt — reusable on the article foot + footer.
+	wp_register_style( 'howtoinvest-preferred-source', get_stylesheet_directory_uri() . '/assets/css/preferred-source.css', array(), VERSION );
+
 	// Single-news article: reading-progress bar + copy-link.
 	wp_register_style( 'howtoinvest-news-article', get_stylesheet_directory_uri() . '/assets/css/news-article.css', array(), VERSION );
 	wp_register_script(
@@ -496,6 +499,9 @@ function strings(): array {
 		'about_journey_1'  => array( 'en' => 'Prototype on Base44', 'pt' => 'Protótipo no Base44' ),
 		'about_journey_2'  => array( 'en' => 'Self-hosted WordPress (SEO)', 'pt' => 'WordPress próprio (SEO)' ),
 		'about_cta'        => array( 'en' => 'Discover your investor profile', 'pt' => 'Descobre o teu perfil de investidor' ),
+		'psrc_txt'         => array( 'en' => 'Find us useful? Add HowToInvest as a preferred source on Google to see more of our articles in Search and AI Overviews.', 'pt' => 'Achas-nos úteis? Adiciona o HowToInvest às tuas fontes preferidas no Google para veres mais artigos nossos na Pesquisa e nas AI Overviews.' ),
+		'psrc_btn'         => array( 'en' => 'Preferred source on Google', 'pt' => 'Fonte preferida no Google' ),
+		'psrc_aria'        => array( 'en' => 'Add HowToInvest as a preferred source on Google (opens in a new tab)', 'pt' => 'Adicionar o HowToInvest às fontes preferidas do Google (abre num novo separador)' ),
 	);
 }
 
@@ -715,6 +721,18 @@ function register_dynamic_blocks(): void {
 			'title'           => __( 'News article', 'howtoinvest' ),
 			'category'        => 'theme',
 			'render_callback' => __NAMESPACE__ . '\\render_news_article',
+		)
+	);
+	register_block_type(
+		'howtoinvest/preferred-source',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Preferred source (Google)', 'howtoinvest' ),
+			'category'        => 'theme',
+			'attributes'      => array(
+				'variant' => array( 'type' => 'string', 'default' => 'banner' ),
+			),
+			'render_callback' => __NAMESPACE__ . '\\render_preferred_source_block',
 		)
 	);
 }
@@ -2950,6 +2968,63 @@ function news_article_related( \WP_Post $post, bool $pt ): string {
  *
  * @return string Safe HTML.
  */
+/**
+ * Google "Preferred sources" deep link for this site. A reader who clicks and
+ * selects us sees more of our articles in Top Stories, AI Overviews and AI
+ * Mode. No registration or Publisher Center — just a link keyed on the domain
+ * (Google only accepts domains/subdomains, never subdirectories).
+ */
+function preferred_source_url(): string {
+	$host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+	if ( '' === $host ) {
+		return '';
+	}
+	// Always the bare https origin, so Polylang's /pt/ path never leaks in.
+	return 'https://www.google.com/preferences/source?q=' . rawurlencode( 'https://' . $host . '/' );
+}
+
+/**
+ * The "Preferred source on Google" prompt. Two variants: a `banner` (article
+ * foot) and a compact `footer` link (subtle, sitewide). Returns '' if the
+ * origin can't be resolved.
+ *
+ * @param string $variant banner|footer.
+ * @return string Safe HTML.
+ */
+function render_preferred_source( string $variant = 'banner' ): string {
+	$url = preferred_source_url();
+	if ( '' === $url ) {
+		return '';
+	}
+	wp_enqueue_style( 'howtoinvest-preferred-source' );
+
+	// Google's four-colour "G" mark (the link points to Google, so its own mark).
+	$g = '<span class="hti-psrc__g" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 48 48" focusable="false"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.28-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.55 10.78l7.98-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>';
+
+	$btn = '<a class="hti-psrc__btn" href="' . esc_url( $url ) . '" target="_blank" rel="noopener nofollow"'
+		. ' aria-label="' . esc_attr( t( 'psrc_aria' ) ) . '"'
+		. ' data-hti-track="preferred_source_click" data-htip-variant="' . esc_attr( $variant ) . '">'
+		. $g . '<span>' . esc_html( t( 'psrc_btn' ) ) . '</span></a>';
+
+	if ( 'footer' === $variant ) {
+		return '<div class="hti-psrc hti-psrc--footer">' . $btn . '</div>';
+	}
+
+	return '<aside class="hti-psrc hti-psrc--banner hti-noprint" aria-label="' . esc_attr( t( 'psrc_btn' ) ) . '">'
+		. '<div class="hti-psrc__body"><p class="hti-psrc__txt">' . esc_html( t( 'psrc_txt' ) ) . '</p>' . $btn . '</div></aside>';
+}
+
+/**
+ * Block render for `howtoinvest/preferred-source`.
+ *
+ * @param array<string,mixed> $attributes Block attributes.
+ * @return string Safe HTML.
+ */
+function render_preferred_source_block( array $attributes = array() ): string {
+	$variant = ( isset( $attributes['variant'] ) && 'footer' === $attributes['variant'] ) ? 'footer' : 'banner';
+	return render_preferred_source( $variant );
+}
+
 function render_news_article(): string {
 	if ( ! is_singular( 'news' ) ) {
 		return '';
@@ -3051,6 +3126,9 @@ function render_news_article(): string {
 
 	// Social share.
 	$out .= news_article_share( $url, $title, $pt );
+
+	// Preferred source on Google (reader is engaged at the article foot).
+	$out .= render_preferred_source( 'banner' );
 
 	// Author box.
 	$out .= '<div class="hti-art__author"><span class="hti-art__avatar hti-art__avatar--lg">' . $logo . '</span><div><div class="hti-art__by">' . esc_html( t( 'art_byline' ) ) . '</div><p class="hti-art__author-bio">' . esc_html( t( 'art_author_bio' ) ) . '</p></div></div>';
