@@ -784,16 +784,79 @@ function schema_author_person( array $author, \WP_Post $post ): array {
 	);
 
 	// Author photo: the About page featured image, when set.
-	if ( $about_id && has_post_thumbnail( $about_id ) ) {
-		$src = wp_get_attachment_image_src( (int) get_post_thumbnail_id( $about_id ), 'medium' );
-		if ( is_array( $src ) && ! empty( $src[0] ) ) {
-			$person['image'] = array( '@type' => 'ImageObject', 'url' => (string) $src[0] );
-		}
+	$photo = author_photo_url();
+	if ( '' !== $photo ) {
+		$person['image'] = array( '@type' => 'ImageObject', 'url' => $photo );
 	}
 
 	return $person;
 }
 add_filter( 'hti_schema_author', __NAMESPACE__ . '\\schema_author_person', 10, 2 );
+
+/**
+ * The author's photo URL — the About (author) page featured image, resolved to
+ * the current language and cached per request. '' when none is set. Upload the
+ * photo as the About page's Featured Image and it flows everywhere: the About
+ * card, article bylines, the author box and the Person schema image.
+ */
+function author_photo_url(): string {
+	static $cache = null;
+	if ( null !== $cache ) {
+		return $cache;
+	}
+	$cache = '';
+	$about = get_page_by_path( 'about' );
+	if ( $about instanceof \WP_Post ) {
+		$id = (int) $about->ID;
+		if ( function_exists( 'pll_get_post' ) ) {
+			$translated = pll_get_post( $id );
+			if ( $translated ) {
+				$id = (int) $translated;
+			}
+		}
+		if ( has_post_thumbnail( $id ) ) {
+			$src = wp_get_attachment_image_src( (int) get_post_thumbnail_id( $id ), 'medium' );
+			if ( is_array( $src ) && ! empty( $src[0] ) ) {
+				$cache = (string) $src[0];
+			}
+		}
+	}
+	return $cache;
+}
+
+/**
+ * Author avatar for article bylines: the author photo when set, else the brand
+ * mark — so a named author reads as a real person once a photo exists.
+ */
+function author_avatar_html(): string {
+	$url = author_photo_url();
+	if ( '' === $url ) {
+		return news_brand_mark();
+	}
+	return '<img class="hti-art__avatar-photo" src="' . esc_url( $url ) . '" alt="' . esc_attr( t( 'art_byline' ) ) . '" width="96" height="96" loading="lazy" decoding="async" />';
+}
+
+/**
+ * Brand entity `sameAs`: the PROJECT's official social profiles (not the
+ * author's personal ones — those live on the Person node). Strengthens
+ * Organization entity recognition for search + AI engines.
+ *
+ * @param array<int,string> $urls Existing sameAs URLs.
+ * @return array<int,string>
+ */
+function organization_same_as( array $urls ): array {
+	return array_merge(
+		$urls,
+		array(
+			'https://www.facebook.com/profile.php?id=61579037635642',
+			'https://x.com/howtoinvestpro',
+			'https://www.instagram.com/howtoinvest.pro/',
+			'https://www.tiktok.com/@howtoinvest_pro',
+			'https://www.youtube.com/channel/UC1Le99kTE5pHMWpcz99zMcA',
+		)
+	);
+}
+add_filter( 'hti_organization_same_as', __NAMESPACE__ . '\\organization_same_as' );
 
 /**
  * The rich mobile hamburger drawer (matches the Claude Design handoff): a
@@ -3100,7 +3163,7 @@ function render_news_article(): string {
 	$it    = news_item_data( $post, $pt );
 	$url   = (string) get_permalink( $post );
 	$title = (string) get_the_title( $post );
-	$logo  = news_brand_mark();
+	$avatar = author_avatar_html();
 
 	$views = (int) $it['views'];
 	$vf    = $views >= 1000 ? number_format_i18n( $views / 1000, 1 ) . 'k' : (string) $views;
@@ -3139,7 +3202,7 @@ function render_news_article(): string {
 	}
 
 	// Byline.
-	$out .= '<div class="hti-art__byline"><span class="hti-art__avatar">' . $logo . '</span><div><div class="hti-art__by">' . esc_html( t( 'art_byline' ) ) . '</div><div class="hti-art__meta">' . esc_html( $meta ) . '</div></div></div>';
+	$out .= '<div class="hti-art__byline"><span class="hti-art__avatar">' . $avatar . '</span><div><div class="hti-art__by">' . esc_html( t( 'art_byline' ) ) . '</div><div class="hti-art__meta">' . esc_html( $meta ) . '</div></div></div>';
 
 	// Hero: the embedded video (video format), else featured image, else gradient.
 	if ( $is_video ) {
@@ -3191,7 +3254,7 @@ function render_news_article(): string {
 	$out .= render_preferred_source( 'banner' );
 
 	// Author box (named author for E-E-A-T; kept in sync with the Person schema).
-	$out .= '<div class="hti-art__author"><span class="hti-art__avatar hti-art__avatar--lg">' . $logo . '</span>'
+	$out .= '<div class="hti-art__author"><span class="hti-art__avatar hti-art__avatar--lg">' . $avatar . '</span>'
 		. '<div><div class="hti-art__by">' . esc_html( t( 'art_byline' ) ) . '</div>'
 		. '<div class="hti-art__author-role">' . esc_html( t( 'art_author_role' ) ) . '</div>'
 		. '<p class="hti-art__author-bio">' . esc_html( t( 'art_author_bio' ) ) . '</p>'

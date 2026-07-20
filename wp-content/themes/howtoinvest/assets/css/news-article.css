@@ -39,7 +39,8 @@
 
 /* byline */
 .hti-art__byline { display: flex; align-items: center; gap: 12px; padding-bottom: 22px; border-bottom: 1px solid var( --art-border ); }
-.hti-art__avatar { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var( --art-navy ); display: flex; align-items: center; justify-content: center; }
+.hti-art__avatar { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var( --art-navy ); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.hti-art__avatar-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hti-art__avatar--lg { width: 48px; height: 48px; }
 .hti-art__by { font: 600 15px var( --art-bodyf ); color: var( --art-text ); }
 .hti-art__meta { font: 500 13px var( --art-bodyf ); color: var( --art-faint ); margin-top: 1px; }
