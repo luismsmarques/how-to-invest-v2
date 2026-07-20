@@ -2691,6 +2691,9 @@ function render_news_hub(): string {
 	$out .= '<p class="hti-newshub__sub">' . esc_html( t( 'news_hub_sub' ) ) . '</p>';
 	$out .= '</div>';
 
+	// Preferred source on Google — prominent on the news landing (Top Stories).
+	$out .= render_preferred_source( 'banner' );
+
 	// Category tabs.
 	$out .= '<div class="hti-newshub__tabs" role="group" aria-label="' . esc_attr( $pt ? 'Filtrar por categoria' : 'Filter by category' ) . '">';
 	foreach ( $tabs as $i => $tab ) {
