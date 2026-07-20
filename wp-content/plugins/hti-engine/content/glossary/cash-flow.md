@@ -20,7 +20,7 @@ Cash flow describes the real money moving in and out of a company over a period 
 A company can report a profit on paper yet still run short of actual cash to pay its bills, because accounting profit includes items that are not money changing hands. Cash flow shows the genuine liquidity of a business, which is why it sits alongside measures like [glossary:ebitda|EBITDA] when assessing financial health.
 
 ## How does cash flow relate to investing?
-For an investor studying an individual [glossary:stock|stock], steady positive cash flow can suggest a company funds itself comfortably, while persistent negative cash flow may signal strain. It is one lens among many and never a guarantee of future results.
+For an investor studying an individual [glossary:stock|stock], steady positive cash flow can suggest a company funds itself comfortably, while persistent negative cash flow may signal strain. For a profile built on diversified [learn:a-closer-look-at-global-equities|global equities], it is one lens among many and never a guarantee of future results.
 
 ## Key takeaways
 - Cash flow tracks the actual money entering and leaving a business.

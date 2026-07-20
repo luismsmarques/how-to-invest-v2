@@ -20,7 +20,7 @@ KYC, short for "Know Your Customer," is the set of checks a financial institutio
 KYC exists to prevent fraud, money laundering, and the financing of illegal activity. By verifying identity, address, and sometimes the source of your funds, institutions can flag suspicious behaviour and protect honest clients. Regulators in most countries make these checks a legal requirement rather than an optional courtesy.
 
 ## What does the KYC process involve?
-Typically you provide an official ID document, proof of address, and answer a few questions about your financial situation and goals. Some of this overlaps with assessing your risk tolerance before you build a [glossary:portfolio|portfolio]. Knowing that KYC is normal helps you tell a legitimate provider from a scam: a trustworthy platform follows clear rules, while one that skips verification entirely is a warning sign.
+Typically you provide an official ID document, proof of address, and answer a few questions about your financial situation and goals. Some of this overlaps with assessing your risk tolerance and choosing [learn:understanding-account-types|the right type of account] before you build a [glossary:portfolio|portfolio]. Knowing that KYC is normal helps you tell a legitimate provider from a scam: a trustworthy platform follows clear rules, while one that skips verification entirely is a warning sign.
 
 ## Key takeaways
 - KYC means verifying a client's identity before they can transact.

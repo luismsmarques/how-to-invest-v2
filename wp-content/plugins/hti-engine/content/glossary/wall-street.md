@@ -20,7 +20,7 @@ Wall Street is both a real street in lower Manhattan and a shorthand for the ent
 As a metaphor, Wall Street stands for institutional finance: the trading of [glossary:stock|stock], the issuing of [glossary:bonds|bonds], and the activity of large investment firms. It is frequently contrasted with "Main Street," meaning the everyday economy. The term captures sentiment and influence rather than any single building.
 
 ## How does Wall Street relate to global markets?
-Because the largest US exchanges and many influential institutions are concentrated there, movements associated with Wall Street can ripple across global markets and shape investor mood worldwide. Understanding it as a symbol helps decode headlines, but it offers no instruction about what any individual should buy or sell.
+Because the largest US exchanges and many influential institutions are concentrated there, movements associated with Wall Street can ripple across global markets and shape investor mood worldwide. Understanding [learn:how-markets-work|how markets and "Wall Street" work] helps decode headlines, but it offers no instruction about what any individual should buy or sell.
 
 ## Key takeaways
 - Wall Street is both a Manhattan street and shorthand for the US financial industry.

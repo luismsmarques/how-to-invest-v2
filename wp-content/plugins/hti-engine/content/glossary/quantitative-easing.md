@@ -20,7 +20,7 @@ Quantitative easing, often shortened to QE, is a tool central banks use when nor
 The central bank purchases assets from banks and other holders, paying with newly created reserves. This pushes asset prices up and yields down, which tends to make borrowing cheaper. The intended effect is more lending, spending and investment when the economy is weak.
 
 ## Why does QE matter to investors?
-Because it can influence the backdrop for nearly every [glossary:asset|asset] class. Periods of easing have often coincided with rising markets and compressed [glossary:yield|yields], while its reversal can do the opposite. Understanding QE helps explain why broad market conditions sometimes shift even when individual companies have not changed.
+Because it can influence the backdrop for nearly every [glossary:asset|asset] class. Periods of easing have often coincided with rising markets and compressed [glossary:yield|yields], while its reversal can do the opposite. Seeing how [learn:central-banks-and-monetary-policy|central banks and monetary policy] work helps explain why broad market conditions sometimes shift even when individual companies have not changed.
 
 ## Key takeaways
 - QE is a central bank buying assets with newly created money to ease financial conditions.

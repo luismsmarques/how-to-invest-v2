@@ -20,7 +20,7 @@ Underwriting is the behind-the-scenes work that brings new securities to market.
 In an [glossary:ipo|initial public offering], underwriters assess demand, help set the offer price, and often guarantee to buy unsold shares. By assuming this risk, they give the issuing company more certainty that the funds will be raised. Their judgement shapes how a fresh batch of [glossary:stock|stock] first reaches public investors.
 
 ## Why does underwriting matter for investors?
-For everyday investors, underwriting is a sign that a new issue has been examined and priced by professionals, though it never removes market risk. Bonds and shares brought to market this way still rise and fall once trading begins. Understanding the process helps explain why the price of a new [glossary:asset|asset] can move sharply on its first days.
+For everyday investors, underwriting is a sign that a new issue has been examined and priced by professionals, though it never removes market risk. Bonds and shares brought to market this way still rise and fall once trading begins. Seeing [learn:how-markets-work|how a company reaches the market] helps explain why the price of a new [glossary:asset|asset] can move sharply on its first days.
 
 ## Key takeaways
 - Underwriting is how institutions evaluate and assume the risk of new securities.

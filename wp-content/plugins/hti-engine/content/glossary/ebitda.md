@@ -20,7 +20,7 @@ EBITDA is a measure of how much profit a company generates from its core operati
 Because it removes the effects of financing and tax decisions, EBITDA lets people compare companies of different sizes or in different countries on a more even footing. It is one of several figures used when studying a company's [glossary:cash-flow|cash flow] and overall health, and it often appears in valuation discussions.
 
 ## What are the limits of EBITDA?
-EBITDA is not the same as actual cash a company keeps, because it ignores real costs like interest and equipment wear. A company can show a healthy EBITDA while still struggling. For an investor weighing an individual [glossary:stock|stock], it is one signal among many, never the whole picture.
+EBITDA is not the same as actual cash a company keeps, because it ignores real costs like interest and equipment wear. A company can show a healthy EBITDA while still struggling. For an investor weighing an individual [glossary:stock|stock] rather than diversified [learn:a-closer-look-at-global-equities|global equities], it is one signal among many, never the whole picture.
 
 ## Key takeaways
 - EBITDA shows operating profit before interest, taxes, depreciation, and amortization.

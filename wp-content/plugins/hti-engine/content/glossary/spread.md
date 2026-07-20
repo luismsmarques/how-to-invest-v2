@@ -20,7 +20,7 @@ The spread is the gap between the highest price a buyer will pay (the bid) and t
 At any moment, an asset has two quoted prices: a slightly lower bid and a slightly higher ask. To buy immediately you generally pay the ask; to sell immediately you receive the bid. That small difference is a real cost, even when no separate fee is shown.
 
 ## Why does the spread matter to investors?
-Wider spreads usually appear in less actively traded markets, while highly liquid assets tend to have narrow ones. For long-term investors who trade rarely, the spread matters little; for frequent traders it adds up. It is one reason patient, low-turnover investing keeps costs down.
+Wider spreads usually appear in less actively traded markets, while highly liquid assets tend to have narrow ones. For long-term investors who trade rarely, the spread matters little; for frequent traders it adds up. It is one reason patient, low-turnover investing helps keep [learn:costs-and-fees-explained|costs and fees] low.
 
 ## Key takeaways
 - The spread is the gap between the bid (buy) and ask (sell) prices of an asset.

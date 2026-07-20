@@ -14,7 +14,7 @@ seo_desc_pt: "Entenda como funcionam as mais-valias. Saiba como se calcula o gan
 <!-- EN -->
 > A profit from the sale of property or an investment.
 
-A capital gain is the profit you make when you sell something for more than you paid for it. If an [glossary:asset|asset] is bought at one price and later sold at a higher one, the difference is the gain. It is one of the two main ways an investment can reward an owner.
+A capital gain is the profit you make when you sell something for more than you paid for it. If an [glossary:asset|asset] is bought at one price and later sold at a higher one, the difference is the gain. It is one of the two main ways an investment — such as diversified [learn:a-closer-look-at-global-equities|global equities] — can reward an owner.
 
 ## How is a capital gain different from income?
 A capital gain only appears when you actually sell, so it differs from regular income like interest or a [glossary:dividend|dividend], which arrives while you still hold the asset. Until you sell, any rise in value is only "on paper" and can still disappear if prices fall again.

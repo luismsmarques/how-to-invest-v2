@@ -97,8 +97,12 @@ A completar:
    classe, tokens de glossário e ligação ao capítulo-pilar. Via **pipeline `.md`**
    (igual ao learn): `content/glossary/*.md` + importador idempotente + botão em
    Ferramentas. Piloto de 5–6 termos → validar → escalar aos ~36 restantes.
-2. **P0 — Completar a ligação inter-cluster:** mapear termo↔capítulo e adicionar os
-   links em falta (glossário→learn).
+2. ✅ **P0 — Ligação inter-cluster (feito):** todos os termos de glossário ligam ao
+   capítulo-pilar do seu cluster via token `[learn:slug|…]` (na secção EN, a que o
+   conversor resolve). Para dar casa aos termos avançados/macro sem pilar natural,
+   criaram-se dois capítulos Learn: `how-markets-work` (mercados, bolsas, IPO,
+   underwriting, Wall Street, NASDAQ) e `central-banks-and-monetary-policy`
+   (bancos centrais, taxas, QE). Sem tokens pendentes.
 3. **P1 — Análise de lacunas de cluster:** identificar queries de alto valor sem
    página e criar o capítulo/termo correspondente.
 4. **P1 — Cadência de notícias:** fluxo regular (frescura → Top Stories).

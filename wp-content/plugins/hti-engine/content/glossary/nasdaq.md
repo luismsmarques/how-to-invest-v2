@@ -20,7 +20,7 @@ The NASDAQ is one of the largest stock exchanges in the United States, known as 
 Unlike older trading floors, the NASDAQ operates as an electronic network that matches buyers and sellers of [glossary:stock|shares] through computers rather than people shouting on a floor. This automated model helped it become a benchmark for how modern exchanges run. Its best-known index tracks many of the largest firms listed there, so its movements are often quoted as a gauge of the tech sector's mood.
 
 ## Why does the NASDAQ matter to a global investor?
-For someone holding broad [glossary:global-equities|global equities], the NASDAQ matters as one important piece of the world market rather than a place to pick individual winners. Its heavy tilt toward technology can make it more changeable than a broader index. Understanding it as a market venue, not a recommendation, keeps the focus on diversification.
+For someone holding broad [glossary:global-equities|global equities], the NASDAQ matters as one important piece of the world market rather than a place to pick individual winners. Its heavy tilt toward technology can make it more changeable than a broader index. Seeing [learn:how-markets-work|how markets and exchanges work] — as a venue, not a recommendation — keeps the focus on diversification.
 
 ## Key takeaways
 - The NASDAQ is a major US electronic stock exchange.

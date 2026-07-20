@@ -17,7 +17,7 @@ seo_desc_pt: "Saiba o que é uma Oferta Pública Inicial (IPO), as suas vantagen
 An Initial Public Offering, or IPO, marks the moment a privately owned company first sells its [glossary:stock|shares] to the public on a stock exchange. It is a milestone event that often draws a lot of media attention, but understanding the mechanics matters far more than the headlines.
 
 ## Why do companies go public?
-Companies typically pursue an IPO to raise capital for expansion, repay debt, or let early backers sell part of their stake. Going public also brings new scrutiny: the business must publish financial reports and answer to a wider base of owners. The process is usually coordinated by investment banks that handle the [glossary:underwriting|underwriting] and pricing.
+Companies typically pursue an IPO to raise capital for expansion, repay debt, or let early backers sell part of their stake. Going public also brings new scrutiny: the business must publish financial reports and answer to a wider base of owners. The process is usually coordinated by investment banks that handle the [glossary:underwriting|underwriting] and pricing — part of [learn:how-markets-work|how a company reaches the market].
 
 ## What should a beginner know about IPO investing?
 A newly listed company has a short public track record, so its share price can swing sharply in early trading. A profile focused on long-term, diversified [glossary:global-equities|equities] typically gains little from chasing individual debuts. Treating an IPO as just one name among thousands, rather than a guaranteed win, is a more measured way to view it.
