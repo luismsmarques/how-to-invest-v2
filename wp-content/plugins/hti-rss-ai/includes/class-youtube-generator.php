@@ -79,7 +79,7 @@ class YouTube_Generator {
 		array_unshift( $existing, $video_source );
 		$data['sources'] = $existing;
 
-		$valid = Validator::validate( $data );
+		$valid = Validator::validate( $data, $lang );
 		if ( is_wp_error( $valid ) ) {
 			return $valid;
 		}

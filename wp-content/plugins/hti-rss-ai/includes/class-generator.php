@@ -55,7 +55,7 @@ class Generator {
 			$data['sources'] = $result['sources'];
 		}
 
-		$valid = Validator::validate( $data );
+		$valid = Validator::validate( $data, $lang );
 		if ( is_wp_error( $valid ) ) {
 			return $valid;
 		}
@@ -136,7 +136,7 @@ class Generator {
 		}
 		$data['sources'] = $existing;
 
-		$valid = Validator::validate( $data );
+		$valid = Validator::validate( $data, $lang, (string) $item->description );
 		if ( is_wp_error( $valid ) ) {
 			return $valid;
 		}
