@@ -2271,7 +2271,7 @@ function render_learn_quiz(): string {
 								</div>
 								<div class="hti-quiz__opts" role="radiogroup" aria-label="<?php echo esc_attr( (string) ( $q['q'] ?? '' ) ); ?>">
 									<?php foreach ( (array) ( $q['options'] ?? array() ) as $oi => $o ) : ?>
-										<div class="hti-quiz__opt" role="radio" aria-checked="false" tabindex="0" data-q="<?php echo (int) $qi; ?>" data-o="<?php echo (int) $oi; ?>" data-correct="<?php echo ! empty( $o['c'] ) ? '1' : '0'; ?>">
+										<div class="hti-quiz__opt" role="radio" aria-checked="false" tabindex="<?php echo 0 === (int) $oi ? '0' : '-1'; ?>" data-q="<?php echo (int) $qi; ?>" data-o="<?php echo (int) $oi; ?>" data-correct="<?php echo ! empty( $o['c'] ) ? '1' : '0'; ?>">
 											<span class="hti-quiz__marker" aria-hidden="true">
 												<span class="hti-quiz__m hti-quiz__m--empty"></span>
 												<span class="hti-quiz__m hti-quiz__m--filled"><span></span></span>
@@ -2820,7 +2820,7 @@ function render_news_hub(): string {
 	// Category tabs.
 	$out .= '<div class="hti-newshub__tabs" role="group" aria-label="' . esc_attr( $pt ? 'Filtrar por categoria' : 'Filter by category' ) . '">';
 	foreach ( $tabs as $i => $tab ) {
-		$out .= '<button type="button" class="hti-newshub__tab' . ( 0 === $i ? ' is-active' : '' ) . '" data-cat="' . esc_attr( (string) $tab[0] ) . '">' . esc_html( (string) $tab[1] ) . '</button>';
+		$out .= '<button type="button" class="hti-newshub__tab' . ( 0 === $i ? ' is-active' : '' ) . '" aria-pressed="' . ( 0 === $i ? 'true' : 'false' ) . '" data-cat="' . esc_attr( (string) $tab[0] ) . '">' . esc_html( (string) $tab[1] ) . '</button>';
 	}
 	$out .= '</div>';
 

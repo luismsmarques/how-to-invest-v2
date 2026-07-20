@@ -50,7 +50,11 @@
 
 	tabs.forEach( function ( tab ) {
 		tab.addEventListener( 'click', function () {
-			tabs.forEach( function ( t ) { t.classList.toggle( 'is-active', t === tab ); } );
+			tabs.forEach( function ( t ) {
+				var on = t === tab;
+				t.classList.toggle( 'is-active', on );
+				t.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+			} );
 			apply( tab.getAttribute( 'data-cat' ) || '' );
 		} );
 	} );

@@ -345,7 +345,10 @@
 				var tag = opt.querySelector( '.hti-quiz__tag' );
 				opt.classList.remove( 'is-chosen', 'is-correct', 'is-wrong', 'is-faded' );
 				opt.setAttribute( 'aria-checked', chosen ? 'true' : 'false' );
-				opt.setAttribute( 'tabindex', state.checked ? '-1' : '0' );
+				// Roving tabindex: one tab stop per radiogroup — the chosen option,
+				// or the first when none is chosen; nothing tabbable once locked.
+				var active = ! state.checked && ( chosen || ( state.sel[ qi ] == null && String( oi ) === '0' ) );
+				opt.setAttribute( 'tabindex', active ? '0' : '-1' );
 				if ( tag ) { tag.textContent = ''; }
 
 				if ( ! state.checked ) {
@@ -394,7 +397,25 @@
 		opts.forEach( function ( opt ) {
 			opt.addEventListener( 'click', function () { pick( opt.getAttribute( 'data-q' ), opt.getAttribute( 'data-o' ) ); } );
 			opt.addEventListener( 'keydown', function ( e ) {
-				if ( e.key === ' ' || e.key === 'Enter' || e.key === 'Spacebar' ) { e.preventDefault(); pick( opt.getAttribute( 'data-q' ), opt.getAttribute( 'data-o' ) ); }
+				var k = e.key;
+				if ( k === ' ' || k === 'Enter' || k === 'Spacebar' ) {
+					e.preventDefault();
+					pick( opt.getAttribute( 'data-q' ), opt.getAttribute( 'data-o' ) );
+					return;
+				}
+				// WAI-ARIA radiogroup: arrow keys move focus between options (Home/
+				// End jump to the ends), with roving tabindex; Space/Enter selects.
+				var dir = ( k === 'ArrowDown' || k === 'ArrowRight' ) ? 1 : ( ( k === 'ArrowUp' || k === 'ArrowLeft' ) ? -1 : 0 );
+				if ( ! dir && k !== 'Home' && k !== 'End' ) { return; }
+				if ( state.checked ) { return; } // locked once the answer is checked
+				e.preventDefault();
+				var qi = opt.getAttribute( 'data-q' );
+				var group = Array.prototype.filter.call( opts, function ( o ) { return o.getAttribute( 'data-q' ) === qi; } );
+				if ( group.length < 2 ) { return; }
+				var idx = group.indexOf( opt );
+				var target = ( k === 'Home' ) ? 0 : ( k === 'End' ) ? group.length - 1 : ( idx + dir + group.length ) % group.length;
+				group.forEach( function ( o, i ) { o.setAttribute( 'tabindex', i === target ? '0' : '-1' ); } );
+				group[ target ].focus();
 			} );
 		} );
 
