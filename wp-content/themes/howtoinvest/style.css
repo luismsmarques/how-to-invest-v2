@@ -1931,3 +1931,24 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	.hti-ebp__grid { grid-template-columns: 1fr; }
 	.hti-ebp__cover-wrap { position: static; max-width: 300px; }
 }
+
+/* Skip-to-content link — off-screen until keyboard focus (WCAG 2.4.1). */
+.hti-skip {
+	position: absolute;
+	left: 8px;
+	top: -56px;
+	z-index: 1000;
+	padding: 10px 16px;
+	background: var( --wp--preset--color--contrast, #1E2147 );
+	color: #fff;
+	font-weight: 600;
+	text-decoration: none;
+	border-radius: 8px;
+	transition: top 0.15s ease;
+}
+.hti-skip:focus,
+.hti-skip:focus-visible {
+	top: 8px;
+	outline: 2.5px solid var( --wp--preset--color--primary, #FF6B5E );
+	outline-offset: 2px;
+}

@@ -346,6 +346,7 @@ function current_lang(): string {
 function strings(): array {
 	return array(
 		// Header / nav / CTAs.
+		'skip_to_content'  => array( 'en' => 'Skip to content', 'pt' => 'Saltar para o conteúdo' ),
 		'cta_get_started'  => array( 'en' => 'Get started', 'pt' => 'Começar' ),
 		'cta_start_quiz'   => array( 'en' => 'Start the questionnaire', 'pt' => 'Começar o questionário' ),
 		'cta_curious_h'    => array( 'en' => 'Curious where you fit?', 'pt' => 'Curioso sobre onde te encaixas?' ),
@@ -3737,6 +3738,29 @@ function render_t_block( array $a ): string {
 
 	return '<' . $tag . $attr . '>' . esc_html( $text ) . '</' . $tag . '>';
 }
+
+/**
+ * Give the main-content landmark a stable id + programmatic focus target so the
+ * header "Skip to content" link (href="#main") works on every template. Every
+ * template renders its content area as a core/group with tagName "main", so one
+ * render_block filter covers them all — no need to edit 16 templates.
+ *
+ * @param string              $block_content Rendered block HTML.
+ * @param array<string,mixed> $block         Parsed block.
+ */
+function add_main_landmark_id( string $block_content, array $block ): string {
+	if ( 'core/group' !== ( $block['blockName'] ?? '' ) ) {
+		return $block_content;
+	}
+	if ( 'main' !== ( $block['attrs']['tagName'] ?? '' ) ) {
+		return $block_content;
+	}
+	if ( false !== strpos( $block_content, 'id="main"' ) ) {
+		return $block_content;
+	}
+	return preg_replace( '/<main\b/', '<main id="main" tabindex="-1"', $block_content, 1 );
+}
+add_filter( 'render_block', __NAMESPACE__ . '\\add_main_landmark_id', 10, 2 );
 
 /**
  * Register a dedicated block-pattern category for our reusable patterns.
