@@ -3765,6 +3765,21 @@ function add_main_landmark_id( string $block_content, array $block ): string {
 add_filter( 'render_block', __NAMESPACE__ . '\\add_main_landmark_id', 10, 2 );
 
 /**
+ * Output the "Skip to content" link as the very first focusable element in the
+ * body (before the header), so keyboard users can jump straight to <main>.
+ * Emitted on wp_body_open rather than inside the header group, so it never
+ * shifts that constrained group's block-gap layout. Hidden until focus via CSS.
+ */
+function render_skip_link(): void {
+	$text = t( 'skip_to_content' );
+	if ( '' === $text ) {
+		return;
+	}
+	echo '<a class="hti-skip" href="#main">' . esc_html( $text ) . '</a>';
+}
+add_action( 'wp_body_open', __NAMESPACE__ . '\\render_skip_link' );
+
+/**
  * Register a dedicated block-pattern category for our reusable patterns.
  */
 function register_pattern_category(): void {
