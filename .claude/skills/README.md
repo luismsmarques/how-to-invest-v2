@@ -22,12 +22,14 @@ disclaimer present, bilingual EN+PT, no execution CTAs, LLM keys server-side.
 | **ux-ui-design** | Visual/interaction decisions — design tokens, hierarchy, component states, mobile-first, micro-copy placement. |
 | **accessibility** | Any user-facing UI for a11y — keyboard nav, focus, ARIA, labels, contrast, screen-reader (WCAG 2.1 AA). |
 
-## Backend / engine (4)
+## Backend / engine (6)
 | Skill | Use when |
 |---|---|
 | **wordpress-backend** | Server-side WP — CPTs/taxonomies, hooks, REST routes, options/settings, cron, i18n, capabilities. |
 | **php-standards** | Writing/reviewing any PHP — PHP 8.4 + WPCS, sanitize/escape/prepare, WP_Error, clean classes. |
 | **hti-engine-spec** | The recommendation engine — deterministic scoring, archetypes, safety traps, the Gemini call, schema validation, fallback. |
+| **rss-ai-pipeline** | Engineering the `hti-rss-ai` plugin — fetching/backoff, grouping + embeddings, generators, validator, retention. |
+| **i18n-polylang** | The bilingual layer in code — Polylang linking, language resolution, PT slugs, hreflang, localized URLs. |
 | **gdpr-data** | Personal data, consent or privacy — profiles, export/delete, consent banner, no PII in logs (P0). |
 
 ## Content / brand (4)
