@@ -70,9 +70,9 @@ The seeder is install-only. Ongoing Learn content lives in the editorial pipelin
 3. **Import** with `wp hti import-learn` (or Tools → Learn content). It upserts both languages, idempotent by slug, links them via Polylang, files them under `learn_topic`, and sets the SEO description from the excerpt. New chapters are **published straight away** in both languages; an existing post keeps its current status (a re-sync never reverts an editor change).
 4. Update the `status` column in the sheet as chapters ship.
 
-Inline glossary tokens `[glossary:slug|Text]` / `[learn:slug|Text]` exist but resolve to the given slug regardless of language — for correct PT term URLs prefer the auto-built "Learn more" line (frontmatter `glossary`), which resolves the localized term.
+Inline glossary tokens `[glossary:slug|Text]` / `[learn:slug|Text]` exist but resolve to the given slug regardless of language — for correct PT term URLs prefer the auto-built "Learn more" line (frontmatter `glossary`), which resolves the localized term. Glossary authoring, news review and the shared import pipeline live in `content-editorial`.
 
-A chapter must be ebook-ready: self-contained, with TL;DR + takeaways (the `ebook-build` skill pulls title + body + takeaways).
+A chapter must be ebook-ready: self-contained, with TL;DR + takeaways — the ebook lead magnet (see `marketing-growth`) reuses the title + body + takeaways.
 
 ## Checklist (before "done")
 - [ ] Beginner-readable; every term defined on first use
