@@ -1760,21 +1760,86 @@ class Seeder {
 			array(
 				'slug'    => 'how-to-start-investing',
 				'title'   => 'How to start investing',
-				'content' => self::heading( 'Start with the basics' )
-					. self::paragraph( 'Before thinking about any portfolio, the most useful first step is usually an emergency fund — money kept somewhere safe and easy to reach, so a surprise never forces you to sell investments at a bad time.' )
-					. self::heading( 'Understand the building blocks' )
-					. self::paragraph( 'Portfolios are built from asset classes — global equities, bonds, cash, real estate and alternatives, and a small optional slice of crypto. Each behaves differently. Our glossary explains them in plain language.' )
-					. self::heading( 'Know your time horizon' )
-					. self::paragraph( 'Time is an investor\'s biggest ally: the further away your goal, the more ups and downs you can ride out along the way. A profile that fits your horizon and comfort matters more than chasing any single asset.' )
-					. '<!-- wp:pattern {"slug":"howtoinvest/cta-questionnaire"} /-->',
+				'excerpt' => 'A calm, step-by-step starting point — emergency fund, time horizon, your investor profile, the asset classes, costs and reviewing — all educational, none of it a recommendation.',
+				'content' => self::paragraph( 'Starting to invest can feel like a wall of jargon and choices. It does not have to. This is a calm, educational walkthrough of the steps that usually come first — in a sensible order — so you can build your own understanding before anything else. Nothing here is a recommendation, and we never name specific products, funds or brokers.' )
+					. self::heading( 'Step 1 — Build a safety net first' )
+					. self::paragraph( 'Before thinking about any portfolio, the most useful first step is usually an emergency fund — money kept somewhere safe and easy to reach, so a surprise never forces you to sell investments at a bad time. A common rule of thumb is a few months of essential expenses, held as cash. It is not exciting, but it is what lets you stay invested when markets wobble.' )
+					. self::heading( 'Step 2 — Know your time horizon' )
+					. self::paragraph( 'Time is an investor\'s biggest ally: the further away your goal, the more ups and downs you can ride out along the way. Money you may need within a couple of years is usually kept safe rather than invested for growth; money you will not touch for a decade can sit through the swings that come with growth assets. Matching each goal to its horizon is one of the most important decisions you make.' )
+					. self::heading( 'Step 3 — Find your investor profile' )
+					. self::paragraph( 'Your profile is a simple, educational description of how much short-term volatility you can comfortably live with in exchange for potential long-term growth. It draws on your horizon, your goals and your temperament. The short questionnaire suggests one of five illustrative profiles — from cautious to adventurous — each expressed only as a mix of asset classes.' )
+					. self::heading( 'Step 4 — Understand the building blocks' )
+					. self::paragraph( 'Portfolios are built from a handful of asset classes — global equities, bonds, cash, real estate and alternatives, and a small optional slice of crypto. Each behaves differently, and combining several is what smooths the ride. You do not need to master them all at once; a plain-language tour is enough to read any portfolio, including the illustrative one in your result.' )
+					. self::related(
+						array(
+							array( home_url( '/asset-classes/' ), 'The asset classes explained' ),
+							array( home_url( '/investor-types/' ), 'The five investor profiles' ),
+						)
+					)
+					. self::heading( 'Step 5 — Mind the costs' )
+					. self::paragraph( 'Costs are one of the few things within your control, and small percentages compound into large sums over decades. It is worth understanding the kinds of fees that can apply — ongoing charges, transaction costs, account fees — and how they quietly reduce returns, before deciding anything. We describe these at a general level; confirming the specifics is part of your own research.' )
+					. self::heading( 'Step 6 — Think long term, and review' )
+					. self::paragraph( 'A profile that fits your horizon and comfort matters far more than chasing any single asset or trying to time the market. Once a mix is in place, a portfolio tends to need patience, not constant tinkering — with an occasional review to check it still matches your life and to nudge it back toward its intended proportions. Take the short questionnaire to see which illustrative profile fits you today.' )
+					. self::cta()
+					. self::faq(
+						array(
+							array( 'How much money do I need to start?', 'There is no universal minimum — this is educational content, not product advice. What matters more at the start is the safety net, the horizon and understanding the building blocks, so that whatever amount you eventually invest fits a plan you understand.' ),
+							array( 'Should I pay off debt before investing?', 'Expensive debt generally deserves attention first, because its cost can outweigh what a portfolio might reasonably earn. A safety net and a clear picture of your obligations usually come before growth investing. Your own circumstances decide the balance.' ),
+							array( 'Is now a good time to start?', 'Trying to pick the "right" moment is notoriously unreliable, even for professionals. A long horizon matters more than the entry point, because it gives a portfolio time to ride out the inevitable ups and downs. This is a general observation, not a recommendation to act.' ),
+							array( 'Do I need a financial adviser?', 'That is a personal decision. This site is here to build your understanding so you can ask better questions — it is educational and does not provide personalised advice or tell you what to buy.' ),
+						),
+						'en'
+					)
+					. self::sources(
+						array(
+							array( 'https://www.todoscontam.pt/', 'Todos Contam — the Portuguese financial-literacy portal (Banco de Portugal, CMVM, ASF)' ),
+							array( 'https://www.esma.europa.eu/investor-corner', 'ESMA — Investor Corner (European Securities and Markets Authority)' ),
+							array( 'https://www.ecb.europa.eu/ecb/educational/explainers/html/index.en.html', 'European Central Bank — Explainers' ),
+						),
+						'en'
+					)
+					. self::small( 'Educational content only — a general starting point, not financial advice or a recommendation. Everything is described at the asset-class level.' ),
 				'pt'      => array(
 					'title'   => 'Como começar a investir',
-					'content' => self::heading( 'Começa pelo básico' )
-						. self::paragraph( 'Antes de pensar em qualquer carteira, o primeiro passo mais útil costuma ser um fundo de emergência — dinheiro guardado num sítio seguro e de fácil acesso, para que um imprevisto nunca te obrigue a vender investimentos num mau momento.' )
-						. self::heading( 'Percebe os blocos de construção' )
-						. self::paragraph( 'As carteiras constroem-se a partir de classes de ativos — ações globais, obrigações, liquidez, imobiliário e alternativos, e uma pequena fatia opcional de cripto. Cada uma comporta-se de forma diferente. O nosso glossário explica-as em linguagem simples.' )
-						. self::heading( 'Conhece o teu horizonte temporal' )
-						. self::paragraph( 'O tempo é o maior aliado de quem investe: quanto mais longe está o teu objetivo, mais altos e baixos consegues atravessar pelo caminho. Um perfil adequado ao teu horizonte e conforto importa mais do que perseguir um único ativo.' ),
+					'excerpt' => 'Um ponto de partida calmo, passo a passo — fundo de emergência, horizonte temporal, o teu perfil de investidor, as classes de ativos, custos e revisão — tudo educativo, nada disto uma recomendação.',
+					'content' => self::paragraph( 'Começar a investir pode parecer um muro de jargão e escolhas. Não tem de ser assim. Este é um percurso educativo e calmo pelos passos que costumam vir primeiro — por uma ordem sensata — para construíres a tua própria compreensão antes de mais nada. Nada aqui é uma recomendação, e nunca nomeamos produtos, fundos ou corretoras concretas.' )
+						. self::heading( 'Passo 1 — Constrói primeiro uma rede de segurança' )
+						. self::paragraph( 'Antes de pensar em qualquer carteira, o primeiro passo mais útil costuma ser um fundo de emergência — dinheiro guardado num sítio seguro e de fácil acesso, para que um imprevisto nunca te obrigue a vender investimentos num mau momento. Uma regra prática comum é ter alguns meses de despesas essenciais em liquidez. Não é entusiasmante, mas é o que te permite manteres-te investido quando os mercados oscilam.' )
+						. self::heading( 'Passo 2 — Conhece o teu horizonte temporal' )
+						. self::paragraph( 'O tempo é o maior aliado de quem investe: quanto mais longe está o teu objetivo, mais altos e baixos consegues atravessar pelo caminho. Dinheiro de que possas precisar dentro de um ou dois anos costuma ser mantido seguro, e não investido para crescer; dinheiro em que não tocas há uma década pode atravessar as oscilações que vêm com os ativos de crescimento. Fazer corresponder cada objetivo ao seu horizonte é uma das decisões mais importantes que tomas.' )
+						. self::heading( 'Passo 3 — Descobre o teu perfil de investidor' )
+						. self::paragraph( 'O teu perfil é uma descrição simples e educativa de quanta volatilidade de curto prazo consegues suportar com conforto em troca de potencial crescimento a longo prazo. Apoia-se no teu horizonte, nos teus objetivos e no teu temperamento. O questionário curto sugere um de cinco perfis ilustrativos — do mais prudente ao mais arrojado — cada um expresso apenas como uma mistura de classes de ativos.' )
+						. self::heading( 'Passo 4 — Percebe os blocos de construção' )
+						. self::paragraph( 'As carteiras constroem-se a partir de um punhado de classes de ativos — ações globais, obrigações, liquidez, imobiliário e alternativos, e uma pequena fatia opcional de cripto. Cada uma comporta-se de forma diferente, e combinar várias é o que suaviza o percurso. Não precisas de as dominar todas de uma vez; uma volta em linguagem simples chega para leres qualquer carteira, incluindo a ilustrativa do teu resultado.' )
+						. self::related(
+							array(
+								array( home_url( '/asset-classes/' ), 'As classes de ativos explicadas' ),
+								array( home_url( '/investor-types/' ), 'Os cinco perfis de investidor' ),
+							)
+						)
+						. self::heading( 'Passo 5 — Atenção aos custos' )
+						. self::paragraph( 'Os custos são uma das poucas coisas sob o teu controlo, e pequenas percentagens compõem-se em somas grandes ao longo de décadas. Vale a pena perceber os tipos de comissões que podem aplicar-se — encargos correntes, custos de transação, comissões de conta — e como reduzem os retornos de forma silenciosa, antes de decidires seja o que for. Descrevemo-los a um nível geral; confirmar os detalhes faz parte da tua própria pesquisa.' )
+						. self::heading( 'Passo 6 — Pensa a longo prazo, e revê' )
+						. self::paragraph( 'Um perfil adequado ao teu horizonte e conforto importa muito mais do que perseguir um único ativo ou tentar acertar no timing do mercado. Depois de a mistura estar definida, uma carteira costuma precisar de paciência, não de mexidas constantes — com uma revisão ocasional para confirmar que ainda encaixa na tua vida e para a aproximar das proporções pretendidas. Faz o questionário curto para veres qual perfil ilustrativo encaixa em ti hoje.' )
+						. self::cta()
+						. self::faq(
+							array(
+								array( 'De quanto dinheiro preciso para começar?', 'Não há um mínimo universal — isto é conteúdo educativo, não aconselhamento sobre produtos. O que mais conta no início é a rede de segurança, o horizonte e perceber os blocos de construção, para que qualquer montante que venhas a investir encaixe num plano que compreendes.' ),
+								array( 'Devo pagar dívidas antes de investir?', 'Dívida cara costuma merecer atenção primeiro, porque o seu custo pode superar o que uma carteira poderia razoavelmente render. Uma rede de segurança e uma visão clara das tuas obrigações costumam vir antes de investir para crescer. As tuas circunstâncias decidem o equilíbrio.' ),
+								array( 'Agora é uma boa altura para começar?', 'Tentar escolher o momento "certo" é notoriamente pouco fiável, mesmo para profissionais. Um horizonte longo importa mais do que o ponto de entrada, porque dá tempo à carteira para atravessar os inevitáveis altos e baixos. É uma observação geral, não uma recomendação para agir.' ),
+								array( 'Preciso de um consultor financeiro?', 'É uma decisão pessoal. Este site existe para construir a tua compreensão, para que faças melhores perguntas — é educativo e não presta aconselhamento personalizado nem te diz o que comprar.' ),
+							),
+							'pt'
+						)
+						. self::sources(
+							array(
+								array( 'https://www.todoscontam.pt/', 'Todos Contam — o portal português de literacia financeira (Banco de Portugal, CMVM, ASF)' ),
+								array( 'https://www.cmvm.pt/', 'CMVM — Comissão do Mercado de Valores Mobiliários' ),
+								array( 'https://www.ecb.europa.eu/ecb/educational/explainers/html/index.pt.html', 'Banco Central Europeu — Explicadores' ),
+							),
+							'pt'
+						)
+						. self::small( 'Conteúdo apenas educativo — um ponto de partida geral, não aconselhamento financeiro nem uma recomendação. Tudo é descrito ao nível da classe de ativos.' ),
 				),
 			),
 			array(
@@ -2250,7 +2315,19 @@ class Seeder {
 			'slug'    => 'investor-types',
 			'title'   => 'Investor types',
 			'excerpt' => 'Five educational investor profiles, from cautious to adventurous — each shown as an illustrative allocation by asset class.',
-			'content' => self::paragraph( 'Everyone approaches investing a little differently. These five educational profiles describe common starting points — from cautious to adventurous — each shown as an illustrative allocation by asset class. Take the short questionnaire to see which one fits you today.' )
+			'content' => self::paragraph( 'Everyone approaches investing a little differently. These five educational profiles describe common starting points — from cautious to adventurous — each shown as an illustrative allocation by asset class. This page explains what shapes a profile and how the five compare, so the result you get from the questionnaire makes sense.' )
+				. self::heading( 'What is an investor profile?' )
+				. self::paragraph( 'An investor profile is a simple, educational way to describe how much short-term ups and downs you can comfortably live with in exchange for potential long-term growth. It is not a label that boxes you in forever — it is a snapshot of where you are today, and it can shift as your life and goals change. Each profile here is expressed only as an illustrative mix of asset classes, never as specific products.' )
+				. self::heading( 'What shapes your profile' )
+				. self::bullets(
+					array(
+						array( home_url( '/how-to-start-investing/' ), 'Time horizon', 'how far away the goal is — the further, the more swings you can ride out.' ),
+						array( home_url( '/how-to-start-investing/' ), 'Comfort with risk', 'how you would honestly react if your portfolio fell for a while.' ),
+						array( home_url( '/how-to-start-investing/' ), 'Goals & stability', 'what the money is for, and how steady the rest of your finances are.' ),
+					)
+				)
+				. self::small( 'Together these suggest how many short-term ups and downs you can sit through without being forced — or tempted — to sell at a bad time.' )
+				. self::heading( 'The five profiles' )
 				. self::bullets(
 					array(
 						array( home_url( '/preservation-investor/' ), 'Preservation', 'protects capital first, with a small growth slice.' ),
@@ -2260,11 +2337,60 @@ class Seeder {
 						array( home_url( '/aggressive-growth-investor/' ), 'Aggressive growth', 'almost entirely growth assets, for very long horizons.' ),
 					)
 				)
-				. self::cta(),
+				. self::heading( 'How the profiles compare' )
+				. self::ctable(
+					array( 'Profile', 'Leans towards', 'Typical horizon', 'Tolerance for swings' ),
+					array(
+						array( 'Preservation', 'Bonds & cash', 'Shorter', 'Low' ),
+						array( 'Balanced income', 'Bonds, some equities', 'Medium', 'Low to moderate' ),
+						array( 'Balanced', 'Even growth / stability', 'Medium to long', 'Moderate' ),
+						array( 'Growth', 'Global equities', 'Long', 'High' ),
+						array( 'Aggressive growth', 'Mostly global equities', 'Very long', 'Very high' ),
+					)
+				)
+				. self::small( 'Illustrative only — the exact ranges for each profile are shown on its own page, always as percentages by asset class that add up to 100%.' )
+				. self::heading( 'There is no better or worse profile' )
+				. self::paragraph( 'A cautious profile is not more sensible than an adventurous one, nor the other way around — each simply fits a different mix of horizon, goals and temperament. The best profile is the one you can actually stick with through a rough patch, because staying invested is what gives a portfolio time to do its work. Take the short questionnaire to see which profile fits you today.' )
+				. self::related(
+					array(
+						array( home_url( '/asset-classes/' ), 'The asset classes explained' ),
+						array( home_url( '/how-to-start-investing/' ), 'How to start investing' ),
+					)
+				)
+				. self::cta()
+				. self::faq(
+					array(
+						array( 'Can my profile change over time?', 'Yes — and it usually does. As your time horizon shortens, your goals change or your financial situation shifts, a different profile may fit better. It is worth re-checking every so often, or after a big life change.' ),
+						array( 'Is a cautious profile safer?', 'It typically has smaller short-term swings, but "safer" is not the whole story: holding too little in growth assets over a long horizon carries its own risk — that your money grows too slowly to reach the goal. The right balance depends on you.' ),
+						array( 'What if I fall between two profiles?', 'That is common. The profiles are reference points, not rigid boxes. If you are between two, the questionnaire leans on your answers about horizon and comfort to suggest the closer fit — and you can always read both.' ),
+						array( 'Does the profile tell me what to buy?', 'No. It only describes an illustrative mix of asset classes. This site is educational and never names specific products, funds or brokers, and never tells you to buy or sell.' ),
+					),
+					'en'
+				)
+				. self::sources(
+					array(
+						array( 'https://www.todoscontam.pt/', 'Todos Contam — the Portuguese financial-literacy portal (Banco de Portugal, CMVM, ASF)' ),
+						array( 'https://www.esma.europa.eu/investor-corner', 'ESMA — Investor Corner (European Securities and Markets Authority)' ),
+					),
+					'en'
+				)
+				. self::small( 'Educational content only — illustrative, not financial advice or a recommendation. Profiles and allocations are examples by asset class.' ),
 			'pt'      => array(
 				'title'   => 'Perfis de investidor',
 				'excerpt' => 'Cinco perfis de investidor educativos, do mais prudente ao mais arrojado — cada um mostrado como uma alocação ilustrativa por classe de ativos.',
-				'content' => self::paragraph( 'Cada pessoa aborda o investimento de forma um pouco diferente. Estes cinco perfis educativos descrevem pontos de partida comuns — do mais prudente ao mais arrojado — cada um mostrado como uma alocação ilustrativa por classe de ativos. Faz o questionário curto para veres qual encaixa em ti hoje.' )
+				'content' => self::paragraph( 'Cada pessoa aborda o investimento de forma um pouco diferente. Estes cinco perfis educativos descrevem pontos de partida comuns — do mais prudente ao mais arrojado — cada um mostrado como uma alocação ilustrativa por classe de ativos. Esta página explica o que molda um perfil e como os cinco se comparam, para que o resultado do questionário faça sentido.' )
+						. self::heading( 'O que é um perfil de investidor?' )
+						. self::paragraph( 'Um perfil de investidor é uma forma simples e educativa de descrever quantos altos e baixos de curto prazo consegues suportar com conforto em troca de potencial crescimento a longo prazo. Não é um rótulo que te prende para sempre — é um retrato de onde estás hoje, e pode mudar à medida que a tua vida e os teus objetivos mudam. Cada perfil aqui é expresso apenas como uma mistura ilustrativa de classes de ativos, nunca como produtos concretos.' )
+						. self::heading( 'O que molda o teu perfil' )
+						. self::bullets(
+							array(
+								array( home_url( '/how-to-start-investing/' ), 'Horizonte temporal', 'quão longe está o objetivo — quanto mais longe, mais oscilações consegues atravessar.' ),
+								array( home_url( '/how-to-start-investing/' ), 'Conforto com o risco', 'como reagirias honestamente se a tua carteira caísse durante algum tempo.' ),
+								array( home_url( '/how-to-start-investing/' ), 'Objetivos e estabilidade', 'para que serve o dinheiro e quão estável está o resto das tuas finanças.' ),
+							)
+						)
+						. self::small( 'Juntos, sugerem quantos altos e baixos de curto prazo consegues atravessar sem seres obrigado — ou tentado — a vender num mau momento.' )
+						. self::heading( 'Os cinco perfis' )
 					. self::bullets(
 						array(
 							array( home_url( '/preservation-investor/' ), 'Preservação', 'protege o capital primeiro, com uma pequena fatia de crescimento.' ),
@@ -2273,7 +2399,45 @@ class Seeder {
 							array( home_url( '/growth-investor/' ), 'Crescimento', 'deixa as ações globais fazer o trabalho pesado.' ),
 							array( home_url( '/aggressive-growth-investor/' ), 'Crescimento agressivo', 'quase só ativos de crescimento, para horizontes muito longos.' ),
 						)
-					),
+					)
+					. self::heading( 'Como se comparam os perfis' )
+					. self::ctable(
+						array( 'Perfil', 'Apoia-se em', 'Horizonte habitual', 'Tolerância a oscilações' ),
+						array(
+							array( 'Preservação', 'Obrigações e liquidez', 'Mais curto', 'Baixa' ),
+							array( 'Rendimento equilibrado', 'Obrigações, algumas ações', 'Médio', 'Baixa a moderada' ),
+							array( 'Equilibrado', 'Crescimento / estabilidade a par', 'Médio a longo', 'Moderada' ),
+							array( 'Crescimento', 'Ações globais', 'Longo', 'Elevada' ),
+							array( 'Crescimento agressivo', 'Sobretudo ações globais', 'Muito longo', 'Muito elevada' ),
+						)
+					)
+					. self::small( 'Apenas ilustrativo — os intervalos exatos de cada perfil aparecem na sua própria página, sempre como percentagens por classe de ativos que somam 100%.' )
+					. self::heading( 'Não há perfil melhor nem pior' )
+					. self::paragraph( 'Um perfil prudente não é mais sensato do que um arrojado, nem o contrário — cada um encaixa numa combinação diferente de horizonte, objetivos e temperamento. O melhor perfil é aquele que consegues realmente manter durante um período difícil, porque manteres-te investido é o que dá tempo à carteira para fazer o seu trabalho. Faz o questionário curto para veres qual encaixa em ti hoje.' )
+					. self::related(
+						array(
+							array( home_url( '/asset-classes/' ), 'As classes de ativos explicadas' ),
+							array( home_url( '/how-to-start-investing/' ), 'Como começar a investir' ),
+						)
+					)
+					. self::cta()
+					. self::faq(
+						array(
+							array( 'O meu perfil pode mudar ao longo do tempo?', 'Sim — e normalmente muda. À medida que o teu horizonte encurta, os teus objetivos mudam ou a tua situação financeira se altera, um perfil diferente pode encaixar melhor. Vale a pena reavaliar de tempos a tempos, ou após uma grande mudança de vida.' ),
+							array( 'Um perfil prudente é mais seguro?', 'Costuma ter oscilações de curto prazo menores, mas "mais seguro" não é a história toda: ter muito pouco em ativos de crescimento num horizonte longo tem o seu próprio risco — o de o dinheiro crescer devagar demais para chegar ao objetivo. O equilíbrio certo depende de ti.' ),
+							array( 'E se eu estiver entre dois perfis?', 'É comum. Os perfis são pontos de referência, não caixas rígidas. Se estás entre dois, o questionário apoia-se nas tuas respostas sobre horizonte e conforto para sugerir o mais próximo — e podes sempre ler ambos.' ),
+							array( 'O perfil diz-me o que comprar?', 'Não. Descreve apenas uma mistura ilustrativa de classes de ativos. Este site é educativo e nunca nomeia produtos, fundos ou corretoras concretas, nem te diz para comprar ou vender.' ),
+						),
+						'pt'
+					)
+					. self::sources(
+						array(
+							array( 'https://www.todoscontam.pt/', 'Todos Contam — o portal português de literacia financeira (Banco de Portugal, CMVM, ASF)' ),
+							array( 'https://www.cmvm.pt/', 'CMVM — Comissão do Mercado de Valores Mobiliários' ),
+						),
+						'pt'
+					)
+					. self::small( 'Conteúdo apenas educativo — ilustrativo, não é aconselhamento financeiro nem uma recomendação. Perfis e alocações são exemplos por classe de ativos.' ),
 			),
 		);
 
@@ -2282,7 +2446,10 @@ class Seeder {
 			'slug'    => 'asset-classes',
 			'title'   => 'Asset classes',
 			'excerpt' => 'The building blocks of any portfolio — global equities, bonds, cash, real estate & alternatives, and crypto — each explained in plain language.',
-			'content' => self::paragraph( 'Portfolios are built from a handful of asset classes, each behaving differently. Understanding them is the first step to understanding any portfolio — including the illustrative ones in your result. Here is what each one does.' )
+			'content' => self::paragraph( 'Portfolios are built from a handful of asset classes, each behaving differently. Understanding them is the first step to understanding any portfolio — including the illustrative ones in your result. This page explains what each asset class does, how they work together, and why the right mix depends on you.' )
+				. self::heading( 'What is an asset class?' )
+				. self::paragraph( 'An asset class is a family of investments that tend to behave in a similar way and share broadly the same kind of risk and reward. Grouping the investing world like this — instead of looking at thousands of individual products — makes it far easier to picture what a portfolio actually holds and why. Everything on this site is described at the asset-class level, never as specific products, funds, tickers or companies.' )
+				. self::heading( 'The building blocks' )
 				. self::bullets(
 					array(
 						array( home_url( '/global-equities-explained/' ), 'Global equities', 'the growth engine — shares in companies worldwide.' ),
@@ -2292,11 +2459,54 @@ class Seeder {
 						array( home_url( '/crypto-explained/' ), 'Crypto', 'a young, very volatile, strictly optional slice.' ),
 					)
 				)
-				. self::cta(),
+				. self::heading( 'The main asset classes at a glance' )
+				. self::ctable(
+					array( 'Asset class', 'Typical role', 'Growth potential', 'Short-term swings' ),
+					array(
+						array( 'Global equities', 'Growth engine', 'Higher over long periods', 'Larger' ),
+						array( 'Bonds', 'Stability & income', 'Lower to moderate', 'Smaller' ),
+						array( 'Cash & equivalents', 'Safety & quick access', 'Very low', 'Minimal' ),
+						array( 'Real estate & alternatives', 'Variety / diversification', 'Moderate', 'Moderate' ),
+						array( 'Crypto', 'Optional, speculative', 'Very uncertain', 'Very large' ),
+					)
+				)
+				. self::small( 'These are general tendencies over long periods, not promises — any asset class can disappoint over any given stretch of time.' )
+				. self::heading( 'Why hold more than one?' )
+				. self::paragraph( 'Because asset classes rarely move in lockstep, holding several together can smooth the ride: when one is falling, another may be flat or rising. This is the simple idea behind diversification — not putting everything in one basket. It does not remove risk, but it can make the ups and downs easier to live with, which in turn makes it easier to stay invested for the long run. Over time, a portfolio can also drift away from its intended mix as one class grows faster than the others; periodically nudging it back toward the original proportions is what people mean by rebalancing.' )
+				. self::heading( 'How much of each? It depends on your profile' )
+				. self::paragraph( 'There is no single right mix. How much of each asset class suits you depends mostly on your time horizon, your goals and how comfortable you are with short-term swings. A cautious profile leans on bonds and cash; an adventurous one leans on global equities, with the steadier classes kept small. Our five illustrative investor profiles show how these building blocks can be combined — take the short questionnaire to see which one fits you today.' )
+				. self::related(
+					array(
+						array( home_url( '/investor-types/' ), 'The five investor profiles' ),
+						array( home_url( '/how-to-start-investing/' ), 'How to start investing' ),
+					)
+				)
+				. self::cta()
+				. self::faq(
+					array(
+						array( 'How many asset classes should a portfolio have?', 'There is no magic number. Many simple, well-diversified portfolios are built from just three or four broad asset classes. What matters more than the count is that the mix fits your time horizon and your comfort with risk.' ),
+						array( 'Which asset class is best?', 'None is best in every situation — each does a different job. Global equities have tended to grow most over long periods but swing the hardest; cash barely grows but is there when you need it. A portfolio usually blends them rather than picking one.' ),
+						array( 'Where does crypto fit?', 'Crypto is treated here as a young, highly volatile and strictly optional slice — never a foundation. Some profiles leave it out entirely. If it appears in an example at all, it is a small share that you could lose completely.' ),
+						array( 'Do I need a lot of money to spread across asset classes?', 'Not necessarily. Diversification is about proportions, not amounts — the same illustrative mix can describe a small or a large portfolio. This site is educational and does not recommend any specific product to achieve it.' ),
+					),
+					'en'
+				)
+				. self::sources(
+					array(
+						array( 'https://www.todoscontam.pt/', 'Todos Contam — the Portuguese financial-literacy portal (Banco de Portugal, CMVM, ASF)' ),
+						array( 'https://www.esma.europa.eu/investor-corner', 'ESMA — Investor Corner (European Securities and Markets Authority)' ),
+						array( 'https://www.ecb.europa.eu/ecb/educational/explainers/html/index.en.html', 'European Central Bank — Explainers' ),
+					),
+					'en'
+				)
+				. self::small( 'Educational content only — illustrative, not financial advice or a recommendation to buy or sell anything. Allocations shown across the site are examples by asset class.' ),
 			'pt'      => array(
 				'title'   => 'Classes de ativos',
 				'excerpt' => 'Os blocos de construção de qualquer carteira — ações globais, obrigações, liquidez, imobiliário e alternativos, e cripto — cada um explicado em linguagem simples.',
-				'content' => self::paragraph( 'As carteiras constroem-se a partir de um punhado de classes de ativos, cada uma a comportar-se de forma diferente. Compreendê-las é o primeiro passo para compreender qualquer carteira — incluindo as ilustrativas do teu resultado. Aqui está o que cada uma faz.' )
+				'content' => self::paragraph( 'As carteiras constroem-se a partir de um punhado de classes de ativos, cada uma a comportar-se de forma diferente. Compreendê-las é o primeiro passo para compreender qualquer carteira — incluindo as ilustrativas do teu resultado. Esta página explica o que cada classe faz, como se combinam, e porque a mistura certa depende de ti.' )
+					. self::heading( 'O que é uma classe de ativos?' )
+					. self::paragraph( 'Uma classe de ativos é uma família de investimentos que tendem a comportar-se de forma parecida e a partilhar o mesmo tipo de risco e retorno. Agrupar o mundo do investimento assim — em vez de olhar para milhares de produtos individuais — torna muito mais fácil imaginar o que uma carteira realmente contém e porquê. Neste site tudo é descrito ao nível da classe de ativos, nunca como produtos, fundos, tickers ou empresas concretas.' )
+					. self::heading( 'Os blocos de construção' )
 					. self::bullets(
 						array(
 							array( home_url( '/global-equities-explained/' ), 'Ações globais', 'o motor de crescimento — participações em empresas de todo o mundo.' ),
@@ -2305,7 +2515,48 @@ class Seeder {
 							array( home_url( '/reits-alternatives-explained/' ), 'Imobiliário e alternativos', 'variedade que nem sempre se move com as ações.' ),
 							array( home_url( '/crypto-explained/' ), 'Cripto', 'uma fatia jovem, muito volátil e estritamente opcional.' ),
 						)
-					),
+					)
+					. self::heading( 'As principais classes de ativos num relance' )
+					. self::ctable(
+						array( 'Classe de ativos', 'Papel habitual', 'Potencial de crescimento', 'Oscilações de curto prazo' ),
+						array(
+							array( 'Ações globais', 'Motor de crescimento', 'Maior em períodos longos', 'Maiores' ),
+							array( 'Obrigações', 'Estabilidade e rendimento', 'Baixo a moderado', 'Menores' ),
+							array( 'Liquidez e equivalentes', 'Segurança e acesso rápido', 'Muito baixo', 'Mínimas' ),
+							array( 'Imobiliário e alternativos', 'Variedade / diversificação', 'Moderado', 'Moderadas' ),
+							array( 'Cripto', 'Opcional, especulativa', 'Muito incerto', 'Muito grandes' ),
+						)
+					)
+					. self::small( 'São tendências gerais ao longo de períodos longos, não promessas — qualquer classe pode desiludir num dado intervalo de tempo.' )
+					. self::heading( 'Porquê ter mais do que uma?' )
+					. self::paragraph( 'Como as classes de ativos raramente se movem em sintonia, tê-las juntas pode suavizar o percurso: quando uma cai, outra pode estar estável ou a subir. É esta a ideia simples por trás da diversificação — não pôr tudo no mesmo cesto. Não elimina o risco, mas torna os altos e baixos mais fáceis de viver, o que, por sua vez, ajuda a manter-te investido a longo prazo. Com o tempo, uma carteira também se afasta da mistura pretendida à medida que uma classe cresce mais depressa do que as outras; voltar a aproximá-la das proporções iniciais é o que se chama reequilíbrio (rebalanceamento).' )
+					. self::heading( 'Quanto de cada? Depende do teu perfil' )
+					. self::paragraph( 'Não há uma única mistura certa. Quanto de cada classe te serve depende sobretudo do teu horizonte temporal, dos teus objetivos e do teu conforto com as oscilações de curto prazo. Um perfil prudente apoia-se em obrigações e liquidez; um mais arrojado apoia-se em ações globais, com as classes mais estáveis reduzidas ao mínimo. Os nossos cinco perfis de investidor ilustrativos mostram como estes blocos se podem combinar — faz o questionário curto para veres qual encaixa em ti hoje.' )
+					. self::related(
+						array(
+							array( home_url( '/investor-types/' ), 'Os cinco perfis de investidor' ),
+							array( home_url( '/how-to-start-investing/' ), 'Como começar a investir' ),
+						)
+					)
+					. self::cta()
+					. self::faq(
+						array(
+							array( 'Quantas classes de ativos deve ter uma carteira?', 'Não há um número mágico. Muitas carteiras simples e bem diversificadas constroem-se a partir de apenas três ou quatro classes de ativos amplas. Mais importante do que a quantidade é que a mistura encaixe no teu horizonte temporal e no teu conforto com o risco.' ),
+							array( 'Qual é a melhor classe de ativos?', 'Nenhuma é a melhor em todas as situações — cada uma faz um trabalho diferente. As ações globais tenderam a crescer mais em períodos longos, mas oscilam mais; a liquidez quase não cresce, mas está lá quando precisas. Uma carteira costuma combiná-las em vez de escolher uma só.' ),
+							array( 'Onde encaixa a cripto?', 'A cripto é tratada aqui como uma fatia jovem, muito volátil e estritamente opcional — nunca uma base. Alguns perfis deixam-na totalmente de fora. Se aparecer num exemplo, é uma fatia pequena que podes perder por completo.' ),
+							array( 'Preciso de muito dinheiro para diversificar por classes de ativos?', 'Não necessariamente. A diversificação é uma questão de proporções, não de montantes — a mesma mistura ilustrativa pode descrever uma carteira pequena ou grande. Este site é educativo e não recomenda qualquer produto concreto para a alcançar.' ),
+						),
+						'pt'
+					)
+					. self::sources(
+						array(
+							array( 'https://www.todoscontam.pt/', 'Todos Contam — o portal português de literacia financeira (Banco de Portugal, CMVM, ASF)' ),
+							array( 'https://www.cmvm.pt/', 'CMVM — Comissão do Mercado de Valores Mobiliários' ),
+							array( 'https://www.ecb.europa.eu/ecb/educational/explainers/html/index.pt.html', 'Banco Central Europeu — Explicadores' ),
+						),
+						'pt'
+					)
+					. self::small( 'Conteúdo apenas educativo — ilustrativo, não é aconselhamento financeiro nem uma recomendação de compra ou venda. As alocações mostradas no site são exemplos por classe de ativos.' ),
 			),
 		);
 
@@ -2904,6 +3155,76 @@ class Seeder {
 	 */
 	private static function heading( string $text ): string {
 		return '<!-- wp:heading --><h2 class="wp-block-heading">' . esc_html( $text ) . '</h2><!-- /wp:heading -->' . "\n\n";
+	}
+
+	/**
+	 * Wrap text in an h3 heading block.
+	 *
+	 * @param string $text Plain text.
+	 */
+	private static function subheading( string $text ): string {
+		return '<!-- wp:heading {"level":3} --><h3 class="wp-block-heading">' . esc_html( $text ) . '</h3><!-- /wp:heading -->' . "\n\n";
+	}
+
+	/**
+	 * An HTML FAQ block: an H2 section title followed by question/answer pairs
+	 * (H3 + paragraph). Plain, indexable HTML — no FAQPage schema is emitted
+	 * (RankMath owns page-level schema; we avoid duplicate/competing markup).
+	 *
+	 * @param array<int,array{0:string,1:string}> $pairs [question, answer] pairs.
+	 * @param string                               $lang  'en' or 'pt'.
+	 */
+	private static function faq( array $pairs, string $lang ): string {
+		$title = 'pt' === $lang ? 'Perguntas frequentes' : 'Frequently asked questions';
+		$out   = self::heading( $title );
+		foreach ( $pairs as $pair ) {
+			$out .= self::subheading( (string) ( $pair[0] ?? '' ) )
+				. self::paragraph( (string) ( $pair[1] ?? '' ) );
+		}
+		return $out;
+	}
+
+	/**
+	 * A "Primary sources" section: an H2 title and a bulleted list of external
+	 * links to authoritative educational bodies. Outbound links to authorities
+	 * are a positive signal, so no rel="nofollow"; opened safely.
+	 *
+	 * @param array<int,array{0:string,1:string}> $items [url, label] pairs.
+	 * @param string                               $lang  'en' or 'pt'.
+	 */
+	private static function sources( array $items, string $lang ): string {
+		$title = 'pt' === $lang ? 'Fontes e leitura de confiança' : 'Trusted sources & further reading';
+		$lis   = '';
+		foreach ( $items as $item ) {
+			$lis .= '<li><a href="' . esc_url( (string) ( $item[0] ?? '' ) ) . '" target="_blank" rel="noopener">'
+				. esc_html( (string) ( $item[1] ?? '' ) ) . '</a></li>';
+		}
+		return self::heading( $title )
+			. '<!-- wp:list --><ul class="wp-block-list">' . $lis . '</ul><!-- /wp:list -->' . "\n\n";
+	}
+
+	/**
+	 * A generic comparison table from a header row and body rows (all plain
+	 * text, escaped). Keeps everything at asset-class / profile level.
+	 *
+	 * @param array<int,string>              $headers Header cells.
+	 * @param array<int,array<int,string>>   $rows    Body rows.
+	 */
+	private static function ctable( array $headers, array $rows ): string {
+		$head = '';
+		foreach ( $headers as $h ) {
+			$head .= '<th>' . esc_html( (string) $h ) . '</th>';
+		}
+		$body = '';
+		foreach ( $rows as $row ) {
+			$cells = '';
+			foreach ( (array) $row as $cell ) {
+				$cells .= '<td>' . esc_html( (string) $cell ) . '</td>';
+			}
+			$body .= '<tr>' . $cells . '</tr>';
+		}
+		return '<!-- wp:table --><figure class="wp-block-table"><table><thead><tr>'
+			. $head . '</tr></thead><tbody>' . $body . '</tbody></table></figure><!-- /wp:table -->' . "\n\n";
 	}
 
 	/**
