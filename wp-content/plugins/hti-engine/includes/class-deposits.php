@@ -160,6 +160,173 @@ class Deposits {
 		);
 	}
 
+	/* ------------------------------------------------------------- language */
+
+	/**
+	 * Current render language: 'en' on the English page, 'pt' otherwise. The
+	 * dataset (Portuguese banks) is shared; only the interface differs.
+	 */
+	private static function lang(): string {
+		if ( function_exists( 'pll_current_language' ) && 'en' === pll_current_language( 'slug' ) ) {
+			return 'en';
+		}
+		return 'pt';
+	}
+
+	/**
+	 * Localized interface strings. The 'pt' values are the originals, so the
+	 * Portuguese page renders byte-for-byte as before; 'en' adds the English
+	 * comparator ("Term Deposit Comparison — Portugal").
+	 *
+	 * @param string $lang 'en' or 'pt'.
+	 * @return array<string,string>
+	 */
+	private static function strings( string $lang ): array {
+		$pt = array(
+			'eyebrow'        => 'Ferramenta educativa',
+			'amount_label'   => 'Montante a depositar',
+			'amount_aria'    => 'Montante a depositar em euros',
+			'calc_note_a'    => 'O juro mostrado em cada cartão é ',
+			'calc_note_b'    => 'estimado e ilustrativo',
+			'calc_note_c'    => ', calculado sobre este montante, no prazo de cada produto, já com a retenção de IRS de 28%.',
+			'filters'        => 'Filtros',
+			'clear'          => 'Limpar',
+			'search_ph'      => 'Banco ou produto…',
+			'search_aria'    => 'Pesquisar banco ou produto',
+			'min_tanb'       => 'TANB mínima',
+			'pct_zero'       => '0,00%',
+			'term'           => 'Prazo',
+			'term_all'       => 'Todos',
+			'bank'           => 'Banco',
+			'bank_all'       => 'Todos os bancos',
+			'sw_new'         => 'Novos clientes',
+			'sw_early'       => 'Mobilização antecipada',
+			'sw_irs'         => 'Bancos estrangeiros (IRS)',
+			'deposits_word'  => 'depósitos',
+			'beats_word'     => 'acima dos Certificados de Aforro',
+			'sort_label'     => 'Ordenar:',
+			'sort_aria'      => 'Ordenar resultados',
+			'sort_rate'      => 'Maior taxa',
+			'sort_term'      => 'Menor prazo',
+			'sort_min'       => 'Menor mínimo',
+			'ref_a'          => 'Referência do Estado: ',
+			'ref_b'          => 'Certificados de Aforro a ',
+			'ref_c'          => ' (TANB ilustrativa). Um depósito só compensa se a taxa, líquida de custos, superar esta alternativa de baixo risco.',
+			'empty_t'        => 'Nenhum depósito corresponde aos filtros',
+			'empty_d'        => 'Experimenta baixar a TANB mínima ou alargar o prazo e o montante.',
+			'empty_btn'      => 'Limpar filtros',
+			'note1_t'        => 'Garantia até 100 000 €',
+			'note1_d'        => 'O Fundo de Garantia de Depósitos (FGD) cobre até 100 000 € por depositante e por instituição. Acima disso, convém dividir entre bancos.',
+			'note2_t'        => 'Custos escondidos',
+			'note2_d'        => 'Alguns bancos exigem conta à ordem com custos de manutenção. Confirma se as transferências para constituir o depósito são gratuitas.',
+			'note3_t'        => 'IRS de 28%',
+			'note3_d'        => 'Os juros são tributados a 28% (retenção na fonte). Não residentes podem ter regras diferentes — confirma a tua situação fiscal.',
+			'updated_label'  => 'Última atualização:',
+			'method_link'    => 'Como recolhemos e calculamos estes dados',
+			'disclaimer_t'   => 'Importante:',
+			'disclaimer_d'   => 'esta ferramenta é educativa. As taxas, prazos e condições são ilustrativos, recolhidos de fontes públicas, e não refletem ofertas em tempo real. Não é aconselhamento financeiro nem uma recomendação. Confirma sempre as condições atuais junto de cada instituição e na respetiva FIN (Ficha de Informação Normalizada) antes de decidir. Os juros estimados não consideram custos de conta nem todos os impostos aplicáveis. Capital garantido pelo FGD até 100 000€ por titular e por instituição.',
+			// Card.
+			'top_badge'      => '★ Melhor taxa',
+			'month'          => ' mês',
+			'months'         => ' meses',
+			'mob_yes'        => 'Mobilização antecipada',
+			'mob_notes'      => 'Mobilização (ver notas)',
+			'mob_no'         => 'Sem mobilização',
+			'clients_new'    => 'Novos clientes',
+			'clients_all'    => 'Todos os clientes',
+			'new_amounts'    => 'Novos montantes',
+			'non_resident'   => 'Não residentes',
+			'tanb'           => 'TANB',
+			'beats_badge'    => '▲ acima do Aforro',
+			'est_label'      => 'Juro líquido estimado',
+			'gross'          => 'bruto ',
+			'min_prefix'     => 'Mín. ',
+			'min_none'       => 'Sem mínimo',
+			'max_prefix'     => 'Máx. ',
+			'max_none'       => 'Sem limite',
+		);
+
+		$en = array(
+			'eyebrow'        => 'Educational tool',
+			'amount_label'   => 'Amount to deposit',
+			'amount_aria'    => 'Amount to deposit in euros',
+			'calc_note_a'    => 'The interest shown on each card is ',
+			'calc_note_b'    => 'estimated and illustrative',
+			'calc_note_c'    => ', calculated on this amount, over each product\'s term, already net of the 28% Portuguese withholding tax (IRS).',
+			'filters'        => 'Filters',
+			'clear'          => 'Clear',
+			'search_ph'      => 'Bank or product…',
+			'search_aria'    => 'Search bank or product',
+			'min_tanb'       => 'Min. gross rate',
+			'pct_zero'       => '0.00%',
+			'term'           => 'Term',
+			'term_all'       => 'All',
+			'bank'           => 'Bank',
+			'bank_all'       => 'All banks',
+			'sw_new'         => 'New clients',
+			'sw_early'       => 'Early withdrawal',
+			'sw_irs'         => 'Foreign banks (tax)',
+			'deposits_word'  => 'deposits',
+			'beats_word'     => 'above Savings Certificates',
+			'sort_label'     => 'Sort:',
+			'sort_aria'      => 'Sort results',
+			'sort_rate'      => 'Highest rate',
+			'sort_term'      => 'Shortest term',
+			'sort_min'       => 'Lowest minimum',
+			'ref_a'          => 'State benchmark: ',
+			'ref_b'          => 'Savings Certificates (Certificados de Aforro) at ',
+			'ref_c'          => ' (illustrative gross rate). A deposit only pays off if its rate, net of costs, beats this low-risk alternative.',
+			'empty_t'        => 'No deposit matches your filters',
+			'empty_d'        => 'Try lowering the minimum rate or widening the term and amount.',
+			'empty_btn'      => 'Clear filters',
+			'note1_t'        => 'Guaranteed up to €100,000',
+			'note1_d'        => 'The Deposit Guarantee Fund (FGD) covers up to €100,000 per depositor and per institution. Above that, it is wise to split across banks.',
+			'note2_t'        => 'Hidden costs',
+			'note2_d'        => 'Some banks require a current account with maintenance fees. Check whether the transfers needed to open the deposit are free.',
+			'note3_t'        => '28% tax on interest',
+			'note3_d'        => 'Interest is taxed at 28% (withheld at source). Non-residents may face different rules — confirm your own tax situation.',
+			'updated_label'  => 'Last updated:',
+			'method_link'    => 'How we collect and calculate this data',
+			'disclaimer_t'   => 'Important:',
+			'disclaimer_d'   => 'this is an educational tool. Rates, terms and conditions are illustrative, gathered from public sources, and do not reflect real-time offers. It is not financial advice or a recommendation. Always confirm the current conditions with each institution and in its standardised information sheet (FIN) before deciding. Estimated interest does not account for account costs or every applicable tax. Capital guaranteed by the FGD up to €100,000 per holder and per institution.',
+			// Card.
+			'top_badge'      => '★ Best rate',
+			'month'          => ' month',
+			'months'         => ' months',
+			'mob_yes'        => 'Early withdrawal',
+			'mob_notes'      => 'Early withdrawal (see notes)',
+			'mob_no'         => 'No early withdrawal',
+			'clients_new'    => 'New clients',
+			'clients_all'    => 'All clients',
+			'new_amounts'    => 'New funds',
+			'non_resident'   => 'Non-residents',
+			'tanb'           => 'Gross rate',
+			'beats_badge'    => '▲ above Aforro',
+			'est_label'      => 'Estimated net interest',
+			'gross'          => 'gross ',
+			'min_prefix'     => 'Min. ',
+			'min_none'       => 'No minimum',
+			'max_prefix'     => 'Max. ',
+			'max_none'       => 'No cap',
+		);
+
+		return 'en' === $lang ? $en : $pt;
+	}
+
+	/**
+	 * English meta (title/intro/footer) for the comparator. The Portuguese
+	 * meta is editor-managed in the option; the English page uses these.
+	 *
+	 * @return array{title:string,intro:string,footer:string}
+	 */
+	private static function en_meta(): array {
+		return array(
+			'title'  => 'Term Deposit Comparison — Portugal',
+			'intro'  => 'Compare the gross rates, terms and conditions of term deposits available in Portugal. Set your amount and see the estimated interest, side by side. These are capital-guaranteed products (up to €100,000 per holder through the Deposit Guarantee Fund) that pay a fixed rate over a set term.',
+			'footer' => "Many of these banks offer free online transfers (Banco CTT, BAI, Bankinter, Best, BIL, Bison, BPG, Carregosa, Easisave, Klarna, MeDirect, Openbank), subject to a daily limit between €5,000 and €25,000. Others charge €0.50 (BluOr, Finantia), €1.00 (BiG, EuroBic) or €1.50 (Atlántico, BNI, Haitong).\n\nProducts such as the Bankinter Conta Mais Ordenado, uninvested cash on Trade Republic or Revolut's instant-access savings are not term deposits (they allow top-ups and withdrawals without penalty), so they are not listed here.\n\nFor comparison, new subscriptions of Portuguese Savings Certificates carry an initial rate of 2.215%.",
+		);
+	}
+
 	/* ---------------------------------------------------------------- render */
 
 	/**
@@ -194,6 +361,14 @@ class Deposits {
 		$rows   = $data['rows'];
 		$aforro = (float) ( $data['aforro'] ?? 2.215 );
 		$amount = (int) ( $data['amount'] ?? 10000 );
+
+		$lang  = self::lang();
+		$L     = self::strings( $lang );
+		$is_en = 'en' === $lang;
+		$em    = self::en_meta();
+		$title = $is_en ? $em['title'] : (string) $data['title'];
+		$intro = $is_en ? $em['intro'] : (string) $data['intro'];
+		$footer = $is_en ? $em['footer'] : (string) ( $data['footer'] ?? '' );
 
 		// Sort by rate desc, then term asc, for a sensible default order.
 		usort(
@@ -230,51 +405,56 @@ class Deposits {
 
 		ob_start();
 		?>
-		<section class="hti-dep" aria-label="<?php echo esc_attr( $data['title'] ); ?>"
+		<section class="hti-dep" aria-label="<?php echo esc_attr( $title ); ?>"
 			data-amount="<?php echo esc_attr( (string) $amount ); ?>"
-			data-aforro="<?php echo esc_attr( (string) $aforro ); ?>">
+			data-aforro="<?php echo esc_attr( (string) $aforro ); ?>"
+			data-lang="<?php echo esc_attr( $lang ); ?>"
+			data-gross-label="<?php echo esc_attr( $L['gross'] ); ?>">
 			<header class="hti-dep__head">
-				<span class="hti-dep__eyebrow"><span class="hti-dep__eyebrow-dot"></span>Ferramenta educativa</span>
-				<h1 class="hti-dep__title"><?php echo esc_html( $data['title'] ); ?></h1>
-				<?php if ( '' !== $data['intro'] ) : ?>
-					<p class="hti-dep__intro"><?php echo esc_html( $data['intro'] ); ?></p>
+				<span class="hti-dep__eyebrow"><span class="hti-dep__eyebrow-dot"></span><?php echo esc_html( $L['eyebrow'] ); ?></span>
+				<h1 class="hti-dep__title"><?php echo esc_html( $title ); ?></h1>
+				<?php if ( '' !== $intro ) : ?>
+					<p class="hti-dep__intro"><?php echo esc_html( $intro ); ?></p>
+				<?php endif; ?>
+				<?php if ( ! empty( $data['updated'] ) ) : ?>
+					<p class="hti-dep__updated"><?php echo esc_html( $L['updated_label'] . ' ' . (string) $data['updated'] ); ?></p>
 				<?php endif; ?>
 			</header>
 
 			<!-- Amount calculator -->
 			<div class="hti-dep__calc">
 				<div class="hti-dep__calc-field">
-					<label class="hti-dep__calc-label" for="hti-dep-amount">Montante a depositar</label>
+					<label class="hti-dep__calc-label" for="hti-dep-amount"><?php echo esc_html( $L['amount_label'] ); ?></label>
 					<div class="hti-dep__calc-input">
-						<input type="text" inputmode="numeric" id="hti-dep-amount" class="hti-dep__amount" value="<?php echo esc_attr( self::group( $amount ) ); ?>" aria-label="Montante a depositar em euros">
+						<input type="text" inputmode="numeric" id="hti-dep-amount" class="hti-dep__amount" value="<?php echo esc_attr( self::group( $amount ) ); ?>" aria-label="<?php echo esc_attr( $L['amount_aria'] ); ?>">
 						<span class="hti-dep__calc-eur">€</span>
 					</div>
 				</div>
-				<p class="hti-dep__calc-note">O juro mostrado em cada cartão é <strong>estimado e ilustrativo</strong>, calculado sobre este montante, no prazo de cada produto, já com a retenção de IRS de 28%.</p>
+				<p class="hti-dep__calc-note"><?php echo esc_html( $L['calc_note_a'] ); ?><strong><?php echo esc_html( $L['calc_note_b'] ); ?></strong><?php echo esc_html( $L['calc_note_c'] ); ?></p>
 			</div>
 
 			<div class="hti-dep__layout">
 				<!-- Filters -->
-				<form class="hti-dep__filters" role="search" aria-label="Filtros">
+				<form class="hti-dep__filters" role="search" aria-label="<?php echo esc_attr( $L['filters'] ); ?>">
 					<div class="hti-dep__filters-head">
-						<h2 class="hti-dep__filters-title">Filtros</h2>
-						<button type="button" class="hti-dep__reset">Limpar</button>
+						<h2 class="hti-dep__filters-title"><?php echo esc_html( $L['filters'] ); ?></h2>
+						<button type="button" class="hti-dep__reset"><?php echo esc_html( $L['clear'] ); ?></button>
 					</div>
 
 					<div class="hti-dep__search">
 						<span class="hti-dep__search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg></span>
-						<input type="search" class="hti-dep__q" placeholder="Banco ou produto…" autocomplete="off" aria-label="Pesquisar banco ou produto">
+						<input type="search" class="hti-dep__q" placeholder="<?php echo esc_attr( $L['search_ph'] ); ?>" autocomplete="off" aria-label="<?php echo esc_attr( $L['search_aria'] ); ?>">
 					</div>
 
 					<div class="hti-dep__group">
-						<div class="hti-dep__group-head"><label for="hti-dep-tanb">TANB mínima</label><span class="hti-dep__tanb-val">0,00%</span></div>
+						<div class="hti-dep__group-head"><label for="hti-dep-tanb"><?php echo esc_html( $L['min_tanb'] ); ?></label><span class="hti-dep__tanb-val"><?php echo esc_html( $L['pct_zero'] ); ?></span></div>
 						<input type="range" id="hti-dep-tanb" class="hti-dep__tanb" min="0" max="<?php echo esc_attr( (string) $slider_max ); ?>" step="0.05" value="0">
 					</div>
 
 					<div class="hti-dep__group">
-						<span class="hti-dep__group-label">Prazo</span>
+						<span class="hti-dep__group-label"><?php echo esc_html( $L['term'] ); ?></span>
 						<div class="hti-dep__chips">
-							<button type="button" class="hti-dep__chip is-active" data-term="">Todos</button>
+							<button type="button" class="hti-dep__chip is-active" data-term=""><?php echo esc_html( $L['term_all'] ); ?></button>
 							<?php foreach ( $terms as $t ) : ?>
 								<button type="button" class="hti-dep__chip" data-term="<?php echo esc_attr( (string) $t ); ?>"><?php echo esc_html( $t . 'm' ); ?></button>
 							<?php endforeach; ?>
@@ -282,9 +462,9 @@ class Deposits {
 					</div>
 
 					<div class="hti-dep__group">
-						<label class="hti-dep__group-label" for="hti-dep-bank">Banco</label>
+						<label class="hti-dep__group-label" for="hti-dep-bank"><?php echo esc_html( $L['bank'] ); ?></label>
 						<select class="hti-dep__bank" id="hti-dep-bank">
-							<option value="">Todos os bancos</option>
+							<option value=""><?php echo esc_html( $L['bank_all'] ); ?></option>
 							<?php foreach ( $banks as $bank ) : ?>
 								<option value="<?php echo esc_attr( $bank ); ?>"><?php echo esc_html( $bank ); ?></option>
 							<?php endforeach; ?>
@@ -292,53 +472,53 @@ class Deposits {
 					</div>
 
 					<div class="hti-dep__switches">
-						<label class="hti-dep__switch"><span>Novos clientes</span><input type="checkbox" class="hti-dep__nc"><span class="hti-dep__track" aria-hidden="true"></span></label>
-						<label class="hti-dep__switch"><span>Mobilização antecipada</span><input type="checkbox" class="hti-dep__early"><span class="hti-dep__track" aria-hidden="true"></span></label>
-						<label class="hti-dep__switch"><span>Bancos estrangeiros (IRS)</span><input type="checkbox" class="hti-dep__naores"><span class="hti-dep__track" aria-hidden="true"></span></label>
+						<label class="hti-dep__switch"><span><?php echo esc_html( $L['sw_new'] ); ?></span><input type="checkbox" class="hti-dep__nc"><span class="hti-dep__track" aria-hidden="true"></span></label>
+						<label class="hti-dep__switch"><span><?php echo esc_html( $L['sw_early'] ); ?></span><input type="checkbox" class="hti-dep__early"><span class="hti-dep__track" aria-hidden="true"></span></label>
+						<label class="hti-dep__switch"><span><?php echo esc_html( $L['sw_irs'] ); ?></span><input type="checkbox" class="hti-dep__naores"><span class="hti-dep__track" aria-hidden="true"></span></label>
 					</div>
 				</form>
 
 				<!-- Results -->
 				<div class="hti-dep__results">
 					<div class="hti-dep__results-head">
-						<p class="hti-dep__count" role="status" aria-live="polite"><span class="hti-dep__count-n"><?php echo esc_html( (string) count( $rows ) ); ?></span> depósitos · <span class="hti-dep__beats"><span class="hti-dep__beats-n"><?php echo esc_html( (string) $beats_count ); ?></span> acima dos Certificados de Aforro</span></p>
-						<label class="hti-dep__sortwrap">Ordenar:
-							<select class="hti-dep__sort" aria-label="Ordenar resultados">
-								<option value="rate">Maior taxa</option>
-								<option value="term">Menor prazo</option>
-								<option value="min">Menor mínimo</option>
+						<p class="hti-dep__count" role="status" aria-live="polite"><span class="hti-dep__count-n"><?php echo esc_html( (string) count( $rows ) ); ?></span> <?php echo esc_html( $L['deposits_word'] ); ?> · <span class="hti-dep__beats"><span class="hti-dep__beats-n"><?php echo esc_html( (string) $beats_count ); ?></span> <?php echo esc_html( $L['beats_word'] ); ?></span></p>
+						<label class="hti-dep__sortwrap"><?php echo esc_html( $L['sort_label'] ); ?>
+							<select class="hti-dep__sort" aria-label="<?php echo esc_attr( $L['sort_aria'] ); ?>">
+								<option value="rate"><?php echo esc_html( $L['sort_rate'] ); ?></option>
+								<option value="term"><?php echo esc_html( $L['sort_term'] ); ?></option>
+								<option value="min"><?php echo esc_html( $L['sort_min'] ); ?></option>
 							</select>
 						</label>
 					</div>
 
 					<div class="hti-dep__aforro">
 						<span class="hti-dep__aforro-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
-						<span>Referência do Estado: <strong>Certificados de Aforro a <?php echo esc_html( $aforro_label ); ?></strong> (TANB ilustrativa). Um depósito só compensa se a taxa, líquida de custos, superar esta alternativa de baixo risco.</span>
+						<span><?php echo esc_html( $L['ref_a'] ); ?><strong><?php echo esc_html( $L['ref_b'] . $aforro_label ); ?></strong><?php echo esc_html( $L['ref_c'] ); ?></span>
 					</div>
 
 					<div class="hti-dep__list">
 						<?php foreach ( $rows as $row ) : ?>
-							<?php echo self::card( $row, $amount, $aforro, $top_tanb ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in card(). ?>
+							<?php echo self::card( $row, $amount, $aforro, $top_tanb, $L ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in card(). ?>
 						<?php endforeach; ?>
 					</div>
 
 					<div class="hti-dep__empty" hidden>
-						<p class="hti-dep__empty-t">Nenhum depósito corresponde aos filtros</p>
-						<p class="hti-dep__empty-d">Experimenta baixar a TANB mínima ou alargar o prazo e o montante.</p>
-						<button type="button" class="hti-dep__reset hti-dep__reset--btn">Limpar filtros</button>
+						<p class="hti-dep__empty-t"><?php echo esc_html( $L['empty_t'] ); ?></p>
+						<p class="hti-dep__empty-d"><?php echo esc_html( $L['empty_d'] ); ?></p>
+						<button type="button" class="hti-dep__reset hti-dep__reset--btn"><?php echo esc_html( $L['empty_btn'] ); ?></button>
 					</div>
 
 					<!-- Contextual notes -->
 					<div class="hti-dep__notes-grid">
-						<div class="hti-dep__note"><div class="hti-dep__note-t hti-dep__note-t--green">Garantia até 100 000 €</div><p>O Fundo de Garantia de Depósitos (FGD) cobre até 100 000 € por depositante e por instituição. Acima disso, convém dividir entre bancos.</p></div>
-						<div class="hti-dep__note"><div class="hti-dep__note-t hti-dep__note-t--purple">Custos escondidos</div><p>Alguns bancos exigem conta à ordem com custos de manutenção. Confirma se as transferências para constituir o depósito são gratuitas.</p></div>
-						<div class="hti-dep__note"><div class="hti-dep__note-t hti-dep__note-t--amber">IRS de 28%</div><p>Os juros são tributados a 28% (retenção na fonte). Não residentes podem ter regras diferentes — confirma a tua situação fiscal.</p></div>
+						<div class="hti-dep__note"><div class="hti-dep__note-t hti-dep__note-t--green"><?php echo esc_html( $L['note1_t'] ); ?></div><p><?php echo esc_html( $L['note1_d'] ); ?></p></div>
+						<div class="hti-dep__note"><div class="hti-dep__note-t hti-dep__note-t--purple"><?php echo esc_html( $L['note2_t'] ); ?></div><p><?php echo esc_html( $L['note2_d'] ); ?></p></div>
+						<div class="hti-dep__note"><div class="hti-dep__note-t hti-dep__note-t--amber"><?php echo esc_html( $L['note3_t'] ); ?></div><p><?php echo esc_html( $L['note3_d'] ); ?></p></div>
 					</div>
 
-					<?php if ( '' !== trim( (string) $data['footer'] ) ) : ?>
+					<?php if ( '' !== trim( $footer ) ) : ?>
 						<div class="hti-dep__footer">
 							<?php
-							$paras = preg_split( '/\n\s*\n/', str_replace( "\r\n", "\n", (string) $data['footer'] ) );
+							$paras = preg_split( '/\n\s*\n/', str_replace( "\r\n", "\n", $footer ) );
 							foreach ( (array) $paras as $p ) {
 								$p = trim( $p );
 								if ( '' !== $p ) {
@@ -352,8 +532,10 @@ class Deposits {
 					<!-- Strong disclaimer -->
 					<div class="hti-dep__disclaimer">
 						<span class="hti-dep__disclaimer-icon" aria-hidden="true">!</span>
-						<p><strong>Importante:</strong> esta ferramenta é educativa. As taxas, prazos e condições são <strong>ilustrativos</strong>, recolhidos de fontes públicas, e não refletem ofertas em tempo real. Não é aconselhamento financeiro nem uma recomendação. Confirma sempre as condições atuais junto de cada instituição e na respetiva FIN (Ficha de Informação Normalizada) antes de decidir. Os juros estimados não consideram custos de conta nem todos os impostos aplicáveis. Capital garantido pelo FGD até 100 000€ por titular e por instituição.</p>
+						<p><strong><?php echo esc_html( $L['disclaimer_t'] ); ?></strong> <?php echo esc_html( $L['disclaimer_d'] ); ?></p>
 					</div>
+
+					<p class="hti-dep__method"><a href="<?php echo esc_url( home_url( '/' . ( $is_en ? 'deposit-comparison-methodology' : 'metodologia-do-comparador-de-depositos' ) . '/' ) ); ?>"><?php echo esc_html( $L['method_link'] ); ?></a></p>
 				</div>
 			</div>
 		</section>
@@ -373,12 +555,17 @@ class Deposits {
 		$post = get_queried_object();
 		$url  = $post instanceof \WP_Post ? get_permalink( $post ) : home_url( '/' );
 
+		$is_en = 'en' === self::lang();
+		$em    = self::en_meta();
+		$name  = $is_en ? $em['title'] : (string) $data['title'];
+		$desc  = $is_en ? $em['intro'] : (string) $data['intro'];
+
 		$node = array(
 			'@context'        => 'https://schema.org',
 			'@type'           => 'Dataset',
-			'name'            => wp_strip_all_tags( (string) $data['title'] ),
-			'description'     => wp_strip_all_tags( (string) $data['intro'] ),
-			'inLanguage'      => 'pt-PT',
+			'name'            => wp_strip_all_tags( $name ),
+			'description'     => wp_strip_all_tags( $desc ),
+			'inLanguage'      => $is_en ? 'en' : 'pt-PT',
 			'url'             => $url,
 			'isAccessibleForFree' => true,
 			'creator'         => array(
@@ -405,9 +592,10 @@ class Deposits {
 	 * @param int                 $amount   Default deposit amount for the estimate.
 	 * @param float               $aforro   Savings-certificate reference rate.
 	 * @param float               $top_tanb Highest TANB in the set (for the badge).
+	 * @param array<string,string> $L       Localized interface strings.
 	 * @return string Safe HTML.
 	 */
-	private static function card( array $row, int $amount, float $aforro, float $top_tanb ): string {
+	private static function card( array $row, int $amount, float $aforro, float $top_tanb, array $L ): string {
 		$rate  = (float) $row['rate'];
 		$term  = (int) $row['term'];
 		$min   = isset( $row['min'] ) && '' !== $row['min'] && null !== $row['min'] ? (int) $row['min'] : null;
@@ -422,7 +610,7 @@ class Deposits {
 		$notes = (string) ( $row['notes'] ?? '' );
 
 		$rate_str = number_format_i18n( $rate, 2 ) . '%';
-		$term_str = $term . ( 1 === $term ? ' mês' : ' meses' );
+		$term_str = $term . ( 1 === $term ? $L['month'] : $L['months'] );
 		$is_top   = $rate >= $top_tanb && $top_tanb > 0;
 		$beats    = $rate > $aforro;
 
@@ -430,18 +618,18 @@ class Deposits {
 		$gross = $amount * $rate / 100 * $term / 12;
 		$net   = $gross * 0.72;
 
-		$min_label = null !== $min ? 'Mín. ' . self::money( $min ) : 'Sem mínimo';
-		$max_label = null !== $max ? 'Máx. ' . self::money( $max ) : 'Sem limite';
+		$min_label = null !== $min ? $L['min_prefix'] . self::money( $min ) : $L['min_none'];
+		$max_label = null !== $max ? $L['max_prefix'] . self::money( $max ) : $L['max_none'];
 
 		// Mobilization badge (tri-state mapped from the stored field).
 		if ( 'sim' === $mobil ) {
-			$mob_label = 'Mobilização antecipada';
+			$mob_label = $L['mob_yes'];
 			$mob_class = 'hti-dep__chiptag--green';
 		} elseif ( 'notas' === $mobil ) {
-			$mob_label = 'Mobilização (ver notas)';
+			$mob_label = $L['mob_notes'];
 			$mob_class = 'hti-dep__chiptag--amber';
 		} else {
-			$mob_label = 'Sem mobilização';
+			$mob_label = $L['mob_no'];
 			$mob_class = '';
 		}
 
@@ -459,7 +647,7 @@ class Deposits {
 			data-early="<?php echo $early ? '1' : '0'; ?>"
 			data-naores="<?php echo $irs ? '1' : '0'; ?>"
 			data-text="<?php echo esc_attr( $search ); ?>">
-			<span class="hti-dep__top" aria-hidden="<?php echo $is_top ? 'false' : 'true'; ?>"<?php echo $is_top ? '' : ' hidden'; ?>>★ Melhor taxa</span>
+			<span class="hti-dep__top" aria-hidden="<?php echo $is_top ? 'false' : 'true'; ?>"<?php echo $is_top ? '' : ' hidden'; ?>><?php echo esc_html( $L['top_badge'] ); ?></span>
 			<div class="hti-dep__card-main">
 				<div class="hti-dep__avatar" aria-hidden="true"><?php echo esc_html( self::initials( $bank ) ); ?></div>
 				<div class="hti-dep__id">
@@ -467,21 +655,21 @@ class Deposits {
 					<div class="hti-dep__prod"><?php echo esc_html( trim( $prod . ' · ' . $term_str, ' ·' ) ); ?></div>
 					<div class="hti-dep__chiptags">
 						<span class="hti-dep__chiptag <?php echo esc_attr( $mob_class ); ?>"><?php echo esc_html( $mob_label ); ?></span>
-						<span class="hti-dep__chiptag"><?php echo esc_html( $nc ? 'Novos clientes' : 'Todos os clientes' ); ?></span>
-						<?php if ( $nm ) : ?><span class="hti-dep__chiptag">Novos montantes</span><?php endif; ?>
-						<?php if ( $irs ) : ?><span class="hti-dep__chiptag hti-dep__chiptag--blue">Não residentes</span><?php endif; ?>
+						<span class="hti-dep__chiptag"><?php echo esc_html( $nc ? $L['clients_new'] : $L['clients_all'] ); ?></span>
+						<?php if ( $nm ) : ?><span class="hti-dep__chiptag"><?php echo esc_html( $L['new_amounts'] ); ?></span><?php endif; ?>
+						<?php if ( $irs ) : ?><span class="hti-dep__chiptag hti-dep__chiptag--blue"><?php echo esc_html( $L['non_resident'] ); ?></span><?php endif; ?>
 					</div>
 				</div>
 			</div>
 			<div class="hti-dep__tanb">
 				<div class="hti-dep__tanb-num"><?php echo esc_html( $rate_str ); ?></div>
-				<div class="hti-dep__tanb-lbl">TANB</div>
-				<div class="hti-dep__tanb-beats"<?php echo $beats ? '' : ' hidden'; ?>>▲ acima do Aforro</div>
+				<div class="hti-dep__tanb-lbl"><?php echo esc_html( $L['tanb'] ); ?></div>
+				<div class="hti-dep__tanb-beats"<?php echo $beats ? '' : ' hidden'; ?>><?php echo esc_html( $L['beats_badge'] ); ?></div>
 			</div>
 			<div class="hti-dep__est">
-				<div class="hti-dep__est-lbl">Juro líquido estimado</div>
+				<div class="hti-dep__est-lbl"><?php echo esc_html( $L['est_label'] ); ?></div>
 				<div class="hti-dep__est-net">+<?php echo esc_html( self::money( (int) round( $net ) ) ); ?></div>
-				<div class="hti-dep__est-gross">bruto <?php echo esc_html( self::money( (int) round( $gross ) ) ); ?></div>
+				<div class="hti-dep__est-gross"><?php echo esc_html( $L['gross'] ); ?><?php echo esc_html( self::money( (int) round( $gross ) ) ); ?></div>
 				<div class="hti-dep__est-minmax"><?php echo esc_html( $min_label . ' · ' . $max_label ); ?></div>
 			</div>
 			<?php if ( '' !== $notes ) : ?><p class="hti-dep__card-notes"><?php echo esc_html( $notes ); ?></p><?php endif; ?>

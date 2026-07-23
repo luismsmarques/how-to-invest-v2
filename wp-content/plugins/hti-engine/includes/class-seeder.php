@@ -334,6 +334,8 @@ class Seeder {
 			'how-to-start-investing'           => 'como-comecar-a-investir',
 			'privacy-policy'                   => 'politica-de-privacidade',
 			'terms-and-conditions'             => 'termos-e-condicoes',
+			'term-deposit-comparison-portugal' => 'comparador-de-depositos-a-prazo',
+			'deposit-comparison-methodology'   => 'metodologia-do-comparador-de-depositos',
 			// Articles.
 			'what-is-an-investor-profile'      => 'o-que-e-um-perfil-de-investidor',
 			'asset-classes-explained'          => 'classes-de-ativos-explicadas',
@@ -1860,6 +1862,28 @@ class Seeder {
 					'content' => self::legal_terms( true ),
 				),
 			),
+			array(
+				'slug'    => 'term-deposit-comparison-portugal',
+				'title'   => 'Term Deposit Comparison — Portugal',
+				'excerpt' => 'Compare gross rates, terms and conditions of term deposits available in Portugal — set your amount and see the estimated net interest, side by side. Educational, not advice.',
+				'content' => '<!-- wp:shortcode -->[hti_depositos]<!-- /wp:shortcode -->',
+				'pt'      => array(
+					'title'   => 'Comparador de Depósitos a Prazo',
+					'excerpt' => 'Compara TANB, prazos e condições de depósitos a prazo em Portugal — define o teu montante e vê o juro líquido estimado, lado a lado. Educativo, não é aconselhamento.',
+					'content' => '<!-- wp:shortcode -->[hti_depositos]<!-- /wp:shortcode -->',
+				),
+			),
+			array(
+				'slug'    => 'deposit-comparison-methodology',
+				'title'   => 'How we compare term deposits — methodology',
+				'excerpt' => 'How the term-deposit comparison is built: where the data comes from, what the gross rate means, how the estimated interest is calculated, and the limits you should keep in mind.',
+				'content' => self::deposit_methodology( false ),
+				'pt'      => array(
+					'title'   => 'Metodologia do comparador de depósitos',
+					'excerpt' => 'Como é construída a comparação de depósitos a prazo: de onde vêm os dados, o que significa a TANB, como é calculado o juro estimado, e os limites a ter em conta.',
+					'content' => self::deposit_methodology( true ),
+				),
+			),
 		);
 
 		// Children (archetypes + asset classes + tools) come before the hubs so
@@ -2084,6 +2108,77 @@ class Seeder {
 			. self::heading( 'Contact' )
 			. self::paragraph( 'Questions about these terms? Contact us at [● contact email].' )
 			. self::paragraph( 'Last updated: ' . $updated . '.' );
+	}
+
+	/**
+	 * Methodology page for the term-deposit comparator. Explains the data
+	 * source, the metrics and the calculation behind the estimated interest —
+	 * transparency that supports the tool's E-E-A-T and its Dataset schema.
+	 *
+	 * @param bool $pt European Portuguese when true, English otherwise.
+	 */
+	private static function deposit_methodology( bool $pt ): string {
+		if ( $pt ) {
+			return self::paragraph( 'Esta página explica como é construído o nosso Comparador de Depósitos a Prazo: de onde vêm os dados, o que significa cada coluna, como calculamos o juro estimado e que limites deves ter em conta. É conteúdo educativo — não é aconselhamento financeiro nem uma recomendação.' )
+				. self::heading( 'De onde vêm os dados' )
+				. self::paragraph( 'As ofertas são recolhidas manualmente a partir de fontes públicas — sobretudo os sites dos próprios bancos e as respetivas Fichas de Informação Normalizada (FIN). Não há qualquer ligação em tempo real aos bancos: é uma fotografia editorial, verificada à mão, da data indicada no topo da ferramenta. As taxas e condições mudam com frequência, por isso confirma sempre junto da instituição antes de decidir.' )
+				. self::heading( 'O que significa cada coluna' )
+				. self::bullets(
+					array(
+						array( home_url( '/term-deposit-comparison-portugal/' ), 'TANB', 'Taxa Anual Nominal Bruta — a taxa anual antes de impostos e custos. É o número comparável entre ofertas.' ),
+						array( home_url( '/term-deposit-comparison-portugal/' ), 'Prazo', 'a duração do depósito, em meses, durante a qual a taxa se mantém fixa.' ),
+						array( home_url( '/term-deposit-comparison-portugal/' ), 'Mínimo / Máximo', 'os montantes que a oferta aceita; "sem mínimo" ou "sem limite" quando não se aplica.' ),
+						array( home_url( '/term-deposit-comparison-portugal/' ), 'Mobilização antecipada', 'se é possível levantar antes do fim do prazo (por vezes com penalização — ver notas).' ),
+					)
+				)
+				. self::heading( 'Como calculamos o juro estimado' )
+				. self::paragraph( 'O juro bruto estimado é simplesmente o montante × TANB × (prazo em meses ÷ 12). Ao juro bruto aplicamos uma retenção de IRS de 28% para mostrar um valor líquido aproximado (juro líquido ≈ bruto × 0,72). É uma estimativa ilustrativa e simplificada: não considera capitalização intercalar, comissões de conta, nem regimes fiscais diferentes (por exemplo, não residentes). Serve para comparar ordens de grandeza, não para prometer um resultado.' )
+				. self::heading( 'A referência dos Certificados de Aforro' )
+				. self::paragraph( 'Mostramos, como termo de comparação, a taxa das novas subscrições de Certificados de Aforro — uma alternativa de baixo risco do Estado. A ideia educativa é simples: um depósito só compensa, em termos de risco e retorno, se a sua taxa líquida superar esta referência. Não é uma recomendação de nenhum dos produtos.' )
+				. self::heading( 'Garantia de depósitos e impostos' )
+				. self::paragraph( 'Os depósitos a prazo têm capital garantido pelo Fundo de Garantia de Depósitos (FGD) até 100 000 € por titular e por instituição. Acima desse valor, costuma fazer sentido dividir entre bancos. Os juros são tributados a 28% (retenção na fonte); não residentes podem ter regras diferentes.' )
+				. self::heading( 'Atualizações e correções' )
+				. self::paragraph( 'A data de "Última atualização" no topo da ferramenta indica quando a tabela foi revista pela última vez. Encontraste uma taxa desatualizada ou um erro? Diz-nos pela página de contacto e corrigimos.' )
+				. self::sources(
+					array(
+						array( 'https://www.todoscontam.pt/', 'Todos Contam — literacia financeira (Banco de Portugal, CMVM, ASF)' ),
+						array( 'https://www.fgd.pt/', 'Fundo de Garantia de Depósitos' ),
+						array( 'https://clientebancario.bportugal.pt/', 'Banco de Portugal — Cliente Bancário' ),
+					),
+					'pt'
+				)
+				. self::small( 'Conteúdo apenas educativo — ilustrativo, não é aconselhamento financeiro nem uma recomendação. Confirma sempre as condições atuais junto de cada instituição.' );
+		}
+
+		return self::paragraph( 'This page explains how our Term Deposit Comparison for Portugal is built: where the data comes from, what each column means, how the estimated interest is calculated, and the limits you should keep in mind. It is educational content — not financial advice or a recommendation.' )
+			. self::heading( 'Where the data comes from' )
+			. self::paragraph( 'Offers are collected by hand from public sources — mainly the banks\' own websites and their standardised information sheets (FIN). There is no real-time connection to any bank: it is a hand-checked editorial snapshot, accurate as of the date shown at the top of the tool. Rates and conditions change often, so always confirm with the institution before deciding.' )
+			. self::heading( 'What each column means' )
+			. self::bullets(
+				array(
+					array( home_url( '/term-deposit-comparison-portugal/' ), 'Gross rate (TANB)', 'the gross annual nominal rate, before tax and costs — the number you can compare across offers.' ),
+					array( home_url( '/term-deposit-comparison-portugal/' ), 'Term', 'the length of the deposit, in months, during which the rate is fixed.' ),
+					array( home_url( '/term-deposit-comparison-portugal/' ), 'Minimum / Maximum', 'the amounts the offer accepts; "no minimum" or "no cap" when it does not apply.' ),
+					array( home_url( '/term-deposit-comparison-portugal/' ), 'Early withdrawal', 'whether you can withdraw before the term ends (sometimes with a penalty — see notes).' ),
+				)
+			)
+			. self::heading( 'How the estimated interest is calculated' )
+			. self::paragraph( 'Estimated gross interest is simply amount × gross rate × (term in months ÷ 12). To the gross figure we apply a 28% Portuguese withholding tax to show an approximate net figure (net interest ≈ gross × 0.72). It is an illustrative, simplified estimate: it does not account for interim compounding, account fees, or different tax regimes (for example, non-residents). Use it to compare orders of magnitude, not as a promise of any outcome.' )
+			. self::heading( 'The Savings Certificates benchmark' )
+			. self::paragraph( 'As a point of comparison we show the rate on new subscriptions of Portuguese Savings Certificates (Certificados de Aforro) — a low-risk State alternative. The educational idea is simple: a deposit only pays off, in risk-and-return terms, if its net rate beats this benchmark. It is not a recommendation of any product.' )
+			. self::heading( 'Deposit guarantee and taxes' )
+			. self::paragraph( 'Term deposits have capital guaranteed by the Deposit Guarantee Fund (FGD) up to €100,000 per holder and per institution. Above that, it often makes sense to split across banks. Interest is taxed at 28% (withheld at source); non-residents may face different rules.' )
+			. self::heading( 'Updates and corrections' )
+			. self::paragraph( 'The "Last updated" date at the top of the tool shows when the table was last reviewed. Spotted an outdated rate or an error? Tell us via the contact page and we will fix it.' )
+			. self::sources(
+				array(
+					array( 'https://www.todoscontam.pt/', 'Todos Contam — financial literacy (Banco de Portugal, CMVM, ASF)' ),
+					array( 'https://www.fgd.pt/', 'Deposit Guarantee Fund (Fundo de Garantia de Depósitos)' ),
+					array( 'https://clientebancario.bportugal.pt/', 'Banco de Portugal — Bank Customer portal' ),
+				),
+				'en'
+			)
+			. self::small( 'Educational content only — illustrative, not financial advice or a recommendation. Always confirm the current conditions with each institution.' );
 	}
 
 	/**

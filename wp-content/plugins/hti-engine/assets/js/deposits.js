@@ -18,6 +18,8 @@
 
 	var amount0 = parseInt( root.getAttribute( 'data-amount' ), 10 ) || 10000;
 	var aforro  = parseFloat( root.getAttribute( 'data-aforro' ) ) || 2.215;
+	var isEn    = 'en' === root.getAttribute( 'data-lang' );
+	var grossLb = root.getAttribute( 'data-gross-label' ) || 'bruto ';
 
 	var list   = root.querySelector( '.hti-dep__list' );
 	var cards  = Array.prototype.slice.call( root.querySelectorAll( '.hti-dep__card' ) );
@@ -58,7 +60,8 @@
 	}
 
 	function fmtPct( n ) {
-		return n.toFixed( 2 ).replace( '.', ',' ) + '%';
+		var s = n.toFixed( 2 );
+		return ( isEn ? s : s.replace( '.', ',' ) ) + '%';
 	}
 
 	// Recompute the estimated interest on every card for the current amount.
@@ -75,7 +78,7 @@
 				netEl.textContent = '+' + eur( net );
 			}
 			if ( grossEl ) {
-				grossEl.textContent = 'bruto ' + eur( gross );
+				grossEl.textContent = grossLb + eur( gross );
 			}
 		} );
 	}

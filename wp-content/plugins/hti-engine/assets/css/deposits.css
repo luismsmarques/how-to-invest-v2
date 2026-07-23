@@ -321,6 +321,10 @@ section.hti-dep {
 .hti-dep__disclaimer p { margin: 0; color: #7A5043; font-size: 13px; line-height: 1.55; }
 .hti-dep__disclaimer strong { color: #5A382E; }
 
+.hti-dep__updated { color: var( --dep-muted ); font-size: 13px; margin: 10px 0 0; }
+.hti-dep__method { margin: 14px 0 0; font-size: 13px; }
+.hti-dep__method a { color: var( --dep-primary ); text-decoration: underline; }
+
 /* ---------- responsive ---------- */
 @media ( max-width: 900px ) {
 	.hti-dep__layout { grid-template-columns: 1fr; }
