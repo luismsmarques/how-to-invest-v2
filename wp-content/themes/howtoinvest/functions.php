@@ -116,6 +116,17 @@ function enqueue_styles(): void {
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\\enqueue_styles' );
 
 /**
+ * Normalise the document language tag. WordPress' pt_PT_ao90 locale emits the
+ * invalid BCP-47 subtag `pt-PT-ao90` in <html lang="…">; output plain `pt-PT`.
+ */
+add_filter(
+	'language_attributes',
+	static function ( string $output ): string {
+		return str_replace( 'pt-PT-ao90', 'pt-PT', $output );
+	}
+);
+
+/**
  * Enqueue the small mobile-header menu toggle (deferred, footer).
  */
 function enqueue_scripts(): void {
@@ -1827,7 +1838,7 @@ function render_learn_meta(): string {
 	}
 
 	$pt      = 'pt' === current_lang();
-	$by      = $pt ? 'Redação HowToInvest' : 'HowToInvest Editorial';
+	$by      = t( 'art_byline' );
 	$about   = page_url( 'about' );
 	$pub_iso = get_the_date( DATE_W3C, $post );
 	$pub_h   = get_the_date( '', $post );
@@ -2876,7 +2887,7 @@ function news_hub_hero_html( array $it, string $badge, string $min ): string {
 	// The hero image is the LCP element: render a real <img> with high fetch
 	// priority so it's discovered and loaded early (a CSS background loads late).
 	if ( '' !== $it['thumb'] ) {
-		$media = '<span class="hti-newshub__hero-media"><img class="hti-newshub__img" src="' . esc_url( (string) $it['thumb'] ) . '" alt="" width="768" height="376" fetchpriority="high" decoding="async"><span class="hti-newshub__hero-badge">' . esc_html( $badge ) . '</span></span>';
+		$media = '<span class="hti-newshub__hero-media"><img class="hti-newshub__img" src="' . esc_url( (string) $it['thumb'] ) . '" alt="' . esc_attr( (string) $it['title'] ) . '" width="768" height="376" fetchpriority="high" decoding="async"><span class="hti-newshub__hero-badge">' . esc_html( $badge ) . '</span></span>';
 	} else {
 		$media = '<span class="hti-newshub__hero-media" style="background:' . esc_attr( (string) $it['grad'] ) . ';"><span class="hti-newshub__hero-badge">' . esc_html( $badge ) . '</span></span>';
 	}
@@ -2897,7 +2908,7 @@ function news_hub_hero_html( array $it, string $badge, string $min ): string {
  */
 function news_hub_side_html( array $it ): string {
 	$media = '' !== $it['thumb']
-		? '<span class="hti-newshub__side-media"><img class="hti-newshub__img" src="' . esc_url( (string) $it['thumb'] ) . '" alt="" width="380" height="148" loading="lazy" decoding="async"></span>'
+		? '<span class="hti-newshub__side-media"><img class="hti-newshub__img" src="' . esc_url( (string) $it['thumb'] ) . '" alt="' . esc_attr( (string) $it['title'] ) . '" width="380" height="148" loading="lazy" decoding="async"></span>'
 		: '<span class="hti-newshub__side-media" style="background:' . esc_attr( (string) $it['grad'] ) . ';"></span>';
 	$out  = '<a class="hti-newshub__side" href="' . esc_url( (string) $it['url'] ) . '" data-cat="' . esc_attr( (string) $it['slug'] ) . '">';
 	$out .= $media;
@@ -2915,7 +2926,7 @@ function news_hub_side_html( array $it ): string {
  */
 function news_hub_list_html( array $it, bool $dup, string $min ): string {
 	$media = '' !== $it['thumb']
-		? '<span class="hti-newshub__row-media"><img class="hti-newshub__img" src="' . esc_url( (string) $it['thumb'] ) . '" alt="" width="168" height="168" loading="lazy" decoding="async"></span>'
+		? '<span class="hti-newshub__row-media"><img class="hti-newshub__img" src="' . esc_url( (string) $it['thumb'] ) . '" alt="' . esc_attr( (string) $it['title'] ) . '" width="168" height="168" loading="lazy" decoding="async"></span>'
 		: '<span class="hti-newshub__row-media" style="background:' . esc_attr( (string) $it['grad'] ) . ';"></span>';
 	$cls = 'hti-newshub__row' . ( $dup ? ' is-dup' : '' );
 	$out  = '<a class="' . $cls . '"' . ( $dup ? ' hidden' : '' ) . ' href="' . esc_url( (string) $it['url'] ) . '" data-cat="' . esc_attr( (string) $it['slug'] ) . '">';
@@ -3533,7 +3544,8 @@ function search_url(): string {
  */
 function render_header_search(): string {
 	$svg = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>';
-	return '<a class="hti-header__search" href="' . esc_url( search_url() ) . '" aria-label="' . esc_attr( t( 'search_label' ) ) . '">' . $svg . '</a>';
+	// nofollow: the search results page is noindex — don't pass equity to it.
+	return '<a class="hti-header__search" rel="nofollow" href="' . esc_url( search_url() ) . '" aria-label="' . esc_attr( t( 'search_label' ) ) . '">' . $svg . '</a>';
 }
 
 /**

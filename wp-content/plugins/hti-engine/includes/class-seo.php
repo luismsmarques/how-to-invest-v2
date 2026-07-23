@@ -58,7 +58,10 @@ class SEO {
 		 *
 		 * @param bool $emit Whether to add the WebSite + Organization nodes.
 		 */
-		if ( apply_filters( 'hti_emit_entity_graph', true ) ) {
+		// Default off when an SEO plugin (RankMath/Yoast) is active — it already
+		// emits WebSite/Organization at the same #website/#organization @ids, so
+		// our per-post publisher refs still resolve while the duplicate is gone.
+		if ( apply_filters( 'hti_emit_entity_graph', ! self::seo_plugin_active() ) ) {
 			$graph[] = self::website_node();
 			$graph[] = self::organization_node();
 		}
@@ -93,6 +96,12 @@ class SEO {
 			if ( apply_filters( 'hti_emit_breadcrumbs', true ) ) {
 				$graph[] = self::breadcrumbs( $post );
 			}
+		}
+
+		// Calculators/tools are apps, not articles → WebApplication (turn off
+		// RankMath's per-page Article for these pages so this is the main entity).
+		if ( is_page() && $post instanceof \WP_Post && has_shortcode( (string) $post->post_content, 'hti_tool' ) ) {
+			$graph[] = self::web_application( $post );
 		}
 
 		$graph = array_values( array_filter( $graph ) );
@@ -159,10 +168,11 @@ class SEO {
 	 */
 	private static function organization_node(): array {
 		$node = array(
-			'@type' => 'Organization',
-			'@id'   => self::org_id(),
-			'name'  => get_bloginfo( 'name' ),
-			'url'   => home_url( '/' ),
+			'@type'     => 'EducationalOrganization',
+			'@id'       => self::org_id(),
+			'name'      => get_bloginfo( 'name' ),
+			'legalName' => (string) apply_filters( 'hti_org_legal_name', 'Atlas Invencível, Lda.' ),
+			'url'       => home_url( '/' ),
 		);
 
 		$logo = self::logo_url();
@@ -237,6 +247,33 @@ class SEO {
 			'@type'           => 'BreadcrumbList',
 			'@id'             => get_permalink( $post ) . '#breadcrumb',
 			'itemListElement' => $items,
+		);
+	}
+
+	/**
+	 * WebApplication (FinanceApplication) node for a calculator/tool page — a
+	 * free web app, not an article. RankMath's per-page Article should be
+	 * disabled for these pages so this is the sole main entity.
+	 *
+	 * @param \WP_Post $post Tool page.
+	 * @return array<string,mixed>
+	 */
+	private static function web_application( \WP_Post $post ): array {
+		return array(
+			'@type'               => 'WebApplication',
+			'@id'                 => get_permalink( $post ) . '#app',
+			'name'                => wp_strip_all_tags( get_the_title( $post ) ),
+			'url'                 => get_permalink( $post ),
+			'applicationCategory' => 'FinanceApplication',
+			'operatingSystem'     => 'Web',
+			'inLanguage'          => self::post_lang( $post ),
+			'isAccessibleForFree' => true,
+			'offers'              => array(
+				'@type'         => 'Offer',
+				'price'         => 0,
+				'priceCurrency' => 'EUR',
+			),
+			'publisher'           => array( '@id' => self::org_id() ),
 		);
 	}
 

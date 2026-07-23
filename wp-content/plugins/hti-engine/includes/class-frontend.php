@@ -586,7 +586,11 @@ class Frontend {
 	 */
 	public static function render_app(): string {
 		$noscript = esc_html__( 'This questionnaire needs JavaScript enabled in your browser.', 'hti-engine' );
-		return '<div id="hti-app" class="hti-app" aria-live="polite"></div>'
+		// A page needs a top-level heading (a11y); the page is noindex, so hide it
+		// visually — the JS app renders its own visible chrome.
+		$h1 = esc_html__( 'Discover your investor profile', 'hti-engine' );
+		return '<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0">' . $h1 . '</h1>'
+			. '<div id="hti-app" class="hti-app" aria-live="polite"></div>'
 			. '<noscript><p class="hti-noscript">' . $noscript . '</p></noscript>';
 	}
 
