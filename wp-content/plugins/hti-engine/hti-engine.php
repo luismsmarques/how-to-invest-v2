@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.8.53
+ * Version:           0.8.54
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.53';
+const VERSION = '0.8.54';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -38,6 +38,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-cpt.php';
 require_once HTI_ENGINE_PATH . 'includes/class-taxonomy.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seo.php';
 require_once HTI_ENGINE_PATH . 'includes/class-news-sitemap.php';
+require_once HTI_ENGINE_PATH . 'includes/class-ads-txt.php';
 require_once HTI_ENGINE_PATH . 'includes/class-redirects.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seeder.php';
 require_once HTI_ENGINE_PATH . 'includes/class-content-import.php';
@@ -142,6 +143,11 @@ SEO::init();
  * Google News XML sitemap at /news-sitemap.xml (last 48h, per-post language).
  */
 News_Sitemap::init();
+
+/**
+ * ads.txt (AdSense authorized sellers) served virtually at /ads.txt.
+ */
+Ads_Txt::init();
 
 /**
  * 301 redirects from the legacy Base44 URLs.
