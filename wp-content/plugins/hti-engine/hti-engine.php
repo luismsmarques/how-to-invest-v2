@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.8.55
+ * Version:           0.8.56
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.55';
+const VERSION = '0.8.56';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -224,10 +224,32 @@ function send_security_headers(): void {
 	header( 'Referrer-Policy: strict-origin-when-cross-origin' );
 	header( 'Permissions-Policy: geolocation=(), microphone=(), camera=()' );
 	if ( is_ssl() && (bool) apply_filters( 'hti_enable_hsts', false ) ) {
-		header( 'Strict-Transport-Security: max-age=15552000; includeSubDomains' );
+		$max_age = max( 0, (int) apply_filters( 'hti_hsts_max_age', 15552000 ) );
+		$hsts    = 'max-age=' . $max_age;
+		if ( (bool) apply_filters( 'hti_hsts_include_subdomains', true ) ) {
+			$hsts .= '; includeSubDomains';
+		}
+		header( 'Strict-Transport-Security: ' . $hsts );
 	}
 }
 add_action( 'send_headers', __NAMESPACE__ . '\\send_security_headers' );
+
+/**
+ * HSTS rollout — staged and reversible.
+ *
+ * Phase A (current): enabled with a short 5-minute max-age and apex only (no
+ * includeSubDomains), so any HTTPS problem self-heals within minutes instead of
+ * locking browsers for months.
+ *
+ * Phase B (later, once the header is confirmed live and EVERY subdomain —
+ * including staging — serves valid HTTPS): raise `hti_hsts_max_age` to
+ * 15552000 (180 days) and set `hti_hsts_include_subdomains` to true.
+ *
+ * To roll back before Phase B, remove the three filters below.
+ */
+add_filter( 'hti_enable_hsts', '__return_true' );
+add_filter( 'hti_hsts_max_age', static function (): int { return 300; } );
+add_filter( 'hti_hsts_include_subdomains', '__return_false' );
 
 /**
  * Daily pruning of stale anonymous profiles (RGPD minimization).
