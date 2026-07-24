@@ -44,7 +44,11 @@ class Ads_Txt {
 	public static function init(): void {
 		add_action( 'init', array( __CLASS__, 'add_rewrite' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'add_query_var' ) );
-		add_action( 'template_redirect', array( __CLASS__, 'maybe_render' ) );
+		// Priority 0 so we emit before core's redirect_canonical (priority 10),
+		// which would otherwise 301 /ads.txt → /ads.txt/ and break the route.
+		add_action( 'template_redirect', array( __CLASS__, 'maybe_render' ), 0 );
+		// Belt-and-suspenders: never canonical-redirect the ads.txt request.
+		add_filter( 'redirect_canonical', array( __CLASS__, 'skip_canonical' ), 10, 2 );
 	}
 
 	/**
@@ -78,6 +82,21 @@ class Ads_Txt {
 	 */
 	public static function body(): string {
 		return (string) apply_filters( 'hti_ads_txt', self::DEFAULT_LINE );
+	}
+
+	/**
+	 * Disable WordPress's canonical redirect for the ads.txt request, so the
+	 * file is served at /ads.txt (no trailing-slash 301).
+	 *
+	 * @param string $redirect_url  The proposed canonical URL.
+	 * @param string $requested_url The originally requested URL.
+	 * @return string|false False to cancel the redirect for our route.
+	 */
+	public static function skip_canonical( $redirect_url, $requested_url = '' ) {
+		if ( get_query_var( self::QUERY_VAR ) ) {
+			return false;
+		}
+		return $redirect_url;
 	}
 
 	/**
