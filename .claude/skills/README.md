@@ -51,7 +51,13 @@ disclaimer present, bilingual EN+PT, no execution CTAs, LLM keys server-side.
 |---|---|
 | **analytics-measurement** | Measuring/tracking — the first-party funnel, HTITrack, consent-gated GA, KPIs + event allowlist, Search Console. |
 | **deployment-ops** | Deploy & environments — cPanel deploy, staging-first, CI, `VERSION` cache-busting, composer, env keys. |
-| **testing-qa** | Writing tests & validating — the pure-PHP harness, adding `test-*.php`, the QA gates + RGPD checklist. |
+| **testing-qa** | Writing tests & validating — the pure-PHP harness, adding `test-*.php`, exploratory product-QA flows, the QA gates + RGPD checklist. |
+
+## Review / audit (2)
+| Skill | Use when |
+|---|---|
+| **project-review** | Full project audit as product owner — what's missing, what's wrong, what's extra, across every dimension; the entry point for "revisão completa" / "estamos prontos?". Produces one prioritized P0–P3 report. |
+| **security-audit** | Adversarial security pass over the theme + 3 plugins — REST auth, escaping, SQL, SSRF, secrets, headers, dependencies. Run standalone or as project-review's security dimension. |
 
 ---
 

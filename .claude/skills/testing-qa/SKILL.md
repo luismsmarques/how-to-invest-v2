@@ -1,6 +1,6 @@
 ---
 name: testing-qa
-description: Use when writing tests or validating changes — the pure-PHP test harness (tests/run.php + bootstrap shims, no WordPress), how to add a test-*.php, the engine test matrix, and the launch QA gates including the RGPD export/delete checklist. Triggers on tests/ work, adding coverage, or pre-commit/pre-launch validation. Run the suites before every commit.
+description: Use when writing tests or validating changes — the pure-PHP test harness (tests/run.php + bootstrap shims, no WordPress), how to add a test-*.php, the engine test matrix, exploratory/product QA flows, and the launch QA gates including the RGPD export/delete checklist. Triggers on tests/ work, adding coverage, manual testing requests, or pre-commit/pre-launch validation. Run the suites before every commit.
 ---
 
 # testing-qa — Test harness & QA gates
@@ -24,6 +24,19 @@ Tests run in **pure PHP, without WordPress or a database** — WP functions are 
 - Validators, prompt, fallback, settings, cron, rate-limit, metrics/KPIs, GDPR grace flow — each has a `test-*.php`.
 - **Untestable here → manual:** real REST auth + the GDPR delete/export DB cascade run through `docs/QA_RGPD_Checklist.md` on staging.
 
+## Exploratory / product QA (the tester hat — manual, on staging or live)
+End-to-end user flows, always in **both EN and /pt/** (parity is an invariant), on
+desktop + mobile, mouse + keyboard (see `accessibility`):
+- **Core:** quiz → result (allocation sums 100%, disclaimer present) → save profile →
+  register/login → my-account → export → schedule delete → cancel delete.
+- **Growth:** subscribe → double opt-in email → ebook download; contact, feedback, NPS forms.
+- **Content:** Learn hub + a chapter + quiz; glossary term links; news hub + article;
+  deposit comparator (amount, filters, sort, empty state).
+- **Failure paths:** LLM down → fallback explanation still renders; invalid form input →
+  clear error, no white screen; 404 page; rate-limit response.
+For a whole-project assessment, `project-review` orchestrates this alongside the other
+dimensions.
+
 ## QA gates (before launch)
 - `docs/Criterios_Pronto_QA_HowToInvest_MVP.md` (definition of done), `docs/QA_Gate_Lancamento.md` (launch gate), `docs/QA_RGPD_Checklist.md` (RGPD P0). Verify schema in the Rich Results Test; Core Web Vitals green.
 
@@ -33,3 +46,4 @@ Tests run in **pure PHP, without WordPress or a database** — WP functions are 
 - [ ] Shims added guarded by `function_exists`; privates via reflection
 - [ ] Engine changes update the ≥12-scenario matrix
 - [ ] DB/REST-dependent behaviour flagged for the manual QA checklist
+- [ ] User-facing changes walked through the exploratory flows in EN **and** /pt/
