@@ -203,8 +203,21 @@ alterado.
   de `Config::faqs()` partilhadas entre página e schema. FAQ legal (FEMA/RBI)
   **só no hub**, num único sítio.
 - **Testes**: suite própria (`php wp-content/plugins/hti-forex/tests/run.php`)
-  — settings, rates, sessões/DST, schema em PHP + 51 asserções Node no núcleo
+  — settings, rates, sessões/DST, schema em PHP + asserções Node no núcleo
   de matemática. CI e `.cpanel.yml` já incluem o plugin.
+- **v2 (Fase 1 completa + funil de email):** profit/loss calculator em ₹
+  (com sinal, verde/vermelho); extensão de margem/leverage do position size
+  (`leverage="1"` → notional + margem em ₹ — "leverage muda a margem, não o
+  tamanho"); 4 páginas de variante com conteúdo único (profit-calculator,
+  xauusd-lot-size-calculator, lot-size-for-100-dollar-account,
+  lot-size-calculator-with-leverage) — 8 páginas no total, hub relistado
+  (apagar hub antigo + re-seed para regenerar a lista). **Funil:** o
+  hti-engine ganhou um pending store generalizado (`hti_pending_source`) —
+  o `source` de qualquer opt-in vira atributo `SOURCE` no Brevo (⚠️ criar o
+  atributo de texto no dashboard do Brevo) e o filtro `hti_lead_magnet`
+  permite lead magnets por plugin: opt-ins `forex-*` recebem o **INR lot
+  size cheat sheet** (PDF de 2 páginas, commitado, fonte HTML regenerável
+  via Chromium). Comportamento do ebook intacto; suites verdes.
 - **Antes de ligar o CTA em produção**: rever a exposição regulatória (Alert
   List RBI / FEMA — promover corretoras offshore a residentes indianos é o
   risco; as ferramentas em si são seguras) e configurar o URL de afiliado no

@@ -59,7 +59,16 @@ fresh page (the seeder never updates existing pages).
 ## Settings walkthrough (go-live)
 
 1. **Seed the pages** — Settings → HTI Forex → "Seed forex pages" (or
-   `wp hti-forex seed`). Four EN pages appear under `/forex/`.
+   `wp hti-forex seed`). Eight EN pages appear under `/forex/`: the hub,
+   position size, pip value, profit/loss, market hours, plus the XAUUSD,
+   "$100 account" and "with leverage" variants. Re-running only adds what
+   is missing — if the hub was seeded before the variants existed, delete
+   the hub page and re-seed to regenerate its tool list.
+1b. **Brevo** — create a `SOURCE` **text attribute** in the Brevo dashboard
+   (Contacts → Settings → Attributes). Confirmed opt-ins then carry the
+   originating form (e.g. `FOREX-PIP_VALUE`, `EBOOK-PAGE`) for
+   segmentation; without the attribute Brevo silently ignores it. Forex
+   opt-ins receive the INR lot-size cheat sheet PDF after confirming.
 2. **Rates** — activation schedules the twice-daily fetch and an immediate
    first fetch; check the "Exchange rates" panel shows `frankfurter` with a
    fresh date (use "Fetch now" if needed). Overrides are for emergencies.
@@ -75,19 +84,25 @@ fresh page (the seeder never updates existing pages).
 
 ## Phase 2 backlog
 
-- Brevo source attribution: generalize hti-engine's `hti_ebook_pending` into
-  a source-pending store and pass a `SOURCE` attribute on upsert, so forex
-  leads can be segmented (and a "lot size cheat sheet" PDF can ride the same
-  gate as the ebook).
-- Dedicated XAUUSD page (`/forex/xauusd-lot-size-calculator/`) — gold is the
-  most persistent modifier in the research; the anchor on the pip-value page
-  covers it for now.
-- Profit/loss calculator; "with leverage" and "for $100 account" variant
-  pages with unique content.
+Shipped since the MVP: profit/loss calculator, XAUUSD / "$100 account" /
+"with leverage" variant pages, Brevo `SOURCE` attribution and the cheat-sheet
+lead magnet (all in this plugin + a small generalization in hti-engine's
+subscribe flow: `hti_pending_source` store + `hti_lead_magnet` filter).
+
+Still open:
+
 - Noindex campaign variants (stripped nav, harder CTA) using the existing
   robots-filter pattern, if ad QS/policy calls for separate landers.
 - NSE ↔ global lot-convention converter and the XAUUSD ↔ MCX gold bridge
   (research gaps #2 and #5) once the MVP proves traffic.
+- Romanized Hindi/Tamil educational articles with English slugs (research:
+  tools in English, education in Indian languages).
+- Total funding-cost calculator in ₹ (UPI/IMPS fees, conversion markup,
+  withdrawal costs) — research gap #4, defensible because it needs upkeep.
+
+The cheat sheet's reference rates are baked into the PDF (dated August
+2026). To refresh: edit `assets/pdf/src/cheat-sheet.html`, regenerate with
+the Chromium command in its header comment, and commit both files.
 
 ## Tests
 
