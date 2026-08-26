@@ -16,11 +16,16 @@
 		}
 	}
 
-	// View events (comparison page vs single review, marked by the body class).
-	var root = document.querySelector( '.hti-bk' );
+	// View events: single review, account-opening guide (the inline CTA box),
+	// or the comparison itself (identified by its card list).
 	var single = document.querySelector( '.hti-broker-review' );
+	var guideBox = document.querySelector( '.hti-bkr__cta--inline' );
+	var list = document.querySelector( '.hti-bk__list' );
+	var root = list ? list.closest( '.hti-bk' ) : null;
 	if ( single ) {
 		track( 'broker_review_view', {} );
+	} else if ( guideBox ) {
+		track( 'broker_guide_view', {} );
 	}
 	if ( ! root ) {
 		return;
@@ -28,7 +33,6 @@
 	track( 'broker_compare_view', {} );
 
 	var cards  = Array.prototype.slice.call( root.querySelectorAll( '.hti-bk__card' ) );
-	var list   = root.querySelector( '.hti-bk__list' );
 	var q      = root.querySelector( '.hti-bk__q' );
 	var noCfd  = root.querySelector( '.hti-bk__nocfd' );
 	var sort   = root.querySelector( '.hti-bk__sort' );

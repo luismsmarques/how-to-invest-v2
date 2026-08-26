@@ -395,7 +395,7 @@ class Metrics {
 	 * Aggregate the counters over the last $days days.
 	 *
 	 * @param int $days Window size in days.
-	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>,page:array<string,int>,lang:array<string,int>,ref:array<string,int>,rec:array<string,int>,lat:array<string,int>}
+	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>,page:array<string,int>,lang:array<string,int>,ref:array<string,int>,rec:array<string,int>,lat:array<string,int>,bkr:array<string,int>,bkr_loc:array<string,int>,bkr_arch:array<int,int>}
 	 */
 	public static function totals( int $days ): array {
 		$data = get_option( self::OPTION, array() );
@@ -405,21 +405,24 @@ class Metrics {
 		$cutoff = gmdate( 'Y-m-d', time() - ( max( 1, $days ) - 1 ) * DAY_IN_SECONDS );
 
 		$out = array(
-			'e'    => array(),
-			'step' => array(),
-			'arch' => array(),
-			'cta'  => array(),
-			'page' => array(),
-			'lang' => array(),
-			'ref'  => array(),
-			'rec'  => array(),
-			'lat'  => array(),
+			'e'        => array(),
+			'step'     => array(),
+			'arch'     => array(),
+			'cta'      => array(),
+			'page'     => array(),
+			'lang'     => array(),
+			'ref'      => array(),
+			'rec'      => array(),
+			'lat'      => array(),
+			'bkr'      => array(),
+			'bkr_loc'  => array(),
+			'bkr_arch' => array(),
 		);
 		foreach ( $data as $day => $buckets ) {
 			if ( (string) $day < $cutoff ) {
 				continue;
 			}
-			foreach ( array( 'e', 'step', 'arch', 'cta', 'page', 'lang', 'ref', 'rec', 'lat' ) as $group ) {
+			foreach ( array( 'e', 'step', 'arch', 'cta', 'page', 'lang', 'ref', 'rec', 'lat', 'bkr', 'bkr_loc', 'bkr_arch' ) as $group ) {
 				if ( empty( $buckets[ $group ] ) || ! is_array( $buckets[ $group ] ) ) {
 					continue;
 				}
@@ -686,6 +689,52 @@ class Metrics {
 			}
 			if ( $cta_rows ) {
 				self::bar_table( $cta_rows, (int) $cta_total );
+			} else {
+				echo '<p>' . esc_html__( 'No data yet.', 'hti-engine' ) . '</p>';
+			}
+			?>
+
+			<h2><?php esc_html_e( 'Brokers (partner section)', 'hti-engine' ); ?></h2>
+			<?php
+			$clicks  = (int) ( $e['broker_click'] ?? 0 );
+			$mod     = (int) ( $e['result_broker_view'] ?? 0 );
+			$compare = (int) ( $e['broker_compare_view'] ?? 0 );
+			$reviews = (int) ( $e['broker_review_view'] ?? 0 );
+			$guides  = (int) ( $e['broker_guide_view'] ?? 0 );
+			?>
+			<table class="widefat striped" style="max-width:520px;margin-bottom:1em;">
+				<tbody>
+					<tr><td><?php esc_html_e( 'Outbound clicks (/go/)', 'hti-engine' ); ?></td><td style="text-align:right;font-variant-numeric:tabular-nums;"><strong><?php echo esc_html( number_format_i18n( $clicks ) ); ?></strong></td></tr>
+					<tr><td><?php esc_html_e( 'Comparison views', 'hti-engine' ); ?></td><td style="text-align:right;font-variant-numeric:tabular-nums;"><strong><?php echo esc_html( number_format_i18n( $compare ) ); ?></strong></td></tr>
+					<tr><td><?php esc_html_e( 'Review views', 'hti-engine' ); ?></td><td style="text-align:right;font-variant-numeric:tabular-nums;"><strong><?php echo esc_html( number_format_i18n( $reviews ) ); ?></strong></td></tr>
+					<tr><td><?php esc_html_e( 'Guide views', 'hti-engine' ); ?></td><td style="text-align:right;font-variant-numeric:tabular-nums;"><strong><?php echo esc_html( number_format_i18n( $guides ) ); ?></strong></td></tr>
+					<tr><td><?php esc_html_e( 'Result partner-module views', 'hti-engine' ); ?></td><td style="text-align:right;font-variant-numeric:tabular-nums;"><strong><?php echo esc_html( number_format_i18n( $mod ) ); ?></strong></td></tr>
+					<tr><td><?php esc_html_e( 'Click-through: comparison → click', 'hti-engine' ); ?></td><td style="text-align:right;font-variant-numeric:tabular-nums;"><strong><?php echo esc_html( $compare > 0 ? number_format_i18n( $clicks / $compare * 100, 1 ) . '%' : '—' ); ?></strong></td></tr>
+					<tr><td><?php esc_html_e( 'Click-through: partner module → click', 'hti-engine' ); ?></td><td style="text-align:right;font-variant-numeric:tabular-nums;"><strong><?php echo esc_html( $mod > 0 ? number_format_i18n( $clicks / $mod * 100, 1 ) . '%' : '—' ); ?></strong></td></tr>
+				</tbody>
+			</table>
+			<h3 style="margin:.5em 0;"><?php esc_html_e( 'Clicks by broker', 'hti-engine' ); ?></h3>
+			<?php
+			$bkr_rows = array();
+			arsort( $t['bkr'] );
+			foreach ( $t['bkr'] as $slug => $n ) {
+				$bkr_rows[] = array( (string) $slug, (int) $n );
+			}
+			if ( $bkr_rows ) {
+				self::bar_table( $bkr_rows, $clicks );
+			} else {
+				echo '<p>' . esc_html__( 'No data yet.', 'hti-engine' ) . '</p>';
+			}
+			?>
+			<h3 style="margin:.5em 0;"><?php esc_html_e( 'Clicks by location', 'hti-engine' ); ?></h3>
+			<?php
+			$bl_rows = array();
+			arsort( $t['bkr_loc'] );
+			foreach ( $t['bkr_loc'] as $loc => $n ) {
+				$bl_rows[] = array( (string) $loc, (int) $n );
+			}
+			if ( $bl_rows ) {
+				self::bar_table( $bl_rows, $clicks );
 			} else {
 				echo '<p>' . esc_html__( 'No data yet.', 'hti-engine' ) . '</p>';
 			}
