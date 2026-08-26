@@ -273,3 +273,58 @@
 		padding: 1.25rem 1.5rem;
 	}
 }
+
+/* Single review (single-broker template) ---------------------------------- */
+.hti-bkr__hero {
+	border: 1px solid var( --bk-border );
+	border-radius: 16px;
+	background: var( --bk-white );
+	padding: 1.25rem 1.5rem;
+	margin-bottom: 1.5rem;
+}
+.hti-bkr__title {
+	margin: 0;
+	font-family: var( --bk-head );
+	font-size: clamp( 1.5rem, 3vw, 2rem );
+	line-height: 1.25;
+}
+.hti-bkr__reg {
+	margin: 0.3rem 0 0;
+	font-size: 0.85rem;
+	color: var( --bk-muted );
+}
+.hti-bkr__facts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem 1rem;
+	margin-top: 0.6rem;
+	font-size: 0.85rem;
+	color: var( --bk-muted );
+}
+.hti-bkr__body {
+	margin-bottom: 1.5rem;
+}
+.hti-bkr__cta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	align-items: center;
+	border: 1px solid var( --bk-border );
+	border-radius: 16px;
+	background: var( --bk-soft );
+	padding: 1rem 1.25rem;
+	margin-bottom: 1.25rem;
+}
+.hti-bkr__foot {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.85rem;
+}
+.hti-bkr__back {
+	font-weight: 600;
+	text-decoration: none;
+	color: var( --bk-primary );
+}
