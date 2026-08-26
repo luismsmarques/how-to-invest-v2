@@ -175,6 +175,41 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 **Legal (⚠️ bloqueador antes de divulgar):**
 - [ ] **L-D — Revisão jurídica** dos disclaimers + páginas privacidade/termos (são placeholders; mencionar o GA na política de privacidade).
 
+## Forex tools Índia (`hti-forex`) — ago 2026
+
+Plugin novo e **isolado** para a secção `/forex/` (EN-only): calculadoras forex
+dirigidas ao mercado indiano, usadas como landing pages de campanhas pagas
+(Propeller/Facebook via GTM) **e** páginas indexáveis (a lacuna INR identificada
+na pesquisa de mercado). É a **única exceção documentada** aos invariantes
+"sem CTA de corretora / bilingue" — contida no plugin; nada do hti-engine foi
+alterado.
+
+- **Ferramentas** (`[hti_forex_tool name=…]`): position size com conta em ₹
+  (floor a micro-lote, estado "below one micro lot"), pip value em ₹ (EURUSD,
+  GBPUSD, USDJPY, XAUUSD, USDINR; formatação lakh/crore), e relógio de sessões
+  em **IST** (baseline server-side sem JS + relógio vivo com overlap Londres–NY;
+  DST vem da tz database, incluindo os desyncs de março/novembro).
+- **Câmbios**: cron 2×/dia (Frankfurter/BCE, sem chave) → option; precedência
+  override do admin > fetched > fallback; o rate é sempre input editável com
+  data visível — API morta nunca parte a página.
+- **Monetização**: CTA de afiliado **off por defeito** (Settings → HTI Forex:
+  URL https, label, kill-switch global + por ferramenta; `rel="sponsored
+  nofollow noopener"`; clickid/utm_campaign propagado ao href no cliente) +
+  captura de email via o endpoint `subscribe` existente com `source=forex-*`.
+  Tracking: `cta_click` declarativo via `hti-track` (allowlist intocada).
+- **SEO**: 4 páginas seedadas (`/forex/` hub + position-size-calculator +
+  pip-value-calculator + market-hours-ist, botão no admin ou `wp hti-forex
+  seed`), JSON-LD próprio (WebApplication INR + FAQPage + breadcrumbs), FAQs
+  de `Config::faqs()` partilhadas entre página e schema. FAQ legal (FEMA/RBI)
+  **só no hub**, num único sítio.
+- **Testes**: suite própria (`php wp-content/plugins/hti-forex/tests/run.php`)
+  — settings, rates, sessões/DST, schema em PHP + 51 asserções Node no núcleo
+  de matemática. CI e `.cpanel.yml` já incluem o plugin.
+- **Antes de ligar o CTA em produção**: rever a exposição regulatória (Alert
+  List RBI / FEMA — promover corretoras offshore a residentes indianos é o
+  risco; as ferramentas em si são seguras) e configurar o URL de afiliado no
+  admin. Sem configuração, as páginas são 100% educativas.
+
 ## Próximos passos sugeridos
 1. Configurar RankMath (sitemap + schema + Search Console).
 2. Configurar Brevo e testar o fluxo de registo/verificação.

@@ -56,6 +56,39 @@ editor rewrites the page copy in wp-admin, the schema keeps emitting the config
 version; keep the two in sync by editing `Config::faqs()` and re-seeding a
 fresh page (the seeder never updates existing pages).
 
+## Settings walkthrough (go-live)
+
+1. **Seed the pages** — Settings → HTI Forex → "Seed forex pages" (or
+   `wp hti-forex seed`). Four EN pages appear under `/forex/`.
+2. **Rates** — activation schedules the twice-daily fetch and an immediate
+   first fetch; check the "Exchange rates" panel shows `frankfurter` with a
+   fresh date (use "Fetch now" if needed). Overrides are for emergencies.
+3. **Campaign tracking** — first-party `page_view`/`cta_click` work out of the
+   box (HTI Funnel screen). For ad-platform pixels, configure them in GTM;
+   the dataLayer push is consent-gated as everywhere else on the site.
+4. **Affiliate CTA** — paste the https partner URL, keep the conditional
+   label, tick the tools it should show on, then enable the kill-switch
+   checkbox. The `clickid`/`utm_campaign` landing parameter is appended to
+   the CTA automatically for sub-id attribution.
+5. **Before enabling the CTA**: re-read the regulatory note below — the
+   tools are safe; the conversion layer is where the exposure lives.
+
+## Phase 2 backlog
+
+- Brevo source attribution: generalize hti-engine's `hti_ebook_pending` into
+  a source-pending store and pass a `SOURCE` attribute on upsert, so forex
+  leads can be segmented (and a "lot size cheat sheet" PDF can ride the same
+  gate as the ebook).
+- Dedicated XAUUSD page (`/forex/xauusd-lot-size-calculator/`) — gold is the
+  most persistent modifier in the research; the anchor on the pip-value page
+  covers it for now.
+- Profit/loss calculator; "with leverage" and "for $100 account" variant
+  pages with unique content.
+- Noindex campaign variants (stripped nav, harder CTA) using the existing
+  robots-filter pattern, if ad QS/policy calls for separate landers.
+- NSE ↔ global lot-convention converter and the XAUUSD ↔ MCX gold bridge
+  (research gaps #2 and #5) once the MVP proves traffic.
+
 ## Tests
 
 ```
