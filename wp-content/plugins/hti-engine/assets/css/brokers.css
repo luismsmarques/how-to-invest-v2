@@ -315,6 +315,13 @@
 	padding: 1rem 1.25rem;
 	margin-bottom: 1.25rem;
 }
+.hti-bkr__cta--inline {
+	margin: 1.25rem 0;
+}
+.hti-bkr__cta--inline .hti-bk__disclosure {
+	flex-basis: 100%;
+	margin: 0.5rem 0 0;
+}
 .hti-bkr__foot {
 	display: flex;
 	flex-wrap: wrap;

@@ -27,12 +27,14 @@ defined( 'ABSPATH' ) || exit;
 class Brokers {
 
 	private const SHORTCODE = 'hti_brokers';
+	private const SHORTCODE_CTA = 'hti_broker_cta';
 
 	/**
-	 * Hook the shortcode, assets and schema.
+	 * Hook the shortcodes, assets and schema.
 	 */
 	public static function init(): void {
 		add_shortcode( self::SHORTCODE, array( __CLASS__, 'render' ) );
+		add_shortcode( self::SHORTCODE_CTA, array( __CLASS__, 'render_cta' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 		add_action( 'wp_head', array( __CLASS__, 'schema' ) );
 	}
@@ -328,10 +330,21 @@ class Brokers {
 	}
 
 	/**
+	 * Whether the queried singular page embeds the partner CTA box (guides).
+	 */
+	private static function is_cta_page(): bool {
+		if ( ! is_singular() ) {
+			return false;
+		}
+		$post = get_queried_object();
+		return $post instanceof \WP_Post && has_shortcode( (string) $post->post_content, self::SHORTCODE_CTA );
+	}
+
+	/**
 	 * Enqueue the comparison assets only where the shortcode is present.
 	 */
 	public static function enqueue(): void {
-		if ( ! self::is_page() && ! is_singular( 'broker' ) ) {
+		if ( ! self::is_page() && ! self::is_cta_page() && ! is_singular( 'broker' ) ) {
 			return;
 		}
 		wp_enqueue_style( 'hti-brokers', HTI_ENGINE_URL . 'assets/css/brokers.css', array(), VERSION );
@@ -396,6 +409,57 @@ class Brokers {
 				<button type="button" class="hti-bk__reset"><?php echo esc_html( $l['clear'] ); ?></button>
 			</div>
 		</section>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * The labelled partner CTA box — the ONLY affiliate component inside a
+	 * "how to open an account" guide (the rest of the guide is factual
+	 * step-by-step content). Carries the on-page disclosure, the label, the
+	 * /go/ link and the CFD warning.
+	 *
+	 * @param array<string,string>|string $atts Shortcode attributes.
+	 * @return string Safe HTML.
+	 */
+	public static function render_cta( $atts ): string {
+		$atts = shortcode_atts(
+			array(
+				'slug'     => '',
+				'location' => 'guide',
+			),
+			(array) $atts,
+			self::SHORTCODE_CTA
+		);
+
+		$slug = sanitize_key( (string) $atts['slug'] );
+		if ( '' === $slug ) {
+			return '';
+		}
+		$post = get_page_by_path( $slug, OBJECT, 'broker' );
+		if ( ! $post instanceof \WP_Post || 'publish' !== $post->post_status ) {
+			return '';
+		}
+
+		$lang = self::lang();
+		$l    = self::strings( $lang );
+		$r    = self::record( $post, $lang );
+		$loc  = in_array( (string) $atts['location'], Broker_Go::LOCATIONS, true ) ? (string) $atts['location'] : 'guide';
+		$go   = self::go_link( $r, $loc );
+
+		ob_start();
+		?>
+		<aside class="hti-bk hti-bkr__cta hti-bkr__cta--inline">
+			<?php if ( ! empty( $r['affiliate'] ) ) : ?>
+				<span class="hti-bk__label"><?php echo esc_html( $l['label'] ); ?></span>
+			<?php endif; ?>
+			<a class="hti-bk__btn" href="<?php echo esc_url( $go['href'] ); ?>" rel="<?php echo esc_attr( $go['rel'] ); ?>" target="_blank"><?php echo esc_html( $l['visit_btn'] . ' ' . (string) $r['name'] ); ?></a>
+			<a class="hti-bk__btn hti-bk__btn--ghost" href="<?php echo esc_url( (string) $r['review_url'] ); ?>"><?php echo esc_html( $l['review_btn'] ); ?> →</a>
+			<?php if ( $r['cfd'] ) : ?>
+				<?php echo self::cfd_warning_html( $lang, (string) $r['cfd_pct'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in cfd_warning_html(). ?>
+			<?php endif; ?>
+			<?php echo self::disclosure_html( $lang ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in disclosure_html(). ?>
+		</aside>
 		<?php
 		return (string) ob_get_clean();
 	}

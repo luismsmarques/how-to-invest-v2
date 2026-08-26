@@ -25,6 +25,16 @@ if ( ! function_exists( 'esc_html' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_url' ) ) {
+	/**
+	 * @param string $url URL.
+	 * @return string
+	 */
+	function esc_url( $url ) {
+		return (string) $url;
+	}
+}
+
 require_once __DIR__ . '/../includes/class-broker-admin.php';
 require_once __DIR__ . '/../includes/class-broker-seeder.php';
 
@@ -158,6 +168,35 @@ check( array() === $uc_bad, 'every use case has EN + PT names (' . implode( ',',
 echo "\nPT slugs\n";
 check( 'xtb-analise' === Broker_Seeder::pt_slug( 'xtb' ), 'pt_slug appends -analise' );
 check( 'trading-212-analise' === Broker_Seeder::pt_slug( 'trading-212' ), 'pt_slug keeps the brand slug' );
+check( 'como-abrir-conta-xtb' === Broker_Seeder::page_pt_slug( 'how-to-open-an-account-with-xtb', '' ), 'guide PT slug derived from the EN slug' );
+check( 'melhores-corretoras-em-portugal' === Broker_Seeder::page_pt_slug( 'best-brokers-in-portugal', '' ), 'pillar PT slug mapped' );
+
+echo "\nGuides\n";
+$guides = Broker_Seeder::guides();
+check( count( $guides ) === count( $brokers ), 'one guide per broker (' . count( $guides ) . ')' );
+$g_bad = array();
+foreach ( $guides as $g ) {
+	$slug = (string) ( $g['slug'] ?? '?' );
+	if ( ! str_starts_with( $slug, 'how-to-open-an-account-with-' ) ) {
+		$g_bad[] = "{$slug}: unexpected slug";
+	}
+	if ( empty( $g['content'] ) || empty( $g['pt']['content'] ) ) {
+		$g_bad[] = "{$slug}: missing content";
+	}
+	if ( false === strpos( (string) $g['content'], '[hti_broker_cta' ) || false === strpos( (string) $g['pt']['content'], '[hti_broker_cta' ) ) {
+		$g_bad[] = "{$slug}: partner CTA shortcode missing";
+	}
+	if ( substr_count( (string) $g['content'], '[hti_broker_cta' ) > 1 ) {
+		$g_bad[] = "{$slug}: more than one CTA (guides carry exactly one affiliate component)";
+	}
+	if ( ( $g['page_template'] ?? '' ) !== 'page-no-sidebar' ) {
+		$g_bad[] = "{$slug}: missing no-sidebar template";
+	}
+	if ( ( $g['pt']['content'] ?? '' ) === ( $g['content'] ?? '' ) ) {
+		$g_bad[] = "{$slug}: PT content equals EN content";
+	}
+}
+check( array() === $g_bad, 'all guides complete (' . implode( ' | ', $g_bad ) . ')' );
 
 echo "\n=== {$passes} passed, {$failures} failed ===\n";
 exit( $failures > 0 ? 1 : 0 );

@@ -80,9 +80,34 @@ class Broker_Seeder {
 			}
 		}
 
+		foreach ( self::guides() as $entry ) {
+			$id = self::insert_page( $entry );
+			if ( $id > 0 ) {
+				++$report['pages_created'];
+			} else {
+				++$report['skipped'];
+			}
+		}
+
+		self::link_guides();
+
 		$report['translations_created'] = self::seed_translations();
 
 		return $report;
+	}
+
+	/**
+	 * Point each EN broker record at its EN guide page (review ↔ guide link).
+	 * Idempotent; renderers resolve the PT twin through Polylang.
+	 */
+	private static function link_guides(): void {
+		foreach ( self::brokers() as $entry ) {
+			$broker = get_page_by_path( $entry['slug'], OBJECT, 'broker' );
+			$guide  = get_page_by_path( 'how-to-open-an-account-with-' . $entry['slug'], OBJECT, 'page' );
+			if ( $broker instanceof \WP_Post && $guide instanceof \WP_Post ) {
+				update_post_meta( (int) $broker->ID, Broker_Admin::PREFIX . 'guide_page', (string) $guide->ID );
+			}
+		}
 	}
 
 	/* -------------------------------------------------------------------------
@@ -689,6 +714,9 @@ class Broker_Seeder {
 	 * @param string $pt_title PT title (sanitized fallback).
 	 */
 	public static function page_pt_slug( string $en_slug, string $pt_title ): string {
+		if ( str_starts_with( $en_slug, 'how-to-open-an-account-with-' ) ) {
+			return 'como-abrir-conta-' . substr( $en_slug, strlen( 'how-to-open-an-account-with-' ) );
+		}
 		$map = array(
 			'best-brokers-in-portugal'                => 'melhores-corretoras-em-portugal',
 			'best-brokers-for-beginners-portugal'     => 'melhores-corretoras-para-iniciantes',
@@ -868,6 +896,263 @@ class Broker_Seeder {
 		);
 	}
 
+	/* -------------------------------------------------------------------------
+	 * "How to open an account" guides — one per broker, from a shared template.
+	 * ---------------------------------------------------------------------- */
+
+	/**
+	 * Per-broker guide parameters: sign-up channel, rough duration and the one
+	 * broker-specific note worth knowing before starting.
+	 *
+	 * @return array<string,array{channel:string,minutes:int,note_en:string,note_pt:string}>
+	 */
+	private static function guide_params(): array {
+		return array(
+			'xtb'                 => array(
+				'channel' => 'both',
+				'minutes' => 10,
+				'note_en' => 'XTB has a Portuguese branch, so support and documents are available in Portuguese.',
+				'note_pt' => 'A XTB tem sucursal portuguesa, por isso o apoio e os documentos existem em português.',
+			),
+			'trading-212'         => array(
+				'channel' => 'both',
+				'minutes' => 10,
+				'note_en' => 'Make sure you pick the Invest account — the CFD account is a separate, high-risk product.',
+				'note_pt' => 'Garante que escolhes a conta Invest — a conta CFD é um produto separado e de risco elevado.',
+			),
+			'trade-republic'      => array(
+				'channel' => 'app',
+				'minutes' => 10,
+				'note_en' => 'Everything happens in the mobile app — there is no desktop sign-up.',
+				'note_pt' => 'Tudo acontece na app — não há registo por computador.',
+			),
+			'lightyear'           => array(
+				'channel' => 'both',
+				'minutes' => 10,
+				'note_en' => 'One of the simplest sign-ups in the comparison — there is no CFD product to steer around.',
+				'note_pt' => 'Um dos registos mais simples da comparação — não há produto CFD para evitar.',
+			),
+			'degiro'              => array(
+				'channel' => 'both',
+				'minutes' => 15,
+				'note_en' => 'You confirm your identity by linking a bank account in your name with a small verification transfer.',
+				'note_pt' => 'Confirmas a identidade ao associar uma conta bancária em teu nome com uma pequena transferência de verificação.',
+			),
+			'interactive-brokers' => array(
+				'channel' => 'web',
+				'minutes' => 30,
+				'note_en' => 'The application is longer than app-first brokers (more regulatory questions) — allow extra time.',
+				'note_pt' => 'O processo é mais longo do que nas corretoras app-first (mais perguntas regulatórias) — conta com tempo extra.',
+			),
+			'etoro'               => array(
+				'channel' => 'both',
+				'minutes' => 10,
+				'note_en' => 'The account is denominated in US dollars, so euro deposits are converted on the way in.',
+				'note_pt' => 'A conta é denominada em dólares, por isso os depósitos em euros são convertidos à entrada.',
+			),
+			'saxo'                => array(
+				'channel' => 'web',
+				'minutes' => 15,
+				'note_en' => 'Saxo runs a bank-grade onboarding; have your tax details at hand.',
+				'note_pt' => 'O Saxo tem um onboarding de nível bancário; tem os teus dados fiscais à mão.',
+			),
+			'revolut'             => array(
+				'channel' => 'app',
+				'minutes' => 10,
+				'note_en' => 'Investing lives inside the Revolut app — you open a Revolut account first, then activate investing.',
+				'note_pt' => 'O investimento vive dentro da app Revolut — primeiro abres a conta Revolut, depois ativas o investimento.',
+			),
+			'activobank'          => array(
+				'channel' => 'both',
+				'minutes' => 20,
+				'note_en' => 'Opening an account means becoming a bank client — it can also be done in person at a Ponto Activo.',
+				'note_pt' => 'Abrir conta significa tornares-te cliente do banco — também pode ser feito presencialmente num Ponto Activo.',
+			),
+		);
+	}
+
+	/**
+	 * The guide entries (same shape as pages(), plus the no-sidebar template).
+	 *
+	 * @return list<array<string,mixed>>
+	 */
+	public static function guides(): array {
+		$params = self::guide_params();
+		$out    = array();
+
+		foreach ( self::brokers() as $b ) {
+			$slug  = (string) $b['slug'];
+			$brand = (string) $b['title'];
+			$p     = $params[ $slug ] ?? array(
+				'channel' => 'both',
+				'minutes' => 15,
+				'note_en' => '',
+				'note_pt' => '',
+			);
+
+			$out[] = array(
+				'slug'          => 'how-to-open-an-account-with-' . $slug,
+				'title'         => 'How to open an account with ' . $brand,
+				'page_template' => 'page-no-sidebar',
+				'seo'           => array(
+					'title' => 'How to open an account with ' . $brand . ' (%currentyear% step by step)',
+					'desc'  => 'A factual, step-by-step walkthrough of opening a ' . $brand . ' account from Portugal: what you need, identity verification and the first deposit. Educational, not a recommendation.',
+				),
+				'content'       => self::guide_content( 'en', $brand, $slug, $p ),
+				'pt'            => array(
+					'title'   => 'Como abrir conta na ' . $brand,
+					'seo'     => array(
+						'title' => 'Como abrir conta na ' . $brand . ' (%currentyear%, passo a passo)',
+						'desc'  => 'Um passo-a-passo factual para abrir conta na ' . $brand . ' a partir de Portugal: o que precisas, verificação de identidade e primeiro depósito. Educativo, não é uma recomendação.',
+					),
+					'content' => self::guide_content( 'pt', $brand, $slug, $p ),
+				),
+			);
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Build one guide's content (EN or PT) from the shared template.
+	 *
+	 * @param string                                                       $lang  'en' or 'pt'.
+	 * @param string                                                       $brand Broker display name.
+	 * @param string                                                       $slug  Broker slug.
+	 * @param array{channel:string,minutes:int,note_en:string,note_pt:string} $p     Guide parameters.
+	 */
+	private static function guide_content( string $lang, string $brand, string $slug, array $p ): string {
+		$pt      = 'pt' === $lang;
+		$minutes = (int) $p['minutes'];
+		$note    = $pt ? (string) $p['note_pt'] : (string) $p['note_en'];
+
+		$channel_txt = array(
+			'app'  => $pt ? 'na app' : 'in the app',
+			'web'  => $pt ? 'no site oficial' : 'on the official website',
+			'both' => $pt ? 'na app ou no site oficial' : 'in the app or on the official website',
+		);
+		$where = $channel_txt[ $p['channel'] ] ?? $channel_txt['both'];
+
+		$review_href = $pt ? '/pt/brokers/' . self::pt_slug( $slug ) . '/' : '/brokers/' . $slug . '/';
+		$pillar_href = $pt ? '/pt/melhores-corretoras-em-portugal/' : '/best-brokers-in-portugal/';
+
+		$intro = $pt
+			? "Abrir conta na {$brand} faz-se {$where} e costuma demorar cerca de {$minutes} minutos, mais o tempo de aprovação. Este é um passo-a-passo factual do processo — informação educativa, não uma recomendação. Se a {$brand} faz sentido para ti é outra pergunta: a análise cobre para quem costuma fazer sentido."
+			: "Opening an account with {$brand} is done {$where} and usually takes about {$minutes} minutes, plus approval time. This is a factual walkthrough of the process — educational information, not a recommendation. Whether {$brand} fits you is a different question: the review covers who it tends to suit.";
+
+		$needs = $pt
+			? array(
+				'Cartão de Cidadão ou passaporte válido.',
+				'O teu NIF (número de identificação fiscal).',
+				'Comprovativo de morada, se for pedido (fatura recente ou extrato bancário).',
+				'Uma conta bancária em teu nome para o primeiro depósito.',
+			)
+			: array(
+				'A valid Citizen Card or passport.',
+				'Your NIF (Portuguese tax number).',
+				'Proof of address, if requested (a recent utility bill or bank statement).',
+				'A bank account in your own name for the first deposit.',
+			);
+
+		$steps = $pt
+			? array(
+				'app' === $p['channel']
+					? "Instala a app oficial da {$brand} a partir da App Store ou do Google Play — confirma que é a app oficial, não uma imitação."
+					: ( 'web' === $p['channel']
+						? "Vai ao site oficial da {$brand} — escreve tu o endereço no browser em vez de seguires anúncios, para evitar páginas falsas."
+						: "Instala a app oficial da {$brand} (App Store/Google Play) ou vai ao site oficial — escreve tu o endereço, para evitar páginas falsas." ),
+				'Começa o registo com o teu email e uma password forte, e confirma o email.',
+				'Preenche os dados pessoais, incluindo o NIF e a residência fiscal.',
+				'Verifica a identidade com o Cartão de Cidadão ou passaporte (fotografia ou vídeo curto).',
+				'Responde ao questionário de adequação com honestidade — é uma proteção tua, exigida pelas regras europeias, não uma formalidade.',
+				'Faz o primeiro depósito por transferência a partir de uma conta em teu nome.',
+			)
+			: array(
+				'app' === $p['channel']
+					? "Install the official {$brand} app from the App Store or Google Play — make sure it is the official app, not a lookalike."
+					: ( 'web' === $p['channel']
+						? "Go to {$brand}'s official website — type the address yourself rather than following ads, to avoid fake pages."
+						: "Install the official {$brand} app (App Store/Google Play) or go to the official website — type the address yourself, to avoid fake pages." ),
+				'Start the sign-up with your email and a strong password, and confirm the email.',
+				'Fill in your personal details, including your NIF and tax residency.',
+				'Verify your identity with your Citizen Card or passport (a photo or short video).',
+				'Answer the suitability questionnaire honestly — it is a protection for you, required by EU rules, not a formality.',
+				'Make the first deposit by bank transfer from an account in your own name.',
+			);
+
+		$after = $pt
+			? 'A aprovação costuma ser rápida, mas pode demorar mais quando os documentos precisam de revisão manual. Quando a conta abrir, começa pequeno: um primeiro depósito modesto chega para conheceres a plataforma com calma.'
+			: 'Approval is usually quick, but can take longer when documents need a manual review. Once the account opens, start small: a modest first deposit is enough to get to know the platform calmly.';
+
+		$costs = $pt
+			? "Antes de investir, lê o preçário publicado pela {$brand} — comissões de negociação, custos de conversão cambial e eventuais custos de inatividade. Os custos mudam; o documento oficial é a única fonte a confiar."
+			: "Before investing, read {$brand}'s published price list — dealing fees, currency-conversion costs and any inactivity charges. Costs change; the official document is the only source to trust.";
+
+		$content = self::paragraph( $intro );
+		if ( '' !== $note ) {
+			$content .= self::paragraph( $note );
+		}
+		$content .= self::heading( $pt ? 'O que precisas' : 'What you need' )
+			. self::bullets( $needs )
+			. self::heading( $pt ? 'Passo a passo' : 'Step by step' )
+			. self::steps( $steps )
+			. self::heading( $pt ? 'Depois da aprovação' : 'After approval' )
+			. self::paragraph( $after )
+			. '<!-- wp:shortcode -->[hti_broker_cta slug="' . $slug . '" location="guide"]<!-- /wp:shortcode -->' . "\n\n"
+			. self::heading( $pt ? 'Custos a ter em conta' : 'Costs to keep in mind' )
+			. self::paragraph( $costs )
+			. self::links_paragraph(
+				$pt,
+				array(
+					array( $review_href, $pt ? 'Análise completa à ' . $brand : 'Full ' . $brand . ' review' ),
+					array( $pillar_href, $pt ? 'Comparar todas as corretoras' : 'Compare all brokers' ),
+				)
+			);
+
+		return $content;
+	}
+
+	/**
+	 * Block-markup unordered list.
+	 *
+	 * @param list<string> $items Items.
+	 */
+	private static function bullets( array $items ): string {
+		$li = '';
+		foreach ( $items as $item ) {
+			$li .= '<!-- wp:list-item --><li>' . esc_html( $item ) . '</li><!-- /wp:list-item -->';
+		}
+		return '<!-- wp:list --><ul class="wp-block-list">' . $li . '</ul><!-- /wp:list -->' . "\n\n";
+	}
+
+	/**
+	 * Block-markup ordered list (the numbered steps).
+	 *
+	 * @param list<string> $items Items.
+	 */
+	private static function steps( array $items ): string {
+		$li = '';
+		foreach ( $items as $item ) {
+			$li .= '<!-- wp:list-item --><li>' . esc_html( $item ) . '</li><!-- /wp:list-item -->';
+		}
+		return '<!-- wp:list {"ordered":true} --><ol class="wp-block-list">' . $li . '</ol><!-- /wp:list -->' . "\n\n";
+	}
+
+	/**
+	 * A "keep reading" paragraph of internal links.
+	 *
+	 * @param bool                          $pt    Portuguese?
+	 * @param list<array{0:string,1:string}> $links [href, label] pairs.
+	 */
+	private static function links_paragraph( bool $pt, array $links ): string {
+		$parts = array();
+		foreach ( $links as $pair ) {
+			$parts[] = '<a href="' . esc_url( $pair[0] ) . '">' . esc_html( $pair[1] ) . '</a>';
+		}
+		$label = $pt ? 'Continuar a ler: ' : 'Keep reading: ';
+		return '<!-- wp:paragraph --><p>' . esc_html( $label ) . implode( ' · ', $parts ) . '</p><!-- /wp:paragraph -->' . "\n\n";
+	}
+
 	/**
 	 * Insert one section page (EN). Skips existing.
 	 *
@@ -886,6 +1171,9 @@ class Broker_Seeder {
 			'post_name'    => $entry['slug'],
 			'post_content' => $entry['content'],
 		);
+		if ( ! empty( $entry['page_template'] ) ) {
+			$postarr['page_template'] = (string) $entry['page_template'];
+		}
 
 		$id = wp_insert_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $id ) || 0 === $id ) {
@@ -1058,7 +1346,7 @@ class Broker_Seeder {
 			++$created;
 		}
 
-		foreach ( self::pages() as $entry ) {
+		foreach ( array_merge( self::pages(), self::guides() ) as $entry ) {
 			$en_post = get_page_by_path( $entry['slug'], OBJECT, 'page' );
 			if ( ! $en_post instanceof \WP_Post ) {
 				continue;
@@ -1084,6 +1372,9 @@ class Broker_Seeder {
 				'post_title'   => $pt_data['title'],
 				'post_content' => (string) ( $pt_data['content'] ?? '' ),
 			);
+			if ( ! empty( $entry['page_template'] ) ) {
+				$postarr['page_template'] = (string) $entry['page_template'];
+			}
 
 			$pt_id = wp_insert_post( wp_slash( $postarr ), true );
 			if ( is_wp_error( $pt_id ) || 0 === $pt_id ) {
