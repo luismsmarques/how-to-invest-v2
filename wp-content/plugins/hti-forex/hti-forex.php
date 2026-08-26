@@ -30,6 +30,7 @@ define( 'HTI_FOREX_URL', plugin_dir_url( __FILE__ ) );
 
 require_once HTI_FOREX_PATH . 'includes/class-config.php';
 require_once HTI_FOREX_PATH . 'includes/class-settings.php';
+require_once HTI_FOREX_PATH . 'includes/class-rates.php';
 
 /**
  * Admin settings (Settings → HTI Forex): affiliate CTA kill-switch, email
@@ -38,16 +39,25 @@ require_once HTI_FOREX_PATH . 'includes/class-settings.php';
 Settings::init();
 
 /**
- * Activation / deactivation. The plugin registers no CPTs or rewrite rules,
- * so there is nothing to flush; cron scheduling is added by the Rates layer.
+ * USD→INR/JPY reference rates: twice-daily cron fetch + admin panel.
+ */
+Rates::init();
+
+/**
+ * Activation: schedule the rates cron and queue an immediate first fetch so
+ * a fresh install has real rates without blocking activation. No CPTs or
+ * rewrite rules are registered, so there is nothing to flush.
  */
 function activate(): void {
+	Rates::schedule();
+	wp_schedule_single_event( time() + 30, Rates::HOOK );
 }
 register_activation_hook( __FILE__, __NAMESPACE__ . '\\activate' );
 
 /**
- * Deactivation counterpart.
+ * Deactivation: clear the rates cron.
  */
 function deactivate(): void {
+	Rates::unschedule();
 }
 register_deactivation_hook( __FILE__, __NAMESPACE__ . '\\deactivate' );
