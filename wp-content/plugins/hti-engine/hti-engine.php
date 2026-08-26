@@ -73,6 +73,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-deposits.php';
 require_once HTI_ENGINE_PATH . 'includes/class-broker-admin.php';
 require_once HTI_ENGINE_PATH . 'includes/class-broker-seeder.php';
 require_once HTI_ENGINE_PATH . 'includes/class-broker-go.php';
+require_once HTI_ENGINE_PATH . 'includes/class-broker-match.php';
 require_once HTI_ENGINE_PATH . 'includes/class-brokers.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';

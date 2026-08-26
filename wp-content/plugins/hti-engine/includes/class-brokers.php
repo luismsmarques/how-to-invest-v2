@@ -605,6 +605,69 @@ class Brokers {
 		return $out;
 	}
 
+	/* -------------------------------------------------------------- partner */
+
+	/**
+	 * Build the post-result partner module ("Passar à prática"), fully
+	 * localized and ready to render — result.js only paints it. Deterministic
+	 * (Broker_Match), never persisted with the profile, never part of the
+	 * Explainer/Validator pipeline, and excluded from the PDF and emails.
+	 *
+	 * @param int                                     $archetype_id Archetype 1–5.
+	 * @param list<array{class:string,pct:int|float}> $allocation   Fixed allocation.
+	 * @param string                                  $locale       Request locale.
+	 * @return array<string,mixed>|null Null when there is nothing to show.
+	 */
+	public static function partner_module( int $archetype_id, array $allocation, string $locale ): ?array {
+		$lang = str_starts_with( strtolower( $locale ), 'pt' ) ? 'pt' : 'en';
+
+		$records = self::records( $lang );
+		if ( array() === $records ) {
+			return null;
+		}
+
+		$picked = Broker_Match::pick( $records, $archetype_id, $allocation );
+		if ( array() === $picked ) {
+			return null;
+		}
+
+		$l  = self::strings( $lang );
+		$pt = 'pt' === $lang;
+
+		$items = array();
+		foreach ( $picked as $r ) {
+			$go      = self::go_link( $r, 'result' );
+			$items[] = array(
+				'name'        => (string) $r['name'],
+				'tagline'     => (string) $r['tagline'],
+				'regulator'   => (string) $r['regulator'],
+				'url'         => $go['href'],
+				'rel'         => $go['rel'],
+				'review_url'  => (string) $r['review_url'],
+				'affiliate'   => (bool) $r['affiliate'],
+				'cfd'         => (bool) $r['cfd'],
+				'cfd_warning' => $r['cfd'] ? Disclaimer::cfd_risk( $lang, (string) $r['cfd_pct'] ) : null,
+				'visit_label' => $l['visit_btn'] . ' ' . (string) $r['name'],
+			);
+		}
+
+		// Canonical module copy (Textos §6.4).
+		return array(
+			'eyebrow'      => $l['label'],
+			'heading'      => $pt ? 'Passar à prática' : 'Putting it into practice',
+			'intro'        => $pt
+				? 'Plataformas que perfis como este costumam usar para deter estas classes de ativos. Informação editorial com metodologia pública — não é uma recomendação pessoal.'
+				: 'Platforms that profiles like this often use to hold these asset classes. Editorial information with a public methodology — not a personal recommendation.',
+			'disclosure'   => Disclaimer::affiliate( $lang ),
+			'how_link'     => array(
+				'url'   => self::money_page_url( $lang ),
+				'label' => $l['how_link'],
+			),
+			'review_label' => $l['review_btn'],
+			'items'        => $items,
+		);
+	}
+
 	/* ---------------------------------------------------------------- schema */
 
 	/**
