@@ -32,6 +32,7 @@ require_once HTI_FOREX_PATH . 'includes/class-config.php';
 require_once HTI_FOREX_PATH . 'includes/class-settings.php';
 require_once HTI_FOREX_PATH . 'includes/class-rates.php';
 require_once HTI_FOREX_PATH . 'includes/class-tools.php';
+require_once HTI_FOREX_PATH . 'includes/class-schema.php';
 
 /**
  * Admin settings (Settings → HTI Forex): affiliate CTA kill-switch, email
@@ -48,6 +49,11 @@ Rates::init();
  * The tools: `[hti_forex_tool name="position_size|pip_value|sessions"]`.
  */
 Tools::init();
+
+/**
+ * JSON-LD (WebApplication INR + FAQPage + breadcrumbs) on the forex pages.
+ */
+Schema::init();
 
 /**
  * Activation: schedule the rates cron and queue an immediate first fetch so
