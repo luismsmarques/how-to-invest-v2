@@ -841,20 +841,16 @@ window.HTI_SOCIAL_TEMPLATES = ( function () {
 							'<div style="margin:22px 20px 0;background:#fff;border-radius:26px;padding:30px 26px;box-shadow:0 12px 30px -14px rgba(30,33,71,.2);">' +
 								'<span style="font:600 15px ' + JAKARTA + ';color:#A89FB5;letter-spacing:.03em;">Available balance</span>' +
 								'<div style="font:700 62px ' + POPPINS + ';letter-spacing:-.03em;color:#1E2147;margin-top:8px;">{{balance}}</div>' +
-								'<div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><span style="display:inline-flex;align-items:center;gap:5px;background:#E3F7F1;color:#0E9E82;font:700 14px ' + JAKARTA + ';padding:5px 12px;border-radius:999px;">▲ ready to invest</span></div>' +
-								'<div style="margin-top:22px;width:100%;background:#FF6B5E;color:#fff;font:600 19px ' + POPPINS + ';padding:16px;border-radius:16px;text-align:center;">Invest now</div>' +
-							'</div>' +
+																							'</div>' +
 							'<div style="margin:20px 20px 0;display:flex;flex-direction:column;gap:12px;">' +
 								'<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:15px 16px;">' +
 									'<span style="width:38px;height:38px;border-radius:11px;background:#EDE7FB;display:flex;align-items:center;justify-content:center;color:#7C5CFC;font:700 15px ' + JAKARTA + ';">ETF</span>' +
 									'<div style="flex:1;"><div style="font:600 16px ' + JAKARTA + ';color:#2A2438;">Global index</div><div style="font:500 13px ' + JAKARTA + ';color:#A89FB5;">fractions from $1</div></div>' +
-									'<span style="font:700 15px ' + JAKARTA + ';color:#0E9E82;">+0,4%</span>' +
-								'</div>' +
+																	'</div>' +
 								'<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:15px 16px;">' +
 									'<span style="width:38px;height:38px;border-radius:11px;background:#FFEDE9;display:flex;align-items:center;justify-content:center;color:#FF6B5E;font:700 15px ' + JAKARTA + ';">A</span>' +
-									'<div style="flex:1;"><div style="font:600 16px ' + JAKARTA + ';color:#2A2438;">Fractional shares</div><div style="font:500 13px ' + JAKARTA + ';color:#A89FB5;">buy $5 of any stock</div></div>' +
-									'<span style="font:700 15px ' + JAKARTA + ';color:#0E9E82;">+1,2%</span>' +
-								'</div>' +
+									'<div style="flex:1;"><div style="font:600 16px ' + JAKARTA + ';color:#2A2438;">Fractional shares</div><div style="font:500 13px ' + JAKARTA + ';color:#A89FB5;">illustrative, by asset class</div></div>' +
+																	'</div>' +
 							'</div>' +
 						'</div>' +
 					'</div>' +

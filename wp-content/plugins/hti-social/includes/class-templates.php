@@ -42,9 +42,15 @@ class Templates {
 	public static function categories_for_post_type( string $post_type ): array {
 		switch ( $post_type ) {
 			case 'news':
-				return array( 'news', 'og', 'editorial' );
+				/*
+				 * A news item supports far more than a news card: the concept
+				 * behind it, a myth it contradicts, a question it raises, a
+				 * quiz prompt. Those families were already built but unreachable
+				 * from a post, which is most of why the generator went unused.
+				 */
+				return array( 'news', 'og', 'editorial', 'glossary', 'fact', 'cta', 'carousel' );
 			case 'glossary':
-				return array( 'glossary' );
+				return array( 'glossary', 'fact', 'cta' );
 			default:
 				return array();
 		}
