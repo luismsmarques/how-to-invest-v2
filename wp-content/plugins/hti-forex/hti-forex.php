@@ -33,6 +33,7 @@ require_once HTI_FOREX_PATH . 'includes/class-settings.php';
 require_once HTI_FOREX_PATH . 'includes/class-rates.php';
 require_once HTI_FOREX_PATH . 'includes/class-tools.php';
 require_once HTI_FOREX_PATH . 'includes/class-schema.php';
+require_once HTI_FOREX_PATH . 'includes/class-seeder.php';
 
 /**
  * Admin settings (Settings → HTI Forex): affiliate CTA kill-switch, email
@@ -54,6 +55,21 @@ Tools::init();
  * JSON-LD (WebApplication INR + FAQPage + breadcrumbs) on the forex pages.
  */
 Schema::init();
+
+/**
+ * Page seeder (Settings → HTI Forex button, and `wp hti-forex seed`).
+ */
+Seeder::init();
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	\WP_CLI::add_command(
+		'hti-forex seed',
+		function () {
+			$report = Seeder::seed();
+			\WP_CLI::success( sprintf( '%d forex pages created, %d already existed.', $report['created'], $report['skipped'] ) );
+		}
+	);
+}
 
 /**
  * Activation: schedule the rates cron and queue an immediate first fetch so
