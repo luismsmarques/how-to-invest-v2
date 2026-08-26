@@ -231,6 +231,60 @@ class Config {
 					'a' => 'Profits from forex trading are generally taxable in India, and how they are classified (often as business income) depends on the facts of each case. Separately, sending money abroad under the Liberalised Remittance Scheme can attract TCS, and trading through platforms not authorised to operate in India raises issues under FEMA regardless of any tax paid. Tax rules change and this is not tax or legal advice — a chartered accountant can assess a specific situation.',
 				),
 			),
+			'xauusd'        => array(
+				array(
+					'q' => 'What is the lot size of XAUUSD (gold)?',
+					'a' => 'On most global platforms a standard lot of XAUUSD is 100 troy ounces, a mini lot is 10 ounces and a micro lot is 1 ounce. At $3,300 per ounce a standard lot is about $330,000 of notional exposure — which is why gold positions are usually sized in micro and mini lots.',
+				),
+				array(
+					'q' => 'How much is 1 pip on gold in Indian rupees?',
+					'a' => 'Using the common convention of one pip being a $0.10 move, a pip on a standard XAUUSD lot is worth $10 — about ₹830 at ₹83 per dollar. On a micro lot (1 oz) the same pip is about ₹8.30. Some platforms count each $0.01 tick as a pip worth $1; the calculator above uses the $0.10 convention and shows the value at your rate.',
+				),
+				array(
+					'q' => 'What lot size of gold fits a smaller account?',
+					'a' => 'As an illustration: an ₹85,000 account risking 1% (₹850) with a 50-pip ($5) stop on XAUUSD works out to about 0.02 lots — 2 ounces. Gold moves in bigger dollar steps than major currency pairs, so stops tend to be wider and positions smaller for the same rupee risk. This is an example of the arithmetic, not a recommendation.',
+				),
+				array(
+					'q' => 'Is XAUUSD the same as MCX gold?',
+					'a' => 'No. XAUUSD is spot gold quoted in US dollars per troy ounce on global platforms; MCX gold is an exchange-traded futures contract in rupees per 10 grams, and its price already includes India\'s import duty (though not GST). A rough bridge is ₹ per 10g ≈ (XAUUSD ÷ 31.1035) × USD/INR × 10 before duties — the actual MCX price trades at a premium or discount that moves with import policy and local demand.',
+				),
+			),
+			'small_account' => array(
+				array(
+					'q' => 'What lot size should I use for a $100 forex account?',
+					'a' => 'A $100 account is roughly ₹8,500. Risking 1% (about ₹85) with a 20-pip stop on EUR/USD works out to about 0.005 lots — below one micro lot (0.01), the smallest size most platforms allow. In practice an account this small cannot hold a position at that risk level; the calculator above shows this honestly instead of rounding up. This is a description of the arithmetic, not advice.',
+				),
+				array(
+					'q' => 'What lot size is good for a $1,000 account?',
+					'a' => 'As an illustration: $1,000 is roughly ₹85,000. At 1% risk (₹850) with a 20-pip stop on EUR/USD at ₹83 per dollar, the arithmetic gives about 0.05 lots (5 micro lots), with the rupee risk capped near ₹830. Different stops, pairs and risk percentages change the number — that is exactly what the calculator recomputes as you type.',
+				),
+				array(
+					'q' => 'What is the minimum amount needed to trade forex?',
+					'a' => 'Two different minimums matter: the platform\'s minimum deposit, and the arithmetic minimum — the balance at which your chosen risk percentage covers at least one micro lot at your typical stop distance. With a 20-pip stop on EUR/USD and 1% risk, one micro lot needs roughly ₹17,000 of balance at ₹83 per dollar. Below that, every trade risks more than the chosen percentage.',
+				),
+				array(
+					'q' => 'Why do micro lots matter for small accounts?',
+					'a' => 'Micro lots (1,000 units) are the granularity of risk control. The finer the step, the closer a position can match a chosen rupee risk; when the account is small, whole-lot steps are so coarse that the real risk jumps far above the intended one. That is why the calculator rounds down to micro lots and flags positions that fall below one.',
+				),
+			),
+			'leverage'      => array(
+				array(
+					'q' => 'Does leverage change my position size?',
+					'a' => 'No — and that is the most misunderstood part of position sizing. The risk-based position size depends on your balance, risk percentage and stop distance. Leverage determines how much margin the platform sets aside to hold that position, not how large the position should be. Higher leverage lowers the margin requirement; it does not change what a prudent size would be.',
+				),
+				array(
+					'q' => 'How is forex margin calculated?',
+					'a' => 'Margin is the position\'s notional value divided by the leverage. For EUR/USD, the notional in dollars is units × price; for pairs where the US dollar is the base (like USD/JPY), the notional is simply the number of units; for gold it is ounces × price. The calculator converts the result to rupees at the USD/INR rate.',
+				),
+				array(
+					'q' => 'What leverage do forex brokers typically offer?',
+					'a' => 'It varies enormously by jurisdiction. Offshore platforms commonly advertise anywhere from 1:100 to 1:2000, while major regulators cap retail leverage much lower (for example 1:30 for major pairs in the EU and UK). India\'s exchange-traded currency derivatives work differently again — margins are set by SPAN-based risk models rather than a fixed leverage ratio. These are descriptions of market practice, not an endorsement of any level.',
+				),
+				array(
+					'q' => 'Is higher leverage riskier?',
+					'a' => 'Leverage amplifies both directions: it lets a small margin control a large notional, so the same price move produces a larger gain or loss relative to the account. The risk in a trade comes from the position size relative to the balance and the stop distance — but high leverage makes it easy to open positions far larger than a risk-based size, and thin margin leaves little room before a margin call closes positions automatically.',
+				),
+			),
 			'sessions'      => array(
 				array(
 					'q' => 'What time does the forex market open in India (IST)?',
