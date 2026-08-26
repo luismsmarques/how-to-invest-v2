@@ -26,7 +26,7 @@ howtoinvest/
 ├── patterns/
 │   ├── footer-disclaimer.php # full disclaimer (Textos §1.3), EN+PT
 │   ├── disclaimer-short.php  # one-line disclaimer (Textos §1.2)
-│   ├── cta-questionnaire.php # insertable CTA → /investor-profile-quiz/ (never brokerage)
+│   ├── cta-questionnaire.php # insertable CTA → /investor-profile-quiz/ (never brokerage; broker links only in the labelled broker section)
 │   ├── glossary-term.php     # glossary term layout
 │   └── news-card.php         # news card for query loops
 └── languages/

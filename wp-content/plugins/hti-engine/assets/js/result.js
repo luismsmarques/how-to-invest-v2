@@ -234,7 +234,8 @@
 			root.appendChild( esg );
 		}
 
-		// Closing actions (educational only — never execution/brokerage).
+		// Closing actions (educational only — no execution/brokerage in this block;
+	// the labelled partner module, when present, renders separately after it).
 		var actions = el( 'div', { class: 'hti-actions' } );
 
 		// Export PDF — POST to admin-post.php (keeps the token out of the URL).

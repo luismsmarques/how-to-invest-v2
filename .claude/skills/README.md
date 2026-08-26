@@ -9,8 +9,10 @@ on…"* line) and applies the skill when your task matches — e.g. touching
 `class-metrics.php` pulls in `analytics-measurement`. You can also invoke one by name.
 
 **Read first, always:** `CLAUDE.md` (the project invariants). Every skill enforces them:
-asset-class only (no named instruments/brokers), educational & conditional tone,
-disclaimer present, bilingual EN+PT, no execution CTAs, LLM keys server-side.
+asset-class only in engine output and educational content (no named
+instruments/brokers), educational & conditional tone, disclaimer present, bilingual
+EN+PT, no execution CTAs outside the labelled broker editorial section (rules in
+`broker-affiliate`), LLM keys server-side.
 
 ---
 

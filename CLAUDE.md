@@ -20,9 +20,9 @@ Lê `/docs` para a especificação completa. Lê `README.md` para o mapa.
 ## Invariantes — nunca quebrar
 
 1. As **regras determinísticas decidem** (arquétipo + alocação). O **LLM só explica**. Se o output do LLM tentar mudar números → rejeitar via schema → fallback.
-2. Output **sempre por classes de ativos** (global_equity, bonds, cash, reits_alt, crypto). **Nunca** instrumentos, tickers, fundos ou empresas nomeadas.
+2. Output do motor/LLM **sempre por classes de ativos** (global_equity, bonds, cash, reits_alt, crypto). **Nunca** instrumentos, tickers, fundos, corretoras ou empresas nomeadas (o validator bloqueia e força fallback).
 3. Linguagem **condicional e ilustrativa**, nunca imperativa ("um perfil como este costuma…", nunca "deves comprar").
-4. **Disclaimer contextual** em todos os resultados; nunca CTA de execução/corretora.
+4. **Disclaimer contextual** em todos os resultados. O resultado do motor, o PDF e os emails são 100% educativos — **nunca** contêm CTA de execução nem corretoras. Conteúdo sobre corretoras vive **apenas na secção editorial de corretoras** (comparador, reviews, guias de abertura de conta e o módulo "Passar à prática" a seguir ao resultado), sempre rotulado **"Parceria · Publicidade"**, com divulgação de afiliação **na própria página**, linguagem factual/condicional (nunca captação/imperativos), links de saída só via `/go/{slug}` com `rel="sponsored nofollow"` quando há afiliação ativa, e aviso de risco CFD quando a corretora oferece CFDs. Regras completas: `.claude/skills/broker-affiliate/SKILL.md`.
 5. Sem criar conta → só sessão **anónima**, nenhum dado identificado retido.
 6. **Export e delete** de conta (RGPD) são P0.
 7. Chave do Gemini **nunca** no HTML/JS do cliente. Guardar via `wp-config.php`/env.
@@ -72,4 +72,6 @@ Ver `docs/Stack_Concreta_HowToInvest_MVP.md §4`. Resumo:
 - Não pôr lógica de decisão de alocação no LLM ou no cliente.
 - Não reter dados identificados sem conta criada.
 - Não publicar texto financeiro sem disclaimer associado.
-- Não nomear instrumentos financeiros em lado nenhum do output.
+- Não nomear instrumentos financeiros em lado nenhum do output do motor/LLM.
+- Não misturar corretoras no resultado do motor, no PDF ou nos emails; corretoras só na secção editorial rotulada "Parceria · Publicidade" com disclosure na página (skill `broker-affiliate`).
+- Não publicar link de afiliado fora do redirector `/go/{slug}` nem sem `rel="sponsored nofollow"`.

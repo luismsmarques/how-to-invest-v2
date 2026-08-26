@@ -94,6 +94,16 @@ $bad = $base;
 $bad['class_notes']['bonds'] = 'A steady class that some access through tickers like VWCE in practice, illustratively speaking here.';
 check( ! Validator::is_valid( $bad, $granted, 'en' ), 'rejects ticker-like tokens (VWCE)' );
 
+// Named broker (invariant 4: the engine/LLM output never names brokers, even
+// though the labelled broker editorial section may).
+$bad = $base;
+$bad['why_archetype'] = 'A profile like this often considers a platform such as eToro or Trade Republic to hold steadier classes over time.';
+check( ! Validator::is_valid( $bad, $granted, 'en' ), 'rejects named brokers (eToro, Trade Republic)' );
+
+$bad = $base;
+$bad['class_notes']['bonds'] = 'Uma classe estável que perfis assim por vezes acedem através da degiro ou da lightyear na prática, ilustrativamente.';
+check( ! Validator::is_valid( $bad, $granted, 'en' ), 'rejects lowercase broker names (degiro, lightyear)' );
+
 // Invented percentage.
 $bad = $base;
 $bad['why_archetype'] = 'An example for a profile like this might lean around 73% toward growth assets over the long term here.';

@@ -4,7 +4,7 @@
  * Slug: howtoinvest/cta-questionnaire
  * Categories: howtoinvest
  * Keywords: cta, questionnaire, profile, quiz
- * Description: Insertable call-to-action that sends readers to the educational questionnaire. Never links to execution/brokerage.
+ * Description: Insertable call-to-action that sends readers to the educational questionnaire. Never links to execution/brokerage (broker links live only in the labelled broker editorial section — see the broker-affiliate skill).
  * Inserter: yes
  *
  * @package HowToInvest
