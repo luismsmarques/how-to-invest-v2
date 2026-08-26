@@ -46,6 +46,15 @@ Ver `docs/Stack_Concreta_HowToInvest_MVP.md §4`. Resumo:
 
 ## Fluxo de trabalho
 
+- **Branches — regra dura:** o trabalho vai **sempre primeiro para `develop`**, nunca
+  direto para `main`. Cria a branch a partir de `develop` e abre o PR **com base em
+  `develop`**. A `main` é **produção** e só recebe PRs de *release* (`develop` → `main`)
+  depois de validado em staging. Ver `CONTRIBUTING.md` para o detalhe e para hotfixes.
+
+  ```
+  feature/… ──PR──▶ develop ──(staging, validar)──▶ PR ──▶ main ──(produção)
+  ```
+
 - Construir e testar em **staging** (subdomínio noindex + password), nunca em produção.
 - Antes de marcar feito: critérios de aceitação do PRD + `docs/Criterios_Pronto_QA…` da área relevante.
 - A matriz de teste do motor (mín. 12 cenários) deve correr como suite repetível.
