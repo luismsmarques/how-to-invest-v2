@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>INR Lot Size Cheat Sheet — HowToInvest</title>
+<style>
+	/* Print source for assets/pdf/hti-forex-lot-size-cheat-sheet.pdf.
+	   Regenerate with:
+	   chromium --headless --no-sandbox --print-to-pdf=../hti-forex-lot-size-cheat-sheet.pdf --no-pdf-header-footer cheat-sheet.html */
+	@page { size: A4; margin: 0; }
+	* { margin: 0; padding: 0; box-sizing: border-box; }
+	:root {
+		--coral: #ff6b5e;
+		--accent: #7c5cfc;
+		--ink: #2a2438;
+		--muted: #6e6680;
+		--surface: #fff6f1;
+		--line: #f2e4dd;
+	}
+	body { font: 400 10.5pt/1.5 Arial, Helvetica, sans-serif; color: var(--ink); }
+	.page { width: 210mm; height: 296mm; padding: 14mm 16mm; page-break-after: always; position: relative; background: #fff; }
+	.page:last-child { page-break-after: auto; }
+
+	header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 3px solid var(--coral); padding-bottom: 5mm; margin-bottom: 7mm; }
+	.brand { font: 800 20pt Arial, sans-serif; letter-spacing: -0.5px; }
+	.brand em { color: var(--coral); font-style: normal; }
+	.tagline { font: 600 9pt Arial, sans-serif; color: var(--muted); text-align: right; }
+
+	h1 { font: 800 17pt Arial, sans-serif; margin-bottom: 2mm; }
+	h2 { font: 800 11.5pt Arial, sans-serif; margin: 6mm 0 2.5mm; color: var(--ink); }
+	h2 .no { display: inline-block; width: 6.5mm; height: 6.5mm; line-height: 6.5mm; text-align: center; background: var(--coral); color: #fff; border-radius: 50%; font-size: 9.5pt; margin-right: 2mm; }
+	p.lead { color: var(--muted); font-size: 10pt; margin-bottom: 2mm; }
+
+	table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+	th, td { padding: 1.8mm 2.5mm; text-align: left; border-bottom: 1px solid var(--line); }
+	thead th { background: var(--surface); font: 700 8.5pt Arial, sans-serif; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+	td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+	tr.hl td { background: #fff1ee; font-weight: 700; }
+
+	.box { background: var(--surface); border: 1px solid var(--line); border-radius: 4mm; padding: 4mm 5mm; margin: 2mm 0; }
+	.formula { font: 700 11pt "Courier New", monospace; color: var(--ink); background: #fff; border: 1.5px dashed var(--coral); border-radius: 2mm; padding: 3mm 4mm; margin: 2mm 0; text-align: center; }
+	.example { font-size: 9.5pt; color: var(--ink); }
+	.example strong { color: var(--coral); }
+
+	.cols { display: flex; gap: 6mm; }
+	.cols > div { flex: 1; }
+
+	.note { font-size: 8pt; color: var(--muted); }
+	.ratebar { font: 600 8.5pt Arial, sans-serif; color: var(--muted); background: var(--surface); border-radius: 2mm; padding: 2mm 3mm; margin-bottom: 4mm; }
+
+	footer { position: absolute; left: 16mm; right: 16mm; bottom: 10mm; border-top: 1px solid var(--line); padding-top: 3mm; font-size: 7.5pt; color: var(--muted); }
+	footer .url { color: var(--coral); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="page">
+	<header>
+		<div class="brand">How<em>To</em>Invest</div>
+		<div class="tagline">Free forex tools for Indian traders<br>howtoinvest.pro/forex</div>
+	</header>
+
+	<h1>The INR Lot Size Cheat Sheet</h1>
+	<p class="lead">Position sizing, pip values and market hours — in rupees, on one sheet. Educational reference, not advice.</p>
+	<div class="ratebar">Reference rates used below: USD/INR 88.00 &middot; USD/JPY 147.00 (August 2026). Rates move — recompute live at howtoinvest.pro/forex.</div>
+
+	<h2><span class="no">1</span>Lot sizes</h2>
+	<table>
+		<thead><tr><th>Lot</th><th class="num">Units (FX pairs)</th><th class="num">Gold (XAUUSD)</th><th class="num">1 pip on EUR/USD</th><th class="num">&asymp; in rupees</th></tr></thead>
+		<tbody>
+			<tr><td>Standard (1.00)</td><td class="num">100,000</td><td class="num">100 oz</td><td class="num">$10.00</td><td class="num">&#8377;880</td></tr>
+			<tr><td>Mini (0.10)</td><td class="num">10,000</td><td class="num">10 oz</td><td class="num">$1.00</td><td class="num">&#8377;88</td></tr>
+			<tr class="hl"><td>Micro (0.01)</td><td class="num">1,000</td><td class="num">1 oz</td><td class="num">$0.10</td><td class="num">&#8377;8.80</td></tr>
+		</tbody>
+	</table>
+	<p class="note">Micro lots are the granularity of risk control — the smallest step most platforms allow.</p>
+
+	<h2><span class="no">2</span>What one pip is worth in &#8377; (per lot size)</h2>
+	<table>
+		<thead><tr><th>Pair</th><th class="num">Pip size</th><th class="num">Standard</th><th class="num">Mini</th><th class="num">Micro</th></tr></thead>
+		<tbody>
+			<tr><td>EUR/USD &middot; GBP/USD</td><td class="num">0.0001</td><td class="num">&#8377;880</td><td class="num">&#8377;88</td><td class="num">&#8377;8.80</td></tr>
+			<tr><td>USD/JPY</td><td class="num">0.01</td><td class="num">&#8377;599</td><td class="num">&#8377;59.90</td><td class="num">&#8377;5.99</td></tr>
+			<tr><td>Gold (XAUUSD)*</td><td class="num">$0.10</td><td class="num">&#8377;880</td><td class="num">&#8377;88</td><td class="num">&#8377;8.80</td></tr>
+			<tr><td>USD/INR (offshore)</td><td class="num">0.0025</td><td class="num">&#8377;250</td><td class="num">&#8377;25</td><td class="num">&#8377;2.50</td></tr>
+		</tbody>
+	</table>
+	<p class="note">*Using the common $0.10-per-pip convention on a 100 oz contract; some platforms count each $0.01 tick as a $1 pip — check your contract specs. USD/JPY converted at the reference rates above.</p>
+
+	<h2><span class="no">3</span>Position size from your risk</h2>
+	<div class="formula">Lots = (Balance &times; Risk%) &divide; (Stop in pips &times; Pip value in &#8377; per lot)</div>
+	<div class="box example">
+		<strong>Worked example:</strong> &#8377;1,00,000 account &middot; 1% risk (&#8377;1,000) &middot; 20-pip stop on EUR/USD.<br>
+		Pip per lot &asymp; &#8377;880 &nbsp;&rarr;&nbsp; 1,000 &divide; (20 &times; 880) = 0.056 &rarr; <strong>round DOWN to 0.05 lots</strong> (5 micro lots) &middot; actual risk <strong>&#8377;880</strong>.<br>
+		<span class="note">Always round down — rounding up silently risks more than you chose. The 1–2% risk figure is a widely cited convention in trading literature, not a rule.</span>
+	</div>
+
+	<footer>Educational content — an illustration of the arithmetic, not investment advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money. Forex in India is regulated under FEMA; the RBI publishes an Alert List of unauthorised platforms — verify the current rules with SEBI/RBI or a professional. <span class="url">howtoinvest.pro/forex</span></footer>
+</div>
+
+<div class="page">
+	<header>
+		<div class="brand">How<em>To</em>Invest</div>
+		<div class="tagline">Free forex tools for Indian traders<br>howtoinvest.pro/forex</div>
+	</header>
+
+	<h2 style="margin-top:0"><span class="no">4</span>Forex market hours in IST</h2>
+	<p class="lead">India has no daylight saving — IST is fixed at UTC+5:30, so it is the foreign sessions that shift twice a year.</p>
+	<div class="cols">
+		<div>
+			<table>
+				<thead><tr><th colspan="3">Winter (Nov–Mar)</th></tr><tr><th>Session</th><th class="num">Opens IST</th><th class="num">Closes IST</th></tr></thead>
+				<tbody>
+					<tr><td>Sydney</td><td class="num">02:30</td><td class="num">11:30</td></tr>
+					<tr><td>Tokyo</td><td class="num">05:30</td><td class="num">14:30</td></tr>
+					<tr><td>London</td><td class="num">13:30</td><td class="num">22:30</td></tr>
+					<tr><td>New York</td><td class="num">18:30</td><td class="num">03:30 +1</td></tr>
+					<tr class="hl"><td>London&ndash;NY overlap</td><td class="num">18:30</td><td class="num">22:30</td></tr>
+				</tbody>
+			</table>
+		</div>
+		<div>
+			<table>
+				<thead><tr><th colspan="3">Summer (Apr–Oct)</th></tr><tr><th>Session</th><th class="num">Opens IST</th><th class="num">Closes IST</th></tr></thead>
+				<tbody>
+					<tr><td>Sydney</td><td class="num">02:30</td><td class="num">11:30</td></tr>
+					<tr><td>Tokyo</td><td class="num">05:30</td><td class="num">14:30</td></tr>
+					<tr><td>London</td><td class="num">12:30</td><td class="num">21:30</td></tr>
+					<tr><td>New York</td><td class="num">17:30</td><td class="num">02:30 +1</td></tr>
+					<tr class="hl"><td>London&ndash;NY overlap</td><td class="num">17:30</td><td class="num">21:30</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<p class="note">For ~3 weeks each March and late October/November the US and UK change clocks on different dates and the overlap temporarily runs about 17:30–22:30 IST. The live clock at howtoinvest.pro/forex computes today&rsquo;s exact windows. Market closed on weekends.</p>
+
+	<h2><span class="no">5</span>Five numbers worth memorising</h2>
+	<div class="box">
+		<table style="font-size:9.5pt">
+			<tbody>
+				<tr><td>1 pip, EUR/USD, micro lot</td><td class="num"><strong>&asymp; &#8377;8.80</strong></td></tr>
+				<tr><td>Balance where 1% risk covers one micro lot (20-pip stop, EUR/USD)</td><td class="num"><strong>&asymp; &#8377;17,600</strong></td></tr>
+				<tr><td>Gold standard lot notional at $3,300/oz</td><td class="num"><strong>&asymp; $330,000</strong></td></tr>
+				<tr><td>Margin for 0.05 lots EUR/USD at 1:500 (price 1.09)</td><td class="num"><strong>&asymp; &#8377;959</strong></td></tr>
+				<tr><td>Busiest hours (winter, IST)</td><td class="num"><strong>18:30&ndash;22:30</strong></td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h2><span class="no">6</span>The free calculators</h2>
+	<p class="lead" style="margin-bottom:1mm">Every number on this sheet, recomputed live with today&rsquo;s rates — INR-native, no sign-up:</p>
+	<table>
+		<tbody>
+			<tr><td>Position size in &#8377;</td><td class="num">howtoinvest.pro/forex/position-size-calculator/</td></tr>
+			<tr><td>Pip value in &#8377;</td><td class="num">howtoinvest.pro/forex/pip-value-calculator/</td></tr>
+			<tr><td>Profit/loss in &#8377;</td><td class="num">howtoinvest.pro/forex/profit-calculator/</td></tr>
+			<tr><td>Gold (XAUUSD) lot size</td><td class="num">howtoinvest.pro/forex/xauusd-lot-size-calculator/</td></tr>
+			<tr><td>Market hours in IST (live)</td><td class="num">howtoinvest.pro/forex/market-hours-ist/</td></tr>
+		</tbody>
+	</table>
+
+	<footer>Educational content — an illustration of the arithmetic, not investment advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money. Forex in India is regulated under FEMA; the RBI publishes an Alert List of unauthorised platforms — verify the current rules with SEBI/RBI or a professional. <span class="url">howtoinvest.pro/forex</span></footer>
+</div>
+
+</body>
+</html>

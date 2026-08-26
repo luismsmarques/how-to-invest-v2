@@ -61,6 +61,28 @@ Schema::init();
  */
 Seeder::init();
 
+/**
+ * Lead magnet: subscribers who opt in from a forex tool page (source
+ * "forex-*") receive the INR lot-size cheat sheet after confirming the
+ * double opt-in — delivered by hti-engine via the `hti_lead_magnet` filter.
+ * Like the ebook, the gate is "you only learn the URL by confirming".
+ */
+add_filter(
+	'hti_lead_magnet',
+	function ( $magnet, $source, $locale ) {
+		unset( $locale );
+		if ( null === $magnet && str_starts_with( (string) $source, 'forex' ) ) {
+			return array(
+				'url'  => HTI_FOREX_URL . 'assets/pdf/hti-forex-lot-size-cheat-sheet.pdf',
+				'name' => 'INR lot size cheat sheet',
+			);
+		}
+		return $magnet;
+	},
+	10,
+	3
+);
+
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	\WP_CLI::add_command(
 		'hti-forex seed',

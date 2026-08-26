@@ -475,8 +475,8 @@ class Tools {
 		}
 
 		return '<div class="hti-fx-email" data-email data-source="forex-' . esc_attr( $tool ) . '" data-location="forex_' . esc_attr( $tool ) . '">'
-			. '<p class="hti-fx-email__title">' . esc_html( 'Get new free tools by email' ) . '</p>'
-			. '<p class="hti-fx-email__sub">' . esc_html( 'An occasional email when a new free calculator or India-focused guide goes live. Double opt-in, unsubscribe anytime.' ) . '</p>'
+			. '<p class="hti-fx-email__title">' . esc_html( 'Get the free INR lot-size cheat sheet (PDF)' ) . '</p>'
+			. '<p class="hti-fx-email__sub">' . esc_html( 'Pip values in ₹, the position-size formula and market hours in IST on one printable sheet — sent after you confirm. Plus an occasional email when a new free tool goes live. Unsubscribe anytime.' ) . '</p>'
 			. '<form class="hti-fx-email__form" novalidate>'
 			. '<input type="email" name="email" autocomplete="email" required placeholder="you@example.com" aria-label="Email address" />'
 			. '<input type="text" name="hti_hp" class="hti-fx-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />'
