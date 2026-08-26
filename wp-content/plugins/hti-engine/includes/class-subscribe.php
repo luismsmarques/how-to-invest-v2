@@ -258,13 +258,14 @@ class Subscribe {
 
 		self::send_optin_email( $email, $locale );
 
-		// Lead magnet: when the form is the ebook gate, remember that intent so
-		// the ebook is delivered *after* the newsletter opt-in is confirmed (the
-		// PDF is gated behind the double opt-in). The source is set by the ebook
-		// form ("ebook-…").
+		// Remember where this opt-in came from so the confirmation step can
+		// (a) attribute the contact in Brevo and (b) deliver the right lead
+		// magnet — the ebook for "ebook-…" sources, or whatever a plugin
+		// offers via the `hti_lead_magnet` filter (e.g. hti-forex's cheat
+		// sheet for "forex-…"). Delivery stays gated behind the double opt-in.
 		$source = sanitize_key( (string) $request->get_param( 'source' ) );
-		if ( str_starts_with( $source, 'ebook' ) ) {
-			self::ebook_pending_set( $email );
+		if ( '' !== $source ) {
+			self::pending_source_set( $email, $source );
 		}
 
 		return new \WP_REST_Response( array( 'sent' => true ), 200 );
@@ -329,6 +330,61 @@ class Subscribe {
 	}
 
 	/**
+	 * Durable option mapping hash(email) => [source, expiry]: which form the
+	 * pending opt-in came from. Generalizes the ebook flag (which stays as a
+	 * read fallback for opt-ins already in flight when this shipped) so any
+	 * source can be attributed in Brevo and matched to a lead magnet.
+	 */
+	private const PENDING_SOURCE_OPTION = 'hti_pending_source';
+
+	/**
+	 * Remember the source of a pending opt-in. Prunes expired entries on
+	 * write so the option stays small.
+	 *
+	 * @param string $email  Email.
+	 * @param string $source Sanitized source key (e.g. "ebook-page", "forex-pip_value").
+	 */
+	private static function pending_source_set( string $email, string $source ): void {
+		$store = get_option( self::PENDING_SOURCE_OPTION, array() );
+		$store = is_array( $store ) ? $store : array();
+		$now   = time();
+		foreach ( $store as $h => $entry ) {
+			if ( (int) ( $entry['x'] ?? 0 ) < $now ) {
+				unset( $store[ $h ] );
+			}
+		}
+		$store[ self::ebook_pending_hash( $email ) ] = array(
+			's' => $source,
+			'x' => $now + WEEK_IN_SECONDS,
+		);
+		update_option( self::PENDING_SOURCE_OPTION, $store, false );
+	}
+
+	/**
+	 * Consume the pending source: returns it if set and still valid ('' when
+	 * not), removing the entry either way.
+	 *
+	 * @param string $email Email.
+	 * @return string
+	 */
+	private static function pending_source_take( string $email ): string {
+		$store = get_option( self::PENDING_SOURCE_OPTION, array() );
+		if ( ! is_array( $store ) ) {
+			return '';
+		}
+		$hash   = self::ebook_pending_hash( $email );
+		$source = '';
+		if ( isset( $store[ $hash ] ) ) {
+			if ( (int) ( $store[ $hash ]['x'] ?? 0 ) >= time() ) {
+				$source = (string) ( $store[ $hash ]['s'] ?? '' );
+			}
+			unset( $store[ $hash ] );
+			update_option( self::PENDING_SOURCE_OPTION, $store, false );
+		}
+		return $source;
+	}
+
+	/**
 	 * Public URL of the ebook PDF for a locale. Themes/plugins can override via
 	 * the `hti_ebook_url` filter; defaults to the file bundled in the theme.
 	 *
@@ -360,20 +416,43 @@ class Subscribe {
 		}
 
 		if ( 'optin' === $action ) {
+			// Where the opt-in came from: the generalized store first, the
+			// legacy ebook flag as a fallback for opt-ins already in flight
+			// when the store shipped.
+			$src = self::pending_source_take( $email );
+			if ( '' === $src && self::ebook_pending_take( $email ) ) {
+				$src = 'ebook';
+			}
+
+			$attributes = array(
+				'LANGUAGE' => strtoupper( $locale ),
+				'OPTIN_AT' => gmdate( 'Y-m-d' ),
+			);
+			if ( '' !== $src ) {
+				// Requires a SOURCE text attribute in the Brevo dashboard;
+				// unknown attributes are silently ignored by the API.
+				$attributes['SOURCE'] = strtoupper( substr( $src, 0, 40 ) );
+			}
+
 			$ok = Brevo::upsert_contact(
 				$email,
-				array( 'LANGUAGE' => strtoupper( $locale ), 'OPTIN_AT' => gmdate( 'Y-m-d' ) ),
+				$attributes,
 				array_filter( array( Brevo::list_id( $locale ) ) )
 			);
 			$source = 'newsletter';
 			if ( $ok ) {
-				// Now that the subscription is confirmed, deliver the ebook to
-				// those who came via the lead-magnet gate; everyone else gets the
-				// plain welcome. The source is carried into the redirect so the
-				// analytics event can attribute the confirmation (ebook vs plain).
-				if ( self::ebook_pending_take( $email ) ) {
+				// Now that the subscription is confirmed, deliver the matching
+				// lead magnet: the ebook for ebook-* sources, whatever a plugin
+				// offers via `hti_lead_magnet` otherwise, or the plain welcome.
+				// The source is carried into the redirect so the analytics
+				// event can attribute the confirmation.
+				$magnet = str_starts_with( $src, 'ebook' ) ? null : apply_filters( 'hti_lead_magnet', null, $src, $locale );
+				if ( str_starts_with( $src, 'ebook' ) ) {
 					$source = 'ebook';
 					self::send_ebook_email( $email, $locale );
+				} elseif ( is_array( $magnet ) && ! empty( $magnet['url'] ) ) {
+					$source = strtok( $src, '-' );
+					self::send_lead_magnet_email( $email, $locale, (string) $magnet['url'], (string) ( $magnet['name'] ?? 'your download' ) );
 				} else {
 					self::send_confirmed_email( $email, $locale );
 				}
@@ -522,6 +601,45 @@ class Subscribe {
 		)
 			. Emails::row( Emails::button( $btn, $url ), '28px 48px 6px', true )
 			. Emails::row( $other, '14px 48px 8px', true )
+			. Emails::row( Emails::note( $note ), '18px 48px 10px', true )
+			. Emails::row( '<a href="' . esc_url( $unsub ) . '" style="font:400 12.5px Arial,sans-serif;color:#9A93A8;">' . esc_html( $unlabel ) . '</a>', '0 48px 44px', true );
+
+		Mailer::send( $email, $subject, Emails::layout( $locale, $inner, $heading ) );
+	}
+
+	/**
+	 * Deliver a plugin-provided lead magnet (via the `hti_lead_magnet`
+	 * filter): a branded email with the download button. Mirrors the ebook
+	 * email and doubles as the post-confirmation welcome, so it carries the
+	 * disclaimer and an unsubscribe link.
+	 *
+	 * @param string $email  Email.
+	 * @param string $locale Locale.
+	 * @param string $url    Download URL.
+	 * @param string $name   Human name of the download (e.g. "INR lot size cheat sheet").
+	 */
+	private static function send_lead_magnet_email( string $email, string $locale, string $url, string $name ): void {
+		$pt = 'pt' === $locale;
+
+		$subject = ( $pt ? 'O teu download chegou — ' : 'Your download is here — ' ) . $name;
+		$heading = $pt ? 'O teu download está pronto' : 'Your download is ready';
+		$lead    = $pt
+			? sprintf( 'Aqui tens “%s”. Carrega no botão para descarregar (PDF).', $name )
+			: sprintf( 'Here is your “%s”. Use the button to download it (PDF).', $name );
+		$btn     = $pt ? 'Descarregar (PDF)' : 'Download (PDF)';
+		$note    = $pt
+			? 'Conteúdo educativo, não constitui aconselhamento financeiro.'
+			: 'Educational content, not financial advice.';
+		$unsub   = self::link( 'unsub', $email, $locale );
+		$unlabel = $pt ? 'Cancelar subscrição' : 'Unsubscribe';
+
+		$inner = Emails::row(
+			Emails::icon_circle( '&#128200;', '#EAF6F0', '#147A57' ) . Emails::h1( $heading ) . Emails::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. Emails::row( Emails::button( $btn, $url ), '28px 48px 6px', true )
+			. Emails::row( Emails::url_fallback( $url, $locale ), '18px 48px 8px' )
 			. Emails::row( Emails::note( $note ), '18px 48px 10px', true )
 			. Emails::row( '<a href="' . esc_url( $unsub ) . '" style="font:400 12.5px Arial,sans-serif;color:#9A93A8;">' . esc_html( $unlabel ) . '</a>', '0 48px 44px', true );
 
