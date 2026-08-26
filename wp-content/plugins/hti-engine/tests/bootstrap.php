@@ -37,6 +37,13 @@ if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 
 // In-memory transient + helper shims so RateLimit is testable without WordPress.
 $GLOBALS['__hti_transients'] = array();
+if ( ! function_exists( 'wp_using_ext_object_cache' ) ) {
+	// No persistent object cache in tests → RateLimit uses the transient path.
+	// The GET_LOCK branch self-skips because $wpdb is not a wpdb instance.
+	function wp_using_ext_object_cache() {
+		return false;
+	}
+}
 if ( ! function_exists( 'get_transient' ) ) {
 	/**
 	 * @param string $key Key.

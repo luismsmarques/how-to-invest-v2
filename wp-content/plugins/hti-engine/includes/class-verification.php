@@ -60,9 +60,16 @@ class Verification {
 
 		if ( $existing instanceof \WP_User ) {
 			if ( self::is_unverified( $existing->ID ) ) {
-				wp_set_password( $password, $existing->ID ); // Honour the latest intent.
-				update_user_meta( $existing->ID, self::META_VERIFIED, '0' );
-				self::store_pending( $existing->ID, $session_token );
+				// SECURITY: never overwrite a not-yet-verified account's password
+				// or profile-claim from a *subsequent* /register. Otherwise an
+				// attacker could register a victim's email (before they click the
+				// link) with the attacker's password, and when the victim later
+				// verifies, the attacker owns the account. So we keep the original
+				// pending registration and only re-send the link; the claim is
+				// seeded only if none was recorded yet.
+				if ( '' === (string) get_user_meta( $existing->ID, self::META_PENDING, true ) ) {
+					self::store_pending( $existing->ID, $session_token );
+				}
 				self::send( $existing, self::issue_token( $existing->ID ), $locale );
 			} else {
 				self::send_existing_notice( $existing, $locale );

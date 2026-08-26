@@ -1,9 +1,9 @@
 <?php
 /**
  * Featured image for a generated `news` post: a plain AI photo about the
- * article's topic (Imagen), saved as the post thumbnail. The same photo is
- * later reused — without re-calling the AI — inside the social-media kit
- * (see Social_Kit). Best-effort: a failure here never blocks the article.
+ * article's topic (Imagen), saved as the post thumbnail. The photo can then be
+ * reused — without re-calling the AI — by the hti-social card generator.
+ * Best-effort: a failure here never blocks the article.
  *
  * @package HTI_RSS_AI
  */
@@ -122,7 +122,18 @@ class Featured_Image {
 		if ( '' === $url ) {
 			return array( null, '' );
 		}
-		$resp = wp_remote_get( $url, array( 'timeout' => 20 ) );
+		// SSRF guard: the URL comes from third-party feed HTML, so use the safe
+		// variant (reject_unsafe_urls → wp_http_validate_url blocks private/
+		// reserved IPs, non-http(s) schemes and odd ports) and cap the response
+		// size, so a hostile feed can't point us at internal services
+		// (169.254.169.254, localhost, LAN) or exhaust memory.
+		$resp = wp_safe_remote_get(
+			$url,
+			array(
+				'timeout'             => 20,
+				'limit_response_size' => 12 * MB_IN_BYTES,
+			)
+		);
 		if ( is_wp_error( $resp ) || 200 !== (int) wp_remote_retrieve_response_code( $resp ) ) {
 			return array( null, '' );
 		}
@@ -215,7 +226,7 @@ class Featured_Image {
 			'rssai_featured_image',
 			__( 'AI featured image', 'hti-rss-ai' ),
 			array( __CLASS__, 'render_meta_box' ),
-			'news',
+			Settings::post_type(),
 			'side',
 			'default'
 		);

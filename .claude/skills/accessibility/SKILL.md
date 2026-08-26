@@ -30,6 +30,11 @@ Target AA across the user-facing app. Accessibility is in the launch gate (Crite
 ## The chart
 - The allocation chart must have a **text alternative**: the same percentages as an accessible list/table. This is also good for SEO and for the PDF.
 
+## House patterns (implemented — follow these precedents)
+- **Skip link:** emitted on `wp_body_open` (`render_skip_link()` in the theme), NOT inside the header group — the header is `position: sticky` (breaks absolute-offset hiding) and theme.json `blockGap` adds margin to a group's second child. Hidden via the clip pattern; on focus `position: fixed` at the viewport corner (`.hti-skip` in `style.css`). Target `#main` is injected by a `render_block` filter (`add_main_landmark_id`) with `tabindex="-1"`.
+- **Toggle buttons/tabs:** expose state with `aria-pressed` (news-hub tabs in `news-hub.js`; glossary filters in `glossary.js`).
+- **Custom radiogroups (quiz):** WAI-ARIA pattern — roving tabindex (one tab stop: the chosen option or the first), Arrow/Home/End move focus, Space/Enter selects (`learn.js`); initial tabindex also set server-side.
+
 ## Screen reader pass
 - Manually walk questionnaire → result with a screen reader before launch.
 

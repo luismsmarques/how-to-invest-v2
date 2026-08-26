@@ -139,3 +139,135 @@
 		font-size: 1.8rem;
 	}
 }
+
+/* Allocation visualiser (archetype selector → donut). */
+.hti-alloc {
+	--hti-coral: #ff6b5e;
+	--hti-ink: #2a2438;
+	--hti-muted: #6e6680;
+	--hti-line: #f2e4dd;
+	--hti-surface: #fff6f1;
+	display: grid;
+	gap: 1.5rem;
+	max-width: 720px;
+	margin: 1.5rem 0;
+	padding: 1.75rem;
+	background: #fff;
+	border: 1px solid var(--hti-line);
+	border-radius: 18px;
+	box-shadow: 0 2px 14px rgba(20, 23, 58, 0.06);
+}
+
+.hti-alloc__tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.hti-alloc__tab {
+	padding: 0.5rem 1rem;
+	font: 600 0.88rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-muted);
+	background: var(--hti-surface);
+	border: 1.5px solid var(--hti-line);
+	border-radius: 999px;
+	cursor: pointer;
+	transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.hti-alloc__tab:hover {
+	color: var(--hti-ink);
+}
+
+.hti-alloc__tab[aria-selected='true'] {
+	color: #fff;
+	background: var(--hti-coral);
+	border-color: var(--hti-coral);
+}
+
+.hti-alloc__tab:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.22);
+}
+
+.hti-alloc__view {
+	display: flex;
+	align-items: center;
+	gap: 2rem;
+	flex-wrap: wrap;
+}
+
+.hti-alloc__donut {
+	flex: none;
+	width: 180px;
+	height: 180px;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+	background: var(--hti-surface);
+}
+
+.hti-alloc__hole {
+	width: 58%;
+	height: 58%;
+	border-radius: 50%;
+	background: #fff;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+
+.hti-alloc__cap {
+	font: 700 0.8rem 'Poppins', system-ui, sans-serif;
+	color: var(--hti-ink);
+}
+
+.hti-alloc__subcap {
+	font: 500 0.68rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-muted);
+}
+
+.hti-alloc__list {
+	flex: 1 1 220px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 0.6rem;
+}
+
+.hti-alloc__row {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	font: 600 0.92rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-ink);
+}
+
+.hti-alloc__dot {
+	flex: none;
+	width: 12px;
+	height: 12px;
+	border-radius: 3px;
+}
+
+.hti-alloc__name {
+	flex: 1 1 auto;
+}
+
+.hti-alloc__pct {
+	font-weight: 800;
+	color: var(--hti-ink);
+}
+
+@media (max-width: 560px) {
+	.hti-alloc {
+		padding: 1.25rem;
+	}
+	.hti-alloc__view {
+		gap: 1.25rem;
+		justify-content: center;
+	}
+}

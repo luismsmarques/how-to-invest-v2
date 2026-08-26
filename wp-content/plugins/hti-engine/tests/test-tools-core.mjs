@@ -52,5 +52,26 @@ const s = T.series( 1000, 100, 5, 10 );
 ok( s.length === 11 && s[ 0 ].year === 0, 'series covers year 0..10' );
 near( s[ 10 ].value, T.futureValue( 1000, 100, 5, 10 ), 1e-6, 'series last value = future value' );
 
+// Emergency fund: target = expenses × months; gap nets out current savings.
+const ef = T.emergencyFund( 1500, 6, 2000, 200 );
+near( ef.target, 9000, 1e-6, 'emergency target = 1500 × 6' );
+near( ef.gap, 7000, 1e-6, 'emergency gap = target − saved' );
+near( ef.monthsToReach, 35, 1e-6, 'emergency months = ceil(gap / monthly)' );
+ok( T.emergencyFund( 1000, 3, 5000, 100 ).gap === 0, 'fully funded → no gap' );
+ok( T.emergencyFund( 1000, 3, 5000, 100 ).monthsToReach === 0, 'fully funded → 0 months' );
+ok( ! isFinite( T.emergencyFund( 1500, 6, 0, 0 ).monthsToReach ), 'no monthly saving → unreachable' );
+
+// Rule of 72: years to double = 72 / rate; multiple = 2^doublings.
+near( T.rule72( 6, 24 ).yearsToDouble, 12, 1e-6, 'rule of 72 at 6% doubles in 12y' );
+near( T.rule72( 6, 24 ).doublings, 2, 1e-6, 'doublings over 24y at 6% = 2' );
+near( T.rule72( 6, 24 ).multiple, 4, 1e-6, 'multiple = 2^2 = 4' );
+ok( ! isFinite( T.rule72( 0, 24 ).yearsToDouble ), 'zero rate never doubles' );
+
+// Fee impact: a yearly fee always lowers the net result vs gross.
+const fi = T.feeImpact( 10000, 200, 6, 1, 25 );
+ok( fi.gross > fi.net && fi.lost > 0, 'fee lowers the net value' );
+near( fi.lost, fi.gross - fi.net, 1e-6, 'lost = gross − net' );
+near( T.feeImpact( 10000, 200, 6, 0, 25 ).lost, 0, 1e-6, 'zero fee → nothing lost' );
+
 console.log( 'tools-core: ' + pass + ' passed, ' + fail + ' failed' );
 process.exit( fail ? 1 : 0 );

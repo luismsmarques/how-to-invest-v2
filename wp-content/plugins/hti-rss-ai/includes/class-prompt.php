@@ -20,34 +20,47 @@ class Prompt {
 	 * @param string $lang 'en' or 'pt'.
 	 */
 	public static function system( string $lang ): string {
-		$language = 'pt' === $lang ? 'European Portuguese (pt-PT)' : 'English';
+		$language = self::language_name( $lang );
 		$today    = self::today();
 		$year     = (int) substr( $today, 0, 4 );
 		$cats     = self::category_rule( $lang );
 
-		return implode(
-			"\n",
+		$lines = array(
+			self::identity_line(),
+			'Your job: from the related headlines/summaries provided, research the current facts on the web and write ONE original, neutral, well-structured news article.',
+			'',
+			"TODAY'S DATE IS {$today}. The article is published today and must read as current on that date.",
+			'',
+			'STRICT RULES:',
+			"- Write in {$language}.",
+			'- Use ONLY facts you can support from your web research. If a detail is uncertain, omit it. Never invent numbers, quotes, dates or names.',
+			'- TEMPORAL FRAMING (critical): write from the perspective of today.',
+			"  - Prefer the most recent data available (latest full-year results and {$year} estimates). Actively search for figures more recent than those in the source summaries — market-research summaries are often a year or two behind.",
+			'  - Never present a past year as the present. Do NOT write "currently", "this year" or "now" about a figure whose base year is in the past.',
+			'  - When a figure\'s base year is older than the current year, state that base year explicitly (e.g. "valued at X in 2024") instead of implying it is current.',
+			"  - For forecasts/CAGR, anchor the window to today and the future (e.g. {$year}–2034), not to a window that has already started in the past.",
+			'  - If you genuinely cannot find data at least as recent as the current year, say so plainly rather than dressing up old figures as current.',
+			'- Original synthesis. NEVER copy the source text verbatim; rewrite in your own words and attribute sources.',
+			'- Neutral and impartial.',
+		);
+		foreach ( self::guard_lines() as $g ) {
+			$lines[] = $g;
+		}
+		$lines = array_merge(
+			$lines,
 			array(
-				'You are a financial-news editor for an educational financial-literacy platform.',
-				'Your job: from the related headlines/summaries provided, research the current facts on the web and write ONE original, neutral, educational news article.',
-				'',
-				"TODAY'S DATE IS {$today}. The article is published today and must read as current on that date.",
-				'',
-				'STRICT RULES:',
-				"- Write in {$language}.",
-				'- Use ONLY facts you can support from your web research. If a detail is uncertain, omit it. Never invent numbers, quotes, dates or names.',
-				'- TEMPORAL FRAMING (critical): write from the perspective of today.',
-				"  - Prefer the most recent data available (latest full-year results and {$year} estimates). Actively search for figures more recent than those in the source summaries — market-research summaries are often a year or two behind.",
-				'  - Never present a past year as the present. Do NOT write "currently", "this year" or "now" about a figure whose base year is in the past.',
-				'  - When a figure\'s base year is older than the current year, state that base year explicitly (e.g. "valued at X in 2024") instead of implying it is current.',
-				"  - For forecasts/CAGR, anchor the window to today and the future (e.g. {$year}–2034), not to a window that has already started in the past.",
-				'  - If you genuinely cannot find data at least as recent as the current year, say so plainly rather than dressing up old figures as current.',
-				'- Original synthesis. NEVER copy the source text verbatim; rewrite in your own words and attribute sources.',
-				'- Educational and impartial. NO investment advice, NO recommendations, NO "buy/sell/should", NO price targets, NO specific tickers or product/fund names.',
 				'- SEO + Google News friendly: a clear, factual headline; a concise meta description (max 155 characters); a short lead (dek); a well-structured body with short paragraphs and the occasional subheading.',
 				'- Include the sources you actually used.',
 				$cats,
 				'',
+			)
+		);
+
+		return implode(
+			"\n",
+			array_merge(
+				$lines,
+				array(
 				'OUTPUT: respond with ONLY a JSON object (no markdown, no commentary) of this exact shape:',
 				'{',
 				'  "headline": string,',
@@ -60,8 +73,55 @@ class Prompt {
 				'  "sources": [ { "title": string, "url": string } ],',
 				'  "lang": "' . $lang . '"',
 				'}',
+				)
 			)
 		);
+	}
+
+	/**
+	 * Neutral identity line, with the optional house style appended.
+	 */
+	private static function identity_line(): string {
+		$house = trim( (string) Settings::get( 'house_style', '' ) );
+		$base  = '' !== $house ? $house : 'You are a professional news editor for an educational publication.';
+		return $base;
+	}
+
+	/**
+	 * Optional finance safety instructions, gated by the same toggles as the
+	 * Validator so a general-news site can drop them.
+	 *
+	 * @return array<int,string>
+	 */
+	private static function guard_lines(): array {
+		$out = array();
+		if ( (int) Settings::get( 'guard_advice', 1 ) ) {
+			$out[] = '- Educational and impartial: NO advice, NO recommendations, NO "buy/sell/should", NO price targets.';
+		}
+		if ( (int) Settings::get( 'guard_tickers', 1 ) ) {
+			$out[] = '- Do NOT name specific stock tickers or push specific products/funds.';
+		}
+		return $out;
+	}
+
+	/**
+	 * Human language name for a code (best-effort; falls back to the code).
+	 *
+	 * @param string $lang Language code.
+	 */
+	public static function language_name( string $lang ): string {
+		$map = array(
+			'en' => 'English',
+			'pt' => 'European Portuguese (pt-PT)',
+			'es' => 'Spanish',
+			'fr' => 'French',
+			'de' => 'German',
+			'it' => 'Italian',
+			'nl' => 'Dutch',
+			'pl' => 'Polish',
+			'br' => 'Brazilian Portuguese',
+		);
+		return $map[ strtolower( $lang ) ] ?? strtoupper( $lang );
 	}
 
 	/**
@@ -88,6 +148,206 @@ class Prompt {
 
 		return "Topic: {$group->label}\n\nRelated headlines and summaries:\n" . implode( "\n", $lines )
 			. "\n\nNote: the summaries above may be a year or two old. Research the latest facts about this topic on the web as of {$today}, prefer the most recent figures you can verify, and write the article exactly as specified in the system instruction.";
+	}
+
+	/**
+	 * Supported YouTube → article types.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function youtube_types(): array {
+		return self::content_types();
+	}
+
+	/**
+	 * The article formats offered for single-item generation (any draft).
+	 *
+	 * @return array<string,string>
+	 */
+	public static function content_types(): array {
+		return array(
+			'news'     => 'News',
+			'quote'    => 'Quote',
+			'tutorial' => 'Tutorial',
+			'summary'  => 'Summary',
+		);
+	}
+
+	/**
+	 * The per-type intent line, phrased around a generic "topic/source" so it
+	 * works for both a video transcript and a text news item.
+	 *
+	 * @param string $type news|quote|tutorial|summary.
+	 */
+	private static function type_intent( string $type ): string {
+		$intent = array(
+			'news'     => 'Write ONE original, neutral news-style article about the topic. Synthesise the key facts; do not copy the source wording.',
+			'quote'    => 'Highlight the single most important point. Include a short, faithful quote (a sentence or two) clearly attributed to its source, then 2-4 short paragraphs of neutral context in plain language.',
+			'tutorial' => 'Write an explainer that teaches the CONCEPTS behind the story, structured with clear subheadings and short sections. Explain ideas; never give instructions to buy or sell anything.',
+			'summary'  => 'Write a concise summary followed by the key takeaways as short, scannable points (use heading + paragraph blocks). Neutral and clear.',
+		);
+		return $intent[ $type ] ?? $intent['news'];
+	}
+
+	/**
+	 * System prompt for generating an article from a YouTube transcript.
+	 *
+	 * @param string $lang Language slug.
+	 * @param string $type news|quote|tutorial|summary.
+	 */
+	public static function youtube_system( string $lang, string $type ): string {
+		$language = self::language_name( $lang );
+		$today    = self::today();
+		$cats     = self::category_rule( $lang );
+
+		$intent = array(
+			'news'     => 'Write ONE original, neutral news-style article about the topic discussed in the video. Synthesise the key points; do not transcribe.',
+			'quote'    => 'Highlight the single most insightful idea from the speaker. Include a short faithful quote (a sentence or two) clearly attributed to the speaker/channel, then 2-4 short paragraphs of neutral context explaining the idea in plain language.',
+			'tutorial' => 'Write an explainer that teaches the CONCEPTS covered in the video, structured with clear subheadings and short steps/sections. Explain ideas; never give instructions to buy or sell anything.',
+			'summary'  => 'Write a concise summary followed by the key takeaways as short, scannable points (use heading + paragraph blocks). Neutral and clear.',
+		);
+		$kind_line = $intent[ $type ] ?? $intent['news'];
+
+		$lines = array(
+			self::identity_line() . ' You are given the transcript of a YouTube video.',
+			$kind_line,
+			'',
+			"TODAY'S DATE IS {$today}.",
+			'',
+			'STRICT RULES:',
+			"- Write in {$language}.",
+			'- Base the content ONLY on the transcript provided. Do not invent facts, numbers, quotes, dates or names that are not supported by the transcript.',
+			'- Original wording. Except for a clearly-marked short quote (quote type only), never copy the transcript verbatim — rewrite in your own words.',
+			'- Always attribute the source: name the channel and reference the video.',
+			'- Neutral and impartial.',
+		);
+		foreach ( self::guard_lines() as $g ) {
+			$lines[] = $g;
+		}
+		$lines = array_merge(
+			$lines,
+			array(
+				'- SEO friendly: a clear factual headline; a concise meta description (max 155 characters); a short lead (dek); well-structured short paragraphs with the occasional subheading.',
+				'- The provided video MUST appear in "sources".',
+				$cats,
+				'',
+				'OUTPUT: respond with ONLY a JSON object (no markdown, no commentary) of this exact shape:',
+				'{',
+				'  "headline": string,',
+				'  "slug": string (kebab-case, no accents),',
+				'  "meta_description": string (<=155 chars),',
+				'  "dek": string (1-2 sentence lead),',
+				'  "body_blocks": [ { "type": "paragraph" | "heading", "text": string } ],',
+				'  "suggested_category": string,',
+				'  "tags": [string],',
+				'  "sources": [ { "title": string, "url": string } ],',
+				'  "lang": "' . $lang . '"',
+				'}',
+			)
+		);
+
+		return implode( "\n", $lines );
+	}
+
+	/**
+	 * User prompt: the video metadata + transcript.
+	 *
+	 * @param object $item       Item row (title, source, link).
+	 * @param string $transcript Transcript text.
+	 * @param string $type       Content type.
+	 */
+	public static function youtube_user( object $item, string $transcript, string $type ): string {
+		// Cap the transcript to keep the request within a sane size.
+		$transcript = trim( $transcript );
+		if ( strlen( $transcript ) > 24000 ) {
+			$transcript = substr( $transcript, 0, 24000 ) . ' […]';
+		}
+		$channel = (string) ( $item->source ?? '' );
+		$title   = (string) ( $item->title ?? '' );
+		$link    = (string) ( $item->link ?? '' );
+
+		return "Content type: {$type}\n"
+			. "Video title: {$title}\n"
+			. "Channel: {$channel}\n"
+			. "Video URL: {$link}\n\n"
+			. "Transcript:\n\"\"\"\n{$transcript}\n\"\"\"\n\n"
+			. 'Write the article exactly as specified in the system instruction, and include this video in "sources".';
+	}
+
+	/**
+	 * System prompt for generating an article from a SINGLE news item (any
+	 * draft), grounded with web search. Transcript-agnostic.
+	 *
+	 * @param string $lang Language slug.
+	 * @param string $type news|quote|tutorial|summary.
+	 */
+	public static function item_system( string $lang, string $type ): string {
+		$language = self::language_name( $lang );
+		$today    = self::today();
+		$cats     = self::category_rule( $lang );
+
+		$lines = array(
+			self::identity_line() . ' You are given a single source news item (its headline and summary) and can use web search to research the topic.',
+			self::type_intent( $type ),
+			'',
+			"TODAY'S DATE IS {$today}.",
+			'',
+			'STRICT RULES:',
+			"- Write in {$language}.",
+			'- Research the topic using reliable, recent sources; base every fact, number, quote, date and name ONLY on the provided source item and the search results. Do not invent anything.',
+			'- Original wording. Except for a clearly-marked short quote (quote type only), never copy the source verbatim — rewrite in your own words.',
+			'- Always attribute your sources: put the URLs you actually used in "sources", and ALWAYS include the original source item there too.',
+			'- Neutral and impartial.',
+		);
+		foreach ( self::guard_lines() as $g ) {
+			$lines[] = $g;
+		}
+		$lines = array_merge(
+			$lines,
+			array(
+				'- SEO friendly: a clear factual headline; a concise meta description (max 155 characters); a short lead (dek); well-structured short paragraphs with the occasional subheading.',
+				'- The provided source item MUST appear in "sources".',
+				$cats,
+				'',
+				'OUTPUT: respond with ONLY a JSON object (no markdown, no commentary) of this exact shape:',
+				'{',
+				'  "headline": string,',
+				'  "slug": string (kebab-case, no accents),',
+				'  "meta_description": string (<=155 chars),',
+				'  "dek": string (1-2 sentence lead),',
+				'  "body_blocks": [ { "type": "paragraph" | "heading", "text": string } ],',
+				'  "suggested_category": string,',
+				'  "tags": [string],',
+				'  "sources": [ { "title": string, "url": string } ],',
+				'  "lang": "' . $lang . '"',
+				'}',
+			)
+		);
+
+		return implode( "\n", $lines );
+	}
+
+	/**
+	 * User prompt: the single item's metadata + summary as the seed to research.
+	 *
+	 * @param object $item Item row (title, source, link, description).
+	 * @param string $type Content type.
+	 */
+	public static function item_user( object $item, string $type ): string {
+		$title   = (string) ( $item->title ?? '' );
+		$source  = (string) ( $item->source ?? '' );
+		$link    = (string) ( $item->link ?? '' );
+		$summary = trim( (string) ( $item->description ?? '' ) );
+		if ( strlen( $summary ) > 4000 ) {
+			$summary = substr( $summary, 0, 4000 ) . ' […]';
+		}
+
+		return "Content type: {$type}\n"
+			. "Source headline: {$title}\n"
+			. "Publisher: {$source}\n"
+			. "Source URL: {$link}\n\n"
+			. "Source summary:\n\"\"\"\n{$summary}\n\"\"\"\n\n"
+			. 'Research this topic with web search and write the article exactly as specified in the system instruction. Include the source URL in "sources".';
 	}
 
 	/**
@@ -137,12 +397,13 @@ class Prompt {
 	 * @param string $lang 'en' or 'pt'.
 	 */
 	private static function category_rule( string $lang ): string {
-		if ( ! function_exists( 'get_terms' ) || ! taxonomy_exists( 'news_category' ) ) {
+		$taxonomy = Settings::taxonomy();
+		if ( ! function_exists( 'get_terms' ) || '' === $taxonomy ) {
 			return '';
 		}
 		$terms = get_terms(
 			array(
-				'taxonomy'   => 'news_category',
+				'taxonomy'   => $taxonomy,
 				'hide_empty' => false,
 			)
 		);

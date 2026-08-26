@@ -257,7 +257,88 @@ class Subscribe {
 		}
 
 		self::send_optin_email( $email, $locale );
+
+		// Lead magnet: when the form is the ebook gate, remember that intent so
+		// the ebook is delivered *after* the newsletter opt-in is confirmed (the
+		// PDF is gated behind the double opt-in). The source is set by the ebook
+		// form ("ebook-…").
+		$source = sanitize_key( (string) $request->get_param( 'source' ) );
+		if ( str_starts_with( $source, 'ebook' ) ) {
+			self::ebook_pending_set( $email );
+		}
+
 		return new \WP_REST_Response( array( 'sent' => true ), 200 );
+	}
+
+	/**
+	 * Durable option holding "these emails are owed the ebook" as
+	 * hash => expiry. Kept in the DB (not a transient) so a persistent object
+	 * cache under memory pressure can't evict the flag between opt-in and
+	 * confirmation and silently downgrade the subscriber to the plain welcome.
+	 */
+	private const EBOOK_PENDING_OPTION = 'hti_ebook_pending';
+
+	/**
+	 * Per-email hash used as the durable-store key.
+	 *
+	 * @param string $email Email.
+	 * @return string
+	 */
+	private static function ebook_pending_hash( string $email ): string {
+		return md5( strtolower( trim( $email ) ) );
+	}
+
+	/**
+	 * Flag that this email is awaiting the ebook (set on the ebook gate).
+	 * Prunes expired entries on write so the option stays small.
+	 *
+	 * @param string $email Email.
+	 */
+	private static function ebook_pending_set( string $email ): void {
+		$store = get_option( self::EBOOK_PENDING_OPTION, array() );
+		$store = is_array( $store ) ? $store : array();
+		$now   = time();
+		foreach ( $store as $h => $exp ) {
+			if ( (int) $exp < $now ) {
+				unset( $store[ $h ] );
+			}
+		}
+		$store[ self::ebook_pending_hash( $email ) ] = $now + WEEK_IN_SECONDS;
+		update_option( self::EBOOK_PENDING_OPTION, $store, false );
+	}
+
+	/**
+	 * Consume the pending-ebook flag: returns whether it was set (and still
+	 * valid), removing it either way.
+	 *
+	 * @param string $email Email.
+	 * @return bool
+	 */
+	private static function ebook_pending_take( string $email ): bool {
+		$store = get_option( self::EBOOK_PENDING_OPTION, array() );
+		if ( ! is_array( $store ) ) {
+			return false;
+		}
+		$hash  = self::ebook_pending_hash( $email );
+		$valid = isset( $store[ $hash ] ) && (int) $store[ $hash ] >= time();
+		if ( isset( $store[ $hash ] ) ) {
+			unset( $store[ $hash ] );
+			update_option( self::EBOOK_PENDING_OPTION, $store, false );
+		}
+		return $valid;
+	}
+
+	/**
+	 * Public URL of the ebook PDF for a locale. Themes/plugins can override via
+	 * the `hti_ebook_url` filter; defaults to the file bundled in the theme.
+	 *
+	 * @param string $locale Locale.
+	 * @return string
+	 */
+	public static function ebook_url( string $locale ): string {
+		$file    = 'pt' === $locale ? 'howtoinvest-como-comecar-a-investir.pdf' : 'howtoinvest-how-to-start-investing.pdf';
+		$default = function_exists( 'get_theme_file_uri' ) ? get_theme_file_uri( 'assets/ebook/' . $file ) : '';
+		return (string) apply_filters( 'hti_ebook_url', $default, $locale );
 	}
 
 	/* ---------- confirm / unsubscribe links ---------- */
@@ -284,15 +365,25 @@ class Subscribe {
 				array( 'LANGUAGE' => strtoupper( $locale ), 'OPTIN_AT' => gmdate( 'Y-m-d' ) ),
 				array_filter( array( Brevo::list_id( $locale ) ) )
 			);
+			$source = 'newsletter';
 			if ( $ok ) {
-				self::send_confirmed_email( $email, $locale );
+				// Now that the subscription is confirmed, deliver the ebook to
+				// those who came via the lead-magnet gate; everyone else gets the
+				// plain welcome. The source is carried into the redirect so the
+				// analytics event can attribute the confirmation (ebook vs plain).
+				if ( self::ebook_pending_take( $email ) ) {
+					$source = 'ebook';
+					self::send_ebook_email( $email, $locale );
+				} else {
+					self::send_confirmed_email( $email, $locale );
+				}
 			}
-			self::redirect_result( $ok ? 'confirmed' : 'error', $locale );
+			self::redirect_result( $ok ? 'confirmed' : 'error', $locale, $source );
 		}
 
 		// Unsubscribe from the language list they subscribed via.
 		$ok = Brevo::remove_from_list( $email, Brevo::list_id( $locale ) );
-		self::redirect_result( $ok ? 'unsubscribed' : 'error', $locale );
+		self::redirect_result( $ok ? 'unsubscribed' : 'error', $locale, 'newsletter' );
 	}
 
 	/**
@@ -301,8 +392,12 @@ class Subscribe {
 	 * @param string $state  Result state.
 	 * @param string $locale Locale.
 	 */
-	private static function redirect_result( string $state, string $locale ): void {
-		wp_safe_redirect( add_query_arg( array( 'hti_sub_done' => $state, 'l' => $locale ), home_url( '/' ) ) );
+	private static function redirect_result( string $state, string $locale, string $source = '' ): void {
+		$args = array( 'hti_sub_done' => $state, 'l' => $locale );
+		if ( '' !== $source ) {
+			$args['src'] = $source;
+		}
+		wp_safe_redirect( add_query_arg( $args, home_url( '/' ) ) );
 		exit;
 	}
 
@@ -331,16 +426,24 @@ class Subscribe {
 			esc_html( $msg )
 		);
 
-		// Report the (no-JS) confirm / unsubscribe outcome to analytics, once the
-		// tracking helper has loaded (deferred scripts run before DOMContentLoaded).
+		// Report the confirm / unsubscribe outcome to analytics (first-party +
+		// GTM dataLayer), once the tracking helper has loaded. Carries source
+		// (ebook vs newsletter) and status so the GA4 event can attribute it.
 		$event = array(
 			'confirmed'    => 'newsletter_confirmed',
 			'unsubscribed' => 'newsletter_unsubscribe',
 		)[ $state ] ?? '';
 		if ( '' !== $event ) {
+			$status  = 'confirmed' === $state ? 'confirmed' : 'unsubscribed';
+			$src     = isset( $_GET['src'] ) ? sanitize_key( wp_unslash( $_GET['src'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$payload = array( 'status' => $status );
+			if ( '' !== $src ) {
+				$payload['source'] = $src;
+			}
 			printf(
-				'<script>document.addEventListener("DOMContentLoaded",function(){if(window.HTITrack){window.HTITrack.event(%s);}});</script>',
-				wp_json_encode( $event )
+				'<script>document.addEventListener("DOMContentLoaded",function(){if(window.HTITrack){window.HTITrack.event(%s,%s);}});</script>',
+				wp_json_encode( $event ),
+				wp_json_encode( $payload )
 			);
 		}
 	}
@@ -375,6 +478,52 @@ class Subscribe {
 			. Emails::row( Emails::button( $btn, $url ), '28px 48px 6px', true )
 			. Emails::row( Emails::url_fallback( $url, $locale ), '18px 48px 8px' )
 			. Emails::row( Emails::note( $note ), '18px 48px 44px', true );
+
+		Mailer::send( $email, $subject, Emails::layout( $locale, $inner, $heading ) );
+	}
+
+	/**
+	 * Deliver the ebook: a branded email with the download button (and the
+	 * other language as a secondary link). Sent on the ebook lead-magnet gate.
+	 *
+	 * @param string $email  Email.
+	 * @param string $locale Locale.
+	 */
+	private static function send_ebook_email( string $email, string $locale ): void {
+		$pt  = 'pt' === $locale;
+		$url = self::ebook_url( $locale );
+		if ( '' === $url ) {
+			return;
+		}
+		$other_locale = $pt ? 'en' : 'pt';
+		$other_url    = self::ebook_url( $other_locale );
+
+		$subject = $pt ? 'O teu ebook chegou — Como começar a investir' : 'Your ebook is here — How to start investing';
+		$heading = $pt ? 'O teu ebook está pronto' : 'Your ebook is ready';
+		$lead    = $pt
+			? 'Aqui tens o guia “Como começar a investir” — as bases reunidas num só sítio, sem produtos e sem promessas. Carrega no botão para o descarregar (PDF).'
+			: 'Here is your guide “How to start investing” — the essentials in one place, with no products and no promises. Use the button to download it (PDF).';
+		$btn   = $pt ? 'Descarregar o ebook (PDF)' : 'Download the ebook (PDF)';
+		$other = $pt
+			? '<a href="' . esc_url( $other_url ) . '" style="font:400 13px Arial,sans-serif;color:#7C5CFC;">Prefere a versão em inglês? Descarrega aqui.</a>'
+			: '<a href="' . esc_url( $other_url ) . '" style="font:400 13px Arial,sans-serif;color:#7C5CFC;">Prefer the Portuguese version? Download here.</a>';
+		// This email doubles as the post-confirmation welcome, so it carries the
+		// disclaimer + an unsubscribe link.
+		$note    = $pt
+			? 'Conteúdo educativo, não constitui aconselhamento financeiro. Exemplos só por classe de ativos.'
+			: 'Educational content, not financial advice. Examples by asset class only.';
+		$unsub   = self::link( 'unsub', $email, $locale );
+		$unlabel = $pt ? 'Cancelar subscrição' : 'Unsubscribe';
+
+		$inner = Emails::row(
+			Emails::icon_circle( '&#128214;', '#EFE9FE', '#6A4BE0' ) . Emails::h1( $heading ) . Emails::lead( esc_html( $lead ) ),
+			'44px 48px 0',
+			true
+		)
+			. Emails::row( Emails::button( $btn, $url ), '28px 48px 6px', true )
+			. Emails::row( $other, '14px 48px 8px', true )
+			. Emails::row( Emails::note( $note ), '18px 48px 10px', true )
+			. Emails::row( '<a href="' . esc_url( $unsub ) . '" style="font:400 12.5px Arial,sans-serif;color:#9A93A8;">' . esc_html( $unlabel ) . '</a>', '0 48px 44px', true );
 
 		Mailer::send( $email, $subject, Emails::layout( $locale, $inner, $heading ) );
 	}

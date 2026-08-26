@@ -44,7 +44,7 @@
 	// Close after choosing a link.
 	if ( header ) {
 		header.addEventListener( 'click', function ( e ) {
-			if ( e.target.closest( '.hti-nav-wrap a' ) ) {
+			if ( e.target.closest( '.hti-nav-wrap a' ) || e.target.closest( '.hti-drawer a' ) ) {
 				close();
 			}
 		} );

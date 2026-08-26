@@ -55,6 +55,9 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 - [x] ✅ CTA de encerramento aponta para conteúdo educativo, nunca corretora
 
 ## 5. Conta e RGPD (gate duro)
+> **Validação ponta-a-ponta:** correr `docs/QA_RGPD_Checklist.md` em staging
+> (exportar, apagar, cancelar, cascade real, consentimento) antes do lançamento.
+
 - [x] ✅ Registo + login (email+password) com **verificação por email** (double opt-in)
 - [x] ✅ Login Google (OAuth) — *requer config do OAuth Client em produção*
 - [x] ✅ **Recuperação de password** — link "Esqueceste-te da password?" no
@@ -67,8 +70,9 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 - [x] ✅ Consentimento registado **antes** de qualquer analítica (GA só após opt-in)
 - [x] ✅ Logs do motor sem PII
 - [x] ✅ Banner recusa não-essenciais por omissão (privacy-first)
-- [ ] ⚠️ Política de privacidade e termos **publicados e ligados** — páginas existem
-  (seeder) mas são **placeholders**; exigem **revisão jurídica** e mencionar o GA.
+- [ ] ⚠️ Política de privacidade e termos **publicados e ligados** — **rascunhos
+  substantivos** EN/PT no seeder (`legal_privacy`/`legal_terms`, baseados nas práticas
+  reais), com pontos `[●]` a preencher; ainda exigem **revisão jurídica** + menção ao GA.
 
 ## 6. SEO e conteúdo
 - [ ] 🔧 Schema válido por tipo de página — *testar no Rich Results Test* (DefinedTerm/Article do plugin + RankMath)

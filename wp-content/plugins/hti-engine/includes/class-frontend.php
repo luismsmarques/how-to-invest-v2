@@ -113,7 +113,9 @@ class Frontend {
 					'emailUrl'  => esc_url_raw( rest_url( 'htinvest/v1/email-result' ) ),
 					'nonce'     => wp_create_nonce( 'wp_rest' ),
 					'locale'    => $locale,
+					'homeUrl'   => esc_url( home_url( '/' ) ),
 					'data'      => Questions::payload( $locale ),
+					'feedbackUrl' => Feedback::page_url(),
 					'pdf'       => array(
 						'url'   => esc_url_raw( admin_url( 'admin-post.php' ) ),
 						'nonce' => wp_create_nonce( 'hti_pdf' ),
@@ -145,13 +147,122 @@ class Frontend {
 			'locale'     => $locale,
 			'accountUrl' => esc_url( home_url( '/my-account/' ) ),
 			'homeUrl'    => esc_url( home_url( '/' ) ),
+			'logoutUrl'  => esc_url( wp_logout_url( home_url( '/my-account/' ) ) ),
 			'resultBase' => esc_url( home_url( '/investor-profile-quiz/' ) ),
+			'policiesUrl' => esc_url( ( $p = get_page_by_path( 'privacy-policy' ) ) ? (string) get_permalink( $p->ID ) : home_url( '/privacy-policy/' ) ),
 			'lostUrl'    => esc_url( wp_lostpassword_url() ),
 			'google'     => array(
 				'enabled' => Google::is_configured(),
 				'start'   => esc_url_raw( Google::start_url() ),
 			),
+			'learn'      => self::learn_dashboard( get_current_user_id(), $locale ),
+			'discover'   => self::discover_links(),
+			'archDesc'   => self::archetype_descriptions( $locale ),
+			'allocColors' => array(
+				'global_equity' => '#FF6B5E',
+				'bonds'         => '#7C5CFC',
+				'reits_alt'     => '#D69A1E',
+				'crypto'        => '#22C3A6',
+				'cash'          => '#B7AEC4',
+			),
+			'classLabels' => 'pt' === $locale
+				? array( 'global_equity' => 'Ações globais', 'bonds' => 'Obrigações', 'reits_alt' => 'REITs e alternativos', 'cash' => 'Liquidez', 'crypto' => 'Cripto' )
+				: array( 'global_equity' => 'Global equities', 'bonds' => 'Bonds', 'reits_alt' => 'REITs & alternatives', 'cash' => 'Cash', 'crypto' => 'Crypto' ),
 			'strings'    => self::account_strings( 'pt' === $locale ),
+		);
+	}
+
+	/**
+	 * Per-archetype short descriptions keyed by id (for the dashboard profile card).
+	 *
+	 * @return array<int,string>
+	 */
+	private static function archetype_descriptions( string $locale ): array {
+		$key = 'pt' === $locale ? 'pt' : 'en';
+		$out = array();
+		if ( class_exists( '\\HTI\\Engine\\Config' ) ) {
+			foreach ( Config::descriptions() as $id => $d ) {
+				$out[ (int) $id ] = (string) ( $d[ $key ] ?? ( $d['en'] ?? '' ) );
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Resolve the "Discover" cross-link URLs for the account hub.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function discover_links(): array {
+		$learn = get_post_type_archive_link( 'learn' );
+		return array(
+			'comparador' => esc_url( (string) apply_filters( 'hti_deposits_page_url', home_url( '/comparador-de-depositos/' ) ) ),
+			'glossary'   => esc_url( (string) ( get_post_type_archive_link( 'glossary' ) ?: home_url( '/investing-glossary/' ) ) ),
+			'news'       => esc_url( (string) ( get_post_type_archive_link( 'news' ) ?: home_url( '/financial-news/' ) ) ),
+			'ebook'      => esc_url( (string) apply_filters( 'hti_ebook_page_url', home_url( '/ebook/' ) ) ),
+			'learn'      => esc_url( (string) ( $learn ?: home_url( '/learn/' ) ) ),
+		);
+	}
+
+	/**
+	 * Compute the signed-in user's learning summary for the account hub:
+	 * chapters done/total, percent, per-module badge state, and the next chapter.
+	 *
+	 * @param int    $uid    User id.
+	 * @param string $locale Locale.
+	 * @return array<string,mixed>
+	 */
+	private static function learn_dashboard( int $uid, string $locale ): array {
+		if ( ! $uid || ! class_exists( '\\HTI\\Engine\\Content_Import' ) || ! class_exists( '\\HTI\\Engine\\Learn' ) ) {
+			return array( 'enabled' => false );
+		}
+		$lang = 'pt' === $locale ? 'pt' : 'en';
+		$cur  = Content_Import::curriculum( $lang );
+		if ( empty( $cur ) ) {
+			return array( 'enabled' => false );
+		}
+		$prog   = Learn::get( $uid );
+		$done   = array_flip( $prog['done'] );
+		$passed = array_flip( $prog['passed'] );
+
+		$total = 0;
+		$dn    = 0;
+		$next  = null;
+		$badges = array();
+		foreach ( $cur as $m ) {
+			$mtotal = 0;
+			$mmast  = 0;
+			foreach ( (array) $m['chapters'] as $c ) {
+				++$total;
+				++$mtotal;
+				$slug    = (string) $c['slug'];
+				$is_done = isset( $done[ $slug ] );
+				if ( $is_done ) {
+					++$dn;
+				}
+				if ( isset( $passed[ $slug ] ) || ( empty( $c['has_quiz'] ) && $is_done ) ) {
+					++$mmast;
+				}
+				if ( null === $next && ! empty( $c['published'] ) && ! $is_done ) {
+					$next = array( 'title' => (string) $c['title'], 'url' => (string) $c['url'] );
+				}
+			}
+			$badges[] = array(
+				'num'   => (string) $m['num'],
+				'title' => (string) $m['title'],
+				'state' => ( $mtotal > 0 && $mmast === $mtotal ) ? 'earned' : ( $mmast > 0 ? 'inprog' : 'locked' ),
+			);
+		}
+		$hub = get_post_type_archive_link( 'learn' ) ?: home_url( '/learn/' );
+		return array(
+			'enabled'   => true,
+			'done'      => $dn,
+			'total'     => $total,
+			'pct'       => $total ? (int) round( $dn / $total * 100 ) : 0,
+			'badges'    => $badges,
+			'nextTitle' => $next['title'] ?? '',
+			'nextUrl'   => esc_url( (string) ( $next['url'] ?? $hub ) ),
+			'hubUrl'    => esc_url( (string) $hub ),
 		);
 	}
 
@@ -242,6 +353,86 @@ class Frontend {
 				'onb_q_label'      => 'Qual é a tua maior dúvida ou dificuldade nos investimentos?',
 				'onb_q_ph'         => 'Escreve à vontade — ajuda-nos a criar conteúdo útil para ti.',
 				'onb_finish'       => 'Concluir',
+				'sign_out'         => 'Terminar sessão',
+				'acc_profile_eyebrow' => 'O meu perfil de investidor',
+				'acc_data_eyebrow' => 'Os meus dados (RGPD)',
+				'acc_export_sub'   => 'Portabilidade — descarrega tudo',
+				'acc_delete_sub'   => 'Irreversível',
+				'acc_privacy'      => 'Privacidade e termos',
+				'acc_privacy_sub'  => 'Como tratamos os teus dados',
+				'acc_view_result'  => 'Ver resultado completo',
+				'acc_redo'         => '↻ Refazer questionário',
+				'acc_no_profile'   => 'Ainda não fizeste o questionário. Descobre o teu perfil em poucos minutos.',
+				'acc_discover'     => 'Descobrir o meu perfil →',
+				'acc_learn_eyebrow' => 'A tua aprendizagem',
+				'acc_discover_eyebrow' => 'Descobrir',
+				'acc_data_settings' => 'Os teus dados e definições',
+				'acc_learn_path'   => 'Do zero à tua primeira carteira',
+				'acc_chapters_done' => '%1$s de %2$s capítulos concluídos',
+				'acc_continue_learning' => 'Continuar a aprender →',
+				'acc_course'       => 'Curso',
+				'acc_by_class'     => 'por classe',
+				'acc_illustrative' => 'Exemplo ilustrativo por classes de ativos — educativo, não é aconselhamento.',
+				'acc_saved'        => 'Guardado',
+				'acc_noprofile_t'  => 'Ainda não fizeste o questionário',
+				'acc_noprofile_b'  => 'Em ~2 minutos descobres o teu perfil e um exemplo de carteira por classes de ativos.',
+				'acc_dc_comp_t'    => 'Comparador de Depósitos',
+				'acc_dc_comp_d'    => 'Compara taxas a prazo, sem letras pequenas.',
+				'acc_dc_gloss_t'   => 'Glossário',
+				'acc_dc_gloss_d'   => '~54 termos, em português simples.',
+				'acc_dc_news_t'    => 'Notícias',
+				'acc_dc_news_d'    => 'As finanças explicadas com calma.',
+				'acc_dc_ebook_t'   => 'Ebook grátis',
+				'acc_dc_ebook_d'   => 'As bases, num PDF para guardares.',
+				'acc_dc_open'      => 'Abrir →',
+				'acc_guest_eyebrow' => 'Conta gratuita',
+				'acc_guest_title'  => 'Cria uma conta gratuita para:',
+				'acc_guest_intro'  => 'O questionário e as leituras funcionam sem conta. A conta só guarda o que é teu — e podes apagá-la quando quiseres.',
+				'acc_guest_b1_t'   => 'Guardar o teu perfil de investidor',
+				'acc_guest_b1_d'   => 'O teu arquétipo e a carteira ilustrativa por classes, sempre à mão.',
+				'acc_guest_b2_t'   => 'Ganhar badges ao aprender',
+				'acc_guest_b2_d'   => 'Acompanha o progresso do curso, módulo a módulo.',
+				'acc_guest_b3_t'   => 'Sincronizar entre dispositivos',
+				'acc_guest_b3_d'   => 'Continua de onde ficaste, no telemóvel ou no portátil.',
+				'acc_guest_b4_t'   => 'Gerir os teus dados (RGPD)',
+				'acc_guest_b4_d'   => 'Exporta ou apaga tudo a qualquer momento, sem perguntas.',
+				'acct_back'        => '← A minha conta',
+				'exp_eyebrow'      => 'Portabilidade · RGPD Art. 20.º',
+				'exp_intro'        => 'Descarrega uma cópia de tudo o que guardamos sobre ti, num ficheiro legível por máquina (JSON). É teu, e podes levá-lo para onde quiseres.',
+				'exp_included'     => 'Incluído no ficheiro',
+				'exp_item1'        => 'Dados de conta (nome, email, data de registo)',
+				'exp_item2'        => 'Respostas ao questionário e perfil atribuído',
+				'exp_item3'        => 'Preferências de consentimento e comunicações',
+				'exp_btn'          => 'Preparar e descarregar (JSON)',
+				'exp_done_t'       => 'Download iniciado',
+				'exp_done_b'       => 'Guardámos howtoinvest-os-meus-dados.json nas tuas transferências.',
+				'del_title'        => 'Apagar a tua conta',
+				'del_perm'         => 'Esta ação é permanente e irreversível. Ao apagar a conta, removemos em cascata:',
+				'del_c1'           => 'O teu perfil guardado e respostas ao questionário',
+				'del_c2'           => 'Os teus dados de conta e preferências',
+				'del_c3'           => 'As subscrições de email associadas',
+				'del_confirm_lbl'  => 'Para confirmar, escreve %s abaixo.',
+				'del_word'         => 'APAGAR',
+				'del_btn'          => 'Apagar conta definitivamente',
+				'del_sched_t'      => 'Eliminação agendada',
+				'del_sched_b'      => 'A tua conta e todos os dados serão apagados definitivamente daqui a 30 dias. Até lá, podes cancelar a qualquer momento e fica tudo como estava.',
+				'nl_eyebrow'       => 'Comunicações',
+				'nl_title'         => 'Gerir a newsletter',
+				'nl_intro'         => 'Escolhe com que frequência queres receber o resumo e os temas que mais te interessam. Mudas isto quando quiseres.',
+				'nl_daily_desc'    => 'Todas as manhãs, às 7h',
+				'nl_weekly_desc'   => 'Um resumo, ao domingo',
+				'nl_topics_lbl'    => 'Temas que queres receber',
+				'nl_save'          => 'Guardar preferências',
+				'nl_saved_t'       => 'Preferências guardadas',
+				'nl_unsub'         => 'Cancelar subscrição',
+				'onb_eyebrow'      => 'Bem-vindo(a) à HowToInvest',
+				'onb_lang_label'   => 'Idioma preferido',
+				'onb_digest_t'     => 'Resumo de notícias por email',
+				'onb_digest_d'     => 'Um email semanal, calmo e sem jargão. Sem spam — cancelas quando quiseres.',
+				'onb_finish_long'  => 'Concluir e ir para a minha conta →',
+				'onb_skip'         => 'Agora não',
+				'onb_disclaimer'   => 'Conteúdo educativo, não constitui aconselhamento financeiro.',
+				'onb_q_optional'   => 'Opcional — ajuda-nos a perceber por onde começar contigo.',
 			);
 		}
 		return array(
@@ -307,6 +498,86 @@ class Frontend {
 			'onb_q_label'      => 'What’s your biggest doubt or difficulty with investing?',
 			'onb_q_ph'         => 'Write freely — it helps us create content that’s useful to you.',
 			'onb_finish'       => 'Finish',
+			'sign_out'         => 'Sign out',
+			'acc_profile_eyebrow' => 'My investor profile',
+			'acc_data_eyebrow' => 'My data (GDPR)',
+			'acc_export_sub'   => 'Portability — download everything',
+			'acc_delete_sub'   => 'Irreversible',
+			'acc_privacy'      => 'Privacy & terms',
+			'acc_privacy_sub'  => 'How we handle your data',
+			'acc_view_result'  => 'View full result',
+			'acc_redo'         => '↻ Retake quiz',
+			'acc_no_profile'   => 'You haven\'t taken the quiz yet. Discover your profile in minutes.',
+			'acc_discover'     => 'Discover my profile →',
+			'acc_learn_eyebrow' => 'Your learning',
+			'acc_discover_eyebrow' => 'Discover',
+			'acc_data_settings' => 'Your data & settings',
+			'acc_learn_path'   => 'From zero to your first portfolio',
+			'acc_chapters_done' => '%1$s of %2$s chapters completed',
+			'acc_continue_learning' => 'Continue learning →',
+			'acc_course'       => 'Course',
+			'acc_by_class'     => 'by class',
+			'acc_illustrative' => 'Illustrative example by asset class — educational, not advice.',
+			'acc_saved'        => 'Saved',
+			'acc_noprofile_t'  => 'You haven\'t taken the quiz yet',
+			'acc_noprofile_b'  => 'In ~2 minutes, discover your profile and an example portfolio by asset class.',
+			'acc_dc_comp_t'    => 'Deposit comparator',
+			'acc_dc_comp_d'    => 'Compare term rates, no small print.',
+			'acc_dc_gloss_t'   => 'Glossary',
+			'acc_dc_gloss_d'   => '~54 terms, in plain language.',
+			'acc_dc_news_t'    => 'News',
+			'acc_dc_news_d'    => 'Finance, explained calmly.',
+			'acc_dc_ebook_t'   => 'Free ebook',
+			'acc_dc_ebook_d'   => 'The basics, in a PDF to keep.',
+			'acc_dc_open'      => 'Open →',
+			'acc_guest_eyebrow' => 'Free account',
+			'acc_guest_title'  => 'Create a free account to:',
+			'acc_guest_intro'  => 'The quiz and lessons work without an account. An account only saves what\'s yours — and you can delete it whenever you like.',
+			'acc_guest_b1_t'   => 'Save your investor profile',
+			'acc_guest_b1_d'   => 'Your archetype and illustrative portfolio by asset class, always at hand.',
+			'acc_guest_b2_t'   => 'Earn badges as you learn',
+			'acc_guest_b2_d'   => 'Track your course progress, module by module.',
+			'acc_guest_b3_t'   => 'Sync across devices',
+			'acc_guest_b3_d'   => 'Pick up where you left off, on phone or laptop.',
+			'acc_guest_b4_t'   => 'Manage your data (GDPR)',
+			'acc_guest_b4_d'   => 'Export or delete everything anytime, no questions asked.',
+			'acct_back'        => '← My account',
+			'exp_eyebrow'      => 'Portability · GDPR Art. 20',
+			'exp_intro'        => 'Download a copy of everything we store about you, in a machine-readable file (JSON). It\'s yours, and you can take it anywhere.',
+			'exp_included'     => 'Included in the file',
+			'exp_item1'        => 'Account data (name, email, sign-up date)',
+			'exp_item2'        => 'Quiz answers and assigned profile',
+			'exp_item3'        => 'Consent and communication preferences',
+			'exp_btn'          => 'Prepare and download (JSON)',
+			'exp_done_t'       => 'Download started',
+			'exp_done_b'       => 'We saved howtoinvest-data-export.json to your downloads.',
+			'del_title'        => 'Delete your account',
+			'del_perm'         => 'This action is permanent and irreversible. Deleting your account removes, in cascade:',
+			'del_c1'           => 'Your saved profile and quiz answers',
+			'del_c2'           => 'Your account data and preferences',
+			'del_c3'           => 'Associated email subscriptions',
+			'del_confirm_lbl'  => 'To confirm, type %s below.',
+			'del_word'         => 'DELETE',
+			'del_btn'          => 'Delete account permanently',
+			'del_sched_t'      => 'Deletion scheduled',
+			'del_sched_b'      => 'Your account and all data will be permanently deleted in 30 days. Until then you can cancel anytime and everything stays as it was.',
+			'nl_eyebrow'       => 'Communications',
+			'nl_title'         => 'Manage the newsletter',
+			'nl_intro'         => 'Choose how often you want the digest and the topics that interest you most. Change this anytime.',
+			'nl_daily_desc'    => 'Every morning, at 7am',
+			'nl_weekly_desc'   => 'One summary, on Sunday',
+			'nl_topics_lbl'    => 'Topics you want to receive',
+			'nl_save'          => 'Save preferences',
+			'nl_saved_t'       => 'Preferences saved',
+			'nl_unsub'         => 'Unsubscribe',
+			'onb_eyebrow'      => 'Welcome to HowToInvest',
+			'onb_lang_label'   => 'Preferred language',
+			'onb_digest_t'     => 'News digest by email',
+			'onb_digest_d'     => 'A calm, jargon-free weekly email. No spam — cancel anytime.',
+			'onb_finish_long'  => 'Finish and go to my account →',
+			'onb_skip'         => 'Not now',
+			'onb_disclaimer'   => 'Educational content, not financial advice.',
+			'onb_q_optional'   => 'Optional — it helps us understand where to start with you.',
 		);
 	}
 
@@ -315,7 +586,11 @@ class Frontend {
 	 */
 	public static function render_app(): string {
 		$noscript = esc_html__( 'This questionnaire needs JavaScript enabled in your browser.', 'hti-engine' );
-		return '<div id="hti-app" class="hti-app" aria-live="polite"></div>'
+		// A page needs a top-level heading (a11y); the page is noindex, so hide it
+		// visually — the JS app renders its own visible chrome.
+		$h1 = esc_html__( 'Discover your investor profile', 'hti-engine' );
+		return '<h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0">' . $h1 . '</h1>'
+			. '<div id="hti-app" class="hti-app" aria-live="polite"></div>'
 			. '<noscript><p class="hti-noscript">' . $noscript . '</p></noscript>';
 	}
 

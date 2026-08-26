@@ -1,38 +1,39 @@
 ---
 name: wordpress-theme
-description: Use when building or editing the WordPress block theme (Full Site Editing) — theme.json, block templates and template parts, child theme setup, global styles, fonts, colors, spacing tokens, and FSE patterns. Triggers on theme files, theme.json, templates/, parts/, or any front-end theme structure work.
+description: Use when building or editing the WordPress block theme (FSE) — theme.json tokens, templates/parts, and especially the theme's real architecture of dynamic blocks with render callbacks, the strings()/t() bilingual table, the howtoinvest/t block, render_block filters, and the VERSION cache-bust. Triggers on theme files, theme.json, templates/, parts/, functions.php render_* callbacks, or any front-end theme structure work.
 ---
 
-# WordPress Block Theme (FSE)
+# WordPress Block Theme (FSE) — the `howtoinvest` theme
 
-We use a **child block theme** of a current official base theme (Twenty Twenty-X family). Customization lives in `theme.json` and block templates. **No page builders.**
+Block theme customized via `theme.json` + block templates. **No page builders.** The theme's dominant pattern is NOT static block markup — it is **dynamic blocks rendered in PHP**.
 
-## theme.json — single source of truth for design tokens
-- Define colors, typography (font families, sizes), spacing scale, and layout (contentSize/wideSize) here.
-- Mirror the design tokens agreed in the UX/UI work. Keep the palette small and intentional.
-- Use fluid typography and spacing where it helps responsive behavior.
-- Register custom font assets locally (performance + privacy — avoid loading Google Fonts from Google's CDN; self-host).
+## The real architecture: dynamic blocks
+- ~27 dynamic blocks registered in `functions.php` → `register_dynamic_blocks()` (e.g. `howtoinvest/news-article`, `learn-hub`, `drawer`, `preferred-source`), each with a `render_callback` `render_*()` returning escaped HTML.
+- **Why dynamic:** patterns run at `init` before Polylang knows the language; dynamic blocks render at request time, so `t()` sees the current language. New language-aware UI = a dynamic block, not a static pattern.
+- Cross-template tweaks go through **`render_block` filters** (e.g. `add_main_landmark_id()` injects `id="main"` on every `<main>` group) — one filter beats editing 16 templates.
+- Sitewide utility elements (skip link) hook **`wp_body_open`**, not template markup.
 
-## Templates & parts
-- Templates needed: `index`, `single` (post/article), `archive`, `page`, plus templates for the glossary term CPT and news CPT, and the homepage.
-- Template parts: header, footer (footer must include the full disclaimer — see Textos Finais §1.3).
-- Build with core blocks + block patterns. Register reusable patterns for: article CTA-to-questionnaire block, glossary term layout, news card.
+## Bilingual UI strings
+- The **`strings()`** table (`functions.php` ~346) holds every UI string as `key => ['en'=>…, 'pt'=>…]`; **`t( $key )`** (~515) resolves the current language. Always add EN+PT together (see `i18n-polylang`, `brand-voice`).
+- In FSE templates use the **`howtoinvest/t` block** (`{"k":"key","tag":"a|p|span|…","href":"…","cls":"…"}`) — it renders via `t()` and localizes internal hrefs.
 
-## Child theme hygiene
-- Keep customizations in the child theme so the base theme can update safely.
-- `functions.php` of the child: enqueue child styles, register patterns, register nav menus, theme supports.
+## theme.json + gotchas
+- Tokens (colors, type, spacing, contentSize) live in `theme.json` — never hardcode values CSS can take from a token.
+- **blockGap gotcha:** `theme.json` sets `blockGap`, so in a constrained group the *second* child gets an automatic `margin-block-start`. Inserting a new first child into a group (e.g. the header) shifts everything below — utility elements go via hooks instead.
+- The header is `position: sticky` — it becomes the containing block for absolutely-positioned children; hide/show tricks must not rely on an offset parent (use the clip pattern, see `accessibility`).
 
-## Performance (SEO matters here)
-- Minimal CSS; rely on theme.json-generated styles.
-- Self-host fonts; preload critical font.
-- No render-blocking junk. Lazy-load images (core does this).
+## Assets & cache-busting
+- `const VERSION` (`functions.php:19`) is the `?ver=` for every style/script. **Bump it on any CSS/JS change** or caches serve stale assets (see `deployment-ops`). It does not bust server-rendered HTML — that needs a page-cache purge.
+- Fonts self-hosted; per-feature CSS/JS registered once and enqueued at render time by the block that needs it.
 
-## Interaction with the app
-- The questionnaire/result are rendered by the `hti-engine` plugin (via shortcode/block), NOT the theme. The theme provides the page shell and styles; the plugin provides the interactive app.
+## Boundaries
+- The questionnaire/result/account app is rendered by the **hti-engine plugin** (shortcodes `[hti_questionnaire]`, `[hti_account]`) — the theme provides shell + styles only.
+- Footer part must keep the full disclaimer (`howtoinvest/t` k=footer_disclaimer).
 
 ## Checklist
-- [ ] Tokens in theme.json, not hardcoded in CSS
-- [ ] Footer disclaimer present in footer part
-- [ ] Templates for all content types incl. glossary + news
-- [ ] Fonts self-hosted
-- [ ] Mobile layout verified
+- [ ] Tokens in theme.json; no hardcoded values CSS could token
+- [ ] Language-aware UI = dynamic block (render callback), strings via `strings()`/`t()` in EN+PT
+- [ ] Escaped output in every `render_*` callback
+- [ ] No new first-child inserted into constrained groups (blockGap); utilities via hooks
+- [ ] `VERSION` bumped when CSS/JS changed
+- [ ] Footer disclaimer intact; plugin/theme boundary respected

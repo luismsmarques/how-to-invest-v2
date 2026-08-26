@@ -40,14 +40,129 @@ class Settings {
 		return array(
 			'gemini_model'         => 'gemini-2.5-flash',
 			'fetch_interval'       => 'hourly',
-			'similarity_threshold' => 0.5,
+			'similarity_threshold' => 0.4,
+			'group_max_span_days'  => 3,
+			'enable_embeddings'    => 0,
+			'embedding_model'      => 'text-embedding-004',
+			'embedding_threshold'  => 0.82,
+			'embed_max_per_run'    => 200,
+			'feed_max_errors'      => 5,
 			'max_per_fetch'        => 50,
 			'max_generations_day'  => 10,
 			'default_lang'         => 'en',
 			'image_generate'       => 1,
 			'image_model'          => 'imagen-4.0-generate-001',
 			'image_base_model'     => 'gemini-2.5-flash-image',
+			'youtube_api_key'      => '',
+			'supadata_api_key'     => '',
+			'cleanup_days'         => 30,
+			'open_max_days'        => 14,
+			'enable_post_cleanup'  => 1,
+			'post_cleanup_days'    => 45,
+			'target_post_type'     => '',
+			'target_taxonomy'      => '',
+			'post_status'          => 'pending',
+			'languages'            => '',
+			'house_style'          => '',
+			'disclaimer'           => '',
+			'guard_advice'         => 1,
+			'guard_tickers'        => 1,
 		);
+	}
+
+	/**
+	 * The post type generated articles are created as (default "post").
+	 */
+	public static function post_type(): string {
+		$pt = (string) self::get( 'target_post_type', '' );
+		if ( '' === $pt ) {
+			// Back-compat: prefer an existing "news" CPT, else the default post.
+			$pt = post_type_exists( 'news' ) ? 'news' : 'post';
+		}
+		return post_type_exists( $pt ) ? $pt : 'post';
+	}
+
+	/**
+	 * The taxonomy used for the suggested category ('' if none/disabled).
+	 */
+	public static function taxonomy(): string {
+		$tax = (string) self::get( 'target_taxonomy', '' );
+		if ( '' === $tax ) {
+			$tax = taxonomy_exists( 'news_category' ) ? 'news_category' : 'category';
+		}
+		if ( 'none' === $tax ) {
+			return '';
+		}
+		return taxonomy_exists( $tax ) ? $tax : '';
+	}
+
+	/**
+	 * The status new articles are created with.
+	 */
+	public static function post_status(): string {
+		$status = (string) self::get( 'post_status', 'pending' );
+		// Auto-publish is deliberately not allowed: this is a YMYL (finance)
+		// site, so every AI-generated article must pass a human review gate
+		// (Google scaled-content / site-reputation policy + factual liability).
+		// A legacy 'publish' value in the DB safely degrades to 'pending'.
+		return in_array( $status, array( 'pending', 'draft' ), true ) ? $status : 'pending';
+	}
+
+	/**
+	 * Configured content languages (lowercased codes). Falls back to the site
+	 * locale's 2-letter code, then 'en'.
+	 *
+	 * @return array<int,string>
+	 */
+	public static function languages(): array {
+		$raw = trim( (string) self::get( 'languages', '' ) );
+		if ( '' === $raw ) {
+			$raw = substr( (string) get_locale(), 0, 2 );
+		}
+		$codes = array();
+		foreach ( preg_split( '/[\s,]+/', strtolower( $raw ) ) as $code ) {
+			$code = preg_replace( '/[^a-z]/', '', (string) $code );
+			if ( '' !== $code ) {
+				$codes[ $code ] = true;
+			}
+		}
+		$codes = array_keys( $codes );
+		return $codes ? $codes : array( 'en' );
+	}
+
+	/**
+	 * Whether a language code is one of the configured languages.
+	 *
+	 * @param string $lang Candidate code.
+	 */
+	public static function valid_lang( string $lang ): string {
+		$langs = self::languages();
+		$lang  = strtolower( substr( $lang, 0, 5 ) );
+		return in_array( $lang, $langs, true ) ? $lang : $langs[0];
+	}
+
+	/**
+	 * YouTube Data API key: HTI_YOUTUBE_API_KEY constant, else the stored
+	 * setting, then the rssai_youtube_api_key filter.
+	 */
+	public static function youtube_api_key(): string {
+		$key = defined( 'HTI_YOUTUBE_API_KEY' ) ? (string) constant( 'HTI_YOUTUBE_API_KEY' ) : '';
+		if ( '' === $key ) {
+			$key = (string) self::get( 'youtube_api_key', '' );
+		}
+		return trim( (string) apply_filters( 'rssai_youtube_api_key', $key ) );
+	}
+
+	/**
+	 * Supadata API key: HTI_SUPADATA_API_KEY constant, else the stored setting,
+	 * then the rssai_supadata_api_key filter.
+	 */
+	public static function supadata_api_key(): string {
+		$key = defined( 'HTI_SUPADATA_API_KEY' ) ? (string) constant( 'HTI_SUPADATA_API_KEY' ) : '';
+		if ( '' === $key ) {
+			$key = (string) self::get( 'supadata_api_key', '' );
+		}
+		return trim( (string) apply_filters( 'rssai_supadata_api_key', $key ) );
 	}
 
 	/**
@@ -110,21 +225,48 @@ class Settings {
 	public static function sanitize( $input ): array {
 		$input     = is_array( $input ) ? $input : array();
 		$intervals = array( 'hourly', 'twicedaily', 'daily' );
-		$langs     = array( 'en', 'pt' );
 
-		$threshold = isset( $input['similarity_threshold'] ) ? (float) $input['similarity_threshold'] : 0.5;
+		$threshold = isset( $input['similarity_threshold'] ) ? (float) $input['similarity_threshold'] : 0.4;
 		$threshold = max( 0.0, min( 1.0, $threshold ) );
 
+		$emb_threshold = isset( $input['embedding_threshold'] ) ? (float) $input['embedding_threshold'] : 0.82;
+		$emb_threshold = max( 0.0, min( 1.0, $emb_threshold ) );
+
+		// Keep existing API keys when the field is submitted blank.
+		$existing  = (array) get_option( self::OPTION, array() );
+		$yt_key    = isset( $input['youtube_api_key'] ) ? trim( sanitize_text_field( $input['youtube_api_key'] ) ) : '';
+		$supa_key  = isset( $input['supadata_api_key'] ) ? trim( sanitize_text_field( $input['supadata_api_key'] ) ) : '';
+
 		return array(
+			'youtube_api_key'      => '' !== $yt_key ? $yt_key : (string) ( $existing['youtube_api_key'] ?? '' ),
+			'supadata_api_key'     => '' !== $supa_key ? $supa_key : (string) ( $existing['supadata_api_key'] ?? '' ),
+			'cleanup_days'         => max( 1, min( 365, absint( $input['cleanup_days'] ?? 30 ) ) ),
+			'open_max_days'        => max( 1, min( 90, absint( $input['open_max_days'] ?? 14 ) ) ),
+			'enable_post_cleanup'  => empty( $input['enable_post_cleanup'] ) ? 0 : 1,
+			'post_cleanup_days'    => max( 1, min( 365, absint( $input['post_cleanup_days'] ?? 45 ) ) ),
 			'gemini_model'         => isset( $input['gemini_model'] ) ? sanitize_text_field( $input['gemini_model'] ) : 'gemini-2.5-flash',
 			'fetch_interval'       => in_array( $input['fetch_interval'] ?? '', $intervals, true ) ? $input['fetch_interval'] : 'hourly',
 			'similarity_threshold' => $threshold,
+			'group_max_span_days'  => max( 1, min( 30, absint( $input['group_max_span_days'] ?? 3 ) ) ),
+			'enable_embeddings'    => empty( $input['enable_embeddings'] ) ? 0 : 1,
+			'embedding_model'      => isset( $input['embedding_model'] ) ? sanitize_text_field( $input['embedding_model'] ) : 'text-embedding-004',
+			'embedding_threshold'  => $emb_threshold,
+			'embed_max_per_run'    => max( 1, min( 2000, absint( $input['embed_max_per_run'] ?? 200 ) ) ),
+			'feed_max_errors'      => max( 1, min( 100, absint( $input['feed_max_errors'] ?? 5 ) ) ),
 			'max_per_fetch'        => max( 1, absint( $input['max_per_fetch'] ?? 50 ) ),
 			'max_generations_day'  => max( 1, absint( $input['max_generations_day'] ?? 10 ) ),
-			'default_lang'         => in_array( $input['default_lang'] ?? '', $langs, true ) ? $input['default_lang'] : 'en',
+			'default_lang'         => isset( $input['default_lang'] ) ? preg_replace( '/[^a-z]/', '', strtolower( (string) $input['default_lang'] ) ) : 'en',
 			'image_generate'       => empty( $input['image_generate'] ) ? 0 : 1,
 			'image_model'          => isset( $input['image_model'] ) ? sanitize_text_field( $input['image_model'] ) : 'imagen-4.0-generate-001',
 			'image_base_model'     => isset( $input['image_base_model'] ) ? sanitize_text_field( $input['image_base_model'] ) : 'gemini-2.5-flash-image',
+			'target_post_type'     => isset( $input['target_post_type'] ) ? sanitize_key( $input['target_post_type'] ) : '',
+			'target_taxonomy'      => isset( $input['target_taxonomy'] ) ? sanitize_key( $input['target_taxonomy'] ) : '',
+			'post_status'          => in_array( $input['post_status'] ?? '', array( 'pending', 'draft' ), true ) ? $input['post_status'] : 'pending',
+			'languages'            => isset( $input['languages'] ) ? sanitize_text_field( $input['languages'] ) : '',
+			'house_style'          => isset( $input['house_style'] ) ? sanitize_textarea_field( $input['house_style'] ) : '',
+			'disclaimer'           => isset( $input['disclaimer'] ) ? sanitize_textarea_field( $input['disclaimer'] ) : '',
+			'guard_advice'         => empty( $input['guard_advice'] ) ? 0 : 1,
+			'guard_tickers'        => empty( $input['guard_tickers'] ) ? 0 : 1,
 		);
 	}
 
@@ -140,6 +282,23 @@ class Settings {
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'RSS AI Feed — Settings', 'hti-rss-ai' ); ?></h1>
+			<?php
+			if ( isset( $_GET['rssai_cleaned'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				printf(
+					'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+					esc_html(
+						sprintf(
+							/* translators: 1: items, 2: groups, 3: logs removed, 4: stale drafts trashed. */
+							__( 'Cleanup done — removed %1$d drafts, %2$d groups, %3$d log entries and trashed %4$d stale AI posts.', 'hti-rss-ai' ),
+							isset( $_GET['ci'] ) ? absint( wp_unslash( $_GET['ci'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+							isset( $_GET['cg'] ) ? absint( wp_unslash( $_GET['cg'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+							isset( $_GET['cl'] ) ? absint( wp_unslash( $_GET['cl'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+							isset( $_GET['cp'] ) ? absint( wp_unslash( $_GET['cp'] ) ) : 0 // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+						)
+					)
+				);
+			}
+			?>
 
 			<p>
 				<?php echo esc_html__( 'Gemini API key:', 'hti-rss-ai' ); ?>
@@ -153,7 +312,74 @@ class Settings {
 
 			<form method="post" action="options.php">
 				<?php settings_fields( self::GROUP ); ?>
+				<h2 class="title"><?php echo esc_html__( 'Publishing target', 'hti-rss-ai' ); ?></h2>
+				<p class="description"><?php echo esc_html__( 'Where generated articles go. Works with any post type, taxonomy and theme — no dependency on a specific plugin.', 'hti-rss-ai' ); ?></p>
 				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="rssai_post_type"><?php echo esc_html__( 'Post type', 'hti-rss-ai' ); ?></label></th>
+						<td>
+							<?php $cur_pt = self::post_type(); ?>
+							<select name="<?php echo esc_attr( self::OPTION ); ?>[target_post_type]" id="rssai_post_type">
+								<?php
+								foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $pt_obj ) {
+									printf( '<option value="%1$s"%2$s>%3$s</option>', esc_attr( $pt_obj->name ), selected( $cur_pt, $pt_obj->name, false ), esc_html( $pt_obj->labels->singular_name . ' (' . $pt_obj->name . ')' ) );
+								}
+								?>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_taxonomy"><?php echo esc_html__( 'Category taxonomy', 'hti-rss-ai' ); ?></label></th>
+						<td>
+							<?php $cur_tax = self::taxonomy(); ?>
+							<select name="<?php echo esc_attr( self::OPTION ); ?>[target_taxonomy]" id="rssai_taxonomy">
+								<option value="none"<?php selected( '' === $cur_tax ); ?>><?php echo esc_html__( '— none —', 'hti-rss-ai' ); ?></option>
+								<?php
+								foreach ( get_taxonomies( array( 'public' => true ), 'objects' ) as $tx ) {
+									printf( '<option value="%1$s"%2$s>%3$s</option>', esc_attr( $tx->name ), selected( $cur_tax, $tx->name, false ), esc_html( $tx->labels->singular_name . ' (' . $tx->name . ')' ) );
+								}
+								?>
+							</select>
+							<p class="description"><?php echo esc_html__( 'The model suggests a term from this taxonomy. Choose “none” to skip categorisation.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_post_status"><?php echo esc_html__( 'Create as', 'hti-rss-ai' ); ?></label></th>
+						<td>
+							<select name="<?php echo esc_attr( self::OPTION ); ?>[post_status]" id="rssai_post_status">
+								<?php foreach ( array( 'pending' => __( 'Pending review', 'hti-rss-ai' ), 'draft' => __( 'Draft', 'hti-rss-ai' ) ) as $val => $lbl ) : ?>
+									<option value="<?php echo esc_attr( $val ); ?>"<?php selected( $s['post_status'], $val ); ?>><?php echo esc_html( $lbl ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description"><?php echo esc_html__( 'AI articles never auto-publish on this finance site — they always require a human to review and publish (Pending review), or start as Draft.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_languages"><?php echo esc_html__( 'Languages', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[languages]" id="rssai_languages" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['languages'] ); ?>" placeholder="<?php echo esc_attr( implode( ', ', self::languages() ) ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Comma-separated language codes you publish in (e.g. en, pt). Leave blank to use the site language. Grouping and generation run per language.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_house_style"><?php echo esc_html__( 'House style (voice)', 'hti-rss-ai' ); ?></label></th>
+						<td><textarea name="<?php echo esc_attr( self::OPTION ); ?>[house_style]" id="rssai_house_style" rows="3" class="large-text"><?php echo esc_textarea( (string) $s['house_style'] ); ?></textarea>
+							<p class="description"><?php echo esc_html__( 'Optional extra instructions appended to the writing prompt (tone, audience, do/don’t). Leave blank for the default neutral, educational voice.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_disclaimer"><?php echo esc_html__( 'Disclaimer', 'hti-rss-ai' ); ?></label></th>
+						<td><textarea name="<?php echo esc_attr( self::OPTION ); ?>[disclaimer]" id="rssai_disclaimer" rows="2" class="large-text"><?php echo esc_textarea( (string) $s['disclaimer'] ); ?></textarea>
+							<p class="description"><?php echo esc_html__( 'Appended to every article. Leave blank to use the built-in educational disclaimer (or for no disclaimer on a non-finance site, type a single space).', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Safety guards', 'hti-rss-ai' ); ?></th>
+						<td>
+							<label><input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[guard_advice]" value="1" <?php checked( (int) $s['guard_advice'], 1 ); ?> /> <?php echo esc_html__( 'Reject articles that read like investment advice', 'hti-rss-ai' ); ?></label><br />
+							<label><input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[guard_tickers]" value="1" <?php checked( (int) $s['guard_tickers'], 1 ); ?> /> <?php echo esc_html__( 'Reject articles that name stock ticker symbols', 'hti-rss-ai' ); ?></label>
+							<p class="description"><?php echo esc_html__( 'Finance-specific. Turn off on a general-news site.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
 					<tr>
 						<th scope="row"><label for="rssai_model"><?php echo esc_html__( 'Gemini model', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[gemini_model]" id="rssai_model" type="text" class="regular-text" value="<?php echo esc_attr( $s['gemini_model'] ); ?>" /></td>
@@ -187,8 +413,54 @@ class Settings {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><label for="rssai_open_max_days"><?php echo esc_html__( 'Keep stories open for (days)', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[open_max_days]" id="rssai_open_max_days" type="number" min="1" max="90" class="small-text" value="<?php echo esc_attr( (string) $s['open_max_days'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'A new item can still join an existing open group within this window (avoids duplicate groups for a developing story). After this, an open group with no new activity is considered abandoned and cleaned up.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_group_max_span_days"><?php echo esc_html__( 'Max date span in a group (days)', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[group_max_span_days]" id="rssai_group_max_span_days" type="number" min="1" max="30" class="small-text" value="<?php echo esc_attr( (string) $s['group_max_span_days'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'An item only joins a group when its publish date is within this many days of the group’s most recent item — so old news never gets grouped with recent news, even when the wording matches.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Semantic grouping', 'hti-rss-ai' ); ?></th>
+						<td>
+							<label>
+								<input name="<?php echo esc_attr( self::OPTION ); ?>[enable_embeddings]" type="checkbox" value="1" <?php checked( ! empty( $s['enable_embeddings'] ) ); ?> />
+								<?php echo esc_html__( 'Use AI embeddings to also group stories that mean the same thing but share few words', 'hti-rss-ai' ); ?>
+							</label>
+							<p class="description"><?php echo esc_html__( 'Adds a semantic signal on top of the word-overlap match (an item joins a group when it is close either way). Runs server-side and is cached per item. If the key or quota is unavailable, grouping falls back to word-overlap only. Only matches within the same language.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_embedding_model"><?php echo esc_html__( 'Embedding model', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[embedding_model]" id="rssai_embedding_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['embedding_model'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Gemini embeddings model, e.g. text-embedding-004.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_embedding_threshold"><?php echo esc_html__( 'Semantic threshold', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[embedding_threshold]" id="rssai_embedding_threshold" type="number" step="0.01" min="0" max="1" value="<?php echo esc_attr( (string) $s['embedding_threshold'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'How semantically alike two items must be to group (cosine 0–1). Higher = stricter. Default 0.82.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_embed_max"><?php echo esc_html__( 'Max embeddings per run', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[embed_max_per_run]" id="rssai_embed_max" type="number" min="1" max="2000" class="small-text" value="<?php echo esc_attr( (string) $s['embed_max_per_run'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Caps how many new items get embedded each fetch (cost control).', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="rssai_maxfetch"><?php echo esc_html__( 'Max items per fetch', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[max_per_fetch]" id="rssai_maxfetch" type="number" min="1" value="<?php echo esc_attr( (string) $s['max_per_fetch'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_feed_max_errors"><?php echo esc_html__( 'Auto-pause feed after N errors', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[feed_max_errors]" id="rssai_feed_max_errors" type="number" min="1" max="100" class="small-text" value="<?php echo esc_attr( (string) $s['feed_max_errors'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'A feed that keeps failing is retried with a growing back-off, then paused after this many consecutive errors. Re-enable it any time from the Feeds screen.', 'hti-rss-ai' ); ?></p>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="rssai_maxgen"><?php echo esc_html__( 'Max generations per day', 'hti-rss-ai' ); ?></label></th>
@@ -198,8 +470,9 @@ class Settings {
 						<th scope="row"><label for="rssai_lang"><?php echo esc_html__( 'Default language', 'hti-rss-ai' ); ?></label></th>
 						<td>
 							<select name="<?php echo esc_attr( self::OPTION ); ?>[default_lang]" id="rssai_lang">
-								<option value="en"<?php selected( $s['default_lang'], 'en' ); ?>>English</option>
-								<option value="pt"<?php selected( $s['default_lang'], 'pt' ); ?>>Português</option>
+								<?php foreach ( self::languages() as $code ) : ?>
+									<option value="<?php echo esc_attr( $code ); ?>"<?php selected( $s['default_lang'], $code ); ?>><?php echo esc_html( strtoupper( $code ) ); ?></option>
+								<?php endforeach; ?>
 							</select>
 						</td>
 					</tr>
@@ -225,8 +498,48 @@ class Settings {
 							<p class="description"><?php echo esc_html__( 'When a draft has a feed image, it is used as the base and reimagined into the branded illustration with this model. Must be a Gemini image model (accepts an input image), e.g. gemini-2.5-flash-image. Leave blank to always use plain text-to-image.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_youtube_key"><?php echo esc_html__( 'YouTube Data API key', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[youtube_api_key]" id="rssai_youtube_key" type="password" autocomplete="off" class="regular-text" placeholder="<?php echo esc_attr( '' !== Settings::youtube_api_key() ? '•••••• (leave blank to keep)' : '' ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Used to discover a channel’s recent uploads. Prefer defining HTI_YOUTUBE_API_KEY in wp-config.php. Stored server-side, never sent to the browser.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_supadata_key"><?php echo esc_html__( 'Supadata API key', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[supadata_api_key]" id="rssai_supadata_key" type="password" autocomplete="off" class="regular-text" placeholder="<?php echo esc_attr( '' !== Settings::supadata_api_key() ? '•••••• (leave blank to keep)' : '' ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Used to fetch the transcript of a YouTube video (supadata.ai). Prefer defining HTI_SUPADATA_API_KEY in wp-config.php. Stored server-side.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_cleanup_days"><?php echo esc_html__( 'Cleanup after (days)', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[cleanup_days]" id="rssai_cleanup_days" type="number" min="1" max="365" class="small-text" value="<?php echo esc_attr( (string) $s['cleanup_days'] ); ?>" />
+							<p class="description"><?php echo esc_html__( 'A daily routine deletes draft items and log entries older than this, and keeps groups tidy (empty/abandoned groups removed).', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Trash stale AI drafts', 'hti-rss-ai' ); ?></th>
+						<td>
+							<label>
+								<input name="<?php echo esc_attr( self::OPTION ); ?>[enable_post_cleanup]" type="checkbox" value="1" <?php checked( ! empty( $s['enable_post_cleanup'] ) ); ?> />
+								<?php echo esc_html__( 'Move never-reviewed AI drafts to Trash after the period below', 'hti-rss-ai' ); ?>
+							</label>
+							<p>
+								<input name="<?php echo esc_attr( self::OPTION ); ?>[post_cleanup_days]" id="rssai_post_cleanup_days" type="number" min="1" max="365" class="small-text" value="<?php echo esc_attr( (string) $s['post_cleanup_days'] ); ?>" />
+								<label for="rssai_post_cleanup_days"><?php echo esc_html__( 'days', 'hti-rss-ai' ); ?></label>
+							</p>
+							<p class="description"><?php echo esc_html__( 'Only AI-generated posts still in Pending/Draft are trashed — PUBLISHED news is never removed (kept for SEO). Trash is reversible.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
 				</table>
 				<?php submit_button(); ?>
+			</form>
+			<hr />
+			<h2><?php echo esc_html__( 'Maintenance', 'hti-rss-ai' ); ?></h2>
+			<p class="description"><?php echo esc_html__( 'Drafts and logs are cleaned automatically once a day. You can also run it now.', 'hti-rss-ai' ); ?></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="rssai_cleanup_now" />
+				<?php wp_nonce_field( 'rssai_cleanup_now' ); ?>
+				<?php submit_button( __( 'Run cleanup now', 'hti-rss-ai' ), 'secondary', 'submit', false ); ?>
 			</form>
 		</div>
 		<?php

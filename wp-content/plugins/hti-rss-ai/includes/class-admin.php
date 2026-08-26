@@ -116,31 +116,57 @@ class Admin {
 
 		$name   = $feed->name ?? '';
 		$url    = $feed->url ?? '';
+		$kind   = $feed->kind ?? 'rss';
 		$lang   = $feed->lang ?? Settings::get( 'default_lang', 'en' );
 		$cat    = (int) ( $feed->default_category ?? 0 );
 		$status = isset( $feed->status ) ? (int) $feed->status : 1;
 		?>
 		<div class="wrap">
 			<h1><?php echo $id ? esc_html__( 'Edit feed', 'hti-rss-ai' ) : esc_html__( 'Add feed', 'hti-rss-ai' ); ?></h1>
+			<?php
+			if ( isset( $_GET['rssai_notice'] ) && 'yt_error' === sanitize_key( wp_unslash( $_GET['rssai_notice'] ) ) ) {
+				$msg = isset( $_GET['rssai_msg'] ) ? sanitize_text_field( wp_unslash( $_GET['rssai_msg'] ) ) : '';
+				printf(
+					'<div class="notice notice-error"><p>%s %s</p></div>',
+					esc_html__( 'Could not add the YouTube channel:', 'hti-rss-ai' ),
+					esc_html( $msg )
+				);
+			}
+			?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="rssai_save_feed" />
 				<input type="hidden" name="id" value="<?php echo esc_attr( (string) $id ); ?>" />
 				<?php wp_nonce_field( 'rssai_save_feed' ); ?>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><label for="rssai_name"><?php echo esc_html__( 'Name', 'hti-rss-ai' ); ?></label></th>
-						<td><input name="name" id="rssai_name" type="text" class="regular-text" required value="<?php echo esc_attr( $name ); ?>" /></td>
+						<th scope="row"><label for="rssai_kind"><?php echo esc_html__( 'Type', 'hti-rss-ai' ); ?></label></th>
+						<td>
+							<select name="kind" id="rssai_kind">
+								<option value="rss"<?php selected( $kind, 'rss' ); ?>><?php echo esc_html__( 'RSS feed', 'hti-rss-ai' ); ?></option>
+								<option value="youtube"<?php selected( $kind, 'youtube' ); ?>><?php echo esc_html__( 'YouTube channel', 'hti-rss-ai' ); ?></option>
+							</select>
+							<p class="description"><?php echo esc_html__( 'YouTube channels need the YouTube Data API key + Supadata key in Settings.', 'hti-rss-ai' ); ?></p>
+						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="rssai_url"><?php echo esc_html__( 'Feed URL', 'hti-rss-ai' ); ?></label></th>
-						<td><input name="url" id="rssai_url" type="url" class="large-text code" required placeholder="https://example.com/feed/" value="<?php echo esc_attr( $url ); ?>" /></td>
+						<th scope="row"><label for="rssai_name"><?php echo esc_html__( 'Name', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="name" id="rssai_name" type="text" class="regular-text" value="<?php echo esc_attr( $name ); ?>" />
+							<p class="description"><?php echo esc_html__( 'Leave blank for a YouTube channel to use the channel name automatically.', 'hti-rss-ai' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="rssai_url"><?php echo esc_html__( 'Feed URL or channel', 'hti-rss-ai' ); ?></label></th>
+						<td><input name="url" id="rssai_url" type="text" class="large-text code" required placeholder="https://example.com/feed/ · @handle · UC… · youtube.com/@channel" value="<?php echo esc_attr( $url ); ?>" />
+							<p class="description"><?php echo esc_html__( 'For RSS: the feed URL. For YouTube: a channel id (UC…), @handle, or channel URL.', 'hti-rss-ai' ); ?></p>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="rssai_lang"><?php echo esc_html__( 'Language', 'hti-rss-ai' ); ?></label></th>
 						<td>
 							<select name="lang" id="rssai_lang">
-								<option value="en"<?php selected( $lang, 'en' ); ?>>English</option>
-								<option value="pt"<?php selected( $lang, 'pt' ); ?>>Português</option>
+								<?php foreach ( Settings::languages() as $code ) : ?>
+									<option value="<?php echo esc_attr( $code ); ?>"<?php selected( $lang, $code ); ?>><?php echo esc_html( strtoupper( $code ) ); ?></option>
+								<?php endforeach; ?>
 							</select>
 						</td>
 					</tr>
@@ -148,10 +174,11 @@ class Admin {
 						<th scope="row"><label for="rssai_cat"><?php echo esc_html__( 'Default category', 'hti-rss-ai' ); ?></label></th>
 						<td>
 							<?php
-							if ( taxonomy_exists( 'news_category' ) ) {
+							$tax = Settings::taxonomy();
+							if ( '' !== $tax ) {
 								wp_dropdown_categories(
 									array(
-										'taxonomy'         => 'news_category',
+										'taxonomy'         => $tax,
 										'name'             => 'default_category',
 										'id'               => 'rssai_cat',
 										'selected'         => $cat,
@@ -162,7 +189,7 @@ class Admin {
 									)
 								);
 							} else {
-								echo '<em>' . esc_html__( 'news_category taxonomy not available (activate HTI Engine).', 'hti-rss-ai' ) . '</em>';
+								echo '<em>' . esc_html__( 'No category taxonomy selected in Settings.', 'hti-rss-ai' ) . '</em>';
 							}
 							?>
 							<p class="description"><?php echo esc_html__( 'Suggested category for items from this feed.', 'hti-rss-ai' ); ?></p>
@@ -192,9 +219,35 @@ class Admin {
 		check_admin_referer( 'rssai_save_feed' );
 
 		$id   = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
+		$kind = ( isset( $_POST['kind'] ) && 'youtube' === sanitize_key( wp_unslash( $_POST['kind'] ) ) ) ? 'youtube' : 'rss';
+		$name = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
+		$url  = isset( $_POST['url'] ) ? trim( (string) wp_unslash( $_POST['url'] ) ) : '';
+
+		// Resolve a YouTube channel reference to its channel id (+ name).
+		if ( 'youtube' === $kind ) {
+			$resolved = YouTube::resolve_channel( $url );
+			if ( is_wp_error( $resolved ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'rssai_notice' => 'yt_error',
+							'rssai_msg'    => rawurlencode( $resolved->get_error_message() ),
+						),
+						admin_url( 'admin.php?page=' . self::PAGE . '&action=add' )
+					)
+				);
+				exit;
+			}
+			$url = $resolved['channel_id'];
+			if ( '' === $name ) {
+				$name = $resolved['title'];
+			}
+		}
+
 		$data = array(
-			'name'             => isset( $_POST['name'] ) ? wp_unslash( $_POST['name'] ) : '',
-			'url'              => isset( $_POST['url'] ) ? wp_unslash( $_POST['url'] ) : '',
+			'name'             => $name,
+			'url'              => $url,
+			'kind'             => $kind,
 			'lang'             => isset( $_POST['lang'] ) ? sanitize_key( wp_unslash( $_POST['lang'] ) ) : 'en',
 			'default_category' => isset( $_POST['default_category'] ) ? absint( wp_unslash( $_POST['default_category'] ) ) : 0,
 			'status'           => isset( $_POST['status'] ) ? 1 : 0,

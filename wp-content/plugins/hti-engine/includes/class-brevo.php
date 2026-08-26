@@ -96,6 +96,21 @@ class Brevo {
 	}
 
 	/**
+	 * Permanently delete a contact from Brevo (RGPD erasure). A 404 (already
+	 * gone) counts as success. Returns false if the key lacks delete rights or
+	 * the request errors — the caller should then fall back to list removal.
+	 *
+	 * @param string $email Contact email.
+	 */
+	public static function delete_contact( string $email ): bool {
+		if ( ! self::configured() || ! is_email( $email ) ) {
+			return false;
+		}
+		$res = self::request_data( 'DELETE', '/contacts/' . rawurlencode( $email ) );
+		return $res['ok'] || 404 === (int) $res['code'];
+	}
+
+	/**
 	 * Remove a contact from a list (unsubscribe from that list).
 	 *
 	 * @param string $email   Contact email.
@@ -161,7 +176,7 @@ class Brevo {
 	 * @param string                   $method HTTP method.
 	 * @param string                   $path   Path under the API base.
 	 * @param array<string,mixed>|null $body   JSON body.
-	 * @return array{ok:bool,data:array<string,mixed>}
+	 * @return array{ok:bool,code:int,data:array<string,mixed>}
 	 */
 	private static function request_data( string $method, string $path, ?array $body = null ): array {
 		$args = array(
@@ -184,6 +199,7 @@ class Brevo {
 		$data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		return array(
 			'ok'   => $code >= 200 && $code < 300,
+			'code' => $code,
 			'data' => is_array( $data ) ? $data : array(),
 		);
 	}

@@ -373,6 +373,64 @@ class REST {
 				'permission_callback' => array( __CLASS__, 'check_auth' ),
 			)
 		);
+
+		// Learn course progress (signed-in users; merged with the browser set).
+		register_rest_route(
+			self::NAMESPACE,
+			'/learn-progress',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( __CLASS__, 'get_learn_progress' ),
+					'permission_callback' => array( __CLASS__, 'check_auth' ),
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( __CLASS__, 'save_learn_progress' ),
+					'permission_callback' => array( __CLASS__, 'check_auth' ),
+				),
+				array(
+					'methods'             => 'DELETE',
+					'callback'            => array( __CLASS__, 'reset_learn_progress' ),
+					'permission_callback' => array( __CLASS__, 'check_auth' ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * GET /learn-progress — the signed-in user's completed chapters.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function get_learn_progress( WP_REST_Request $request ) {
+		return new WP_REST_Response( Learn::get( get_current_user_id() ), 200 );
+	}
+
+	/**
+	 * POST /learn-progress — merge the posted completed slugs and return the union.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function save_learn_progress( WP_REST_Request $request ) {
+		$done   = (array) $request->get_param( 'done' );
+		$passed = (array) $request->get_param( 'passed' );
+		return new WP_REST_Response( Learn::merge( get_current_user_id(), $done, $passed ), 200 );
+	}
+
+	/**
+	 * DELETE /learn-progress — erase the signed-in user's learning progress
+	 * (chapters read + quizzes passed). Self-serve RGPD data deletion scoped to
+	 * the Learn course; the account itself is untouched.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public static function reset_learn_progress( WP_REST_Request $request ) {
+		Learn::erase( get_current_user_id() );
+		return new WP_REST_Response( array( 'done' => array(), 'passed' => array() ), 200 );
 	}
 
 	/**
@@ -422,6 +480,10 @@ class REST {
 			return self::too_many();
 		}
 
+		// Start the time-to-result timer (KPI: p95 < 8s). Excludes rate-limited
+		// requests, which never reach the engine.
+		$t0 = microtime( true );
+
 		$locale  = self::locale( (string) $request->get_param( 'locale' ) );
 		$answers = self::sanitize_answers( (array) $request->get_param( 'answers' ) );
 
@@ -429,8 +491,10 @@ class REST {
 		try {
 			$result = Engine::recommend( $answers );
 		} catch ( \InvalidArgumentException $e ) {
+			Metrics::record_recommend( 'error', (int) round( ( microtime( true ) - $t0 ) * 1000 ) );
 			return new WP_Error( 'hti_invalid_answers', __( 'Some answers are missing or invalid.', 'hti-engine' ), array( 'status' => 422 ) );
 		} catch ( \Throwable $e ) {
+			Metrics::record_recommend( 'error', (int) round( ( microtime( true ) - $t0 ) * 1000 ) );
 			return new WP_Error( 'hti_engine_error', __( 'Could not produce a recommendation.', 'hti-engine' ), array( 'status' => 500 ) );
 		}
 
@@ -446,13 +510,30 @@ class REST {
 		// Explanation (LLM → validate → fallback; always succeeds).
 		$explained = Explainer::explain( $result, $answers, $locale, $label );
 
+		// ESG note: when the visitor said sustainability matters, add a
+		// deterministic note (not from the LLM) clarifying that the illustrative
+		// example stays at the asset-class level and names no specific ESG
+		// products — keeping the project invariants explicit in the result.
+		if ( 'yes' === ( $answers['p7_esg'] ?? '' ) && isset( $explained['explanation'] ) && is_array( $explained['explanation'] ) ) {
+			$explained['explanation']['esg_note'] = ( 'pt' === $locale )
+				? 'Indicaste que investir de forma sustentável (ESG) é importante para ti. Este exemplo é educativo e mantém-se ao nível das classes de ativos — não nomeia produtos ESG específicos. Saber mais no guia de investimento ESG.'
+				: 'You told us sustainable (ESG) investing matters to you. This example is educational and stays at the asset-class level — it names no specific ESG products. Learn more in the ESG investing guide.';
+		}
+
 		$session_token = wp_generate_uuid4();
 		$consent       = self::sanitize_consent( (array) $request->get_param( 'consent' ) );
 
 		$profile_id = self::store_profile( $result, $answers, $explained, $locale, $label, $session_token, $consent );
 		if ( is_wp_error( $profile_id ) ) {
+			Metrics::record_recommend( 'error', (int) round( ( microtime( true ) - $t0 ) * 1000 ) );
 			return new WP_Error( 'hti_persist_error', __( 'Could not save the profile.', 'hti-engine' ), array( 'status' => 500 ) );
 		}
+
+		// KPI: engine-success-rate (llm vs fallback) + time-to-result.
+		Metrics::record_recommend(
+			'llm' === ( $explained['source'] ?? '' ) ? 'ok_llm' : 'ok_fallback',
+			(int) round( ( microtime( true ) - $t0 ) * 1000 )
+		);
 
 		return new WP_REST_Response(
 			array(
@@ -871,15 +952,34 @@ class REST {
 			);
 		}
 
+		$prefs     = get_user_meta( $user->ID, 'hti_prefs', true );
+		$nps_score = get_user_meta( $user->ID, 'hti_nps_done', true );
+		$delete_at = get_user_meta( $user->ID, 'hti_delete_at', true );
+
 		$data = array(
-			'exported_at' => gmdate( 'c' ),
-			'account'     => array(
-				'id'           => $user->ID,
-				'email'        => $user->user_email,
-				'display_name' => $user->display_name,
-				'registered'   => $user->user_registered,
+			'exported_at'     => gmdate( 'c' ),
+			'account'         => array(
+				'id'                    => $user->ID,
+				'email'                 => $user->user_email,
+				'display_name'          => $user->display_name,
+				'registered'            => $user->user_registered,
+				'preferred_locale'      => get_user_meta( $user->ID, 'hti_pref_locale', true ),
+				'onboarded'             => (bool) get_user_meta( $user->ID, 'hti_onboarded', true ),
+				'scheduled_deletion_at' => '' !== $delete_at ? gmdate( 'c', (int) $delete_at ) : null,
 			),
-			'profiles'    => $profiles,
+			'onboarding'      => array(
+				'investing_question' => (string) get_user_meta( $user->ID, 'hti_invest_question', true ),
+			),
+			'newsletter'      => array(
+				// Preferences held on-site; the subscription itself is stored at
+				// the email processor (Brevo) and can be exported from there.
+				'preferences' => is_array( $prefs ) ? $prefs : array(),
+			),
+			'nps'             => array(
+				'score' => '' !== $nps_score ? (int) $nps_score : null,
+			),
+			'profiles'        => $profiles,
+			'learn_progress'  => Learn::get( $user->ID ),
 		);
 
 		$response = new WP_REST_Response( $data, 200 );

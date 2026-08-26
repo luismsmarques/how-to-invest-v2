@@ -91,6 +91,56 @@
 	}
 
 	/**
+	 * Emergency-fund target and time to reach it.
+	 *
+	 * @param {number} monthlyExpenses Essential spending per month.
+	 * @param {number} monthsCover     Months of expenses to hold.
+	 * @param {number} currentSaved    Amount already set aside.
+	 * @param {number} monthlySaving   Amount saved toward it each month.
+	 * @return {{target:number,gap:number,monthsToReach:number}}
+	 */
+	function emergencyFund( monthlyExpenses, monthsCover, currentSaved, monthlySaving ) {
+		var target = Math.max( 0, monthlyExpenses ) * Math.max( 0, monthsCover );
+		var gap = Math.max( 0, target - currentSaved );
+		var monthsToReach = 0;
+		if ( gap > 0 ) {
+			monthsToReach = monthlySaving > 0 ? Math.ceil( gap / monthlySaving ) : Infinity;
+		}
+		return { target: target, gap: gap, monthsToReach: monthsToReach };
+	}
+
+	/**
+	 * Rule of 72: years to double, how many times money doubles over a span, and
+	 * the resulting multiple (consistent with the rule's doublings).
+	 *
+	 * @param {number} annualRatePct Annual return, in percent.
+	 * @param {number} years         Number of years to project.
+	 * @return {{yearsToDouble:number,doublings:number,multiple:number}}
+	 */
+	function rule72( annualRatePct, years ) {
+		var yearsToDouble = annualRatePct > 0 ? 72 / annualRatePct : Infinity;
+		var doublings = isFinite( yearsToDouble ) && yearsToDouble > 0 ? years / yearsToDouble : 0;
+		var multiple = Math.pow( 2, doublings );
+		return { yearsToDouble: yearsToDouble, doublings: doublings, multiple: multiple };
+	}
+
+	/**
+	 * Impact of an annual fee: the fee is modelled as a drag on the gross return.
+	 *
+	 * @param {number} initial      Starting amount.
+	 * @param {number} monthly      Monthly contribution.
+	 * @param {number} grossRatePct Gross annual return, in percent.
+	 * @param {number} feePct       Annual fee, in percent.
+	 * @param {number} years        Number of years.
+	 * @return {{gross:number,net:number,lost:number}}
+	 */
+	function feeImpact( initial, monthly, grossRatePct, feePct, years ) {
+		var gross = futureValue( initial, monthly, grossRatePct, years );
+		var net = futureValue( initial, monthly, Math.max( 0, grossRatePct - feePct ), years );
+		return { gross: gross, net: net, lost: Math.max( 0, gross - net ) };
+	}
+
+	/**
 	 * Year-by-year series (year 0..years) of contributed vs portfolio value.
 	 *
 	 * @return {Array<{year:number,contributed:number,value:number}>}
@@ -115,6 +165,9 @@
 		purchasingPower: purchasingPower,
 		amountToMatch: amountToMatch,
 		costOfWaiting: costOfWaiting,
+		emergencyFund: emergencyFund,
+		rule72: rule72,
+		feeImpact: feeImpact,
 		series: series,
 	};
 } ) );

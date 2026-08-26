@@ -38,6 +38,37 @@ class Validator {
 	private const ACRONYM_ALLOWLIST = array( 'ESG', 'REIT', 'REITS', 'AI', 'USA', 'US', 'EU', 'UK', 'PT', 'EN', 'HTI', 'GDPR', 'RGPD' );
 
 	/**
+	 * Imperative / advice-giving phrasing (EN + PT). Invariant 3 requires the
+	 * LLM to stay conditional and illustrative ("a profile like this tends to…"),
+	 * never directive ("you should buy"). Kept high-precision so ordinary
+	 * educational prose is not wrongly rejected; a match → fallback.
+	 */
+	private const DIRECTIVE_PATTERNS = array(
+		// English second-person imperatives / recommendations.
+		'/\byou should\b/i',
+		'/\byou must\b/i',
+		'/\byou need to\b/i',
+		'/\byou have to\b/i',
+		'/\byou ought to\b/i',
+		'/\b(?:we|i) recommend\b/i',
+		'/\b(?:we|i) advise\b/i',
+		'/\b(?:we|i) suggest you\b/i',
+		'/\byour (?:ideal|perfect|best) portfolio\b/i',
+		'/\b(?:buy|sell) now\b/i',
+		// Portuguese.
+		'/\bdeves\b/iu',
+		'/\bdevias\b/iu',
+		'/\btens de\b/iu',
+		'/\bdeve (?:comprar|vender|investir)\b/iu',
+		'/\brecomendamos\b/iu',
+		'/\brecomendo\b/iu',
+		'/\baconselhamos\b/iu',
+		'/\baconselho\b/iu',
+		'/\bsugerimos que\b/iu',
+		'/\b(?:a tua|a sua) carteira ideal\b/iu',
+	);
+
+	/**
 	 * Convenience boolean wrapper around errors().
 	 *
 	 * @param mixed                                                                 $data   LLM output (decoded).
@@ -117,6 +148,10 @@ class Validator {
 			$errors[] = 'text appears to name a financial instrument';
 		}
 
+		if ( self::contains_directive( $text ) ) {
+			$errors[] = 'text uses imperative/advice phrasing (must stay conditional)';
+		}
+
 		$allowed_pcts = array_map( 'intval', array_column( $result['allocation'], 'pct' ) );
 		if ( self::has_foreign_percentage( $text, $allowed_pcts ) ) {
 			$errors[] = 'text contains a percentage not in the fixed allocation';
@@ -147,6 +182,20 @@ class Validator {
 				if ( ! in_array( $token, self::ACRONYM_ALLOWLIST, true ) ) {
 					return true;
 				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Detect imperative/advice phrasing that would breach invariant 3.
+	 *
+	 * @param string $text Combined text.
+	 */
+	private static function contains_directive( string $text ): bool {
+		foreach ( self::DIRECTIVE_PATTERNS as $pattern ) {
+			if ( preg_match( $pattern, $text ) ) {
+				return true;
 			}
 		}
 		return false;

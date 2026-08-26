@@ -34,6 +34,38 @@
 		}
 	}
 
+	// Compact, locale-aware words for the non-money outputs.
+	var WORDS = {
+		en: { year: 'year', years: 'years', month: 'month', months: 'months', times: 'times', never: 'Out of reach' },
+		pt: { year: 'ano', years: 'anos', month: 'mês', months: 'meses', times: 'vezes', never: 'Fora de alcance' },
+	};
+
+	function decimal( value, places ) {
+		var r = Math.round( value * Math.pow( 10, places ) ) / Math.pow( 10, places );
+		return r % 1 === 0 ? String( r ) : r.toFixed( places );
+	}
+
+	// Format an output value per its data-format ('money' is the default).
+	function format( value, fmt, locale ) {
+		var w = WORDS[ locale.indexOf( 'pt' ) === 0 ? 'pt' : 'en' ];
+		if ( fmt && fmt !== 'money' && ! isFinite( value ) ) {
+			return w.never;
+		}
+		switch ( fmt ) {
+			case 'years':
+				return decimal( value, 1 ) + ' ' + ( value === 1 ? w.year : w.years );
+			case 'months':
+				var m = Math.ceil( value );
+				return m + ' ' + ( m === 1 ? w.month : w.months );
+			case 'times':
+				return decimal( value, 1 ) + ' ' + w.times;
+			case 'multiple':
+				return decimal( value, 1 ) + '×';
+			default:
+				return money( value, locale );
+		}
+	}
+
 	var COMPUTE = {
 		compound: function ( r ) {
 			var initial = num( field( r, 'initial' ) ),
@@ -85,6 +117,35 @@
 				chart: [
 					{ data: nowSeries, color: '#FF6B5E', fill: true },
 					{ data: waitSeries, color: '#7C5CFC', dashed: true },
+				],
+			};
+		},
+		emergency_fund: function ( r ) {
+			var expenses = num( field( r, 'expenses' ) ),
+				months = num( field( r, 'months' ) ),
+				saved = num( field( r, 'saved' ) ),
+				monthly = num( field( r, 'monthly' ) );
+			var res = T.emergencyFund( expenses, months, saved, monthly );
+			return { out: { target: res.target, gap: res.gap, time: res.monthsToReach } };
+		},
+		rule_of_72: function ( r ) {
+			var rate = num( field( r, 'rate' ) ),
+				years = num( field( r, 'years' ) );
+			var res = T.rule72( rate, years );
+			return { out: { double: res.yearsToDouble, doublings: res.doublings, multiple: res.multiple } };
+		},
+		fee_impact: function ( r ) {
+			var initial = num( field( r, 'initial' ) ),
+				monthly = num( field( r, 'monthly' ) ),
+				rate = num( field( r, 'rate' ) ),
+				fee = num( field( r, 'fee' ) ),
+				years = num( field( r, 'years' ) );
+			var res = T.feeImpact( initial, monthly, rate, fee, years );
+			return {
+				out: { net: res.net, gross: res.gross, lost: res.lost },
+				chart: [
+					{ data: T.series( initial, monthly, rate, years ).map( pv( 'value' ) ), color: '#7C5CFC', dashed: true },
+					{ data: T.series( initial, monthly, Math.max( 0, rate - fee ), years ).map( pv( 'value' ) ), color: '#FF6B5E', fill: true },
 				],
 			};
 		},
@@ -153,13 +214,86 @@
 		Object.keys( res.out ).forEach( function ( key ) {
 			var slot = root.querySelector( '[data-out="' + key + '"]' );
 			if ( slot ) {
-				slot.textContent = money( res.out[ key ], locale );
+				slot.textContent = format( res.out[ key ], slot.getAttribute( 'data-format' ), locale );
 			}
 		} );
 		var chartEl = root.querySelector( '[data-chart]' );
 		if ( chartEl && res.chart ) {
 			drawChart( chartEl, res.chart );
 		}
+	}
+
+	// Allocation visualiser: archetype tabs → conic-gradient donut + class list.
+	function initAllocation() {
+		var widgets = document.querySelectorAll( '.hti-alloc[data-allocations]' );
+		Array.prototype.forEach.call( widgets, function ( root ) {
+			var data;
+			try {
+				data = JSON.parse( root.getAttribute( 'data-allocations' ) || '[]' );
+			} catch ( e ) {
+				return;
+			}
+			if ( ! data.length ) {
+				return;
+			}
+			var donut = root.querySelector( '[data-donut]' );
+			var list = root.querySelector( '[data-list]' );
+			var tabs = root.querySelectorAll( '.hti-alloc__tab' );
+			var center = root.getAttribute( 'data-center' ) || '';
+			var sub = root.getAttribute( 'data-sub' ) || '';
+
+			function show( arch ) {
+				var stops = [],
+					cumulative = 0;
+				list.innerHTML = '';
+				arch.slices.forEach( function ( s ) {
+					var end = cumulative + s.pct;
+					stops.push( s.color + ' ' + cumulative + '% ' + end + '%' );
+					cumulative = end;
+					var li = document.createElement( 'li' );
+					li.className = 'hti-alloc__row';
+					var dot = document.createElement( 'span' );
+					dot.className = 'hti-alloc__dot';
+					dot.style.background = s.color;
+					var name = document.createElement( 'span' );
+					name.className = 'hti-alloc__name';
+					name.textContent = s.label;
+					var pct = document.createElement( 'span' );
+					pct.className = 'hti-alloc__pct';
+					pct.textContent = s.pct + '%';
+					li.appendChild( dot );
+					li.appendChild( name );
+					li.appendChild( pct );
+					list.appendChild( li );
+				} );
+				donut.style.background = 'conic-gradient(' + stops.join( ',' ) + ')';
+				donut.innerHTML = '<span class="hti-alloc__hole"><span class="hti-alloc__cap">' +
+					escapeText( center ) + '</span><span class="hti-alloc__subcap">' + escapeText( sub ) + '</span></span>';
+			}
+
+			function select( id ) {
+				var arch = data.filter( function ( a ) {
+					return String( a.id ) === String( id );
+				} )[ 0 ] || data[ 0 ];
+				Array.prototype.forEach.call( tabs, function ( t ) {
+					t.setAttribute( 'aria-selected', String( t.getAttribute( 'data-arch' ) ) === String( arch.id ) ? 'true' : 'false' );
+				} );
+				show( arch );
+			}
+
+			Array.prototype.forEach.call( tabs, function ( t ) {
+				t.addEventListener( 'click', function () {
+					select( t.getAttribute( 'data-arch' ) );
+				} );
+			} );
+			select( data[ 0 ].id );
+		} );
+	}
+
+	function escapeText( str ) {
+		var d = document.createElement( 'div' );
+		d.textContent = str;
+		return d.innerHTML;
 	}
 
 	function init() {
@@ -174,6 +308,7 @@
 			} );
 			update( root );
 		} );
+		initAllocation();
 	}
 
 	if ( 'loading' === document.readyState ) {

@@ -64,7 +64,10 @@ class Items_List_Table extends \WP_List_Table {
 	 * @return array<string,string>
 	 */
 	public function get_bulk_actions(): array {
-		return array( 'ignore' => __( 'Ignore', 'hti-rss-ai' ) );
+		return array(
+			'group'  => __( 'Create group from selected', 'hti-rss-ai' ),
+			'ignore' => __( 'Ignore', 'hti-rss-ai' ),
+		);
 	}
 
 	/**
@@ -76,6 +79,7 @@ class Items_List_Table extends \WP_List_Table {
 		return array(
 			'feed_id' => isset( $_GET['feed_id'] ) ? absint( wp_unslash( $_GET['feed_id'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			'status'  => isset( $_GET['fstatus'] ) ? sanitize_key( wp_unslash( $_GET['fstatus'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'lang'    => isset( $_GET['flang'] ) ? preg_replace( '/[^a-z]/', '', strtolower( (string) wp_unslash( $_GET['flang'] ) ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		);
 	}
 
@@ -138,6 +142,15 @@ class Items_List_Table extends \WP_List_Table {
 				if ( $item->source ) {
 					$title .= '<div style="color:#646970;font-size:12px">' . esc_html( $item->source ) . '</div>';
 				}
+				$actions = array();
+				foreach ( Prompt::content_types() as $key => $label ) {
+					$url = wp_nonce_url(
+						admin_url( 'admin-post.php?action=rssai_gen_item&item=' . (int) $item->id . '&type=' . rawurlencode( (string) $key ) ),
+						'rssai_gen_item_' . (int) $item->id
+					);
+					$actions[ 'gen_' . $key ] = '<a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a>';
+				}
+				$title .= '<div style="margin-top:4px;font-size:12px;color:#2271b1;"><span style="color:#646970">' . esc_html__( 'Generate:', 'hti-rss-ai' ) . '</span> ' . $this->row_actions( $actions, true ) . '</div>';
 				return $title;
 			case 'feed':
 				return esc_html( $this->feed_names[ (int) $item->feed_id ] ?? ( '#' . (int) $item->feed_id ) );
@@ -175,6 +188,15 @@ class Items_List_Table extends \WP_List_Table {
 			printf( '<option value="%1$s"%2$s>%1$s</option>', esc_attr( $status ), selected( $filters['status'], $status, false ) );
 		}
 		echo '</select> ';
+
+		$langs = Settings::languages();
+		if ( count( $langs ) > 1 ) {
+			echo '<select name="flang"><option value="">' . esc_html__( 'All languages', 'hti-rss-ai' ) . '</option>';
+			foreach ( $langs as $code ) {
+				printf( '<option value="%1$s"%2$s>%3$s</option>', esc_attr( $code ), selected( $filters['lang'], $code, false ), esc_html( strtoupper( $code ) ) );
+			}
+			echo '</select> ';
+		}
 
 		submit_button( __( 'Filter', 'hti-rss-ai' ), '', 'filter_action', false );
 		echo '</div>';

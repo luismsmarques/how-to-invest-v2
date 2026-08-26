@@ -1,0 +1,94 @@
+/**
+ * HowToInvest ebook — print stylesheet (A4).
+ * "Como começar a investir" / "How to start investing".
+ * Cover direction A (Editorial cream). Fonts embedded locally so the PDF
+ * renders identically offline.
+ */
+
+@font-face { font-family: 'Poppins'; font-weight: 400; font-display: block; src: url('fonts/poppins-400.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 500; font-display: block; src: url('fonts/poppins-500.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 600; font-display: block; src: url('fonts/poppins-600.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 700; font-display: block; src: url('fonts/poppins-700.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 800; font-display: block; src: url('fonts/poppins-800.woff2') format('woff2'); }
+@font-face { font-family: 'Jakarta'; font-weight: 400; font-display: block; src: url('fonts/jakarta-400.woff2') format('woff2'); }
+@font-face { font-family: 'Jakarta'; font-weight: 500; font-display: block; src: url('fonts/jakarta-500.woff2') format('woff2'); }
+@font-face { font-family: 'Jakarta'; font-weight: 600; font-display: block; src: url('fonts/jakarta-600.woff2') format('woff2'); }
+@font-face { font-family: 'Jakarta'; font-weight: 700; font-display: block; src: url('fonts/jakarta-700.woff2') format('woff2'); }
+
+@page { size: A4; margin: 0; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+	font-family: 'Jakarta', system-ui, sans-serif;
+	color: #2A2438;
+	-webkit-print-color-adjust: exact;
+	print-color-adjust: exact;
+}
+.pop { font-family: 'Poppins', sans-serif; }
+
+/* A4 page. */
+.pg {
+	position: relative;
+	width: 210mm;
+	height: 297mm;
+	background: #FFF6F1;
+	overflow: hidden;
+	page-break-after: always;
+	break-after: page;
+}
+.pg:last-child { page-break-after: auto; break-after: auto; }
+.pad { padding: 22mm 18mm 20mm; display: flex; flex-direction: column; height: 100%; }
+.pad-wide { padding: 24mm 22mm; display: flex; flex-direction: column; height: 100%; }
+
+/* Brand row. */
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand__logo { display: flex; }
+.brand__name { font-weight: 600; font-size: 15px; letter-spacing: -0.02em; }
+
+/* Eyebrows / kickers. */
+.kick { font-weight: 600; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #A89FB5; }
+.kick--coral { color: #FF6B5E; }
+.kick--purple { color: #7C5CFC; }
+.eyebrow-pill {
+	display: inline-flex; align-self: flex-start; align-items: center; gap: 8px;
+	background: #FFEDE9; color: #C9362C; font-weight: 600; font-size: 12px;
+	letter-spacing: 0.07em; text-transform: uppercase; padding: 7px 15px; border-radius: 999px;
+}
+.eyebrow-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #7C5CFC; }
+
+/* Headings. */
+.h1 { font-family: 'Poppins', sans-serif; font-weight: 700; letter-spacing: -0.03em; margin: 0; }
+.h2 { font-family: 'Poppins', sans-serif; font-weight: 700; letter-spacing: -0.025em; margin: 0; line-height: 1.1; }
+.h3 { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 27px; letter-spacing: -0.02em; margin: 0; line-height: 1.1; }
+.lead { font-size: 16px; line-height: 1.65; color: #5A5270; }
+.body { font-size: 15px; line-height: 1.62; color: #5A5270; }
+
+/* Cards + callouts. */
+.card { background: #fff; border: 1px solid #F2E4DD; border-radius: 16px; padding: 20px 22px; }
+.key { background: #FFEDE9; border-left: 3px solid #FF6B5E; border-radius: 0 12px 12px 0; padding: 15px 20px; }
+.key__l { font-weight: 600; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #C9362C; margin-bottom: 5px; }
+.key__p { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.4; color: #2A2438; margin: 0; }
+.mini { border-radius: 14px; padding: 16px 18px; }
+.mini--ex { background: #EFE9FE; }
+.mini--ex .mini__l { color: #6A4BE0; }
+.mini--caution { background: #FCEFD9; }
+.mini--caution .mini__l { color: #A9740C; }
+.mini--term { background: #E2F7F2; }
+.mini--term .mini__l { color: #0E9C84; }
+.mini__l { font-weight: 600; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.mini__p { font-size: 13px; line-height: 1.55; color: #5A5270; margin: 0; }
+
+/* Glossary-term underline inside body copy. */
+.term { border-bottom: 1.5px dotted #0E9C84; color: #2A2438; }
+
+/* Page footer. */
+.pgfoot {
+	position: absolute; left: 18mm; right: 18mm; bottom: 11mm;
+	display: flex; align-items: center; justify-content: space-between;
+	font-weight: 600; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: #C3B9C8;
+}
+
+/* Spacers that push content to the bottom of a page. */
+.grow { flex: 1; }
+.push { margin-top: auto; }

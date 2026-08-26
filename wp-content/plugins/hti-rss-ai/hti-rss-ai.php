@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
- * Description:       Ingests RSS feeds into drafts, clusters similar items, and (on demand) researches facts with Gemini grounding to generate SEO/Google-News articles for review. Feeds the hti-engine "news" content type.
- * Version:           1.5.0
+ * Description:       Turns RSS feeds and YouTube channels into AI-drafted articles for review (Gemini). Works with any post type, taxonomy and theme — configure the target in Settings.
+ * Version:           1.11.1
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '1.5.0';
+const VERSION = '1.11.1';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );
@@ -34,23 +34,32 @@ define( 'RSSAI_URL', plugin_dir_url( __FILE__ ) );
  */
 const CRON_HOOK = 'rssai_fetch_cron';
 
+/**
+ * Cron hook for the daily cleanup of old drafts + logs.
+ */
+const CLEANUP_HOOK = 'rssai_cleanup_cron';
+
 require_once RSSAI_PATH . 'includes/class-activator.php';
 require_once RSSAI_PATH . 'includes/class-logger.php';
 require_once RSSAI_PATH . 'includes/class-settings.php';
+require_once RSSAI_PATH . 'includes/class-cleanup.php';
 require_once RSSAI_PATH . 'includes/class-feeds.php';
 require_once RSSAI_PATH . 'includes/class-items.php';
 require_once RSSAI_PATH . 'includes/class-groups.php';
 require_once RSSAI_PATH . 'includes/class-fetcher.php';
 require_once RSSAI_PATH . 'includes/class-grouping.php';
 require_once RSSAI_PATH . 'includes/class-gemini-client.php';
+require_once RSSAI_PATH . 'includes/class-embeddings.php';
+require_once RSSAI_PATH . 'includes/class-youtube.php';
+require_once RSSAI_PATH . 'includes/class-supadata.php';
 require_once RSSAI_PATH . 'includes/class-image-client.php';
 require_once RSSAI_PATH . 'includes/class-prompt.php';
 require_once RSSAI_PATH . 'includes/class-validator.php';
-require_once RSSAI_PATH . 'includes/class-social-card.php';
 require_once RSSAI_PATH . 'includes/class-featured-image.php';
-require_once RSSAI_PATH . 'includes/class-social-kit.php';
 require_once RSSAI_PATH . 'includes/class-generator.php';
+require_once RSSAI_PATH . 'includes/class-youtube-generator.php';
 require_once RSSAI_PATH . 'includes/class-admin.php';
+require_once RSSAI_PATH . 'includes/class-dashboard-page.php';
 require_once RSSAI_PATH . 'includes/class-drafts.php';
 require_once RSSAI_PATH . 'includes/class-groups-page.php';
 require_once RSSAI_PATH . 'includes/class-review.php';
@@ -77,25 +86,26 @@ add_action( 'plugins_loaded', array( Activator::class, 'maybe_upgrade' ) );
  */
 Settings::init();
 Admin::init();
+Dashboard_Page::init();
 Drafts::init();
 Groups_Page::init();
 Review::init();
 Logs_Page::init();
 Fetcher::init();
 Featured_Image::init();
-Social_Kit::init();
+Cleanup::init();
 
 /**
  * Warn (without breaking) when hti-engine's "news" type is missing — the
  * generated articles target that content type.
  */
 function dependency_notice(): void {
-	if ( ! current_user_can( 'manage_options' ) || post_type_exists( 'news' ) ) {
+	if ( ! current_user_can( 'manage_options' ) || post_type_exists( Settings::post_type() ) ) {
 		return;
 	}
 	printf(
 		'<div class="notice notice-warning"><p>%s</p></div>',
-		esc_html__( 'HTI RSS AI Feed: the “news” content type was not found. Activate the HTI Engine plugin so generated articles have somewhere to go.', 'hti-rss-ai' )
+		esc_html__( 'HTI RSS AI Feed: the configured target post type was not found. Pick an existing post type in RSS AI Feed → Settings.', 'hti-rss-ai' )
 	);
 }
 add_action( 'admin_notices', __NAMESPACE__ . '\\dependency_notice' );

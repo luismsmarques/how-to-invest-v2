@@ -100,10 +100,10 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
     e é reinventada no estilo da marca por um modelo Gemini-image (default `gemini-2.5-flash-image`); senão
     text-to-image; senão imagem do feed crua; senão nenhuma. Fonte registada (`ai-from-feed`/`ai`/`feed`/`none`).
     Botão *Regenerate AI image* na meta box. **Imagen exige billing + acesso a image-gen**.
-  - **Kit de redes sociais (M8):** meta box pós-publicação com **download** de cartões de marca renderizados
-    **localmente com GD** (fontes `.ttf` em `assets/fonts/`) — **Quadrado 1080×1080** (feed) e **Story 1080×1920**
-    (stories) — com a **foto de destaque lá dentro** + título/data/disclaimer. **Reaproveita** a foto (sem gastar AI).
-    Templates fiéis a *Notícias · Quadrado* e *Notícias · Story* do design. **Adiados:** editorial 4:5, X/Twitter.
+  - **Kit de redes sociais (M8) — REMOVIDO:** o antigo kit GD (cartões Quadrado/Story renderizados com GD +
+    fontes `.ttf`) foi **removido** (hti-rss-ai v1.6.0) por ser substituído pelo plugin **`hti-social`** (Social
+    Generator), que cobre os mesmos formatos e mais — com muito maior fidelidade ao design e exportação por
+    `<foreignObject>`. A foto de destaque AI continua a ser reaproveitada (auto-fill na meta box do `hti-social`).
   - Meta box no editor de `news`: proveniência + fontes + sugestões de sitelinking (glossário/related).
   - Detalhe: `wp-content/plugins/hti-rss-ai/README.md`; plano: `docs/RSS_AI_Feed_Plan.md`.
 
@@ -148,15 +148,14 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - **Bump de versão obrigatório** ao mexer em CSS/JS do tema/plugin (constante VERSION → `?ver=`), senão a cache serve assets antigos. Em template parts personalizadas no Site Editor, *Clear customizations* para o tema voltar a usar os ficheiros.
 - Testes engine (157 verdes): `for t in engine settings explainer prompt ratelimit cron mailer google llm; do php wp-content/plugins/hti-engine/tests/test-$t.php; done`
 - Testes calculadoras (Node, 14 verdes): `node wp-content/plugins/hti-engine/tests/test-tools-core.mjs`
-- Testes RSS AI (29 verdes): `for t in extract-json validator grouping social-card image-client; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
+- Testes RSS AI (24 verdes): `for t in extract-json validator grouping image-client; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
 
 ## O que falta para o GO-LIVE público (checklist completa: `docs/QA_Gate_Lancamento.md`)
 **Código (produto):** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
 
 **Código — adiado de propósito (opcional, não bloqueia):**
-- [ ] **Hub de Ferramentas — 2ª leva:** Fundo de emergência, Visualizador de alocação por arquétipo (reusa `result.js`+`Config`), Regra dos 72, Impacto das comissões. (1ª leva — juro composto/inflação/meta/custo de esperar — **feita**.)
-- [ ] Kit social: template **Editorial 4:5** (img3) e **X/Twitter 1600×900**.
-- [ ] Outros templates do design (Facto curioso, Glossário cards, CTA, Infográfico, Resumo diário) — "kit de conteúdo" futuro.
+- [x] **Hub de Ferramentas — 2ª leva (feita):** Fundo de emergência, Visualizador de alocação por arquétipo (donut via `Config`+`Engine::allocate`, por classes), Regra dos 72, Impacto das comissões. (1ª leva — juro composto/inflação/meta/custo de esperar — também feita.) Páginas seedadas EN+PT + ligadas no hub `/tools/`; `tools-core` com 27 testes verdes.
+- [x] **Plugin `hti-social` (Social Generator) — feito:** novo plugin que rende os modelos do design "Social Templates" (handoff 9) como HTML/CSS e exporta PNG fiel **sem dependências pesadas** (SVG `<foreignObject>` → canvas, fontes self-hosted em base64). **19 templates**: Notícias (Quadrado/Story/X), Glossário (Facebook/Feed/Story), Facto curioso (verde/roxo/story), CTA Questionário (Quadrado/Story/X), og:image (foto cheia/split 1200×630) e Editorial 4:5 (Destaque, Economia, Promo ferramenta, **Infográfico** com gráfico SVG, Resumo diário). Dois locais: página **Social** no admin + meta box **Social cards** em Notícias/Glossário (auto-preenchida). Disclaimer bilingue e linguagem por classes embutidos. Substitui o "kit social" GD do RSS-AI para estes formatos.
 - [ ] **Base dos slugs dos CPTs em PT** (`/news/`, `/glossary/`) — exige Polylang Pro ou rewrite custom (deixada em EN).
 
 **Operacional (teu, no servidor):**
@@ -182,3 +181,4 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 3. Verificar 301s + HTTPS.
 4. Enviar textos legais ao jurista (L-D).
 5. Ativar o **HTI RSS AI Feed**, adicionar feeds e validar 1 geração ponta a ponta antes de a usar em produção.
+6. **MCP WordPress** (criar/editar conteúdo por comandos): plano e estado em `docs/MCP_WordPress.md` — bloqueado por egress (precisa de ambiente novo) + WAF.

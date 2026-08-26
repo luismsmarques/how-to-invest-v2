@@ -165,6 +165,14 @@
 			safety: trap ? 1 : 0
 		} );
 
+		// Remember the archetype (non-PII) so a later feedback submission can be
+		// attributed to a profile, without retaining any personal data.
+		try {
+			if ( res.archetype && res.archetype.id ) {
+				window.localStorage.setItem( 'hti_last_archetype', String( res.archetype.id ) );
+			}
+		} catch ( e ) {}
+
 		// Heading. Eyebrow + bare archetype name + short illustrative subtitle.
 		if ( trap && exp.safety_message ) {
 			root.appendChild( el( 'p', { class: 'hti-result-pretitle' }, ui.before_portfolios ) );
@@ -215,6 +223,15 @@
 				notes.appendChild( det );
 			} );
 			root.appendChild( notes );
+		}
+
+		// ESG note (when sustainability interest was expressed) — asset-class-only
+		// framing, per the invariants. Server-supplied deterministic text.
+		if ( exp.esg_note ) {
+			var esg = el( 'div', { class: 'hti-esg-note', role: 'note' } );
+			esg.appendChild( el( 'span', { class: 'hti-esg-note__ic', 'aria-hidden': 'true' }, '🌱' ) );
+			esg.appendChild( el( 'p', { class: 'hti-esg-note__t' }, exp.esg_note ) );
+			root.appendChild( esg );
 		}
 
 		// Closing actions (educational only — never execution/brokerage).
@@ -275,6 +292,19 @@
 			var save = el( 'div', { class: 'hti-save-mount' } );
 			root.appendChild( save );
 			window.HTIAccount.mountSave( save, res.session_token );
+		}
+
+		// Feedback invite — only when a feedback page exists.
+		var feedbackUrl = window.HTI_DATA && window.HTI_DATA.feedbackUrl;
+		if ( feedbackUrl && ui.feedback_cta ) {
+			var invite = el( 'div', { class: 'hti-feedback-invite' } );
+			invite.appendChild( el( 'p', { class: 'hti-feedback-invite__txt' }, ui.feedback_intro || '' ) );
+			var fbLink = el( 'a', { class: 'hti-btn hti-btn-ghost', href: feedbackUrl }, ui.feedback_cta );
+			fbLink.addEventListener( 'click', function () {
+				track( 'feedback_invite_click', { archetype: res.archetype && res.archetype.id } );
+			} );
+			invite.appendChild( fbLink );
+			root.appendChild( invite );
 		}
 
 		mount.appendChild( root );

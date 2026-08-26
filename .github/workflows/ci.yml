@@ -28,11 +28,14 @@ jobs:
         with:
           node-version: '22'
 
-      - name: PHP lint (plugin + theme, excluding vendor)
+      - name: PHP lint (plugins + theme, excluding vendor)
         run: |
-          find wp-content/plugins/hti-engine wp-content/themes/howtoinvest \
+          find wp-content/plugins/hti-engine wp-content/plugins/hti-rss-ai wp-content/themes/howtoinvest \
             -path '*/vendor/*' -prune -o -name '*.php' -print0 \
             | xargs -0 -n1 -P4 php -l
 
       - name: Run the test suite
         run: php wp-content/plugins/hti-engine/tests/run.php
+
+      - name: Run the hti-rss-ai test suite
+        run: php wp-content/plugins/hti-rss-ai/tests/run.php

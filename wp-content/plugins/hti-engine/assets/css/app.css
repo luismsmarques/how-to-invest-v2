@@ -6,7 +6,7 @@
  */
 
 .hti-app {
-	--hti-primary: var( --wp--preset--color--primary, #FF6B5E );
+	--hti-primary: var( --wp--preset--color--primary-strong, #C9362C );
 	--hti-primary-hover: var( --wp--preset--color--primary-hover, #FF5544 );
 	--hti-primary-soft: var( --wp--preset--color--primary-soft, #FFEDE9 );
 	--hti-text: var( --wp--preset--color--contrast, #2A2438 );
@@ -16,10 +16,10 @@
 	--hti-border: var( --wp--preset--color--border, #F2E4DD );
 	--hti-white: var( --wp--preset--color--white, #ffffff );
 	--hti-cream: var( --wp--preset--color--background, #FFF6F1 );
-	--hti-accent: var( --wp--preset--color--accent, #7C5CFC );
+	--hti-accent: var( --wp--preset--color--accent-strong, #6B46E0 );
 	--hti-accent-soft: var( --wp--preset--color--accent-soft, #EFE9FE );
 	--hti-accent-border: var( --wp--preset--color--accent-border, #E7DCFB );
-	--hti-caution: var( --wp--preset--color--caution, #D69A1E );
+	--hti-caution: var( --wp--preset--color--caution-strong, #8A6310 );
 	--hti-caution-surface: var( --wp--preset--color--caution-surface, #FFF3D6 );
 	--hti-caution-border: #F4DFA4;
 	--hti-dark: var( --wp--preset--color--dark, #2A2438 );
@@ -27,10 +27,54 @@
 	--hti-font-body: var( --wp--preset--font-family--body, 'Plus Jakarta Sans', sans-serif );
 
 	max-width: 780px;
+	min-height: 600px;
 	margin: 0 auto;
 	color: var( --hti-text );
 	font-family: var( --hti-font-body );
 	line-height: 1.55;
+}
+
+/* The account hub is a wider dashboard than the questionnaire (handoff_9: 960). */
+#hti-account.hti-app {
+	max-width: 960px;
+	min-height: 0;
+}
+
+/* ---- Full-screen questionnaire chrome (E5): own top bar + fixed footer ---- */
+/* During the takeover the mount fills the screen; the inner sections centre. */
+html.hti-quiz-active #hti-app.hti-app { max-width: none; min-height: 0; margin: 0; padding: 0; }
+.hti-qz__top { position: sticky; top: 0; z-index: 10; background: var( --hti-cream, #FFF6F1 ); border-bottom: 1px solid var( --hti-border ); }
+.hti-qz__topin { max-width: 720px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.hti-qz__brand { display: flex; align-items: center; gap: 9px; }
+.hti-qz__logo { width: 27px; height: 27px; display: flex; flex: none; }
+.hti-qz__brandtext { font: 600 15px var( --hti-font-body ); color: var( --hti-text ); }
+.hti-qz__exit { display: inline-flex; align-items: center; gap: 7px; background: none; border: 1px solid #F0E2DC; border-radius: 8px; cursor: pointer; font: 500 14px var( --hti-font-body ); color: var( --hti-muted-light ); padding: 7px 14px; text-decoration: none; }
+.hti-qz__exit:hover { background: #fff; color: var( --hti-text ); }
+.hti-qz__prog { max-width: 720px; margin: 0 auto; padding: 0 24px 16px; }
+.hti-qz__steplabel { display: block; font: 600 13px var( --hti-font-body ); color: #FF6B5E; margin-bottom: 8px; }
+.hti-qz__prog .hti-progress-fill { background: #FF6B5E; }
+.hti-qz__body { max-width: 680px; margin: 0 auto; padding: clamp( 32px, 5vw, 56px ) 24px 140px; }
+.hti-qz__footer { position: fixed; bottom: 0; left: 0; right: 0; background: rgba( 244, 246, 249, 0.92 ); -webkit-backdrop-filter: blur( 10px ); backdrop-filter: blur( 10px ); border-top: 1px solid var( --hti-border ); z-index: 20; }
+.hti-qz__footin { max-width: 680px; margin: 0 auto; padding: 16px 24px calc( 16px + env( safe-area-inset-bottom ) ); display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.hti-qz__footin--end { justify-content: flex-end; }
+.hti-qz__prev { background: none; border: 1.5px solid #F0E2DC; border-radius: 10px; cursor: pointer; font: 600 15px var( --hti-font-body ); color: #5A5270; padding: 13px 22px; }
+.hti-qz__prev:hover { background: #fff; }
+.hti-qz__next { background: #FF6B5E; color: #fff; border: none; cursor: pointer; border-radius: 10px; padding: 14px 28px; font: 600 16px var( --hti-font-body ); box-shadow: 0 2px 8px rgba( 28, 76, 124, 0.22 ); }
+.hti-qz__next:hover { background: #FF5544; }
+.hti-qz__next[disabled] { background: #C9D4DF; cursor: not-allowed; box-shadow: none; }
+/* The body already pads for the fixed footer; drop the takeover top-padding. */
+html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
+
+/* Tighter, less airy spacing on phones (the form felt too spread out). */
+@media ( max-width: 600px ) {
+	.hti-qz__topin { padding: 14px 20px; }
+	.hti-qz__prog { padding: 0 20px 14px; }
+	.hti-qz__body { padding: 20px 20px 124px; }
+	.hti-qz__footin { padding: 12px 20px calc( 12px + env( safe-area-inset-bottom ) ); }
+	.hti-qz .hti-question { font-size: clamp( 1.5rem, 6.5vw, 1.9rem ); margin-bottom: 0.9rem; }
+	.hti-qz .hti-info { padding: 0.8rem 1rem; margin-bottom: 1.1rem; }
+	.hti-qz .hti-option { padding: 0.9rem 1.1rem; margin-bottom: 0.6rem; }
+	.hti-qz .hti-microcopy { margin-top: 1rem; }
 }
 
 .hti-app *:focus-visible {
@@ -86,24 +130,35 @@
 }
 .hti-info {
 	display: flex;
+	align-items: flex-start;
 	gap: 0.7rem;
 	background: var( --hti-accent-soft );
 	border-radius: 12px;
 	padding: 0.95rem 1.15rem;
 	margin-bottom: 1.75rem;
 }
-.hti-info-label {
-	display: block;
-	font-weight: 600;
-	color: var( --hti-primary );
-	margin-bottom: 0.25rem;
+.hti-info__i {
+	flex: none;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: #FF6B5E;
+	color: #fff;
+	font: 600 13px var( --hti-font-body );
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
-.hti-info p {
+.hti-info__p {
 	margin: 0;
 	font-size: 0.9375rem;
 	line-height: 1.5;
 	color: #54497A;
 }
+.hti-info__label { color: #FF6B5E; font-weight: 700; }
+/* Legacy (kept for any cached markup): old stacked label. */
+.hti-info-label { display: block; font-weight: 600; color: var( --hti-accent ); margin-bottom: 0.25rem; }
+.hti-info p { margin: 0; font-size: 0.9375rem; line-height: 1.5; color: #54497A; }
 
 /* --- Options --- */
 .hti-option {
@@ -303,6 +358,20 @@
 }
 .hti-safety p { margin: 0; color: #7C5E22; line-height: 1.55; }
 
+/* ESG note: a calm, green-tinted contextual note (asset-class-only framing). */
+.hti-esg-note {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	background: #E6F7EF;
+	border: 1px solid #C6EBDB;
+	border-radius: 16px;
+	padding: 1.1rem 1.3rem;
+	margin: 0 0 1.75rem;
+}
+.hti-esg-note__ic { flex: none; font-size: 18px; line-height: 1.5; }
+.hti-esg-note__t { margin: 0; color: #15604A; line-height: 1.55; }
+
 /* Dark, non-dismissible disclaimer banner. */
 .hti-disclaimer {
 	background: var( --hti-dark );
@@ -459,6 +528,21 @@
 	background: var( --hti-caution-surface );
 	border: 1px solid var( --hti-caution-border );
 	border-radius: 12px;
+}
+
+/* --- Feedback invite (end of result) --- */
+.hti-feedback-invite {
+	margin-top: 1.5rem;
+	padding: 1.25rem;
+	text-align: center;
+	background: var( --hti-soft-surface, #f7f5fc );
+	border: 1px solid rgba( 30, 33, 71, 0.08 );
+	border-radius: 14px;
+}
+.hti-feedback-invite__txt {
+	margin: 0 0 0.75rem;
+	font-size: 0.95rem;
+	color: var( --hti-muted, #6a6480 );
 }
 
 /* --- Email my result (inline form on the result page) --- */
@@ -714,4 +798,365 @@
 }
 .hti-btn-danger:hover {
 	border-color: #b3261e;
+}
+
+/* ====================== Account / auth redesign (design handoff 8) ====================== */
+/* Centred auth screens (login / register / recover). */
+.hti-auth-wrap { max-width: 440px; margin: 0 auto; }
+.hti-google-wrap { margin-bottom: 18px; }
+.hti-google-btn {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 11px;
+	background: #fff;
+	border: 1.5px solid #F0E2DC;
+	color: var( --hti-body );
+	border-radius: 12px;
+	padding: 13px;
+	font: 600 15px var( --hti-font-body );
+}
+.hti-google-btn:hover { background: #FBF6F2; border-color: var( --hti-accent-border ); }
+.hti-auth-or {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	color: #9A8FA8;
+	font: 500 13px var( --hti-font-body );
+	margin: 0 0 18px;
+}
+.hti-auth-or::before,
+.hti-auth-or::after { content: ""; flex: 1; height: 1px; background: #F0E2DC; }
+.hti-auth { display: flex; flex-direction: column; gap: 0; }
+.hti-auth label { font: 600 13px var( --hti-font-body ); color: #5A5270; margin-top: 4px; }
+.hti-auth input {
+	width: 100%;
+	box-sizing: border-box;
+	background: #fff;
+	border: 1.5px solid #F0E2DC;
+	border-radius: 12px;
+	padding: 14px 15px;
+	font: 400 16px var( --hti-font-body );
+	color: var( --hti-text );
+	margin: 6px 0 16px;
+}
+.hti-auth input:focus { outline: none; border-color: var( --wp--preset--color--primary, #FF6B5E ); }
+.hti-auth-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.hti-auth-actions .hti-btn { width: 100%; border-radius: 14px; padding: 16px; font: 600 16px var( --hti-font-body ); }
+.hti-auth-forgot { text-align: right; margin: -10px 0 0; }
+.hti-auth-forgot .hti-linkbtn { color: var( --hti-primary ); font: 600 13px var( --hti-font-body ); }
+.hti-error { color: #C0392B; font-weight: 600; margin: 4px 0 0; }
+
+/* Dashboard header (avatar + name + email). */
+.hti-acct-head { display: flex; align-items: center; gap: 18px; margin: 4px 0 30px; }
+.hti-acct-avatar {
+	flex: none; width: 68px; height: 68px; border-radius: 50%;
+	background: var( --hti-primary ); color: #fff;
+	display: flex; align-items: center; justify-content: center;
+	font: 600 28px var( --hti-font-body );
+}
+.hti-acct-head__id { min-width: 0; flex: 1 1 auto; }
+.hti-acct-head__name { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 1.4rem, 3vw, 2rem ); letter-spacing: -0.02em; line-height: 1.1; color: var( --hti-text ); }
+.hti-acct-head__email { color: var( --hti-muted-light ); font-size: 16px; margin-top: 4px; word-break: break-word; }
+.hti-acct-head__out {
+	flex: none; align-self: flex-start;
+	display: inline-flex; align-items: center; gap: 6px;
+	font: 600 14px var( --hti-font-body ); color: var( --hti-muted-light );
+	text-decoration: none; padding: 8px 14px; border-radius: 999px;
+	border: 1px solid var( --wp--preset--color--border, #F2E4DD );
+	background: #fff; transition: color 0.15s ease, border-color 0.15s ease;
+}
+.hti-acct-head__out:hover { color: var( --hti-primary ); border-color: var( --hti-primary ); }
+@media ( max-width: 560px ) {
+	.hti-acct-head { flex-wrap: wrap; gap: 14px; }
+	.hti-acct-head__out { order: 3; width: 100%; justify-content: center; }
+}
+
+/* ---- Account dashboard: card layout (E "Conta" design) ---- */
+.hti-acct-eyebrow { display: block; font: 600 12px var( --hti-font-body ); text-transform: uppercase; letter-spacing: 0.06em; color: var( --hti-muted-light ); margin-bottom: 12px; }
+.hti-acct-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
+.hti-acct-col { min-width: 0; }
+.hti-acct-muted { color: var( --hti-muted-light, #6E6680 ); font-size: 16px; margin: 0 0 16px; }
+
+.hti-acct-card { background: #fff; border: 1px solid var( --wp--preset--color--border, #F2E4DD ); border-radius: 20px; padding: 26px; }
+.hti-acct-pcard.is-empty { text-align: center; }
+.hti-acct-pcard__acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+
+.hti-acct-btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; padding: 11px 20px; font: 600 15px var( --hti-font-body ); text-decoration: none; cursor: pointer; border: none; }
+.hti-acct-btn--primary { background: var( --hti-primary, #FF6B5E ); color: #fff; }
+.hti-acct-btn--primary:hover { background: #FF5544; }
+.hti-acct-btn--outline { background: #fff; color: var( --hti-primary, #FF6B5E ); border: 1.5px solid #E7DCFB; }
+.hti-acct-btn--outline:hover { background: #FFF1ED; }
+
+.hti-acct-rows { background: #fff; border: 1px solid var( --wp--preset--color--border, #F2E4DD ); border-radius: 20px; overflow: hidden; }
+.hti-acct-row { width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid #F4E9E3; cursor: pointer; padding: 18px 20px; display: flex; align-items: center; gap: 13px; text-decoration: none; }
+.hti-acct-row:last-child { border-bottom: none; }
+.hti-acct-row:hover { background: #F4F8FC; }
+.hti-acct-row.is-danger:hover { background: #FDF3F2; }
+.hti-acct-row__ic { flex: none; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.hti-acct-row__ic.is-purple { background: #EFE9FE; }
+.hti-acct-row__ic.is-coral { background: #FFEDE9; }
+.hti-acct-row__ic.is-danger { background: #FBEAE7; }
+.hti-acct-row__t { flex: 1; min-width: 0; }
+.hti-acct-row__title { display: block; font: 600 15px var( --hti-font-body ); color: var( --hti-text, #2A2438 ); }
+.hti-acct-row.is-danger .hti-acct-row__title { color: #C0392B; }
+.hti-acct-row__sub { display: block; color: var( --hti-muted-light, #A89FB5 ); font-size: 13px; }
+.hti-acct-row.is-danger .hti-acct-row__sub { color: #D89A92; }
+.hti-acct-row__arrow { flex: none; color: #B7AEC4; }
+.hti-acct-row.is-danger .hti-acct-row__arrow { color: #E2B5AE; }
+
+.hti-acct-logout { display: block; width: 100%; box-sizing: border-box; text-align: center; margin-top: 16px; background: #fff; color: #5A5270; border: 1.5px solid #F0E2DC; border-radius: 12px; padding: 13px; font: 600 15px var( --hti-font-body ); text-decoration: none; }
+.hti-acct-logout:hover { background: #FBF6F2; }
+
+.hti-acct-settings { margin-top: 28px; display: grid; gap: 20px; }
+/* The inline settings forms read as cards here (not divider-separated). */
+.hti-acct-settings .hti-account-email,
+.hti-acct-settings .hti-account-prefs {
+	margin-top: 0;
+	padding: 22px 26px;
+	border: 1px solid var( --wp--preset--color--border, #F2E4DD );
+	border-radius: 20px;
+	background: #fff;
+}
+
+@media ( max-width: 720px ) {
+	.hti-acct-grid { grid-template-columns: 1fr; }
+}
+
+/* ============ Account hub (E "Conta" redesign: 4 zones) ============ */
+.hti-acct-live { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.hti-acct-hub { display: flex; flex-direction: column; gap: 30px; }
+.hti-acct-zone > .hti-acct-eyebrow { margin-bottom: 14px; }
+
+/* Zone 1 — investor profile card */
+.hti-acct-pcard__row { display: flex; gap: 30px; align-items: center; flex-wrap: wrap; }
+.hti-acct-donut { position: relative; width: 152px; height: 152px; flex: none; border-radius: 50%; }
+.hti-acct-donut__c { position: absolute; inset: 27px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; text-align: center; font: 600 12px var( --hti-font-body ); color: var( --hti-muted-light ); line-height: 1.3; }
+.hti-acct-pcard__body { flex: 1; min-width: 240px; }
+.hti-acct-pcard__saved { font: 600 12px var( --hti-font-body ); color: #7C5CFC; text-transform: uppercase; letter-spacing: 0.05em; }
+.hti-acct-pcard__name { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 23px, 2.8vw, 29px ); color: var( --hti-text ); margin: 4px 0 5px; line-height: 1.1; }
+.hti-acct-pcard__desc { margin: 0 0 14px; color: var( --hti-muted ); font-size: 15px; line-height: 1.45; }
+.hti-acct-alloc { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 9px 20px; }
+.hti-acct-alloc__i { display: flex; align-items: center; gap: 9px; font: 500 14px var( --hti-font-body ); color: #3A3450; }
+.hti-acct-alloc__sw { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+.hti-acct-alloc__l { flex: 1; }
+.hti-acct-alloc__p { font-weight: 700; color: var( --hti-text ); }
+.hti-acct-illus { margin: 18px 0 0; display: flex; gap: 8px; font: 500 13px var( --hti-font-body ); color: var( --hti-muted-light ); line-height: 1.45; }
+.hti-acct-pcard .hti-acct-pcard__acts { margin-top: 18px; }
+.hti-acct-empty { background: linear-gradient( 120deg, #FFEDE9, #EFE9FE ); display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.hti-acct-empty__t { font-family: var( --hti-font-head ); font-weight: 700; font-size: 22px; color: var( --hti-text ); }
+.hti-acct-empty__b { margin: 8px 0 0; color: #5A5270; font-size: 15px; line-height: 1.45; }
+
+/* Zone 2 — learning */
+.hti-acct-learn__top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.hti-acct-learn__path { font: 600 12px var( --hti-font-body ); color: #7C5CFC; text-transform: uppercase; letter-spacing: 0.06em; }
+.hti-acct-learn__count { font-family: var( --hti-font-head ); font-weight: 700; font-size: 22px; color: var( --hti-text ); margin-top: 4px; }
+.hti-acct-learn__pct { font: 800 28px var( --hti-font-head ); color: var( --hti-primary ); }
+.hti-acct-learn__bar { height: 10px; background: #F2E4DD; border-radius: 999px; overflow: hidden; margin: 14px 0 24px; }
+.hti-acct-learn__fill { display: block; height: 100%; background: linear-gradient( 90deg, #FF6B5E, #7C5CFC ); border-radius: 999px; }
+.hti-acct-badges { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+.hti-acct-badge { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 66px; text-align: center; }
+.hti-acct-badge__m { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.hti-acct-badge.is-earned .hti-acct-badge__m { background: linear-gradient( 135deg, #22C3A6, #0E9C84 ); box-shadow: 0 4px 10px rgba( 34, 195, 166, 0.32 ); }
+.hti-acct-badge.is-inprog .hti-acct-badge__m { background: #fff; border: 3px solid #FF6B5E; font: 800 18px var( --hti-font-head ); color: #FF6B5E; }
+.hti-acct-badge.is-locked .hti-acct-badge__m { background: #F6F0EC; border: 2px solid #F2E4DD; color: #C4B8B0; }
+.hti-acct-badge.is-course .hti-acct-badge__m { background: #FBF7FF; border: 2px dashed #D9C9F5; color: #A88FE0; }
+.hti-acct-badge__t { font: 600 10px var( --hti-font-body ); color: var( --hti-muted-light ); line-height: 1.2; }
+.hti-acct-continue { display: inline-flex; align-items: center; gap: 12px; background: var( --hti-primary ); color: #fff; border: none; cursor: pointer; border-radius: 13px; padding: 13px 22px; font: 600 15px var( --hti-font-body ); min-height: 46px; text-decoration: none; box-shadow: 0 2px 8px rgba( 201, 54, 44, 0.2 ); }
+.hti-acct-continue:hover { background: #FF5544; }
+.hti-acct-continue__ch { font: 500 13px var( --hti-font-body ); color: #FFE2DC; }
+
+/* Zone 3 — discover */
+.hti-acct-discover { display: grid; grid-template-columns: repeat( auto-fit, minmax( 210px, 1fr ) ); gap: 14px; }
+.hti-acct-dc { text-align: left; background: #fff; border: 1px solid var( --wp--preset--color--border, #F2E4DD ); border-radius: 18px; padding: 20px; cursor: pointer; display: flex; flex-direction: column; gap: 11px; text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+.hti-acct-dc:hover { border-color: #E7DCFB; box-shadow: 0 6px 18px rgba( 22, 38, 58, 0.07 ); transform: translateY( -2px ); }
+.hti-acct-dc__ic { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; }
+.hti-acct-dc__ic.is-blue { background: #EAF1FB; color: #3A8DDE; }
+.hti-acct-dc__ic.is-coral { background: #FFEDE9; color: #FF6B5E; }
+.hti-acct-dc__ic.is-purple { background: #EFE9FE; color: #7C5CFC; }
+.hti-acct-dc__ic.is-green { background: #E6F7EF; color: #0E9C84; }
+.hti-acct-dc__title { display: block; font: 700 16px var( --hti-font-head ); color: var( --hti-text ); }
+.hti-acct-dc__d { display: block; font: 500 13px var( --hti-font-body ); color: var( --hti-muted ); margin-top: 3px; }
+.hti-acct-dc__open { color: var( --hti-primary-strong, #C9362C ); font: 600 14px var( --hti-font-body ); }
+
+@media ( max-width: 560px ) {
+	.hti-acct-alloc { grid-template-columns: 1fr; }
+	.hti-acct-pcard__row { gap: 18px; }
+}
+
+/* Guest entry: sign-in form + "value of an account" benefit panel. */
+.hti-acct-guest { display: grid; grid-template-columns: minmax( 0, 440px ) minmax( 0, 1fr ); gap: clamp( 28px, 4vw, 52px ); align-items: start; }
+.hti-acct-guest__h { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 24px, 3vw, 30px ); letter-spacing: -0.02em; margin: 0 0 6px; color: var( --hti-text ); }
+.hti-acct-guest__sub { color: var( --hti-muted ); font-size: 16px; margin: 0 0 22px; }
+.hti-acct-value { background: linear-gradient( 155deg, #FFF1ED, #F3EEFE ); border: 1px solid var( --hti-border ); border-radius: 24px; padding: clamp( 26px, 3vw, 38px ); }
+.hti-acct-value__eyebrow { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: var( --hti-purple, #7C5CFC ); font: 700 12px var( --hti-font-body ); padding: 6px 13px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+.hti-acct-value__h { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 22px, 2.4vw, 27px ); color: var( --hti-text ); margin: 16px 0 6px; line-height: 1.15; }
+.hti-acct-value__intro { margin: 0 0 24px; color: var( --hti-muted ); font-size: 15px; line-height: 1.5; }
+.hti-acct-value__rows { display: flex; flex-direction: column; gap: 18px; }
+.hti-acct-value__row { display: flex; gap: 14px; align-items: flex-start; }
+.hti-acct-value__ic { flex: none; width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; }
+.hti-acct-value__ic.is-coral { background: #FFEDE9; color: var( --hti-primary, #FF6B5E ); }
+.hti-acct-value__ic.is-green { background: #E6F7EF; color: #0E9C84; }
+.hti-acct-value__ic.is-purple { background: #EFE9FE; color: var( --hti-purple, #7C5CFC ); }
+.hti-acct-value__ic.is-blue { background: #EAF1FB; color: #3A8DDE; }
+.hti-acct-value__t { font: 600 16px var( --hti-font-body ); color: var( --hti-text ); }
+.hti-acct-value__d { font: 500 14px var( --hti-font-body ); color: var( --hti-muted ); margin-top: 2px; line-height: 1.4; }
+@media ( max-width: 760px ) {
+	.hti-acct-guest { grid-template-columns: 1fr; }
+}
+
+/* Dashboard section eyebrows + cards. */
+.hti-account > h2 { font: 600 12px var( --hti-font-body ); text-transform: uppercase; letter-spacing: 0.06em; color: var( --hti-muted-light ); margin: 0 0 12px; }
+.hti-account-list,
+.hti-account-email,
+.hti-account-prefs,
+.hti-save {
+	background: #fff;
+	border: 1px solid var( --hti-border );
+	border-radius: 20px;
+	padding: clamp( 20px, 3vw, 26px );
+	margin: 0 0 24px;
+}
+.hti-account-email h3,
+.hti-account-prefs h3,
+.hti-save h3 { font-family: var( --hti-font-head ); font-weight: 700; font-size: 18px; }
+
+/* Saved-profile list as cards. */
+.hti-profile-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.hti-profile-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0; }
+.hti-profile-item + .hti-profile-item { border-top: 1px solid var( --hti-border ); padding-top: 12px; }
+.hti-profile-link { font-family: var( --hti-font-head ); font-weight: 700; font-size: 1.25rem; color: var( --hti-text ); text-decoration: none; }
+.hti-profile-link:hover { color: var( --hti-primary ); }
+.hti-profile-date { color: var( --hti-muted-light ); font-weight: 500; }
+
+/* RGPD actions row. */
+.hti-account-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; align-items: center; }
+.hti-account-actions .hti-btn { border-radius: 12px; padding: 13px 22px; }
+.hti-btn-danger { background: #fff; border: 1.5px solid #F4D9D4; color: #C0392B; }
+.hti-btn-danger:hover { background: #FDF3F2; border-color: #E8C0B9; color: #A52F22; }
+
+/* Recover panel polish. */
+.hti-recover__check {
+	display: flex; align-items: center; justify-content: center;
+	width: 64px; height: 64px; border-radius: 50%;
+	background: #E6F7EF; color: #1F8A5B; font-size: 30px; margin: 0 auto 18px;
+}
+.hti-recover__title { font-family: var( --hti-font-head ); font-weight: 700; }
+.hti-recover__input { width: 100%; box-sizing: border-box; border: 1.5px solid #F0E2DC; border-radius: 12px; padding: 14px 15px; font: 400 16px var( --hti-font-body ); }
+
+/* Save-on-result card. */
+.hti-save h3 { margin: 0 0 0.5rem; }
+.hti-save-done { font-weight: 700; color: var( --hti-primary ); }
+
+/* ============ Account sub-screens (export / delete / newsletter / onboarding) ============ */
+.hti-acct-sub { max-width: 600px; margin: 0 auto; }
+.hti-acct-sub__back { background: none; border: none; cursor: pointer; color: var( --hti-muted-light ); font: 500 14px var( --hti-font-body ); padding: 0; margin-bottom: 24px; }
+.hti-acct-sub__back:hover { color: #FF6B5E; }
+.hti-acct-sub__eyebrow { display: block; font: 600 13px var( --hti-font-body ); text-transform: uppercase; letter-spacing: 0.06em; }
+.hti-acct-sub__eyebrow.is-purple { color: var( --hti-accent, #7C5CFC ); }
+.hti-acct-sub__eyebrow.is-coral { color: #FF6B5E; }
+.hti-acct-sub__title { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 28px, 4vw, 40px ); letter-spacing: -0.02em; margin: 10px 0 0; color: var( --hti-text ); }
+.hti-acct-sub__intro { color: var( --hti-muted ); font-size: 17px; margin: 14px 0 28px; line-height: 1.5; }
+
+/* Export. */
+.hti-exp__card { padding: 24px; margin-bottom: 24px; }
+.hti-exp__label { font: 600 12px var( --hti-font-body ); text-transform: uppercase; letter-spacing: 0.06em; color: var( --hti-muted-light ); }
+.hti-exp__list { display: flex; flex-direction: column; gap: 13px; margin-top: 14px; }
+.hti-exp__item { display: flex; gap: 11px; align-items: center; font: 500 15px var( --hti-font-body ); color: #3A3450; }
+.hti-exp__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.hti-exp__btn { width: 100%; gap: 10px; padding: 16px; font-size: 16px; }
+.hti-exp__btn svg { flex: none; }
+.hti-exp__status { margin-top: 18px; }
+.hti-exp__done { background: #E6F7EF; border: 1px solid #C2EAD7; border-radius: 14px; padding: 20px 22px; display: flex; gap: 13px; align-items: flex-start; }
+.hti-exp__done-ic { flex: none; width: 30px; height: 30px; border-radius: 50%; background: #1F8A5B; position: relative; }
+.hti-exp__done-ic::after { content: ""; position: absolute; left: 10px; top: 8px; width: 6px; height: 11px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate( 45deg ); }
+.hti-exp__done-t { margin: 0; font: 600 16px var( --hti-font-body ); color: #1F6B47; }
+.hti-exp__done-b { margin: 5px 0 0; color: #2E7D5B; font-size: 14px; line-height: 1.45; }
+
+/* Delete. */
+.hti-acct-sub .hti-del__warn { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: #FBEAE7; color: #C0392B; margin-bottom: 20px; }
+.hti-del__perm { color: var( --hti-muted ); font-size: 17px; margin: 14px 0 24px; line-height: 1.55; }
+.hti-del__cascade { background: #FDF3F2; border: 1px solid #F4D9D4; border-radius: 14px; padding: 20px 22px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 11px; }
+.hti-del__crow { display: flex; gap: 10px; align-items: center; font: 500 15px var( --hti-font-body ); color: #5A2E29; }
+.hti-del__x { color: #C0392B; flex: none; font-weight: 700; }
+.hti-del__confirm-lbl { font: 500 14px var( --hti-font-body ); color: var( --hti-muted ); margin: 0 0 8px; }
+.hti-del__confirm-lbl strong { color: var( --hti-text ); letter-spacing: 0.05em; }
+.hti-del__input { width: 100%; box-sizing: border-box; background: #fff; border: 1.5px solid #F0E2DC; border-radius: 12px; padding: 14px 15px; font: 600 16px var( --hti-font-body ); color: var( --hti-text ); outline: none; letter-spacing: 0.05em; margin-bottom: 22px; }
+.hti-del__input:focus { border-color: #C0392B; }
+.hti-del__acts { display: flex; gap: 12px; flex-wrap: wrap; }
+.hti-del__go { flex: 1; min-width: 200px; background: #C0392B; color: #fff; border: none; cursor: pointer; border-radius: 14px; padding: 15px; font: 600 16px var( --hti-font-body ); }
+.hti-del__go:hover { background: #A52F22; }
+.hti-del__go[disabled] { background: #E8C9C4; cursor: not-allowed; }
+.hti-del__sched { background: #FBF7FF; border: 1px solid var( --hti-accent-border, #E7DCFB ); border-radius: 18px; padding: 28px; }
+.hti-del__sched-head { display: flex; gap: 15px; align-items: flex-start; }
+.hti-del__sched-ic { flex: none; width: 48px; height: 48px; border-radius: 14px; background: var( --hti-accent-soft, #EFE9FE ); display: flex; align-items: center; justify-content: center; color: var( --hti-accent, #7C5CFC ); }
+.hti-del__sched-t { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 24px, 3.4vw, 30px ); letter-spacing: -0.02em; margin: 0; line-height: 1.1; }
+.hti-del__sched-b { color: #5A5270; font-size: 16px; margin: 10px 0 0; line-height: 1.55; }
+.hti-del__sched-acts { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+
+/* Newsletter. */
+.hti-nl__block { margin-bottom: 28px; }
+.hti-nl__label { display: block; font: 600 12px var( --hti-font-body ); text-transform: uppercase; letter-spacing: 0.06em; color: var( --hti-muted-light ); margin-bottom: 10px; }
+.hti-nl__email { display: flex; align-items: center; gap: 11px; background: #fff; border: 1px solid var( --hti-border ); border-radius: 12px; padding: 14px 16px; font: 500 16px var( --hti-font-body ); color: #3A3450; }
+.hti-nl__email-ic { flex: none; width: 32px; height: 32px; border-radius: 9px; background: #FFEDE9; display: flex; align-items: center; justify-content: center; }
+.hti-nl__freq { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.hti-nl__freq-c { text-align: left; background: #fff; border: 1.5px solid #F0E2DC; border-radius: 16px; padding: 20px; cursor: pointer; }
+.hti-nl__freq-c:hover { border-color: #FFB3AA; background: #FFF8F3; }
+.hti-nl__freq-c.is-on { background: #FFEDE9; border: 2px solid #FF6B5E; box-shadow: 0 2px 12px rgba( 28, 76, 124, 0.1 ); }
+.hti-nl__freq-top { display: flex; align-items: center; justify-content: space-between; }
+.hti-nl__freq-name { font: 600 18px var( --hti-font-body ); color: #3A3450; }
+.hti-nl__freq-c.is-on .hti-nl__freq-name { color: var( --hti-text ); }
+.hti-nl__freq-radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #DAC9E8; flex: none; }
+.hti-nl__freq-c.is-on .hti-nl__freq-radio { border-color: #FF6B5E; background: #FF6B5E; position: relative; }
+.hti-nl__freq-c.is-on .hti-nl__freq-radio::after { content: ""; position: absolute; left: 50%; top: 50%; transform: translate( -50%, -50% ); width: 7px; height: 7px; border-radius: 50%; background: #fff; }
+.hti-nl__freq-desc { display: block; color: var( --hti-muted-light ); font-size: 14px; margin-top: 5px; }
+.hti-nl__freq-c.is-on .hti-nl__freq-desc { color: var( --hti-muted ); }
+.hti-nl__topics { background: #fff; border: 1px solid var( --hti-border ); border-radius: 16px; overflow: hidden; }
+.hti-nl__topic { width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid #F4E9E3; cursor: pointer; padding: 18px 20px; display: flex; align-items: center; gap: 15px; }
+.hti-nl__topic:last-child { border-bottom: none; }
+.hti-nl__topic:hover { background: #FBF6F2; }
+.hti-nl__topic-box { flex: none; width: 24px; height: 24px; border-radius: 7px; border: 2px solid #DAC9E8; background: #fff; position: relative; }
+.hti-nl__topic.is-on .hti-nl__topic-box { border-color: #FF6B5E; background: #FF6B5E; }
+.hti-nl__topic.is-on .hti-nl__topic-box::after { content: ""; position: absolute; left: 8px; top: 4px; width: 5px; height: 10px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate( 45deg ); }
+.hti-nl__topic-name { font: 600 16px var( --hti-font-body ); color: var( --hti-text ); }
+.hti-nl__acts { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.hti-nl__unsub { background: none; border: none; cursor: pointer; color: var( --hti-muted-light ); font: 500 15px var( --hti-font-body ); padding: 0; }
+.hti-nl__unsub:hover { color: #C0392B; }
+.hti-nl__status { margin-top: 4px; }
+.hti-nl__saved { display: inline-flex; align-items: center; gap: 11px; background: #E6F7EF; border: 1px solid #C2EAD7; border-radius: 14px; padding: 12px 18px; }
+.hti-nl__saved-ic { flex: none; width: 26px; height: 26px; border-radius: 50%; background: #1F8A5B; position: relative; }
+.hti-nl__saved-ic::after { content: ""; position: absolute; left: 9px; top: 7px; width: 5px; height: 9px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate( 45deg ); }
+.hti-nl__saved-t { font: 600 15px var( --hti-font-body ); color: #1F6B47; }
+
+/* Onboarding. */
+.hti-onb { max-width: 640px; margin: 0 auto; }
+.hti-onb__eyebrow { display: inline-flex; align-items: center; gap: 8px; background: var( --hti-accent-soft, #EFE9FE ); color: var( --hti-accent, #7C5CFC ); font: 600 12px var( --hti-font-body ); padding: 6px 13px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.06em; }
+.hti-onb__title { font-family: var( --hti-font-head ); font-weight: 700; font-size: clamp( 28px, 4vw, 40px ); letter-spacing: -0.02em; line-height: 1.08; margin: 14px 0 0; color: var( --hti-text ); }
+.hti-onb__sub { color: var( --hti-muted ); font-size: 17px; margin: 12px 0 30px; line-height: 1.5; }
+.hti-onb__card { background: #fff; border: 1px solid var( --hti-border ); border-radius: 20px; padding: 24px; margin-bottom: 16px; }
+.hti-onb__card--row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 24px; }
+.hti-onb__label { display: block; font: 600 15px var( --hti-font-body ); color: var( --hti-text ); margin-bottom: 4px; }
+.hti-onb__hint { margin: 0 0 14px; color: var( --hti-muted-light ); font-size: 14px; line-height: 1.4; }
+.hti-onb__card--row .hti-onb__hint { margin: 4px 0 0; }
+.hti-onb__toggle { display: flex; gap: 10px; }
+.hti-onb__opt { background: #fff; color: #5A5270; border: 1.5px solid var( --hti-border ); cursor: pointer; border-radius: 12px; padding: 0 20px; min-height: 48px; font: 600 15px var( --hti-font-body ); }
+.hti-onb__opt:hover { border-color: var( --hti-accent-border ); background: #FBF7FF; }
+.hti-onb__opt[aria-pressed="true"] { background: var( --hti-text ); border-color: var( --hti-text ); color: #fff; }
+.hti-onb__textarea { width: 100%; box-sizing: border-box; background: #FFFDFC; border: 1.5px solid #F0E2DC; border-radius: 12px; padding: 14px 15px; font: 400 16px var( --hti-font-body ); color: var( --hti-text ); outline: none; resize: vertical; line-height: 1.5; }
+.hti-onb__textarea:focus { border-color: #FF6B5E; }
+.hti-onb__acts { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+.hti-onb__finish { padding: 16px 30px; font-size: 16px; min-height: 50px; }
+.hti-onb__skip { background: none; border: none; cursor: pointer; color: var( --hti-muted-light ); font: 500 15px var( --hti-font-body ); padding: 8px; min-height: 44px; }
+.hti-onb__skip:hover { color: #FF6B5E; }
+.hti-onb__disclaimer { margin: 20px 0 0; font: 500 13px var( --hti-font-body ); color: var( --hti-muted-light ); }
+
+/* Toggle switch (onboarding digest). */
+.hti-switch { flex: none; border: none; cursor: pointer; width: 52px; height: 30px; border-radius: 999px; padding: 3px; display: flex; align-items: center; background: #DAC9E8; justify-content: flex-start; transition: background 0.2s ease; }
+.hti-switch.is-on { background: #FF6B5E; justify-content: flex-end; }
+.hti-switch__dot { width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba( 0, 0, 0, 0.25 ); }
+
+@media ( max-width: 560px ) {
+	.hti-nl__freq { grid-template-columns: 1fr; }
+	.hti-del__go { min-width: 0; }
 }
