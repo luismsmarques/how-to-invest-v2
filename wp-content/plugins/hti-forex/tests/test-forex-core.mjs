@@ -133,6 +133,28 @@ ok( null === F.profitLoss( 'EURUSD', 'buy', 0, 1, 2, RATES ), 'profitLoss: zero 
 ok( null === F.profitLoss( 'EURUSD', 'buy', 1, 0, 2, RATES ), 'profitLoss: zero entry → null' );
 ok( null === F.profitLoss( 'USDJPY', 'buy', 1, 147, 148, { USDINR: 83 } ), 'profitLoss: missing USDJPY rate → null' );
 
+// --- marginRequired ---------------------------------------------------------
+// 0.06 lots EURUSD @1.09, 1:500 at 83: notional $6,540 → ₹542,820; margin ₹1,085.64.
+let mg = F.marginRequired( 'EURUSD', 0.06, 1.09, 500, RATES );
+near( mg.notionalUSD, 6540, 1e-9, 'EURUSD notional = units × price' );
+near( mg.notionalINR, 542820, 1e-6, 'EURUSD notional in ₹ at 83' );
+near( mg.marginINR, 1085.64, 1e-6, 'EURUSD margin ₹ at 1:500' );
+
+// USD-base pairs: notional is price-independent (price ignored, even 0).
+mg = F.marginRequired( 'USDJPY', 1, 0, 100, RATES );
+near( mg.notionalUSD, 100000, 1e-9, 'USDJPY notional = units, price-independent' );
+near( mg.marginUSD, 1000, 1e-9, 'USDJPY margin $1,000 at 1:100' );
+
+// XAUUSD: oz × price.
+mg = F.marginRequired( 'XAUUSD', 0.1, 3300, 500, RATES );
+near( mg.notionalUSD, 33000, 1e-9, 'XAUUSD notional = 10oz × $3,300' );
+near( mg.marginINR, ( 33000 * 83 ) / 500, 1e-6, 'XAUUSD margin ₹ at 1:500' );
+
+// Guards.
+ok( null === F.marginRequired( 'EURUSD', 1, 0, 500, RATES ), 'margin: EUR-base needs a price' );
+ok( null === F.marginRequired( 'EURUSD', 1, 1.09, 0, RATES ), 'margin: zero leverage → null' );
+ok( null === F.marginRequired( 'NOPE', 1, 1, 500, RATES ), 'margin: unknown pair → null' );
+
 // --- sessions in IST --------------------------------------------------------
 function windowsAt( iso ) {
 	const now = Date.parse( iso );

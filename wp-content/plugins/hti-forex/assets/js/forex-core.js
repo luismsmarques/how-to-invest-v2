@@ -166,6 +166,47 @@
 		};
 	}
 
+	/**
+	 * Notional value and margin required for a position. Leverage changes
+	 * margin, not risk — the "with leverage" page exists to make exactly
+	 * that distinction. For USD-base pairs (USDJPY, USDINR) the USD notional
+	 * is simply the units, independent of price.
+	 *
+	 * @param {string} pair     Key in PAIRS.
+	 * @param {number} lots     Position size in lots.
+	 * @param {number} price    Current/entry price (ignored for USD-base pairs).
+	 * @param {number} leverage Leverage multiple (e.g. 500 for 1:500).
+	 * @param {Object} rates    { USDINR, USDJPY } reference rates.
+	 * @return {{notionalUSD:number,notionalINR:number,marginUSD:number,marginINR:number}|null}
+	 */
+	function marginRequired( pair, lots, price, leverage, rates ) {
+		var spec = PAIRS[ pair ];
+		if ( ! spec || ! ( lots > 0 ) || ! ( leverage > 0 ) || ! rates || ! ( rates.USDINR > 0 ) ) {
+			return null;
+		}
+
+		var units = lots * spec.contractSize;
+		var baseUSD = 'USD' === pair.slice( 0, 3 );
+		var notionalUSD;
+
+		if ( baseUSD ) {
+			notionalUSD = units;
+		} else {
+			if ( ! ( price > 0 ) ) {
+				return null;
+			}
+			// EURUSD/GBPUSD: base units × USD price. XAUUSD: oz × USD price.
+			notionalUSD = units * price;
+		}
+
+		return {
+			notionalUSD: notionalUSD,
+			notionalINR: notionalUSD * rates.USDINR,
+			marginUSD: notionalUSD / leverage,
+			marginINR: ( notionalUSD * rates.USDINR ) / leverage
+		};
+	}
+
 	/* -------------------------------------------------------------------
 	 * Sessions in IST
 	 * ----------------------------------------------------------------- */
@@ -321,6 +362,7 @@
 		pipValue: pipValue,
 		positionSize: positionSize,
 		profitLoss: profitLoss,
+		marginRequired: marginRequired,
 		zoneOffsetMinutes: zoneOffsetMinutes,
 		sessionWindowsIST: sessionWindowsIST,
 		overlapLondonNY: overlapLondonNY,

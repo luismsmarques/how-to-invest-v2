@@ -87,6 +87,11 @@
 		if ( jpyField ) {
 			jpyField.hidden = 'USDJPY' !== str( form, 'pair' );
 		}
+		// Margin variant: notional is price-independent for USD-base pairs.
+		var priceField = form.querySelector( '.hti-fx-field--price' );
+		if ( priceField ) {
+			priceField.hidden = 'USD' === str( form, 'pair' ).slice( 0, 3 );
+		}
 	}
 
 	function computePositionSize( form ) {
@@ -115,6 +120,19 @@
 		}
 		if ( tooSmall ) {
 			tooSmall.hidden = ! result.tooSmall;
+		}
+
+		// Margin variant: notional + margin for the suggested position.
+		if ( form.querySelector( '[data-field="leverage"]' ) ) {
+			var margin = result.tooSmall ? null : core.marginRequired(
+				str( form, 'pair' ),
+				result.lots,
+				num( form, 'price' ),
+				num( form, 'leverage' ),
+				readRates( form )
+			);
+			write( form, 'notional_inr', margin ? margin.notionalINR : '—' );
+			write( form, 'margin_inr', margin ? margin.marginINR : '—' );
 		}
 	}
 
@@ -192,6 +210,20 @@
 			if ( pairField ) {
 				pairField.addEventListener( 'change', function () {
 					prefillPrices( form );
+				} );
+			}
+		}
+
+		// Margin variant: keep the price prefill in step with the pair.
+		if ( 'position_size' === name && form.querySelector( '[data-field="price"]' ) ) {
+			var psPair = form.querySelector( '[data-field="pair"]' );
+			if ( psPair ) {
+				psPair.addEventListener( 'change', function () {
+					var defaults = PRICE_DEFAULTS[ str( form, 'pair' ) ];
+					var price = form.querySelector( '[data-field="price"]' );
+					if ( defaults && price ) {
+						price.value = defaults[ 0 ];
+					}
 				} );
 			}
 		}

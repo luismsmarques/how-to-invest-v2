@@ -94,12 +94,13 @@ class Tools {
 	public static function render( $atts ): string {
 		$atts = shortcode_atts(
 			array(
-				'name'    => 'position_size',
-				'pair'    => '',
-				'balance' => '',
-				'risk'    => '',
-				'stop'    => '',
-				'lots'    => '',
+				'name'     => 'position_size',
+				'pair'     => '',
+				'balance'  => '',
+				'risk'     => '',
+				'stop'     => '',
+				'lots'     => '',
+				'leverage' => '',
 			),
 			is_array( $atts ) ? $atts : array(),
 			self::SHORTCODE
@@ -132,7 +133,14 @@ class Tools {
 		$cfg   = self::config( $rates );
 		$tool  = self::apply_overrides( $cfg[ $name ], $atts );
 
-		$out = '<form class="hti-fx-tool" data-tool="' . esc_attr( $name ) . '" novalidate>';
+		// `leverage="1"`: the position-size tool grows a margin section
+		// (entry price + leverage → notional ₹ + margin ₹).
+		$with_margin = 'position_size' === $name && in_array( (string) ( $atts['leverage'] ?? '' ), array( '1', 'true', 'yes' ), true );
+		if ( $with_margin ) {
+			$tool = self::add_margin_extension( $tool );
+		}
+
+		$out = '<form class="hti-fx-tool" data-tool="' . esc_attr( $name ) . '"' . ( $with_margin ? ' data-variant="leverage"' : '' ) . ' novalidate>';
 
 		// Inputs.
 		$out .= '<div class="hti-fx-fields">';
@@ -216,6 +224,46 @@ class Tools {
 			}
 			$tool['fields'][ $key ]['default'] = $value;
 		}
+
+		return $tool;
+	}
+
+	/**
+	 * Add the margin fields/outputs to the position-size tool. Price sits
+	 * after the pair select (JS hides it for USD-base pairs, where notional
+	 * is price-independent); leverage defaults to the 1:500 common at
+	 * offshore platforms.
+	 *
+	 * @param array<string,mixed> $tool Position-size tool config.
+	 * @return array<string,mixed>
+	 */
+	private static function add_margin_extension( array $tool ): array {
+		$fields = array();
+		foreach ( $tool['fields'] as $key => $field ) {
+			$fields[ $key ] = $field;
+			if ( 'pair' === $key ) {
+				$fields['price']    = array(
+					'label'   => 'Entry price',
+					'default' => '1.0900',
+					'min'     => 0,
+					'step'    => 'any',
+					'unit'    => '',
+					'class'   => 'hti-fx-field--price',
+				);
+				$fields['leverage'] = array(
+					'label'   => 'Leverage',
+					'default' => 500,
+					'min'     => 1,
+					'max'     => 3000,
+					'step'    => 1,
+					'unit'    => '×',
+				);
+			}
+		}
+		$tool['fields'] = $fields;
+
+		$tool['outputs']['notional_inr'] = array( 'label' => 'Position value (notional ₹)', 'format' => 'inr0' );
+		$tool['outputs']['margin_inr']   = array( 'label' => 'Margin required (₹)', 'format' => 'inr0' );
 
 		return $tool;
 	}
