@@ -85,16 +85,31 @@ class Tools {
 	/**
 	 * `[hti_forex_tool name="position_size|pip_value|sessions"]`.
 	 *
+	 * Optional default-overrides let the variant pages preconfigure the same
+	 * tool: `pair` (validated against Config::pairs()) and the numeric
+	 * `balance`, `risk`, `stop` and `lots` (clamped to the field's min/max).
+	 *
 	 * @param array<string,mixed>|string $atts Shortcode attributes.
 	 */
 	public static function render( $atts ): string {
-		$atts = shortcode_atts( array( 'name' => 'position_size' ), is_array( $atts ) ? $atts : array(), self::SHORTCODE );
+		$atts = shortcode_atts(
+			array(
+				'name'    => 'position_size',
+				'pair'    => '',
+				'balance' => '',
+				'risk'    => '',
+				'stop'    => '',
+				'lots'    => '',
+			),
+			is_array( $atts ) ? $atts : array(),
+			self::SHORTCODE
+		);
 		$name = in_array( $atts['name'], Settings::TOOLS, true ) ? (string) $atts['name'] : 'position_size';
 
 		if ( 'sessions' === $name ) {
 			$body = self::render_sessions();
 		} else {
-			$body = self::render_calculator( $name );
+			$body = self::render_calculator( $name, $atts );
 		}
 
 		// Conversion blocks are siblings of the tool (the calculator is a
@@ -109,12 +124,13 @@ class Tools {
 	/**
 	 * Render one calculator form.
 	 *
-	 * @param string $name position_size|pip_value.
+	 * @param string              $name position_size|pip_value.
+	 * @param array<string,mixed> $atts Shortcode attributes (default-overrides).
 	 */
-	private static function render_calculator( string $name ): string {
+	private static function render_calculator( string $name, array $atts = array() ): string {
 		$rates = Rates::effective();
 		$cfg   = self::config( $rates );
-		$tool  = $cfg[ $name ];
+		$tool  = self::apply_overrides( $cfg[ $name ], $atts );
 
 		$out = '<form class="hti-fx-tool" data-tool="' . esc_attr( $name ) . '" novalidate>';
 
@@ -170,6 +186,38 @@ class Tools {
 		$out .= '</form>';
 
 		return $out;
+	}
+
+	/**
+	 * Apply the shortcode default-overrides to a tool config. `pair` must be
+	 * a known symbol; numeric overrides are clamped to the field's min/max so
+	 * a page can preconfigure, never break, the tool.
+	 *
+	 * @param array<string,mixed> $tool Tool config.
+	 * @param array<string,mixed> $atts Shortcode attributes.
+	 * @return array<string,mixed>
+	 */
+	private static function apply_overrides( array $tool, array $atts ): array {
+		$pair = strtoupper( sanitize_text_field( (string) ( $atts['pair'] ?? '' ) ) );
+		if ( '' !== $pair && isset( $tool['fields']['pair'] ) && isset( Config::pairs()[ $pair ] ) ) {
+			$tool['fields']['pair']['default'] = $pair;
+		}
+
+		foreach ( array( 'balance', 'risk', 'stop', 'lots' ) as $key ) {
+			$raw = (string) ( $atts[ $key ] ?? '' );
+			if ( '' === $raw || ! is_numeric( $raw ) || ! isset( $tool['fields'][ $key ] ) ) {
+				continue;
+			}
+			$value = (float) $raw;
+			$field = $tool['fields'][ $key ];
+			$value = max( (float) $field['min'], $value );
+			if ( isset( $field['max'] ) ) {
+				$value = min( (float) $field['max'], $value );
+			}
+			$tool['fields'][ $key ]['default'] = $value;
+		}
+
+		return $tool;
 	}
 
 	/**
