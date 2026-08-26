@@ -26,6 +26,7 @@
 		if ( 'number' !== typeof value || ! isFinite( value ) ) {
 			return '—';
 		}
+		var plus = value > 0 ? '+' : '';
 		switch ( format ) {
 			case 'inr':
 				return fmtINR.format( value );
@@ -33,10 +34,16 @@
 				return fmtINR0.format( value );
 			case 'usd':
 				return fmtUSD.format( value );
+			case 'inr_signed':
+				return plus + fmtINR.format( value );
+			case 'usd_signed':
+				return plus + fmtUSD.format( value );
 			case 'int':
 				return fmtInt.format( value );
 			case 'lots':
 				return value.toFixed( 2 ) + ' lots';
+			case 'pips':
+				return plus + value.toFixed( 1 ) + ' pips';
 			default:
 				return String( value );
 		}
@@ -111,6 +118,48 @@
 		}
 	}
 
+	// Plausible per-pair price defaults for the profit/loss tool. Prefill
+	// only — the user always types their own prices.
+	var PRICE_DEFAULTS = {
+		EURUSD: [ '1.0900', '1.0920' ],
+		GBPUSD: [ '1.2900', '1.2920' ],
+		USDJPY: [ '147.00', '147.30' ],
+		XAUUSD: [ '3300.00', '3305.00' ],
+		USDINR: [ '88.0000', '88.1000' ]
+	};
+
+	function prefillPrices( form ) {
+		var defaults = PRICE_DEFAULTS[ str( form, 'pair' ) ];
+		var entry = form.querySelector( '[data-field="entry"]' );
+		var exit = form.querySelector( '[data-field="exit"]' );
+		if ( defaults && entry && exit ) {
+			entry.value = defaults[ 0 ];
+			exit.value = defaults[ 1 ];
+		}
+	}
+
+	function computeProfitLoss( form ) {
+		var result = core.profitLoss(
+			str( form, 'pair' ),
+			str( form, 'direction' ),
+			num( form, 'lots' ),
+			num( form, 'entry' ),
+			num( form, 'exit' ),
+			readRates( form )
+		);
+
+		write( form, 'pl_inr', result ? result.inr : '—' );
+		write( form, 'pl_usd', result ? result.usd : '—' );
+		write( form, 'pips', result ? result.pips : '—' );
+
+		form.querySelectorAll( '.hti-fx-out' ).forEach( function ( box ) {
+			box.classList.remove( 'hti-fx-out--pos', 'hti-fx-out--neg' );
+			if ( result && 0 !== result.inr && box.querySelector( '[data-out="pl_inr"], [data-out="pl_usd"]' ) ) {
+				box.classList.add( result.inr > 0 ? 'hti-fx-out--pos' : 'hti-fx-out--neg' );
+			}
+		} );
+	}
+
 	function computePipValue( form ) {
 		var pair = str( form, 'pair' );
 		var rates = readRates( form );
@@ -126,11 +175,25 @@
 
 	function initCalculator( form ) {
 		var name = form.getAttribute( 'data-tool' );
-		var compute = 'pip_value' === name ? computePipValue : computePositionSize;
+		var compute = computePositionSize;
+		if ( 'pip_value' === name ) {
+			compute = computePipValue;
+		} else if ( 'profit_loss' === name ) {
+			compute = computeProfitLoss;
+		}
 
 		function run() {
 			toggleJpyField( form );
 			compute( form );
+		}
+
+		if ( 'profit_loss' === name ) {
+			var pairField = form.querySelector( '[data-field="pair"]' );
+			if ( pairField ) {
+				pairField.addEventListener( 'change', function () {
+					prefillPrices( form );
+				} );
+			}
 		}
 
 		form.addEventListener( 'input', run );

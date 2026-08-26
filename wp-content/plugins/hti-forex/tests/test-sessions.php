@@ -81,7 +81,7 @@ $o = Config::overlap_london_ny_ist( new DateTimeImmutable( '2026-10-28 12:00', n
 check( '17:30' === $o['start_ist'] && '22:30' === $o['end_ist'], 'October desync overlap 17:30–22:30 IST' );
 
 // --- FAQ config sanity ------------------------------------------------------
-foreach ( array( 'hub', 'position_size', 'pip_value', 'sessions' ) as $page ) {
+foreach ( array( 'hub', 'position_size', 'pip_value', 'sessions', 'profit_loss' ) as $page ) {
 	$faqs = Config::faqs( $page );
 	check( count( $faqs ) >= 3, "faqs('{$page}') has at least 3 entries" );
 	$well_formed = true;

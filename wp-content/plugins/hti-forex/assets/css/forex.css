@@ -106,6 +106,14 @@
 	color: var(--hti-coral);
 }
 
+.hti-fx-out--pos .hti-fx-out__value {
+	color: #1c8a5a;
+}
+
+.hti-fx-out--neg .hti-fx-out__value {
+	color: #c0392b;
+}
+
 .hti-fx-toosmall {
 	margin: 0;
 	padding: 0.8rem 1rem;

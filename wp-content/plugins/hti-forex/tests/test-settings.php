@@ -103,6 +103,9 @@ check( null === Settings::cta_for( 'sessions', $tool_off ), 'per-tool toggle dis
 check( null !== Settings::cta_for( 'pip_value', $tool_off ), 'other tools keep their CTA' );
 
 check( null === Settings::cta_for( 'unknown_tool', $on ), 'unknown tool never gets a CTA' );
+check( null !== Settings::cta_for( 'profit_loss', $on ), 'profit_loss is a CTA-capable tool' );
+$pl_off = array_merge( $on, array( 'cta_profit_loss' => false ) );
+check( null === Settings::cta_for( 'profit_loss', $pl_off ), 'profit_loss toggle disables its CTA' );
 
 // --- Flags ------------------------------------------------------------------
 $r = Settings::normalize_settings( array( 'cta_enabled' => '1', 'email_enabled' => '' ), $d );

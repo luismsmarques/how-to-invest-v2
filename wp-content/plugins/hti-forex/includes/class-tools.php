@@ -297,6 +297,32 @@ class Tools {
 					'micro'    => array( 'label' => 'Per micro lot (₹)', 'format' => 'inr' ),
 				),
 			),
+			'profit_loss'   => array(
+				'fields'  => array_merge(
+					array(
+						'pair'      => array( 'label' => 'Pair', 'type' => 'select', 'default' => 'EURUSD', 'options' => $pair_options, 'unit' => '' ),
+						'direction' => array(
+							'label'   => 'Direction',
+							'type'    => 'select',
+							'default' => 'buy',
+							'options' => array(
+								'buy'  => 'Buy (long)',
+								'sell' => 'Sell (short)',
+							),
+							'unit'    => '',
+						),
+						'lots'      => array( 'label' => 'Position size', 'default' => 0.10, 'min' => 0.01, 'step' => 0.01, 'unit' => 'lots' ),
+						'entry'     => array( 'label' => 'Entry price', 'default' => '1.0900', 'min' => 0, 'step' => 'any', 'unit' => '' ),
+						'exit'      => array( 'label' => 'Exit price', 'default' => '1.0920', 'min' => 0, 'step' => 'any', 'unit' => '' ),
+					),
+					$rate_fields
+				),
+				'outputs' => array(
+					'pl_inr' => array( 'label' => 'Profit / loss in ₹', 'format' => 'inr_signed', 'primary' => true ),
+					'pl_usd' => array( 'label' => 'Profit / loss in $', 'format' => 'usd_signed' ),
+					'pips'   => array( 'label' => 'Pips moved', 'format' => 'pips' ),
+				),
+			),
 		);
 	}
 

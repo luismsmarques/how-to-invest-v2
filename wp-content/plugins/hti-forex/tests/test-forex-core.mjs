@@ -95,6 +95,44 @@ near( s.actualRiskINR, 0, 1e-9, 'tooSmall reports ₹0 actual risk' );
 ok( null === F.positionSize( 0, 1, 20, 'EURUSD', RATES ), 'zero balance → null' );
 ok( null === F.positionSize( 100000, 1, 0, 'EURUSD', RATES ), 'zero stop → null' );
 
+// --- profitLoss -------------------------------------------------------------
+// Buy 0.10 EURUSD 1.0900 → 1.0920: +20 pips, +$20, +₹1,660 at 83.
+let pl = F.profitLoss( 'EURUSD', 'buy', 0.1, 1.09, 1.092, RATES );
+near( pl.pips, 20, 1e-6, 'EURUSD buy: +20 pips' );
+near( pl.usd, 20, 1e-9, 'EURUSD buy: +$20' );
+near( pl.inr, 1660, 1e-9, 'EURUSD buy: +₹1,660 at 83' );
+
+// The same move sold is the mirror loss.
+pl = F.profitLoss( 'EURUSD', 'sell', 0.1, 1.09, 1.092, RATES );
+near( pl.pips, -20, 1e-6, 'EURUSD sell into a rise: -20 pips' );
+near( pl.inr, -1660, 1e-9, 'EURUSD sell into a rise: -₹1,660' );
+
+// Sell profits when price falls.
+pl = F.profitLoss( 'EURUSD', 'sell', 0.1, 1.092, 1.09, RATES );
+ok( pl.inr > 0, 'sell profits when price falls' );
+
+// USDJPY: quote is yen, converted via USDJPY then USDINR.
+pl = F.profitLoss( 'USDJPY', 'buy', 1, 147.0, 147.3, RATES );
+near( pl.pips, 30, 1e-6, 'USDJPY buy: +30 pips' );
+near( pl.quote, 30000, 1e-6, 'USDJPY buy: +¥30,000' );
+near( pl.usd, 30000 / 147, 1e-9, 'USDJPY P/L converted to USD' );
+near( pl.inr, ( 30000 / 147 ) * 83, 1e-9, 'USDJPY P/L converted on to INR' );
+
+// XAUUSD: $5 move on 100oz × 0.10 lots = $50.
+pl = F.profitLoss( 'XAUUSD', 'buy', 0.1, 3300, 3305, RATES );
+near( pl.usd, 50, 1e-9, 'XAUUSD buy: +$50 on a $5 move at 0.10 lots' );
+near( pl.pips, 50, 1e-6, 'XAUUSD: $5 move = 50 pips ($0.10 convention)' );
+
+// Flat trade: zero everywhere.
+pl = F.profitLoss( 'EURUSD', 'buy', 1, 1.09, 1.09, RATES );
+near( pl.inr, 0, 1e-9, 'flat trade → ₹0' );
+
+// Guards.
+ok( null === F.profitLoss( 'NOPE', 'buy', 1, 1, 2, RATES ), 'profitLoss: unknown pair → null' );
+ok( null === F.profitLoss( 'EURUSD', 'buy', 0, 1, 2, RATES ), 'profitLoss: zero lots → null' );
+ok( null === F.profitLoss( 'EURUSD', 'buy', 1, 0, 2, RATES ), 'profitLoss: zero entry → null' );
+ok( null === F.profitLoss( 'USDJPY', 'buy', 1, 147, 148, { USDINR: 83 } ), 'profitLoss: missing USDJPY rate → null' );
+
 // --- sessions in IST --------------------------------------------------------
 function windowsAt( iso ) {
 	const now = Date.parse( iso );

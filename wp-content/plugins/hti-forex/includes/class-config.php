@@ -213,6 +213,24 @@ class Config {
 					'a' => 'The pip value is first expressed in the pair\'s quote currency, converted to US dollars where needed, and then multiplied by the USD/INR reference rate. The rate used and its date are shown next to the result, and you can overwrite the rate by hand — useful when your broker\'s conversion rate differs from the published reference.',
 				),
 			),
+			'profit_loss'   => array(
+				array(
+					'q' => 'How is forex profit calculated in Indian rupees?',
+					'a' => 'The price difference between entry and exit is multiplied by the contract size and the number of lots, giving the profit or loss in the pair\'s quote currency. That amount is converted to US dollars where needed and then to rupees at the USD/INR reference rate. For example, buying 0.10 lots of EUR/USD at 1.0900 and closing at 1.0920 gains 20 pips — $20, or about ₹1,660 at ₹83 per dollar.',
+				),
+				array(
+					'q' => 'Why is my USD/JPY profit different from EUR/USD for the same pips?',
+					'a' => 'Because USD/JPY profits are born in yen, not dollars. Twenty pips on one lot of USD/JPY is 20,000 yen, which is converted to dollars at the current USD/JPY rate before becoming rupees — so the same pip count is worth a different rupee amount, and it changes as the yen moves.',
+				),
+				array(
+					'q' => 'Does this calculator include spreads, swaps and commissions?',
+					'a' => 'No. It shows the gross price move only. A real trade also pays the spread on entry, possible commission, and swap charges if the position is held overnight — costs that vary by platform and can meaningfully change the net result, especially on small positions.',
+				),
+				array(
+					'q' => 'How are forex trading profits taxed in India?',
+					'a' => 'Profits from forex trading are generally taxable in India, and how they are classified (often as business income) depends on the facts of each case. Separately, sending money abroad under the Liberalised Remittance Scheme can attract TCS, and trading through platforms not authorised to operate in India raises issues under FEMA regardless of any tax paid. Tax rules change and this is not tax or legal advice — a chartered accountant can assess a specific situation.',
+				),
+			),
 			'sessions'      => array(
 				array(
 					'q' => 'What time does the forex market open in India (IST)?',

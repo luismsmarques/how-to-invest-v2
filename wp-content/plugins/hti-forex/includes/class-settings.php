@@ -29,7 +29,7 @@ class Settings {
 	/**
 	 * Tools that can carry the CTA (shortcode `name` values).
 	 */
-	public const TOOLS = array( 'position_size', 'pip_value', 'sessions' );
+	public const TOOLS = array( 'position_size', 'pip_value', 'sessions', 'profit_loss' );
 
 	/**
 	 * Hook the admin page and setting registration.
@@ -53,6 +53,7 @@ class Settings {
 			'cta_position_size'    => true,
 			'cta_pip_value'        => true,
 			'cta_sessions'         => true,
+			'cta_profit_loss'      => true,
 			'email_enabled'        => true,
 			'sub_param'            => 'clickid',
 			'sub_sources'          => array( 'clickid', 'utm_campaign' ),
@@ -86,7 +87,7 @@ class Settings {
 		$errors = array();
 		$out    = $defaults;
 
-		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'email_enabled' ) as $flag ) {
+		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'email_enabled' ) as $flag ) {
 			$out[ $flag ] = ! empty( $input[ $flag ] );
 		}
 
@@ -266,6 +267,7 @@ class Settings {
 								'position_size' => __( 'Position size calculator', 'hti-forex' ),
 								'pip_value'     => __( 'Pip value calculator', 'hti-forex' ),
 								'sessions'      => __( 'Market hours (IST)', 'hti-forex' ),
+								'profit_loss'   => __( 'Profit/loss calculator', 'hti-forex' ),
 							);
 							foreach ( $tool_labels as $tool => $label ) :
 								?>

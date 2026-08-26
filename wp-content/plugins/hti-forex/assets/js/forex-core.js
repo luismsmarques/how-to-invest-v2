@@ -120,6 +120,52 @@
 		};
 	}
 
+	/**
+	 * Profit/loss for a closed position, in the quote currency, USD and INR.
+	 * Gross price P/L only — spreads, swaps and commissions are not modelled
+	 * (the page says so).
+	 *
+	 * @param {string} pair      Key in PAIRS.
+	 * @param {string} direction 'buy' | 'sell'.
+	 * @param {number} lots      Position size in lots.
+	 * @param {number} entry     Entry price.
+	 * @param {number} exit      Exit price.
+	 * @param {Object} rates     { USDINR, USDJPY } reference rates.
+	 * @return {{pips:number,quote:number,quoteCurrency:string,usd:number,inr:number}|null}
+	 */
+	function profitLoss( pair, direction, lots, entry, exit, rates ) {
+		var spec = PAIRS[ pair ];
+		if ( ! spec || ! ( lots > 0 ) || ! ( entry > 0 ) || ! ( exit > 0 ) || ! rates || ! ( rates.USDINR > 0 ) ) {
+			return null;
+		}
+
+		var sign = 'sell' === direction ? -1 : 1;
+		var diff = ( exit - entry ) * sign;
+		var quote = diff * spec.contractSize * lots;
+		var usd;
+
+		if ( 'USD' === spec.quote ) {
+			usd = quote;
+		} else if ( 'JPY' === spec.quote ) {
+			if ( ! ( rates.USDJPY > 0 ) ) {
+				return null;
+			}
+			usd = quote / rates.USDJPY;
+		} else if ( 'INR' === spec.quote ) {
+			usd = quote / rates.USDINR;
+		} else {
+			return null;
+		}
+
+		return {
+			pips: diff / spec.pipSize,
+			quote: quote,
+			quoteCurrency: spec.quote,
+			usd: usd,
+			inr: 'INR' === spec.quote ? quote : usd * rates.USDINR
+		};
+	}
+
 	/* -------------------------------------------------------------------
 	 * Sessions in IST
 	 * ----------------------------------------------------------------- */
@@ -274,6 +320,7 @@
 		SESSIONS: SESSIONS,
 		pipValue: pipValue,
 		positionSize: positionSize,
+		profitLoss: profitLoss,
 		zoneOffsetMinutes: zoneOffsetMinutes,
 		sessionWindowsIST: sessionWindowsIST,
 		overlapLondonNY: overlapLondonNY,
