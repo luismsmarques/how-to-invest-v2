@@ -209,9 +209,132 @@
 	}
 
 	/* -------------------------------------------------------------------
+	 * Affiliate sub-id passthrough
+	 *
+	 * Reads the campaign id from the landing URL (first configured param
+	 * that is present) and appends it to every affiliate CTA href. Purely
+	 * client-side and storage-free: nothing is persisted, no third-party
+	 * request happens until the user clicks the clearly-labelled link.
+	 * ----------------------------------------------------------------- */
+
+	function initSubid() {
+		var ctas = document.querySelectorAll( 'a[data-hti-fx-cta]' );
+		if ( ! ctas.length || 'undefined' === typeof URLSearchParams ) {
+			return;
+		}
+
+		var params = new URLSearchParams( window.location.search );
+		var value = '';
+		( cfg.subSources || [] ).some( function ( key ) {
+			var v = params.get( key );
+			if ( v ) {
+				value = v;
+				return true;
+			}
+			return false;
+		} );
+
+		value = value.replace( /[^A-Za-z0-9_-]/g, '' ).slice( 0, 64 );
+		if ( ! value ) {
+			return;
+		}
+
+		ctas.forEach( function ( a ) {
+			try {
+				var u = new URL( a.href );
+				u.searchParams.set( cfg.subParam || 'clickid', value );
+				a.href = u.toString();
+			} catch ( e ) {
+				// Malformed href — leave it untouched.
+			}
+		} );
+	}
+
+	/* -------------------------------------------------------------------
+	 * Email capture → hti-engine's double-opt-in endpoint
+	 * ----------------------------------------------------------------- */
+
+	function initEmail( box ) {
+		var form = box.querySelector( '.hti-fx-email__form' );
+		var status = box.querySelector( '.hti-fx-email__status' );
+		var consent = box.querySelector( '[data-consent]' );
+		if ( ! form || ! cfg.subscribeUrl ) {
+			return;
+		}
+
+		function say( message ) {
+			if ( status ) {
+				status.textContent = message;
+			}
+		}
+
+		form.addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+
+			var email = ( form.querySelector( 'input[name="email"]' ) || {} ).value || '';
+			if ( ! email || email.indexOf( '@' ) < 1 ) {
+				say( 'Please enter a valid email address.' );
+				return;
+			}
+			if ( consent && ! consent.checked ) {
+				say( 'Please tick the consent box first.' );
+				return;
+			}
+
+			var button = form.querySelector( 'button[type="submit"]' );
+			if ( button ) {
+				button.disabled = true;
+			}
+			say( 'Sending…' );
+
+			fetch( cfg.subscribeUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': cfg.nonce || ''
+				},
+				body: JSON.stringify( {
+					email: email,
+					consent: true,
+					hti_hp: ( form.querySelector( 'input[name="hti_hp"]' ) || {} ).value || '',
+					locale: 'en',
+					source: box.getAttribute( 'data-source' ) || 'forex'
+				} )
+			} )
+				.then( function ( res ) {
+					if ( res.ok ) {
+						say( 'Almost there — check your inbox and confirm the subscription.' );
+						form.reset();
+						if ( window.HTITrack ) {
+							window.HTITrack.event( 'newsletter_subscribe_submit', {
+								source: box.getAttribute( 'data-source' ) || 'forex',
+								location: box.getAttribute( 'data-location' ) || 'forex',
+								status: 'submitted'
+							} );
+						}
+					} else if ( 429 === res.status ) {
+						say( 'Too many attempts — please try again in a while.' );
+					} else {
+						say( 'That did not work — please check the email address and try again.' );
+					}
+				} )
+				.catch( function () {
+					say( 'Network problem — please try again.' );
+				} )
+				.finally( function () {
+					if ( button ) {
+						button.disabled = false;
+					}
+				} );
+		} );
+	}
+
+	/* -------------------------------------------------------------------
 	 * Boot
 	 * ----------------------------------------------------------------- */
 
 	document.querySelectorAll( 'form.hti-fx-tool[data-tool]' ).forEach( initCalculator );
 	document.querySelectorAll( '.hti-fx-sessions[data-tool="sessions"]' ).forEach( initSessions );
+	document.querySelectorAll( '.hti-fx-email[data-email]' ).forEach( initEmail );
+	initSubid();
 }() );

@@ -97,7 +97,9 @@ class Tools {
 			$body = self::render_calculator( $name );
 		}
 
-		return $body;
+		// Conversion blocks are siblings of the tool (the calculator is a
+		// <form>; nesting the email form inside it would be invalid HTML).
+		return $body . self::cta_block( $name ) . self::email_block( $name );
 	}
 
 	/* ---------------------------------------------------------------------
@@ -306,6 +308,65 @@ class Tools {
 	/* ---------------------------------------------------------------------
 	 * Shared blocks
 	 * ------------------------------------------------------------------- */
+
+	/**
+	 * The affiliate CTA. Renders NOTHING unless Settings::cta_for() allows it
+	 * (global kill-switch on, per-tool toggle on, https URL configured) — no
+	 * hidden markup, no dead tracking attributes. The click is tracked by the
+	 * site-wide hti-track delegated listener via the data attributes alone;
+	 * forex.js appends the campaign sub-id read from the landing URL.
+	 *
+	 * @param string $tool Tool name.
+	 */
+	private static function cta_block( string $tool ): string {
+		$cta = Settings::cta_for( $tool );
+		if ( null === $cta ) {
+			return '';
+		}
+
+		return '<div class="hti-fx-cta">'
+			. '<a class="hti-fx-cta__btn" href="' . esc_url( $cta['url'] ) . '" target="_blank" rel="sponsored nofollow noopener"'
+			. ' data-hti-track="cta_click" data-htip-location="forex_' . esc_attr( $tool ) . '" data-hti-fx-cta>'
+			. esc_html( $cta['label'] )
+			. '</a>'
+			. '<p class="hti-fx-cta__risk">' . esc_html( 'Partner link. Forex and CFDs are high-risk leveraged products; most retail accounts lose money. Educational content — not investment advice.' ) . '</p>'
+			. '</div>';
+	}
+
+	/**
+	 * Email capture: posts to hti-engine's existing double-opt-in endpoint
+	 * (htinvest/v1/subscribe) with source "forex-<tool>" — consent checkbox,
+	 * honeypot and rate limiting all come from that stack. No PII is stored
+	 * by this plugin.
+	 *
+	 * @param string $tool Tool name.
+	 */
+	private static function email_block( string $tool ): string {
+		$settings = Settings::settings();
+		if ( empty( $settings['email_enabled'] ) ) {
+			return '';
+		}
+
+		$privacy = function_exists( 'get_privacy_policy_url' ) ? get_privacy_policy_url() : '';
+		if ( '' === $privacy ) {
+			$privacy = home_url( '/privacy-policy/' );
+		}
+
+		return '<div class="hti-fx-email" data-email data-source="forex-' . esc_attr( $tool ) . '" data-location="forex_' . esc_attr( $tool ) . '">'
+			. '<p class="hti-fx-email__title">' . esc_html( 'Get new free tools by email' ) . '</p>'
+			. '<p class="hti-fx-email__sub">' . esc_html( 'An occasional email when a new free calculator or India-focused guide goes live. Double opt-in, unsubscribe anytime.' ) . '</p>'
+			. '<form class="hti-fx-email__form" novalidate>'
+			. '<input type="email" name="email" autocomplete="email" required placeholder="you@example.com" aria-label="Email address" />'
+			. '<input type="text" name="hti_hp" class="hti-fx-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />'
+			. '<button type="submit">' . esc_html( 'Subscribe' ) . '</button>'
+			. '</form>'
+			. '<label class="hti-fx-email__consent"><input type="checkbox" data-consent /> '
+			. esc_html( 'I agree to receive these emails, as described in the ' )
+			. '<a href="' . esc_url( $privacy ) . '">privacy policy</a>.'
+			. '</label>'
+			. '<p class="hti-fx-email__status" role="status" aria-live="polite"></p>'
+			. '</div>';
+	}
 
 	/**
 	 * The risk/education block every tool ends with. Lives inside the

@@ -206,6 +206,128 @@
 	border-radius: 12px;
 }
 
+/* Affiliate CTA */
+.hti-fx-cta {
+	max-width: 720px;
+	margin: 1rem 0;
+	display: grid;
+	gap: 0.5rem;
+	justify-items: start;
+}
+
+.hti-fx-cta__btn {
+	display: inline-block;
+	padding: 0.85rem 1.5rem;
+	font: 700 1rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #fff;
+	background: #ff6b5e;
+	border-radius: 999px;
+	text-decoration: none;
+	transition: filter 0.15s ease;
+}
+
+.hti-fx-cta__btn:hover {
+	filter: brightness(0.94);
+	color: #fff;
+}
+
+.hti-fx-cta__btn:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.35);
+}
+
+.hti-fx-cta__risk {
+	margin: 0;
+	font: 400 0.78rem/1.5 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #6e6680;
+}
+
+/* Email capture */
+.hti-fx-email {
+	max-width: 720px;
+	margin: 1.5rem 0;
+	padding: 1.5rem;
+	display: grid;
+	gap: 0.6rem;
+	background: #fff6f1;
+	border: 1px solid #f2e4dd;
+	border-radius: 18px;
+}
+
+.hti-fx-email__title {
+	margin: 0;
+	font: 700 1.05rem 'Poppins', system-ui, sans-serif;
+	color: #2a2438;
+}
+
+.hti-fx-email__sub {
+	margin: 0;
+	font: 400 0.85rem/1.5 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #6e6680;
+}
+
+.hti-fx-email__form {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.hti-fx-email__form input[type='email'] {
+	flex: 1 1 220px;
+	padding: 0.7rem 0.85rem;
+	font: 600 1rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #2a2438;
+	background: #fff;
+	border: 1.5px solid #f2e4dd;
+	border-radius: 10px;
+}
+
+.hti-fx-email__form input[type='email']:focus-visible {
+	outline: none;
+	border-color: #ff6b5e;
+	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.18);
+}
+
+.hti-fx-email__form button {
+	padding: 0.7rem 1.4rem;
+	font: 700 0.95rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #fff;
+	background: #2a2438;
+	border: 0;
+	border-radius: 10px;
+	cursor: pointer;
+}
+
+.hti-fx-email__form button:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.hti-fx-hp {
+	position: absolute !important;
+	left: -9999px !important;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+}
+
+.hti-fx-email__consent {
+	font: 400 0.8rem/1.5 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #6e6680;
+}
+
+.hti-fx-email__consent a {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.hti-fx-email__status {
+	margin: 0;
+	min-height: 1.2em;
+	font: 600 0.85rem/1.4 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #2a2438;
+}
+
 /* Mobile-first: single screen, no horizontal scroll */
 @media (max-width: 560px) {
 	.hti-fx-tool,
