@@ -76,6 +76,11 @@ class Metrics {
 			'feedback_invite_click',
 			'data_export',
 			'preferred_source_click',
+			'broker_click',
+			'broker_compare_view',
+			'broker_review_view',
+			'broker_guide_view',
+			'result_broker_view',
 		);
 	}
 
@@ -181,6 +186,28 @@ class Metrics {
 		if ( 'cta_click' === $event && isset( $params['location'] ) ) {
 			$loc = (string) $params['location'];
 			$data[ $day ]['cta'][ $loc ] = ( $data[ $day ]['cta'][ $loc ] ?? 0 ) + 1;
+		}
+		if ( 'broker_click' === $event ) {
+			// Per-broker and per-location breakdowns (server-side, from /go/).
+			if ( isset( $params['broker'] ) && '' !== (string) $params['broker'] ) {
+				$b = (string) $params['broker'];
+				if ( ! isset( $data[ $day ]['bkr'] ) || ! is_array( $data[ $day ]['bkr'] ) ) {
+					$data[ $day ]['bkr'] = array();
+				}
+				if ( isset( $data[ $day ]['bkr'][ $b ] ) || count( $data[ $day ]['bkr'] ) < self::MAX_PATHS_PER_DAY ) {
+					$data[ $day ]['bkr'][ $b ] = ( $data[ $day ]['bkr'][ $b ] ?? 0 ) + 1;
+				} else {
+					$data[ $day ]['bkr']['_other'] = ( $data[ $day ]['bkr']['_other'] ?? 0 ) + 1;
+				}
+			}
+			if ( isset( $params['location'] ) && '' !== (string) $params['location'] ) {
+				$bl = (string) $params['location'];
+				$data[ $day ]['bkr_loc'][ $bl ] = ( $data[ $day ]['bkr_loc'][ $bl ] ?? 0 ) + 1;
+			}
+		}
+		if ( 'result_broker_view' === $event && isset( $params['archetype'] ) ) {
+			$ba = (int) $params['archetype'];
+			$data[ $day ]['bkr_arch'][ $ba ] = ( $data[ $day ]['bkr_arch'][ $ba ] ?? 0 ) + 1;
 		}
 		if ( 'page_view' === $event && isset( $params['path'] ) ) {
 			$path = (string) $params['path'];
