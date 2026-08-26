@@ -5,8 +5,21 @@
  * Maps the old Base44 CamelCase paths to their new canonical WordPress URLs
  * with a permanent (301) redirect, preserving SEO equity during migration.
  *
- * The map is filterable via `hti_legacy_redirects` so slugs can be adjusted
- * to match the pages actually created (without a code deploy).
+ * Three classes of legacy URL are handled:
+ *
+ * 1. **Flat page paths** — `/About`, `/HowToStart`, `/EducationalResources`…
+ *    resolved through {@see Redirects::map()}, which is filterable via
+ *    `hti_legacy_redirects` so slugs can be adjusted without a code deploy.
+ * 2. **News articles** — Base44 served every article from a single path with
+ *    the article in a query string (`/FinancialNews?slug=…`). Dropping the
+ *    query string would collapse every article onto the archive, which reads
+ *    as a soft-404 to search engines and burns the ranking each article
+ *    already earned, so the slug is resolved back to the real `news` post.
+ * 3. **Dead language prefixes** — Base44 auto-translated the site into
+ *    languages the project no longer maintains (`/es/…`, `/fr/…`). Those
+ *    paths are folded onto the default-language equivalent. Languages that
+ *    Polylang actually has configured are never treated as dead, so enabling
+ *    a language in Polylang is enough to take it out of this net.
  *
  * @package HTI_Engine
  */
@@ -19,6 +32,18 @@ defined( 'ABSPATH' ) || exit;
  * Performs 301 redirects from legacy Base44 paths.
  */
 class Redirects {
+
+	/**
+	 * Where a news request lands when the article cannot be resolved.
+	 */
+	private const NEWS_ARCHIVE = '/financial-news/';
+
+	/**
+	 * Legacy paths that carried an article slug in the query string.
+	 *
+	 * @var list<string>
+	 */
+	private const NEWS_PATHS = array( 'financialnews', 'financialnewsarticle' );
 
 	/**
 	 * Hook into the request lifecycle.
@@ -34,14 +59,30 @@ class Redirects {
 	 */
 	private static function map(): array {
 		$map = array(
+			// Base44 CamelCase pages.
 			'about'                => '/about/',
 			'contact'              => '/contact/',
-			'financialnews'        => '/financial-news/',
-			'financialnewsarticle' => '/financial-news/',
+			'educationalresources' => '/learn/',
+			'educationmodule'      => '/learn/',
+			'financialnews'        => self::NEWS_ARCHIVE,
+			'financialnewsarticle' => self::NEWS_ARCHIVE,
+			'home'                 => '/',
 			'howtostart'           => '/how-to-start-investing/',
+			'localizedpage'        => '/',
 			'privacypolicy'        => '/privacy-policy/',
+			'profilebuilder'       => '/investor-profile-quiz/',
+			'profilesettings'      => '/my-account/',
 			'questionnaire'        => '/investor-profile-quiz/',
+			'results'              => '/investor-profile-quiz/',
+			'sitemap'              => '/',
 			'termsandconditions'   => '/terms-and-conditions/',
+
+			/*
+			 * Duplicate slug competing with the canonical chapter: Search
+			 * Console showed /HowToStart, /how-to-start and
+			 * /how-to-start-investing/ splitting impressions three ways.
+			 */
+			'how-to-start'         => '/how-to-start-investing/',
 		);
 
 		/**
@@ -53,6 +94,217 @@ class Redirects {
 	}
 
 	/**
+	 * Language prefixes left behind by Base44 that the project no longer serves.
+	 *
+	 * Any language Polylang has configured is removed from the list, so a live
+	 * language is never folded away by mistake.
+	 *
+	 * @return list<string>
+	 */
+	private static function dead_languages(): array {
+		$dead = array(
+			'ar',
+			'bg',
+			'cs',
+			'da',
+			'de',
+			'el',
+			'es',
+			'fa',
+			'fi',
+			'fr',
+			'he',
+			'hi',
+			'hu',
+			'id',
+			'it',
+			'ja',
+			'ko',
+			'nl',
+			'no',
+			'pl',
+			'ro',
+			'ru',
+			'sv',
+			'th',
+			'tr',
+			'uk',
+			'vi',
+			'zh',
+		);
+
+		/**
+		 * Filter the language prefixes treated as dead Base44 translations.
+		 *
+		 * @param list<string> $dead Two-letter language prefixes.
+		 */
+		$dead = array_map( 'strval', (array) apply_filters( 'hti_dead_language_prefixes', $dead ) );
+
+		// Never fold a language the site actually serves.
+		$live = function_exists( 'pll_languages_list' )
+			? array_map( 'strval', (array) pll_languages_list( array( 'fields' => 'slug' ) ) )
+			: array( 'en', 'pt' );
+
+		return array_values( array_diff( $dead, $live ) );
+	}
+
+	/**
+	 * Resolve a request URI to a legacy redirect target, or null to leave it alone.
+	 *
+	 * Pure: it takes the raw request URI and an optional resolver for news
+	 * slugs, and returns a path relative to the site root. Keeping the lookup
+	 * injectable is what makes the whole mapping testable without WordPress.
+	 *
+	 * @param string        $request_uri Raw request URI (path plus optional query).
+	 * @param callable|null $news_lookup Receives a sanitized slug, returns a
+	 *                                   relative path or null when unknown.
+	 * @return string|null Relative target path, or null when nothing matches.
+	 */
+	public static function resolve( string $request_uri, ?callable $news_lookup = null ): ?string {
+		$path  = (string) wp_parse_url( $request_uri, PHP_URL_PATH );
+		$query = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
+		$key   = strtolower( trim( $path, '/' ) );
+
+		if ( '' === $key ) {
+			return null;
+		}
+
+		$segments = explode( '/', $key );
+		$prefix   = $segments[0];
+
+		if ( in_array( $prefix, self::dead_languages(), true ) ) {
+			array_shift( $segments );
+			$rest = implode( '/', $segments );
+
+			// A bare /es or /fr goes home; anything under it tries the map first.
+			return '' === $rest
+				? '/'
+				: ( self::match( $rest, $query, $news_lookup ) ?? '/' );
+		}
+
+		return self::match( $key, $query, $news_lookup );
+	}
+
+	/**
+	 * Match a normalized path key against the news rule and then the map.
+	 *
+	 * @param string        $key         Lowercased path without surrounding slashes.
+	 * @param string        $query       Raw query string.
+	 * @param callable|null $news_lookup Slug resolver.
+	 * @return string|null Relative target path, or null when nothing matches.
+	 */
+	private static function match( string $key, string $query, ?callable $news_lookup ): ?string {
+		if ( in_array( $key, self::NEWS_PATHS, true ) ) {
+			$slug = self::slug_from_query( $query );
+
+			if ( '' !== $slug && null !== $news_lookup ) {
+				$target = $news_lookup( $slug );
+				if ( is_string( $target ) && '' !== $target ) {
+					return $target;
+				}
+			}
+
+			return self::NEWS_ARCHIVE;
+		}
+
+		$map = self::map();
+
+		return isset( $map[ $key ] ) ? (string) $map[ $key ] : null;
+	}
+
+	/**
+	 * Extract and sanitize the `slug` parameter from a legacy query string.
+	 *
+	 * @param string $query Raw query string.
+	 * @return string Sanitized slug, or '' when absent or unusable.
+	 */
+	private static function slug_from_query( string $query ): string {
+		if ( '' === $query ) {
+			return '';
+		}
+
+		$args = array();
+		parse_str( $query, $args );
+
+		$slug = isset( $args['slug'] ) && is_string( $args['slug'] ) ? $args['slug'] : '';
+		$slug = strtolower( (string) preg_replace( '/[^A-Za-z0-9_-]/', '', $slug ) );
+
+		// Guard the LIKE below against a pathologically long parameter.
+		return substr( trim( $slug, '-' ), 0, 200 );
+	}
+
+	/**
+	 * Find the `news` post a legacy Base44 slug refers to.
+	 *
+	 * Tries an exact slug match first. Migration truncated some long slugs, so
+	 * a prefix match is attempted in both directions before giving up — that is
+	 * the difference between an article keeping its ranking and every legacy
+	 * article collapsing onto the archive.
+	 *
+	 * @param string $slug Sanitized legacy slug.
+	 * @return string|null Relative permalink, or null when no article matches.
+	 */
+	private static function lookup_news( string $slug ): ?string {
+		$post = get_page_by_path( $slug, OBJECT, 'news' );
+
+		if ( ! $post instanceof \WP_Post ) {
+			global $wpdb;
+
+			// No WP_Query equivalent for a prefix match on post_name.
+			$id = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT ID FROM {$wpdb->posts}
+					 WHERE post_type = 'news' AND post_status = 'publish' AND post_name LIKE %s
+					 ORDER BY CHAR_LENGTH( post_name ) ASC LIMIT 1",
+					$wpdb->esc_like( $slug ) . '%'
+				)
+			);
+
+			if ( $id <= 0 ) {
+				// The legacy slug may itself be the longer of the two.
+				$id = (int) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT ID FROM {$wpdb->posts}
+						 WHERE post_type = 'news' AND post_status = 'publish'
+						   AND CHAR_LENGTH( post_name ) > 20 AND %s LIKE CONCAT( post_name, '%%' )
+						 ORDER BY CHAR_LENGTH( post_name ) DESC LIMIT 1",
+						$slug
+					)
+				);
+			}
+
+			if ( $id > 0 ) {
+				$post = get_post( $id );
+			}
+		}
+
+		if ( ! $post instanceof \WP_Post ) {
+			return null;
+		}
+
+		$permalink = get_permalink( $post );
+		if ( ! is_string( $permalink ) || '' === $permalink ) {
+			return null;
+		}
+
+		$path = (string) wp_parse_url( $permalink, PHP_URL_PATH );
+		if ( '' === $path ) {
+			return null;
+		}
+
+		/*
+		 * home_url() re-adds the base path, so strip it here — otherwise a
+		 * WordPress installed in a subdirectory would get it twice.
+		 */
+		$base = rtrim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
+		if ( '' !== $base && str_starts_with( $path, $base . '/' ) ) {
+			$path = substr( $path, strlen( $base ) );
+		}
+
+		return $path;
+	}
+
+	/**
 	 * Redirect the current request if it matches a legacy path.
 	 */
 	public static function maybe_redirect(): void {
@@ -60,27 +312,23 @@ class Redirects {
 			return;
 		}
 
-		$request = wp_unslash( $_SERVER['REQUEST_URI'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- path is sanitized below.
-		$path    = (string) wp_parse_url( $request, PHP_URL_PATH );
-		$key     = strtolower( trim( $path, '/' ) );
+		$request = wp_unslash( $_SERVER['REQUEST_URI'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- parsed and normalized in resolve().
+		$target  = self::resolve( (string) $request, array( __CLASS__, 'lookup_news' ) );
 
-		if ( '' === $key ) {
+		if ( null === $target ) {
 			return;
 		}
 
-		$map = self::map();
-		if ( ! isset( $map[ $key ] ) ) {
-			return;
-		}
-
-		$target = home_url( $map[ $key ] );
+		// A resolved news permalink is already an absolute path on this host.
+		$url  = home_url( $target );
+		$path = (string) wp_parse_url( $request, PHP_URL_PATH );
 
 		// Avoid redirecting a URL onto itself.
-		if ( untrailingslashit( $target ) === untrailingslashit( home_url( $path ) ) ) {
+		if ( untrailingslashit( $url ) === untrailingslashit( home_url( $path ) ) ) {
 			return;
 		}
 
-		wp_safe_redirect( $target, 301, 'HowToInvest' );
+		wp_safe_redirect( $url, 301, 'HowToInvest' );
 		exit;
 	}
 }

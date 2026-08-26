@@ -116,6 +116,16 @@ if ( ! function_exists( 'wp_unslash' ) ) {
 		return $value;
 	}
 }
+if ( ! function_exists( 'wp_parse_url' ) ) {
+	/**
+	 * @param string $url       URL.
+	 * @param int    $component Component constant.
+	 * @return mixed
+	 */
+	function wp_parse_url( $url, $component = -1 ) {
+		return parse_url( (string) $url, $component ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+	}
+}
 
 require_once __DIR__ . '/../includes/class-config.php';
 require_once __DIR__ . '/../includes/class-engine.php';
