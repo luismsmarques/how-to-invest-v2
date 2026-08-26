@@ -73,6 +73,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-deposits.php';
 require_once HTI_ENGINE_PATH . 'includes/class-broker-admin.php';
 require_once HTI_ENGINE_PATH . 'includes/class-broker-seeder.php';
 require_once HTI_ENGINE_PATH . 'includes/class-broker-go.php';
+require_once HTI_ENGINE_PATH . 'includes/class-brokers.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
 require_once HTI_ENGINE_PATH . 'includes/class-analytics.php';
@@ -193,6 +194,7 @@ Deposits::init();
 Broker_Admin::init();
 Broker_Seeder::register();
 Broker_Go::init();
+Brokers::init();
 
 /**
  * Admin settings (Settings → HowToInvest): Gemini key/model + scoring/archetypes.
@@ -303,8 +305,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$report = Broker_Seeder::seed();
 			\WP_CLI::success(
 				sprintf(
-					'%d brokers created, %d PT translations linked, %d skipped.',
+					'%d brokers and %d section pages created, %d PT translations linked, %d skipped.',
 					$report['brokers_created'],
+					$report['pages_created'] ?? 0,
 					$report['translations_created'],
 					$report['skipped']
 				)

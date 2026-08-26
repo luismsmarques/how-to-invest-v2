@@ -73,6 +73,15 @@ class Disclaimer {
 		$pt  = str_starts_with( strtolower( $locale ), 'pt' );
 		$pct = trim( $pct );
 
+		// Until the provider's own current figure is verified, use the generic
+		// ESMA wording — never an invented number.
+		if ( '' === $pct ) {
+			if ( $pt ) {
+				return 'A grande maioria das contas de investidores de retalho perde dinheiro ao negociar CFDs. Os CFDs são produtos complexos e alavancados — considera se compreendes como funcionam e se podes suportar o risco elevado de perder o teu dinheiro.';
+			}
+			return 'The large majority of retail investor accounts lose money when trading CFDs. CFDs are complex, leveraged products — consider whether you understand how they work and whether you can afford the high risk of losing your money.';
+		}
+
 		if ( $pt ) {
 			return $pct . '% das contas de investidores de retalho perdem dinheiro ao negociar CFDs com este fornecedor. Os CFDs são produtos complexos e alavancados — considera se compreendes como funcionam e se podes suportar o risco elevado de perder o teu dinheiro.';
 		}

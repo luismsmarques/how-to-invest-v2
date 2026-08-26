@@ -369,6 +369,7 @@ function strings(): array {
 		'nav_classes'      => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
 		'nav_tools'        => array( 'en' => 'Tools', 'pt' => 'Ferramentas' ),
 		'nav_deposits'     => array( 'en' => 'Term deposits', 'pt' => 'Depósitos a prazo' ),
+		'nav_brokers'      => array( 'en' => 'Brokers', 'pt' => 'Corretoras' ),
 		'nav_glossary'     => array( 'en' => 'Glossary', 'pt' => 'Glossário' ),
 		'nav_news'         => array( 'en' => 'News', 'pt' => 'Notícias' ),
 		'foot_about'       => array( 'en' => 'About', 'pt' => 'Sobre' ),
@@ -3987,6 +3988,31 @@ function append_deposits_menu_item( string $items, $args ): string {
 	return $items . '<li class="menu-item hti-menu-deposits"><a href="' . esc_url( $url ) . '">' . esc_html( t( 'nav_deposits' ) ) . '</a></li>';
 }
 add_filter( 'wp_nav_menu_items', __NAMESPACE__ . '\\append_deposits_menu_item', 10, 2 );
+
+/**
+ * Append the broker comparison pillar to the primary menu (both languages),
+ * mirroring the deposits item. Skipped when the editor already added it, or
+ * while the pillar page hasn't been seeded yet.
+ *
+ * @param string    $items HTML list of <li> menu items.
+ * @param \stdClass $args  wp_nav_menu() arguments.
+ * @return string Augmented menu HTML.
+ */
+function append_brokers_menu_item( string $items, $args ): string {
+	$location = isset( $args->theme_location ) ? (string) $args->theme_location : '';
+	if ( 'primary' !== $location ) {
+		return $items;
+	}
+	if ( ! ( get_page_by_path( 'best-brokers-in-portugal', OBJECT, 'page' ) instanceof \WP_Post ) ) {
+		return $items;
+	}
+	$url = page_url( 'best-brokers-in-portugal' );
+	if ( false !== strpos( $items, 'best-brokers-in-portugal' ) || false !== strpos( $items, 'melhores-corretoras-em-portugal' ) ) {
+		return $items;
+	}
+	return $items . '<li class="menu-item hti-menu-brokers"><a href="' . esc_url( $url ) . '">' . esc_html( t( 'nav_brokers' ) ) . '</a></li>';
+}
+add_filter( 'wp_nav_menu_items', __NAMESPACE__ . '\\append_brokers_menu_item', 10, 2 );
 
 /**
  * Permalink of a custom post type archive (Learn, Glossary, News), localized

@@ -55,6 +55,7 @@ class Broker_Seeder {
 	public static function seed(): array {
 		$report = array(
 			'brokers_created'      => 0,
+			'pages_created'        => 0,
 			'translations_created' => 0,
 			'skipped'              => 0,
 		);
@@ -65,6 +66,15 @@ class Broker_Seeder {
 			$id = self::insert_broker( $entry );
 			if ( $id > 0 ) {
 				++$report['brokers_created'];
+			} else {
+				++$report['skipped'];
+			}
+		}
+
+		foreach ( self::pages() as $entry ) {
+			$id = self::insert_page( $entry );
+			if ( $id > 0 ) {
+				++$report['pages_created'];
 			} else {
 				++$report['skipped'];
 			}
@@ -669,6 +679,227 @@ class Broker_Seeder {
 	}
 
 	/* -------------------------------------------------------------------------
+	 * Section pages (pillar + categories + "How we make money").
+	 * ---------------------------------------------------------------------- */
+
+	/**
+	 * Curated PT slug for a section page.
+	 *
+	 * @param string $en_slug English slug.
+	 * @param string $pt_title PT title (sanitized fallback).
+	 */
+	public static function page_pt_slug( string $en_slug, string $pt_title ): string {
+		$map = array(
+			'best-brokers-in-portugal'                => 'melhores-corretoras-em-portugal',
+			'best-brokers-for-beginners-portugal'     => 'melhores-corretoras-para-iniciantes',
+			'best-etf-brokers-portugal'               => 'melhores-corretoras-para-etfs',
+			'best-stock-brokers-portugal'             => 'melhores-corretoras-para-acoes',
+			'best-interest-on-cash-accounts-portugal' => 'melhores-corretoras-com-juros-sobre-o-saldo',
+			'best-crypto-brokers-portugal'            => 'melhores-corretoras-para-cripto',
+			'how-we-make-money'                       => 'como-ganhamos-dinheiro',
+		);
+		return $map[ $en_slug ] ?? sanitize_title( $pt_title );
+	}
+
+	/**
+	 * The comparison section pages. The year in the SEO titles uses RankMath's
+	 * %currentyear% variable so the pages stay current without re-seeding;
+	 * H1s/slugs are evergreen. Every comparison page's disclosure comes from
+	 * the [hti_brokers] shortcode itself.
+	 *
+	 * @return list<array<string,mixed>>
+	 */
+	public static function pages(): array {
+		$sc = static function ( string $category = '' ): string {
+			$attr = '' === $category ? '' : ' category="' . $category . '"';
+			return '<!-- wp:shortcode -->[hti_brokers' . $attr . ']<!-- /wp:shortcode -->';
+		};
+
+		return array(
+			array(
+				'slug'    => 'best-brokers-in-portugal',
+				'title'   => 'Best brokers in Portugal',
+				'seo'     => array(
+					'title' => 'Best brokers in Portugal %currentyear% — regulated platforms compared',
+					'desc'  => 'Factual comparison of regulated investment platforms available to residents of Portugal: costs, products, regulation and who each one tends to suit. Educational, with a public methodology.',
+				),
+				'content' => self::paragraph( 'This is a factual, editorial comparison of investment platforms available to residents of Portugal. Every platform listed is supervised by a top-tier European regulator, and each card shows the same verifiable facts: regulation, products, minimum, costs and whether it pays interest on cash.' )
+					. self::paragraph( 'It is educational information with a public methodology — not financial advice, and not a personal recommendation. Which platform fits depends on what you need it for; the category pages below narrow the list by use.' )
+					. $sc(),
+				'pt'      => array(
+					'title'   => 'Melhores corretoras em Portugal',
+					'seo'     => array(
+						'title' => 'Melhores corretoras em Portugal %currentyear% — comparação de plataformas reguladas',
+						'desc'  => 'Comparação factual de plataformas de investimento reguladas disponíveis para residentes em Portugal: custos, produtos, regulação e para quem cada uma costuma fazer sentido. Educativo, com metodologia pública.',
+					),
+					'content' => self::paragraph( 'Esta é uma comparação editorial e factual de plataformas de investimento disponíveis para residentes em Portugal. Todas as plataformas listadas são supervisionadas por um regulador europeu de primeira linha, e cada cartão mostra os mesmos factos verificáveis: regulação, produtos, mínimo, custos e se paga juros sobre o saldo.' )
+						. self::paragraph( 'É informação educativa com metodologia pública — não é aconselhamento financeiro nem uma recomendação pessoal. A plataforma certa depende do que precisas; as páginas por categoria abaixo estreitam a lista por uso.' )
+						. $sc(),
+				),
+			),
+			array(
+				'slug'    => 'best-brokers-for-beginners-portugal',
+				'title'   => 'Best brokers for beginners in Portugal',
+				'seo'     => array(
+					'title' => 'Best brokers for beginners in Portugal %currentyear%',
+					'desc'  => 'Platforms that tend to suit a first-time investor in Portugal: simple apps, fractional shares, low minimums and clear costs. Educational comparison, not advice.',
+				),
+				'content' => self::paragraph( 'Starting out, the platform matters less than the habit — but a simple app, fractional shares and a low minimum make the habit easier to build. These are the platforms from our comparison that tend to suit a first-time investor.' )
+					. self::paragraph( 'If you have not yet worked out what kind of investor you are, the free investor-profile questionnaire is the calmer place to start; this page is educational information, not a personal recommendation.' )
+					. $sc( 'beginners' ),
+				'pt'      => array(
+					'title'   => 'Melhores corretoras para iniciantes',
+					'seo'     => array(
+						'title' => 'Melhores corretoras para iniciantes em Portugal %currentyear%',
+						'desc'  => 'Plataformas que costumam fazer sentido para quem investe pela primeira vez em Portugal: apps simples, frações de ações, mínimos baixos e custos claros. Comparação educativa, não é aconselhamento.',
+					),
+					'content' => self::paragraph( 'No início, a plataforma importa menos do que o hábito — mas uma app simples, frações de ações e um mínimo baixo tornam o hábito mais fácil de construir. Estas são as plataformas da nossa comparação que costumam fazer sentido para quem começa.' )
+						. self::paragraph( 'Se ainda não sabes que tipo de investidor és, o questionário gratuito de perfil de investidor é o sítio mais calmo para começar; esta página é informação educativa, não uma recomendação pessoal.' )
+						. $sc( 'beginners' ),
+				),
+			),
+			array(
+				'slug'    => 'best-etf-brokers-portugal',
+				'title'   => 'Best ETF brokers in Portugal',
+				'seo'     => array(
+					'title' => 'Best ETF brokers in Portugal %currentyear% — costs compared',
+					'desc'  => 'Where investors in Portugal buy ETFs: platforms compared on ETF costs, savings plans and product range. Educational comparison, not advice.',
+				),
+				'content' => self::paragraph( 'ETFs are how most long-term portfolios hold whole asset classes with one purchase, so ETF dealing costs and automated savings plans are what separate platforms here. This comparison keeps to the facts each platform publishes.' )
+					. $sc( 'etfs' ),
+				'pt'      => array(
+					'title'   => 'Melhores corretoras para ETFs',
+					'seo'     => array(
+						'title' => 'Melhores corretoras para ETFs em Portugal %currentyear% — custos comparados',
+						'desc'  => 'Onde quem investe em Portugal compra ETFs: plataformas comparadas por custos de ETFs, planos de poupança e gama de produtos. Comparação educativa, não é aconselhamento.',
+					),
+					'content' => self::paragraph( 'Os ETFs são a forma como a maioria das carteiras de longo prazo detém classes de ativos inteiras numa só compra, por isso os custos de negociação de ETFs e os planos de poupança automáticos são o que separa as plataformas aqui. Esta comparação limita-se aos factos que cada plataforma publica.' )
+						. $sc( 'etfs' ),
+				),
+			),
+			array(
+				'slug'    => 'best-stock-brokers-portugal',
+				'title'   => 'Best stock brokers in Portugal',
+				'seo'     => array(
+					'title' => 'Best stock brokers in Portugal %currentyear% — compared',
+					'desc'  => 'Platforms for buying individual stocks from Portugal: market access, costs and regulation compared. Educational comparison, not advice.',
+				),
+				'content' => self::paragraph( 'For individual stocks, what varies between platforms is market access, dealing costs and currency-conversion fees. The comparison below shows the platforms from our list that offer real stock investing to residents of Portugal.' )
+					. $sc( 'stocks' ),
+				'pt'      => array(
+					'title'   => 'Melhores corretoras para ações',
+					'seo'     => array(
+						'title' => 'Melhores corretoras para ações em Portugal %currentyear% — comparadas',
+						'desc'  => 'Plataformas para comprar ações individuais a partir de Portugal: acesso a mercados, custos e regulação comparados. Comparação educativa, não é aconselhamento.',
+					),
+					'content' => self::paragraph( 'Nas ações individuais, o que varia entre plataformas é o acesso a mercados, os custos de negociação e as taxas de conversão cambial. A comparação abaixo mostra as plataformas da nossa lista que oferecem investimento em ações reais a residentes em Portugal.' )
+						. $sc( 'stocks' ),
+				),
+			),
+			array(
+				'slug'    => 'best-interest-on-cash-accounts-portugal',
+				'title'   => 'Best interest on cash at brokers in Portugal',
+				'seo'     => array(
+					'title' => 'Interest on uninvested cash: brokers compared (Portugal, %currentyear%)',
+					'desc'  => 'Which platforms pay interest on uninvested cash for residents of Portugal, and under what conditions. Educational comparison, not advice.',
+				),
+				'content' => self::paragraph( 'The cash sitting in a brokerage account can earn interest while it waits. Rates and conditions change often — each card links to the platform, where the current rate is published; our figures are qualitative on purpose.' )
+					. self::paragraph( 'For cash you never intend to invest, a term deposit can be the simpler home — the term-deposit comparison covers those.' )
+					. $sc( 'interest-on-cash' ),
+				'pt'      => array(
+					'title'   => 'Melhores corretoras com juros sobre o saldo',
+					'seo'     => array(
+						'title' => 'Juros sobre o saldo não investido: corretoras comparadas (Portugal, %currentyear%)',
+						'desc'  => 'Que plataformas pagam juros sobre o saldo não investido a residentes em Portugal, e em que condições. Comparação educativa, não é aconselhamento.',
+					),
+					'content' => self::paragraph( 'O dinheiro parado numa conta de corretora pode render juros enquanto espera. As taxas e condições mudam com frequência — cada cartão liga à plataforma, onde a taxa atual está publicada; os nossos dados são qualitativos de propósito.' )
+						. self::paragraph( 'Para dinheiro que nunca pensas investir, um depósito a prazo pode ser a casa mais simples — o comparador de depósitos a prazo cobre esses.' )
+						. $sc( 'interest-on-cash' ),
+				),
+			),
+			array(
+				'slug'    => 'best-crypto-brokers-portugal',
+				'title'   => 'Best crypto platforms in Portugal',
+				'seo'     => array(
+					'title' => 'Best regulated crypto platforms in Portugal %currentyear%',
+					'desc'  => 'Regulated platforms where residents of Portugal can hold a small crypto slice next to their investments. Educational comparison, not advice.',
+				),
+				'content' => self::paragraph( 'In the educational portfolios on this site, crypto only ever appears as a tiny, optional slice — it is young and very volatile. For a profile that chooses to hold that slice, these are the regulated platforms from our comparison that offer it next to ordinary investments.' )
+					. $sc( 'crypto' ),
+				'pt'      => array(
+					'title'   => 'Melhores corretoras para cripto',
+					'seo'     => array(
+						'title' => 'Melhores plataformas reguladas para cripto em Portugal %currentyear%',
+						'desc'  => 'Plataformas reguladas onde residentes em Portugal podem deter uma fatia pequena de cripto ao lado dos investimentos. Comparação educativa, não é aconselhamento.',
+					),
+					'content' => self::paragraph( 'Nas carteiras educativas deste site, a cripto só aparece como uma fatia minúscula e opcional — é jovem e muito volátil. Para um perfil que escolhe ter essa fatia, estas são as plataformas reguladas da nossa comparação que a oferecem ao lado dos investimentos normais.' )
+						. $sc( 'crypto' ),
+				),
+			),
+			array(
+				'slug'    => 'how-we-make-money',
+				'title'   => 'How we make money',
+				'seo'     => array(
+					'title' => 'How we make money — affiliate disclosure and methodology',
+					'desc'  => 'How this site is funded: affiliate partnerships with some of the regulated platforms we compare, disclosed on every page, never changing our comparisons. Full methodology.',
+				),
+				'content' => self::paragraph( 'HowToInvest is free to use. It is funded in two ways: advertising, and affiliate partnerships with some of the regulated investment platforms we compare. When you open an account through one of our links, the platform may pay us a commission. It costs you nothing extra.' )
+					. self::heading( 'What affiliation never changes' )
+					. self::paragraph( 'Every platform in our comparison is listed on its merits — platforms we have no deal with appear next to platforms we do, with the same card and the same facts. Affiliate status never affects order, rating or wording, and every card with an active partnership is labelled. Our educational tools (the questionnaire, the portfolio examples, the Learn hub) never name platforms at all.' )
+					. self::heading( 'Our methodology' )
+					. self::paragraph( 'We only list platforms supervised by a top-tier European regulator. The data on each card — regulation, products, minimums, costs, interest — comes from each platform\'s own published documents, carries the date we last verified it, and excludes anything we could not confirm. Platforms that offer CFDs carry the risk warning wherever they appear.' )
+					. self::heading( 'The rules we follow' )
+					. self::paragraph( 'Following the CMVM\'s guidance on financial content and affiliation, we disclose the affiliate relationship on every page where links appear, keep comparisons factual rather than promotional, and never present a platform as a personal recommendation — that is a decision for you, ideally with a registered professional. This page is linked from every disclosure.' ),
+				'pt'      => array(
+					'title'   => 'Como ganhamos dinheiro',
+					'seo'     => array(
+						'title' => 'Como ganhamos dinheiro — divulgação de afiliação e metodologia',
+						'desc'  => 'Como este site se financia: parcerias de afiliação com algumas das plataformas reguladas que comparamos, divulgadas em cada página, sem nunca alterar as comparações. Metodologia completa.',
+					),
+					'content' => self::paragraph( 'O HowToInvest é gratuito. Financia-se de duas formas: publicidade, e parcerias de afiliação com algumas das plataformas de investimento reguladas que comparamos. Quando abres conta através de um dos nossos links, a plataforma pode pagar-nos uma comissão. Não te custa nada extra.' )
+						. self::heading( 'O que a afiliação nunca altera' )
+						. self::paragraph( 'Todas as plataformas da nossa comparação estão listadas pelo seu mérito — plataformas sem parceria aparecem ao lado de plataformas com parceria, com o mesmo cartão e os mesmos factos. O estado de afiliação nunca afeta a ordem, a avaliação ou o texto, e todos os cartões com parceria ativa estão rotulados. As nossas ferramentas educativas (o questionário, os exemplos de carteira, o hub Learn) nunca nomeiam plataformas.' )
+						. self::heading( 'A nossa metodologia' )
+						. self::paragraph( 'Só listamos plataformas supervisionadas por um regulador europeu de primeira linha. Os dados de cada cartão — regulação, produtos, mínimos, custos, juros — vêm dos documentos publicados por cada plataforma, indicam a data em que os verificámos pela última vez, e excluem tudo o que não conseguimos confirmar. Plataformas que oferecem CFDs levam o aviso de risco onde quer que apareçam.' )
+						. self::heading( 'As regras que seguimos' )
+						. self::paragraph( 'Seguindo o entendimento da CMVM sobre conteúdos financeiros e afiliação, divulgamos a relação de afiliação em cada página onde há links, mantemos as comparações factuais em vez de promocionais, e nunca apresentamos uma plataforma como recomendação pessoal — essa é uma decisão tua, idealmente com um profissional registado. Esta página está ligada a partir de todas as divulgações.' ),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Insert one section page (EN). Skips existing.
+	 *
+	 * @param array<string,mixed> $entry Page entry.
+	 * @return int New post ID, or 0 if skipped/failed.
+	 */
+	private static function insert_page( array $entry ): int {
+		if ( get_page_by_path( $entry['slug'], OBJECT, 'page' ) instanceof \WP_Post ) {
+			return 0;
+		}
+
+		$postarr = array(
+			'post_type'    => 'page',
+			'post_status'  => 'publish',
+			'post_title'   => $entry['title'],
+			'post_name'    => $entry['slug'],
+			'post_content' => $entry['content'],
+		);
+
+		$id = wp_insert_post( wp_slash( $postarr ), true );
+		if ( is_wp_error( $id ) || 0 === $id ) {
+			return 0;
+		}
+		$id = (int) $id;
+
+		update_post_meta( $id, self::SEED_FLAG, VERSION );
+		self::write_seo_meta( $id, (array) ( $entry['seo'] ?? array() ) );
+
+		return $id;
+	}
+
+	/* -------------------------------------------------------------------------
 	 * Insertion + translation.
 	 * ---------------------------------------------------------------------- */
 
@@ -823,6 +1054,54 @@ class Broker_Seeder {
 			if ( $terms ) {
 				wp_set_object_terms( $pt_id, $terms, 'broker_use_case', false );
 			}
+
+			++$created;
+		}
+
+		foreach ( self::pages() as $entry ) {
+			$en_post = get_page_by_path( $entry['slug'], OBJECT, 'page' );
+			if ( ! $en_post instanceof \WP_Post ) {
+				continue;
+			}
+			$en_id = (int) $en_post->ID;
+
+			if ( ! pll_get_post_language( $en_id ) ) {
+				pll_set_post_language( $en_id, $en );
+			}
+
+			if ( pll_get_post( $en_id, $pt ) ) {
+				continue;
+			}
+
+			$pt_data = (array) ( $entry['pt'] ?? array() );
+			if ( empty( $pt_data['title'] ) ) {
+				continue;
+			}
+
+			$postarr = array(
+				'post_type'    => 'page',
+				'post_status'  => 'publish',
+				'post_title'   => $pt_data['title'],
+				'post_content' => (string) ( $pt_data['content'] ?? '' ),
+			);
+
+			$pt_id = wp_insert_post( wp_slash( $postarr ), true );
+			if ( is_wp_error( $pt_id ) || 0 === $pt_id ) {
+				continue;
+			}
+			$pt_id = (int) $pt_id;
+
+			pll_set_post_language( $pt_id, $pt );
+			wp_update_post(
+				array(
+					'ID'        => $pt_id,
+					'post_name' => self::page_pt_slug( (string) $entry['slug'], (string) $pt_data['title'] ),
+				)
+			);
+			pll_save_post_translations( array( $en => $en_id, $pt => $pt_id ) );
+
+			update_post_meta( $pt_id, self::SEED_FLAG, VERSION );
+			self::write_seo_meta( $pt_id, (array) ( $pt_data['seo'] ?? array() ) );
 
 			++$created;
 		}
@@ -1001,9 +1280,10 @@ class Broker_Seeder {
 		delete_transient( 'hti_broker_seed_report' );
 
 		$message = sprintf(
-			/* translators: 1: brokers created, 2: PT translations, 3: skipped. */
-			__( 'Broker seeding complete: %1$d brokers created, %2$d Portuguese translations linked, %3$d skipped (already existed).', 'hti-engine' ),
+			/* translators: 1: brokers created, 2: section pages, 3: PT translations, 4: skipped. */
+			__( 'Broker seeding complete: %1$d brokers and %2$d section pages created, %3$d Portuguese translations linked, %4$d skipped (already existed).', 'hti-engine' ),
 			(int) $report['brokers_created'],
+			(int) ( $report['pages_created'] ?? 0 ),
 			(int) $report['translations_created'],
 			(int) $report['skipped']
 		);
