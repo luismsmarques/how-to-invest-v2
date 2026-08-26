@@ -31,6 +31,7 @@ define( 'HTI_FOREX_URL', plugin_dir_url( __FILE__ ) );
 require_once HTI_FOREX_PATH . 'includes/class-config.php';
 require_once HTI_FOREX_PATH . 'includes/class-settings.php';
 require_once HTI_FOREX_PATH . 'includes/class-rates.php';
+require_once HTI_FOREX_PATH . 'includes/class-tools.php';
 
 /**
  * Admin settings (Settings → HTI Forex): affiliate CTA kill-switch, email
@@ -42,6 +43,11 @@ Settings::init();
  * USD→INR/JPY reference rates: twice-daily cron fetch + admin panel.
  */
 Rates::init();
+
+/**
+ * The tools: `[hti_forex_tool name="position_size|pip_value|sessions"]`.
+ */
+Tools::init();
 
 /**
  * Activation: schedule the rates cron and queue an immediate first fetch so

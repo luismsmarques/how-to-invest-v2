@@ -1,0 +1,229 @@
+/* HTI Forex — India forex tools. Mirrors the Tools hub look (coral/cream). */
+
+.hti-fx-tool,
+.hti-fx-sessions {
+	--hti-coral: #ff6b5e;
+	--hti-accent: #7c5cfc;
+	--hti-ink: #2a2438;
+	--hti-muted: #6e6680;
+	--hti-surface: #fff6f1;
+	--hti-line: #f2e4dd;
+	--hti-open: #1c8a5a;
+	display: grid;
+	gap: 1.5rem;
+	max-width: 720px;
+	margin: 1.5rem 0;
+	padding: 1.75rem;
+	background: #fff;
+	border: 1px solid var(--hti-line);
+	border-radius: 18px;
+	box-shadow: 0 2px 14px rgba(20, 23, 58, 0.06);
+}
+
+/* Fields */
+.hti-fx-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem 1.25rem;
+}
+
+.hti-fx-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	font: 600 0.9rem/1.3 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-ink);
+}
+
+.hti-fx-field[hidden] {
+	display: none;
+}
+
+.hti-fx-field__label {
+	color: var(--hti-muted);
+}
+
+.hti-fx-field input,
+.hti-fx-field select {
+	width: 100%;
+	padding: 0.7rem 0.85rem;
+	font: 600 1.05rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-ink);
+	background: var(--hti-surface);
+	border: 1.5px solid var(--hti-line);
+	border-radius: 10px;
+	box-sizing: border-box;
+}
+
+.hti-fx-field input:focus-visible,
+.hti-fx-field select:focus-visible {
+	outline: none;
+	border-color: var(--hti-coral);
+	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.18);
+}
+
+.hti-fx-field__caption {
+	font: 500 0.72rem/1.4 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-muted);
+}
+
+/* Results */
+.hti-fx-results {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.75rem;
+}
+
+.hti-fx-out {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.9rem 1rem;
+	background: var(--hti-surface);
+	border-radius: 12px;
+}
+
+.hti-fx-out--primary {
+	grid-column: 1 / -1;
+	background: linear-gradient(135deg, #fff1ee, #fbe9ff);
+	border: 1.5px solid rgba(255, 107, 94, 0.25);
+}
+
+.hti-fx-out__label {
+	font: 600 0.78rem/1.3 'Plus Jakarta Sans', system-ui, sans-serif;
+	letter-spacing: 0.02em;
+	color: var(--hti-muted);
+}
+
+.hti-fx-out__value {
+	font: 800 1.35rem/1.1 'Poppins', system-ui, sans-serif;
+	color: var(--hti-ink);
+	overflow-wrap: anywhere;
+}
+
+.hti-fx-out--primary .hti-fx-out__value {
+	font-size: 2.1rem;
+	color: var(--hti-coral);
+}
+
+.hti-fx-toosmall {
+	margin: 0;
+	padding: 0.8rem 1rem;
+	font: 600 0.85rem/1.5 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: #8a3f00;
+	background: #fff4e5;
+	border: 1.5px solid #ffd9a8;
+	border-radius: 12px;
+}
+
+/* Notes / risk */
+.hti-fx-note {
+	margin: 0;
+	font: 400 0.82rem/1.5 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-muted);
+}
+
+.hti-fx-note a {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.hti-fx-risk {
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--hti-line);
+}
+
+/* IST clock */
+.hti-fx-clock {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.15rem;
+	padding: 1rem;
+	background: var(--hti-surface);
+	border-radius: 12px;
+}
+
+.hti-fx-clock__time {
+	font: 800 2.2rem/1.1 'Poppins', system-ui, sans-serif;
+	font-variant-numeric: tabular-nums;
+	color: var(--hti-ink);
+}
+
+.hti-fx-clock__label {
+	font: 600 0.78rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-muted);
+}
+
+/* Session table */
+.hti-fx-table {
+	width: 100%;
+	border-collapse: collapse;
+	font: 600 0.92rem/1.4 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-ink);
+}
+
+.hti-fx-table caption {
+	margin-bottom: 0.5rem;
+	font: 600 0.82rem 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-muted);
+	text-align: left;
+}
+
+.hti-fx-table th,
+.hti-fx-table td {
+	padding: 0.6rem 0.5rem;
+	text-align: left;
+	border-bottom: 1px solid var(--hti-line);
+}
+
+.hti-fx-table thead th {
+	font-size: 0.78rem;
+	letter-spacing: 0.02em;
+	color: var(--hti-muted);
+}
+
+.hti-fx-table tr.is-open th,
+.hti-fx-table tr.is-open td {
+	background: #f0faf5;
+}
+
+.hti-fx-status--open {
+	color: var(--hti-open);
+	font-weight: 700;
+}
+
+.hti-fx-status--closed {
+	color: var(--hti-muted);
+}
+
+.hti-fx-overlap {
+	margin: 0;
+	padding: 0.8rem 1rem;
+	font: 500 0.9rem/1.5 'Plus Jakarta Sans', system-ui, sans-serif;
+	color: var(--hti-ink);
+	background: var(--hti-surface);
+	border-radius: 12px;
+}
+
+/* Mobile-first: single screen, no horizontal scroll */
+@media (max-width: 560px) {
+	.hti-fx-tool,
+	.hti-fx-sessions {
+		padding: 1.25rem;
+	}
+	.hti-fx-fields {
+		grid-template-columns: 1fr 1fr;
+	}
+	.hti-fx-results {
+		grid-template-columns: 1fr 1fr;
+	}
+	.hti-fx-out--primary .hti-fx-out__value {
+		font-size: 1.8rem;
+	}
+	.hti-fx-table th,
+	.hti-fx-table td {
+		padding: 0.5rem 0.35rem;
+		font-size: 0.85rem;
+	}
+}
