@@ -645,11 +645,13 @@ class Tools {
 			. '</div></div></div>';
 
 		// FAQ — same source as the FAQPage schema (native <details>, no JS).
+		// Every item starts collapsed, so the section reads as a compact list
+		// of questions rather than opening on one answer.
 		$faqs = Config::faqs( 'hub' );
 		if ( array() !== $faqs ) {
 			$out .= '<div class="hti-fx-hub__prose hti-fx-faq"><h2>' . esc_html( 'Frequently asked' ) . '</h2>';
-			foreach ( $faqs as $i => $faq ) {
-				$out .= '<details class="hti-fx-faq__item"' . ( 0 === $i ? ' open' : '' ) . '>'
+			foreach ( $faqs as $faq ) {
+				$out .= '<details class="hti-fx-faq__item">'
 					. '<summary>' . esc_html( $faq['q'] ) . '<span class="hti-fx-faq__marker" aria-hidden="true"></span></summary>'
 					. '<p>' . esc_html( $faq['a'] ) . '</p>'
 					. '</details>';
