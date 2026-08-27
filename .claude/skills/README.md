@@ -34,13 +34,16 @@ EN+PT, no execution CTAs outside the labelled broker editorial section (rules in
 | **i18n-polylang** | The bilingual layer in code — Polylang linking, language resolution, PT slugs, hreflang, localized URLs. |
 | **gdpr-data** | Personal data, consent or privacy — profiles, export/delete, consent banner, no PII in logs (P0). |
 
-## Content / brand (4)
+## Content / brand (7)
 | Skill | Use when |
 |---|---|
 | **learn-guide** | Writing/revising Learn chapters — the "zero to first portfolio" path, house style, EN+PT, quiz format. |
 | **content-editorial** | Content beyond Learn — glossary authoring, AI-news review, the Markdown import pipeline, topic clusters. |
 | **brand-voice** | Any user-facing copy — microcopy, disclaimers, emails, result/CTA text — informal, calm, conditional tone. |
-| **seo-wordpress** | Search visibility — schema.org, sitemaps, meta, canonicals, 301s, internal linking, Core Web Vitals. |
+| **financial-analyst** | Writing any analysis of a named institution/product (broker reviews, banks, ETFs) — the verification-first fact protocol, primary sources, review anatomy, honest cons. |
+| **broker-affiliate** | The broker editorial section — comparison/reviews/guides/partner module, `/go/` redirector, disclosures, CFD warnings; the CMVM/ESMA compliance rules. |
+| **seo-wordpress** | The technical search layer — schema.org, sitemaps, meta plumbing, canonicals, 301s, Core Web Vitals. |
+| **seo-content** | The content search layer — meta titles/descriptions, keyword+intent mapping (EN/PT), heading structure, answer-bolds, internal-linking mesh, GEO/LLM citability. |
 
 ## Marketing / growth (2)
 | Skill | Use when |
