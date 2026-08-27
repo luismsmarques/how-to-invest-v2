@@ -12,7 +12,7 @@ excerpt_pt: "Investir é pôr o dinheiro a trabalhar em ativos que podem crescer
 seo_title_en: "What Is Investing? A Calm Beginner's Explanation"
 seo_title_pt: "O Que É Investir? Uma Explicação Calma para Começar"
 glossary: asset, compound-interest, inflation, global-equities
-prev: budgeting-basics
+prev: investing-with-little-money
 next: risk-and-reward-explained
 ---
 <!-- EN -->
