@@ -158,8 +158,10 @@ class Tools {
 
 		// Conversion hierarchy from the design handoff: tool → email → partner
 		// CTA (never above the result). The banner slot closes the partner
-		// zone right after the CTA.
-		return $body . self::email_block( $name, 'row' ) . self::cta_block( $name ) . self::ad_block();
+		// zone right after the CTA. The top banner sits above the tool, right
+		// after the page's intro paragraph — a banner, not a CTA, so the
+		// "CTA never above the result" rule is untouched.
+		return self::ad_block_top() . $body . self::email_block( $name, 'row' ) . self::cta_block( $name ) . self::ad_block();
 	}
 
 	/* ---------------------------------------------------------------------
@@ -604,6 +606,9 @@ class Tools {
 			. '<span>' . esc_html( 'No sign-up' ) . '</span>'
 			. '</div></div>';
 
+		// Top banner slot — directly under the hero chips.
+		$out .= self::ad_block_top();
+
 		// Core tools.
 		$out .= '<div class="hti-fx-hub__core">';
 		foreach ( $core as $t ) {
@@ -640,11 +645,13 @@ class Tools {
 			. '</div></div></div>';
 
 		// FAQ — same source as the FAQPage schema (native <details>, no JS).
+		// Every item starts collapsed, so the section reads as a compact list
+		// of questions rather than opening on one answer.
 		$faqs = Config::faqs( 'hub' );
 		if ( array() !== $faqs ) {
 			$out .= '<div class="hti-fx-hub__prose hti-fx-faq"><h2>' . esc_html( 'Frequently asked' ) . '</h2>';
-			foreach ( $faqs as $i => $faq ) {
-				$out .= '<details class="hti-fx-faq__item"' . ( 0 === $i ? ' open' : '' ) . '>'
+			foreach ( $faqs as $faq ) {
+				$out .= '<details class="hti-fx-faq__item">'
 					. '<summary>' . esc_html( $faq['q'] ) . '<span class="hti-fx-faq__marker" aria-hidden="true"></span></summary>'
 					. '<p>' . esc_html( $faq['a'] ) . '</p>'
 					. '</details>';
@@ -760,6 +767,38 @@ class Tools {
 			$out .= '<div class="hti-fx-ad__slot hti-fx-ad__slot--mobile">' . $mobile . '</div>';
 		} else {
 			$out .= '<div class="hti-fx-ad__slot">' . ( '' !== $desktop ? $desktop : $mobile ) . '</div>';
+		}
+
+		return $out . '</div>';
+	}
+
+	/**
+	 * The top banner slot (600×90): under the hero chips on the hub, above the
+	 * calculator on the tool pages. Same rules as ad_block() — the global
+	 * toggle gates it, the codes are third-party tags echoed as-is, and
+	 * nothing renders without a code. The desktop code hides below 620px,
+	 * where a 600px banner no longer fits; the optional mobile code takes over
+	 * there. A mobile code alone shows everywhere (320px always fits).
+	 */
+	private static function ad_block_top(): string {
+		$s = Settings::settings();
+		if ( empty( $s['ads_enabled'] ) ) {
+			return '';
+		}
+
+		$desktop = (string) $s['ad_code_top'];
+		$mobile  = (string) $s['ad_code_top_mobile'];
+		if ( '' === $desktop && '' === $mobile ) {
+			return '';
+		}
+
+		$out = '<div class="hti-fx-ad hti-fx-ad--top"><span class="hti-fx-ad__label">' . esc_html( 'Advertisement' ) . '</span>';
+
+		if ( '' !== $desktop ) {
+			$out .= '<div class="hti-fx-ad__slot hti-fx-ad__slot--desktop">' . $desktop . '</div>';
+		}
+		if ( '' !== $mobile ) {
+			$out .= '<div class="hti-fx-ad__slot' . ( '' !== $desktop ? ' hti-fx-ad__slot--mobile' : '' ) . '">' . $mobile . '</div>';
 		}
 
 		return $out . '</div>';

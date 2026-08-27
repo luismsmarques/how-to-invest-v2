@@ -12,7 +12,7 @@ excerpt_pt: "Espalhar o dinheiro para que nenhum resultado isolado decida tudo �
 seo_title_en: "What Is Diversification? What It Protects (and What Not)"
 seo_title_pt: "O Que É a Diversificação? O Que Protege de Facto"
 glossary: diversification, portfolio, asset-allocation, volatility, global-equities, bonds
-prev: central-banks-and-monetary-policy
+prev: savings-certificates-explained
 next: what-is-asset-allocation
 ---
 <!-- EN -->
