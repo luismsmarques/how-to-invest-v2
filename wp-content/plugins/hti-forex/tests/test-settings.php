@@ -117,6 +117,14 @@ $r = Settings::normalize_settings( array( 'ad_code_mobile' => str_repeat( 'x', 1
 check( '' === $r['value']['ad_code_mobile'], 'oversized ad code is cleared' );
 check( count( $r['errors'] ) >= 1, 'oversized ad code is reported' );
 
+// --- Top (600×90) ad slot ---------------------------------------------------
+check( '' === $d['ad_code_top'] && '' === $d['ad_code_top_mobile'], 'top banner codes are empty by default' );
+$r = Settings::normalize_settings( array( 'ad_code_top' => '  <iframe src="https://x.example/600x90"></iframe>  ' ), $d );
+check( '<iframe src="https://x.example/600x90"></iframe>' === $r['value']['ad_code_top'], 'top banner code stored raw, only trimmed' );
+check( '' === $r['value']['ad_code_top_mobile'], 'missing top mobile code stays empty' );
+$r = Settings::normalize_settings( array( 'ad_code_top' => str_repeat( 'x', 10001 ) ), $d );
+check( '' === $r['value']['ad_code_top'], 'oversized top banner code is cleared' );
+
 // --- Propeller pixel --------------------------------------------------------
 check( '' === $d['propeller_partner'], 'Propeller pixel is off by default' );
 $hash = str_repeat( 'ca91f99d', 8 );
