@@ -58,6 +58,8 @@ class Settings {
 			'ads_enabled'          => false,
 			'ad_code_desktop'      => '',
 			'ad_code_mobile'       => '',
+			'ad_code_top'          => '',
+			'ad_code_top_mobile'   => '',
 			'sub_param'            => 'clickid',
 			'sub_sources'          => array( 'clickid', 'utm_campaign' ),
 			'propeller_partner'    => '',
@@ -99,7 +101,7 @@ class Settings {
 		// network) pasted by an admin: stored as-is apart from a trim and a
 		// size cap — never printed anywhere except the forex ad slots, and
 		// only editable with manage_options.
-		foreach ( array( 'ad_code_desktop', 'ad_code_mobile' ) as $slot ) {
+		foreach ( array( 'ad_code_desktop', 'ad_code_mobile', 'ad_code_top', 'ad_code_top_mobile' ) as $slot ) {
 			$code = trim( (string) ( $input[ $slot ] ?? '' ) );
 			if ( strlen( $code ) > 10000 ) {
 				$code     = '';
@@ -317,8 +319,22 @@ class Settings {
 						<td>
 							<label>
 								<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[ads_enabled]" value="1" <?php checked( ! empty( $s['ads_enabled'] ) ); ?> />
-								<?php esc_html_e( 'Render the banner slot on the forex tool pages (below the tool)', 'hti-forex' ); ?>
+								<?php esc_html_e( 'Render the banner slots on the forex pages (top slot and below-the-tool slot)', 'hti-forex' ); ?>
 							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-ad-top"><?php esc_html_e( 'Top banner — desktop (600×90)', 'hti-forex' ); ?></label></th>
+						<td>
+							<textarea id="hti-fx-ad-top" class="large-text code" rows="4" name="<?php echo esc_attr( self::OPTION ); ?>[ad_code_top]"><?php echo esc_textarea( (string) $s['ad_code_top'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Paste the 600×90 banner tag. It renders right below the hero chips on the /forex/ hub and above the calculator on each tool page. Hidden below 620px, where 600px does not fit.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-ad-top-mobile"><?php esc_html_e( 'Top banner — mobile', 'hti-forex' ); ?></label></th>
+						<td>
+							<textarea id="hti-fx-ad-top-mobile" class="large-text code" rows="4" name="<?php echo esc_attr( self::OPTION ); ?>[ad_code_top_mobile]"><?php echo esc_textarea( (string) $s['ad_code_top_mobile'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Optional replacement for the top slot below 620px (320×100 or 320×50). Leave empty to show no top banner on phones.', 'hti-forex' ); ?></p>
 						</td>
 					</tr>
 					<tr>
