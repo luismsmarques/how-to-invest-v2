@@ -684,13 +684,27 @@ class Tools {
 			return '';
 		}
 
-		return '<div class="hti-fx-cta">'
-			. '<span class="hti-fx-cta__badge">' . esc_html( 'PARTNER LINK' ) . '</span>'
-			. '<span class="hti-fx-cta__risk">' . esc_html( 'Forex and CFDs are high-risk leveraged products; most retail accounts lose money. Educational content — not investment advice.' ) . '</span>'
-			. '<a class="hti-fx-cta__btn" href="' . esc_url( $cta['url'] ) . '" target="_blank" rel="sponsored nofollow noopener"'
+		$brand = '' !== $cta['brand'] ? $cta['brand'] : 'Partner';
+		$mark  = '' !== $cta['logo']
+			? '<img class="hti-fx-cta__logo" src="' . esc_url( $cta['logo'] ) . '" alt="' . esc_attr( $brand ) . '" height="26" loading="lazy" decoding="async" />'
+			: '<span class="hti-fx-cta__wordmark">' . esc_html( $brand ) . '</span>';
+
+		$out = '<div class="hti-fx-cta">'
+			. '<div class="hti-fx-cta__head">' . $mark
+			. '<span class="hti-fx-cta__badge">' . esc_html( 'PARTNER · AD' ) . '</span>'
+			. '</div>';
+
+		if ( '' !== $cta['headline'] ) {
+			$out .= '<p class="hti-fx-cta__headline">' . esc_html( $cta['headline'] ) . '</p>';
+		}
+
+		$out .= '<a class="hti-fx-cta__btn" href="' . esc_url( $cta['url'] ) . '" target="_blank" rel="sponsored nofollow noopener"'
 			. ' data-hti-track="cta_click" data-htip-location="forex_' . esc_attr( $tool ) . '" data-hti-fx-cta>'
 			. esc_html( $cta['label'] )
-			. '</a>'
+			. '</a>';
+
+		return $out
+			. '<span class="hti-fx-cta__risk">' . esc_html( 'Forex and CFDs are high-risk leveraged products; most retail accounts lose money. Educational content — not investment advice. We may be paid if you open an account, at no cost to you.' ) . '</span>'
 			. '</div>';
 	}
 

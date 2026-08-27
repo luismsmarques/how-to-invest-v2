@@ -76,6 +76,17 @@ foreach ( $hrefs as $href ) {
 	check( str_starts_with( $href, 'https://' ), "every link is https ({$href})" );
 }
 
+// --- Optional banner slot ---------------------------------------------------
+// The marker must survive edits: build.sh injects the creative there when
+// src/xm-600x90.png exists, and nothing when it does not — which is why the
+// sheet can ship today without a broken image.
+check( str_contains( $html, '<!--XM_BANNER-->' ), 'the banner marker is present for build.sh to fill' );
+check( str_contains( $html, '.adslot' ), 'the banner slot carries its styles' );
+$build = (string) file_get_contents( __DIR__ . '/../assets/pdf/src/build.sh' );
+check( str_contains( $build, 'XM_BANNER' ), 'build.sh replaces the banner marker' );
+check( str_contains( $build, 'forex/go/cheatsheet-banner' ), 'the injected banner uses its own redirector placement' );
+check( ! str_contains( $build, 'pipaffiliates' ), 'build.sh embeds no affiliate URL either' );
+
 // The educational content comes first: the ad sits after the calculators.
 check(
 	strpos( $html, 'The free calculators' ) < strpos( $html, 'class="partner"' ),
