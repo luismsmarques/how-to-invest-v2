@@ -1,8 +1,9 @@
 <?php
 /**
- * Seeds the /forex/ section: the hub page plus the three tool pages, as
- * ordinary WordPress pages with block markup around the [hti_forex_tool]
- * shortcode. Create-only and idempotent (matched by path) — re-running never
+ * Seeds the /forex/ section: the hub page (around the [hti_forex_hub]
+ * shortcode) plus the tool pages, as ordinary WordPress pages with block
+ * markup around the [hti_forex_tool] shortcode. Create-only and idempotent
+ * (matched by path) — re-running never
  * overwrites an editor's changes. English-only: when Polylang is active each
  * page is assigned the "en" language with no PT counterpart, which the
  * theme's hreflang/language-switcher code tolerates.
@@ -130,14 +131,11 @@ class Seeder {
 	 * @return array<string,array<string,mixed>>
 	 */
 	private static function page_defs(): array {
-		$hub_url      = home_url( '/forex/' );
-		$pos_url      = home_url( '/forex/position-size-calculator/' );
-		$pip_url      = home_url( '/forex/pip-value-calculator/' );
-		$hours_url    = home_url( '/forex/market-hours-ist/' );
-		$profit_url   = home_url( '/forex/profit-calculator/' );
-		$gold_url     = home_url( '/forex/xauusd-lot-size-calculator/' );
-		$small_url    = home_url( '/forex/lot-size-for-100-dollar-account/' );
-		$leverage_url = home_url( '/forex/lot-size-calculator-with-leverage/' );
+		$pos_url    = home_url( '/forex/position-size-calculator/' );
+		$pip_url    = home_url( '/forex/pip-value-calculator/' );
+		$hours_url  = home_url( '/forex/market-hours-ist/' );
+		$profit_url = home_url( '/forex/profit-calculator/' );
+		$small_url  = home_url( '/forex/lot-size-for-100-dollar-account/' );
 
 		return array(
 			'hub'           => array(
@@ -147,22 +145,7 @@ class Seeder {
 				'title'     => 'Free forex tools for Indian traders (INR)',
 				'seo_title' => 'Free Forex Tools for Indian Traders — INR Calculators & IST Market Hours',
 				'seo_desc'  => 'Free forex calculators with INR as the account currency: position size, pip value in rupees, and live market hours in IST. Educational, no sign-up.',
-				'content'   => self::p( 'Free forex calculators built for traders in India: your account in Indian rupees, market hours in IST, and the contract conventions actually used on global platforms. No sign-up, no fees — every tool is educational and works on your phone.' )
-					. self::h2( 'The tools' )
-					. self::ul(
-						array(
-							'<a href="' . esc_url( $pos_url ) . '">Position size calculator in ₹ (INR)</a> — how many lots fit your account, risk and stop-loss.',
-							'<a href="' . esc_url( $pip_url ) . '">Pip value calculator in Indian rupees</a> — what one pip is worth in ₹, including gold (XAUUSD).',
-							'<a href="' . esc_url( $profit_url ) . '">Forex profit calculator in ₹</a> — the gross profit or loss of a trade, converted to rupees.',
-							'<a href="' . esc_url( $hours_url ) . '">Forex market hours in IST</a> — live session clock with the London–New York overlap in Indian time.',
-							'<a href="' . esc_url( $gold_url ) . '">XAUUSD (gold) lot size calculator</a> — position sizing for gold, with the 100 oz contract explained.',
-							'<a href="' . esc_url( $small_url ) . '">Lot size for a $100 account</a> — the honest arithmetic of very small accounts.',
-							'<a href="' . esc_url( $leverage_url ) . '">Lot size calculator with leverage</a> — position size plus the margin it actually requires.',
-						)
-					)
-					. self::h2( 'About these tools' )
-					. self::p( 'Every calculator here is an illustration of the arithmetic — how position sizing, pip values and session times work — not advice about what, when or whether to trade. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money.' )
-					. self::faq_section( 'hub' ),
+				'content'   => '<!-- wp:shortcode -->[hti_forex_hub]<!-- /wp:shortcode -->' . "\n",
 			),
 			'position_size' => array(
 				'page'      => 'position_size',
