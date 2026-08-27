@@ -1923,10 +1923,13 @@ class Seeder {
 	}
 
 	/**
-	 * Privacy Policy draft. A working template grounded in how the platform
-	 * actually handles data (anonymous sessions, optional account, consent-gated
-	 * analytics, GDPR export/delete). NOT final legal text — a professional must
-	 * review and complete the [●] items before launch.
+	 * Privacy Policy, grounded in how the platform actually handles data
+	 * (anonymous sessions, optional account, consent-gated analytics with
+	 * Consent Mode, GDPR export/delete, the /forex/ advertising).
+	 *
+	 * Controller, processors and retention periods are the real ones; only the
+	 * registered address is still marked. It is accurate about the system, but
+	 * a lawyer should read it before it is relied upon.
 	 *
 	 * @param bool $pt European Portuguese when true, English otherwise.
 	 */
@@ -1934,10 +1937,9 @@ class Seeder {
 		$updated = gmdate( 'Y-m-d' );
 
 		if ( $pt ) {
-			return self::notice( 'Rascunho para revisão jurídica — modelo de trabalho baseado no funcionamento real da plataforma, não um texto legal final. Um profissional deve rever e completar os pontos marcados [●] antes do lançamento.' )
-				. self::paragraph( 'Esta Política de Privacidade explica que dados pessoais a HowToInvest recolhe, porquê, com quem os partilha e que direitos tens. Aplica-se ao site e ao questionário de perfil de investidor.' )
+			return self::paragraph( 'Esta Política de Privacidade explica que dados pessoais a HowToInvest recolhe, porquê, com quem os partilha e que direitos tens. Aplica-se ao site e ao questionário de perfil de investidor.' )
 				. self::heading( 'Quem somos' )
-				. self::paragraph( 'A HowToInvest ("nós") é uma plataforma educativa de literacia financeira, operada por [● entidade legal / nome], com sede em [● morada], contactável em [● email de contacto]. Somos o responsável pelo tratamento dos dados descritos nesta política.' )
+				. self::paragraph( 'A HowToInvest ("nós") é uma plataforma educativa de literacia financeira, operada pela Atlas Invencível, com sede em [● morada], contactável em lm@atlasinvencivel.pt. Somos o responsável pelo tratamento dos dados descritos nesta política.' )
 				. self::heading( 'Que dados recolhemos' )
 				. self::legal_list(
 					array(
@@ -1964,9 +1966,9 @@ class Seeder {
 				. self::heading( 'Com quem partilhamos' )
 				. self::legal_list(
 					array(
-						'Fornecedor de alojamento [●], para operar o site.',
+						'PTServidor — alojamento web, para operar o site.',
 						'Google — geração de conteúdo por IA (Gemini) e, se consentires, Google Analytics.',
-						'[● fornecedor de email, por exemplo Brevo] — envio da newsletter.',
+						'Brevo — envio da newsletter e dos emails transacionais.',
 					)
 				)
 				. self::paragraph( 'Não vendemos os teus dados.' )
@@ -1987,9 +1989,9 @@ class Seeder {
 				. self::heading( 'Durante quanto tempo guardamos' )
 				. self::legal_list(
 					array(
-						'Sessões/perfis anónimos: guardados apenas por um período limitado e depois eliminados automaticamente.',
+						'Sessões/perfis anónimos: eliminados automaticamente ao fim de 90 dias.',
 						'Dados de conta: até eliminares a conta. Na eliminação, aplicamos um período de tolerância de 30 dias e depois apagamos os teus perfis, registos de respostas e dados relacionados, e removemos-te do fornecedor de newsletter.',
-						'Analítica: contagens agregadas guardadas até [● por exemplo, 120] dias.',
+						'Analítica: contagens agregadas guardadas até 120 dias.',
 					)
 				)
 				. self::heading( 'Os teus direitos (RGPD)' )
@@ -1999,24 +2001,23 @@ class Seeder {
 						'Acesso e exportação: no painel da tua conta ("Exportar"), podes descarregar a conta, os perfis e as preferências.',
 						'Eliminação: "Apagar conta" elimina os teus dados após um período de tolerância de 30 dias (com link para cancelar).',
 						'Consentimento: podes retirar o consentimento da analítica a qualquer momento no banner.',
-						'Reclamação: podes apresentar reclamação à autoridade de controlo ([● por exemplo, CNPD em Portugal]).',
+						'Reclamação: podes apresentar reclamação à autoridade de controlo — em Portugal, a CNPD (Comissão Nacional de Proteção de Dados).',
 					)
 				)
 				. self::heading( 'Transferências internacionais' )
-				. self::paragraph( 'Alguns fornecedores (por exemplo, a Google) podem tratar dados fora do EEE, ao abrigo de salvaguardas adequadas ([● por exemplo, cláusulas contratuais-tipo]).' )
+				. self::paragraph( 'Alguns fornecedores (por exemplo, a Google) podem tratar dados fora do EEE, ao abrigo das cláusulas contratuais-tipo aprovadas pela Comissão Europeia.' )
 				. self::heading( 'Menores' )
-				. self::paragraph( 'O serviço destina-se a adultos ([● por exemplo, 18+]); não recolhemos intencionalmente dados de menores.' )
+				. self::paragraph( 'O serviço destina-se a maiores de 18 anos; não recolhemos intencionalmente dados de menores.' )
 				. self::heading( 'Alterações' )
 				. self::paragraph( 'Podemos atualizar esta política; a data abaixo indica a última alteração.' )
 				. self::heading( 'Contacto' )
-				. self::paragraph( 'Questões sobre privacidade? Contacta-nos em [● email de contacto].' )
+				. self::paragraph( 'Questões sobre privacidade? Contacta-nos em lm@atlasinvencivel.pt.' )
 				. self::paragraph( 'Última atualização: ' . $updated . '.' );
 		}
 
-		return self::notice( 'Draft for legal review — a working template based on how the platform actually handles data, not final legal text. A qualified professional should review and complete the items marked [●] before launch.' )
-			. self::paragraph( 'This Privacy Policy explains what personal data HowToInvest collects, why, who we share it with, and your rights. It covers this website and the investor-profile questionnaire.' )
+		return self::paragraph( 'This Privacy Policy explains what personal data HowToInvest collects, why, who we share it with, and your rights. It covers this website and the investor-profile questionnaire.' )
 			. self::heading( 'Who we are' )
-			. self::paragraph( 'HowToInvest ("we") is an educational financial-literacy platform operated by [● legal entity / name], based at [● address], contactable at [● contact email]. We are the controller of the personal data described in this policy.' )
+			. self::paragraph( 'HowToInvest ("we") is an educational financial-literacy platform operated by Atlas Invencível, based at [● address], contactable at lm@atlasinvencivel.pt. We are the controller of the personal data described in this policy.' )
 			. self::heading( 'The data we collect' )
 			. self::legal_list(
 				array(
@@ -2043,9 +2044,9 @@ class Seeder {
 			. self::heading( 'Who we share it with' )
 			. self::legal_list(
 				array(
-					'Hosting provider [●], to run the site.',
+					'PTServidor — web hosting, to run the site.',
 					'Google — AI content generation (Gemini) and, if you consent, Google Analytics.',
-					'[● email provider, for example Brevo] — newsletter delivery.',
+					'Brevo — newsletter and transactional email delivery.',
 				)
 			)
 			. self::paragraph( 'We do not sell your data.' )
@@ -2066,9 +2067,9 @@ class Seeder {
 			. self::heading( 'How long we keep it' )
 			. self::legal_list(
 				array(
-					'Anonymous sessions/profiles: kept only for a limited period, then deleted automatically.',
+					'Anonymous sessions/profiles: automatically deleted after 90 days.',
 					'Account data: until you delete your account. On deletion we apply a 30-day grace period, then erase your profiles, question logs and related data, and remove you from the newsletter provider.',
-					'Analytics: aggregated counts kept for up to [● e.g., 120] days.',
+					'Analytics: aggregated counts kept for up to 120 days.',
 				)
 			)
 			. self::heading( 'Your rights (GDPR)' )
@@ -2078,17 +2079,17 @@ class Seeder {
 					'Access and export: from your account dashboard ("Export"), you can download your account, profiles and preferences.',
 					'Deletion: "Delete account" erases your data after a 30-day grace period (with a cancel link).',
 					'Consent: you can withdraw analytics consent at any time in the banner.',
-					'Complaint: you may lodge a complaint with your supervisory authority ([● e.g., CNPD in Portugal]).',
+					'Complaint: you may lodge a complaint with your supervisory authority — in Portugal, the CNPD (Comissão Nacional de Proteção de Dados).',
 				)
 			)
 			. self::heading( 'International transfers' )
-			. self::paragraph( 'Some providers (for example, Google) may process data outside the EEA under appropriate safeguards ([● e.g., standard contractual clauses]).' )
+			. self::paragraph( 'Some providers (for example, Google) may process data outside the EEA under the standard contractual clauses approved by the European Commission.' )
 			. self::heading( 'Children' )
-			. self::paragraph( 'The service is intended for adults ([● e.g., 18+]); we do not knowingly collect data from children.' )
+			. self::paragraph( 'The service is intended for people aged 18 or over; we do not knowingly collect data from children.' )
 			. self::heading( 'Changes' )
 			. self::paragraph( 'We may update this policy; the date below shows the last change.' )
 			. self::heading( 'Contact' )
-			. self::paragraph( 'Questions about privacy? Contact us at [● contact email].' )
+			. self::paragraph( 'Questions about privacy? Contact us at lm@atlasinvencivel.pt.' )
 			. self::paragraph( 'Last updated: ' . $updated . '.' );
 	}
 
