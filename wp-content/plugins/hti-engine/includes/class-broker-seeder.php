@@ -147,6 +147,13 @@ class Broker_Seeder {
 			}
 			$tid = (int) ( is_array( $existing ) ? $existing['term_id'] : $existing );
 			update_term_meta( $tid, 'hti_name_pt', $names['pt'] );
+
+			// Terms suffer the same Polylang auto-language trap as posts: force
+			// the EN term to the default language so its PT twin can link.
+			if ( function_exists( 'pll_set_term_language' ) && '' !== self::default_lang()
+				&& self::default_lang() !== (string) pll_get_term_language( $tid ) ) {
+				pll_set_term_language( $tid, self::default_lang() );
+			}
 		}
 	}
 
@@ -169,7 +176,8 @@ class Broker_Seeder {
 			if ( ! $en_term instanceof \WP_Term ) {
 				continue;
 			}
-			if ( ! pll_get_term_language( $en_term->term_id ) ) {
+			// Forced, not only-when-missing (same trap as the post loops).
+			if ( $en !== (string) pll_get_term_language( $en_term->term_id ) ) {
 				pll_set_term_language( (int) $en_term->term_id, $en );
 			}
 			if ( pll_get_term( (int) $en_term->term_id, $pt ) ) {
@@ -1062,6 +1070,11 @@ class Broker_Seeder {
 		}
 		$id = (int) $id;
 
+		// Same Polylang trap as insert_broker(): tag the EN page explicitly.
+		if ( function_exists( 'pll_set_post_language' ) && '' !== self::default_lang() ) {
+			pll_set_post_language( $id, self::default_lang() );
+		}
+
 		update_post_meta( $id, self::SEED_FLAG, VERSION );
 		self::write_seo_meta( $id, (array) ( $entry['seo'] ?? array() ) );
 
@@ -1098,6 +1111,14 @@ class Broker_Seeder {
 			return 0;
 		}
 		$id = (int) $id;
+
+		// Polylang auto-assigns the ADMIN's current language to programmatic
+		// inserts. This English record must be tagged as the default language
+		// explicitly, or (seeded from a PT admin) it would masquerade as the PT
+		// version and block its real translation from ever being created.
+		if ( function_exists( 'pll_set_post_language' ) && '' !== self::default_lang() ) {
+			pll_set_post_language( $id, self::default_lang() );
+		}
 
 		update_post_meta( $id, self::SEED_FLAG, VERSION );
 		self::write_seo_meta( $id, (array) ( $entry['seo'] ?? array() ) );
@@ -1172,7 +1193,13 @@ class Broker_Seeder {
 			}
 			$en_id = (int) $en_post->ID;
 
-			if ( ! pll_get_post_language( $en_id ) ) {
+			// FORCE the default language — never trust what Polylang assigned.
+			// Posts seeded from a PT admin got auto-tagged 'pt', which made
+			// pll_get_post() below return the post itself as its own "PT
+			// translation" and left the PT site serving the English review.
+			// Forcing 'en' both prevents that on fresh seeds and repairs
+			// already-seeded sites on the next run.
+			if ( $en !== (string) pll_get_post_language( $en_id ) ) {
 				pll_set_post_language( $en_id, $en );
 			}
 
@@ -1234,7 +1261,8 @@ class Broker_Seeder {
 			}
 			$en_id = (int) $en_post->ID;
 
-			if ( ! pll_get_post_language( $en_id ) ) {
+			// Same forced-language rule as the broker loop (see comment there).
+			if ( $en !== (string) pll_get_post_language( $en_id ) ) {
 				pll_set_post_language( $en_id, $en );
 			}
 
@@ -2343,6 +2371,16 @@ class Broker_Seeder {
 			update_post_meta( $id, 'rank_math_description', $desc );
 			update_post_meta( $id, '_yoast_wpseo_metadesc', $desc );
 		}
+	}
+
+	/**
+	 * The default (English) language slug, '' when Polylang is inactive.
+	 */
+	private static function default_lang(): string {
+		if ( ! function_exists( 'pll_default_language' ) ) {
+			return '';
+		}
+		return (string) pll_default_language( 'slug' );
 	}
 
 	/**
