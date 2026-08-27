@@ -1160,3 +1160,87 @@ html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 	.hti-nl__freq { grid-template-columns: 1fr; }
 	.hti-del__go { min-width: 0; }
 }
+
+/* -------------------------------------------------------------------------
+ * Partner module ("Putting it into practice") — the labelled affiliate
+ * section AFTER the educational result block. Visually distinct on purpose:
+ * accent border + eyebrow badge, so it never reads as part of the result.
+ * ---------------------------------------------------------------------- */
+.hti-partner {
+	margin-top: 2.25rem;
+	border: 2px solid var( --hti-accent, #6B46E0 );
+	border-radius: 16px;
+	padding: 1.4rem 1.6rem;
+	background: #FBFAFF;
+}
+.hti-partner__eyebrow {
+	display: inline-block;
+	background: var( --hti-accent, #6B46E0 );
+	color: #fff;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	border-radius: 999px;
+	padding: 0.22rem 0.65rem;
+}
+.hti-partner__title {
+	margin: 0.7rem 0 0.25rem;
+	font-size: 1.2rem;
+}
+.hti-partner__intro {
+	margin: 0 0 1rem;
+	color: #5A5470;
+	font-size: 0.9rem;
+	line-height: 1.55;
+}
+.hti-partner__list {
+	display: grid;
+	gap: 0.8rem;
+}
+.hti-partner__card {
+	border: 1px solid #E4DFF2;
+	border-radius: 12px;
+	background: #fff;
+	padding: 0.9rem 1.1rem;
+}
+.hti-partner__name {
+	margin: 0;
+	font-weight: 700;
+}
+.hti-partner__reg {
+	margin: 0.1rem 0 0;
+	font-size: 0.75rem;
+	color: #6E6680;
+}
+.hti-partner__tag {
+	margin: 0.45rem 0 0;
+	font-size: 0.85rem;
+	line-height: 1.5;
+}
+.hti-partner__cfd {
+	margin: 0.55rem 0 0;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	color: #8A6310;
+	background: #FCF3DC;
+	border-radius: 8px;
+	padding: 0.5rem 0.7rem;
+}
+.hti-partner__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+	align-items: center;
+	margin-top: 0.7rem;
+}
+.hti-partner__review {
+	font-size: 0.85rem;
+	font-weight: 600;
+}
+.hti-partner__disclosure {
+	margin: 1rem 0 0;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	color: #6E6680;
+}

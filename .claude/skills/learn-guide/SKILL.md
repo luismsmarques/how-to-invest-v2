@@ -11,10 +11,10 @@ Read `CLAUDE.md` (invariants) and `docs/` before writing substantive content.
 
 ## Non-negotiable invariants (same as the whole project)
 1. **Educational, never advice.** Conditional/illustrative language ("a profile like this often…", never "you should buy"). No imperative calls to act.
-2. **By asset class only** — global equities, bonds, cash, REITs/alternatives, crypto. **Never** name instruments, tickers, funds, brokers or companies.
+2. **By asset class only** — global equities, bonds, cash, REITs/alternatives, crypto. **Never** name instruments, tickers, funds, brokers or companies in Learn content. (Broker names live only in the separate broker editorial section — see `broker-affiliate`; a Learn chapter may link to the broker comparison page as further reading, never embed broker CTAs.)
 3. **Rules decide, content explains.** Any allocation shown must match the engine's curated archetype ranges; don't invent numbers. Crypto only ever a tiny, optional, conditional slice.
 4. **Disclaimer** present (use the theme/engine disclaimer block, never a bespoke one).
-5. **No execution CTAs** (no "open an account with X"). The only conversion CTA is the questionnaire and the newsletter/ebook.
+5. **No execution CTAs in Learn** (no "open an account with X"). The only conversion CTA here is the questionnaire and the newsletter/ebook — the Learn hub keeps its "nothing to sell" positioning even though a labelled broker editorial section exists elsewhere on the site.
 
 ## The learning path (the backbone)
 Every guide is one chapter; the sequence is also the ebook's table of contents. Category = `learn_topic`.

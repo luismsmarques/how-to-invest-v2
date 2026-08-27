@@ -72,7 +72,8 @@
 - [ ] Notas por classe presentes para cada classe da alocação.
 - [ ] Resultado guardado é o mesmo ao recarregar (não recalcula).
 - [ ] Export PDF contém alocação, justificações, gráfico e disclaimer.
-- [ ] CTA de encerramento aponta para conteúdo educativo, nunca para execução/corretora.
+- [ ] CTA de encerramento do bloco educativo aponta para conteúdo educativo, nunca para execução/corretora; o output do motor/LLM não nomeia corretoras (validator).
+- [ ] Se o módulo "Passar à prática" estiver ativo: aparece **depois** das ações educativas, visualmente separado, rotulado "Parceria · Publicidade", com disclosure de afiliação e aviso CFD quando aplicável; PDF e email continuam sem qualquer corretora.
 
 ---
 

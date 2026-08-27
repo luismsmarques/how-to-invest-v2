@@ -548,6 +548,10 @@ class REST {
 				'explanation'   => $explained['explanation'],
 				'safety_flags'  => $result['safety_flags'],
 				'disclaimer'    => Disclaimer::contextual( $locale ),
+				// Labelled partner module, rendered AFTER the educational block.
+				// Deterministic + curated (never the LLM), recomputed per request
+				// (never stored with the profile), absent from the PDF/emails.
+				'partner_module' => Brokers::partner_module( (int) $result['archetype_id'], (array) $result['allocation'], $locale ),
 			),
 			200
 		);
@@ -702,6 +706,12 @@ class REST {
 				'explanation'   => get_post_meta( $profile_id, 'hti_explanation', true ),
 				'safety_flags'  => get_post_meta( $profile_id, 'hti_safety_flags', true ),
 				'disclaimer'    => Disclaimer::contextual( $locale ),
+				// Recomputed on read (not stored): always reflects current deals.
+				'partner_module' => Brokers::partner_module(
+					(int) get_post_meta( $profile_id, 'hti_archetype_id', true ),
+					(array) get_post_meta( $profile_id, 'hti_allocation', true ),
+					$locale
+				),
 			),
 			200
 		);

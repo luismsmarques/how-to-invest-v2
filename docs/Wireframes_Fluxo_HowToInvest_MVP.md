@@ -55,7 +55,7 @@
 **Princípios de navegação:**
 - Todo o conteúdo SEO tem um CTA inline para o questionário (ponto de conversão).
 - O questionário nunca pede login no MVP (P0). Login social é P1.
-- O resultado termina sempre a empurrar para *educação* (artigo), nunca para execução/corretora.
+- O bloco educativo do resultado termina sempre a empurrar para *educação* (artigo), nunca para execução/corretora. Abaixo das ações educativas pode existir o módulo "Passar à prática" — secção visualmente distinta, rotulada "Parceria · Publicidade", com 2–3 corretoras compatíveis (matching determinístico server-side) e disclosure de afiliação; nunca dentro do resultado nem no PDF/email.
 - "Refazer" reinicia o questionário preservando nada (privacidade por omissão).
 
 ---

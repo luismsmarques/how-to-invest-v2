@@ -275,7 +275,7 @@ Esta secção é o coração defensável do produto. O motor separa **decisão**
 3. **Enquadramento:** por **arquétipo de perfil** ("perfis do tipo Equilibrado tendem a…"), não pelo indivíduo ("para ti, X").
 4. **Transparência do método:** mostrar sempre *porquê* aquele arquétipo, dado o que a pessoa respondeu.
 5. **Universo curado e fechado:** o LLM trabalha sobre classes e regras fixas e versionadas; não inventa.
-6. **Sem execução / sem CTA transacional:** nunca liga a corretora, nunca diz "compra agora", nunca cria urgência. Termina em educação (→ artigo).
+6. **Motor sem execução / sem CTA transacional:** o resultado do motor nunca liga a corretora, nunca diz "compra agora", nunca cria urgência; termina em educação (→ artigo). A monetização por afiliação existe, mas vive **fora do motor**: numa secção editorial separada (comparador/reviews/guias) e num módulo pós-resultado visualmente distinto, ambos rotulados "Parceria · Publicidade" e com divulgação de afiliação na própria página (CMVM 13/03/2025). O output do motor/LLM continua proibido de nomear corretoras — ver `.claude/skills/broker-affiliate/SKILL.md`.
 7. **Disclaimers contextuais:** junto ao output, no momento que importa, não só no rodapé.
 
 ### 11.2 Classes de ativos do universo curado

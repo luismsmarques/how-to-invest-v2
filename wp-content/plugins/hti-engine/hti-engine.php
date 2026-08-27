@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.8.56
+ * Version:           0.10.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.56';
+const VERSION = '0.10.0';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -70,6 +70,11 @@ require_once HTI_ENGINE_PATH . 'includes/class-nps.php';
 require_once HTI_ENGINE_PATH . 'includes/class-feedback.php';
 require_once HTI_ENGINE_PATH . 'includes/class-tools.php';
 require_once HTI_ENGINE_PATH . 'includes/class-deposits.php';
+require_once HTI_ENGINE_PATH . 'includes/class-broker-admin.php';
+require_once HTI_ENGINE_PATH . 'includes/class-broker-seeder.php';
+require_once HTI_ENGINE_PATH . 'includes/class-broker-go.php';
+require_once HTI_ENGINE_PATH . 'includes/class-broker-match.php';
+require_once HTI_ENGINE_PATH . 'includes/class-brokers.php';
 require_once HTI_ENGINE_PATH . 'includes/class-settings.php';
 require_once HTI_ENGINE_PATH . 'includes/class-consent.php';
 require_once HTI_ENGINE_PATH . 'includes/class-analytics.php';
@@ -99,7 +104,7 @@ add_action( 'init', array( CPT::class, 'register' ) );
 add_filter(
 	'pll_get_post_types',
 	function ( $post_types, $is_settings = false ) {
-		foreach ( array( 'glossary', 'news', 'learn' ) as $pt ) {
+		foreach ( array( 'glossary', 'news', 'learn', 'broker' ) as $pt ) {
 			$post_types[ $pt ] = $pt;
 		}
 		return $post_types;
@@ -110,7 +115,7 @@ add_filter(
 add_filter(
 	'pll_get_taxonomies',
 	function ( $taxonomies, $is_settings = false ) {
-		foreach ( array( 'glossary_topic', 'news_category', 'learn_topic' ) as $tax ) {
+		foreach ( array( 'glossary_topic', 'news_category', 'learn_topic', 'broker_use_case' ) as $tax ) {
 			$taxonomies[ $tax ] = $tax;
 		}
 		return $taxonomies;
@@ -182,6 +187,15 @@ Emails::init();
 Account::init();
 Tools::init();
 Deposits::init();
+
+/**
+ * Broker editorial section: the "Broker data" metabox and its seeder
+ * (Tools → Seed brokers, `wp hti seed-brokers`). Rules: broker-affiliate skill.
+ */
+Broker_Admin::init();
+Broker_Seeder::register();
+Broker_Go::init();
+Brokers::init();
 
 /**
  * Admin settings (Settings → HowToInvest): Gemini key/model + scoring/archetypes.
@@ -279,6 +293,22 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					$report['glossary_created'],
 					$report['pages_created'],
 					$report['articles_created'],
+					$report['translations_created'],
+					$report['skipped']
+				)
+			);
+		}
+	);
+
+	\WP_CLI::add_command(
+		'hti seed-brokers',
+		function () {
+			$report = Broker_Seeder::seed();
+			\WP_CLI::success(
+				sprintf(
+					'%d brokers and %d section pages created, %d PT translations linked, %d skipped.',
+					$report['brokers_created'],
+					$report['pages_created'] ?? 0,
 					$report['translations_created'],
 					$report['skipped']
 				)

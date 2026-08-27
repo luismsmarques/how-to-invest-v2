@@ -28,6 +28,51 @@ class Taxonomy {
 		self::register_glossary_topic();
 		self::register_news_category();
 		self::register_learn_topic();
+		self::register_broker_use_case();
+	}
+
+	/**
+	 * Broker use case — what a reader wants a platform for (beginners, ETFs,
+	 * stocks, interest on cash, crypto). Powers the comparison category pages.
+	 */
+	private static function register_broker_use_case(): void {
+		$labels = array(
+			'name'              => _x( 'Use cases', 'taxonomy general name', 'hti-engine' ),
+			'singular_name'     => _x( 'Use case', 'taxonomy singular name', 'hti-engine' ),
+			'menu_name'         => __( 'Use cases', 'hti-engine' ),
+			'all_items'         => __( 'All use cases', 'hti-engine' ),
+			'edit_item'         => __( 'Edit use case', 'hti-engine' ),
+			'view_item'         => __( 'View use case', 'hti-engine' ),
+			'update_item'       => __( 'Update use case', 'hti-engine' ),
+			'add_new_item'      => __( 'Add new use case', 'hti-engine' ),
+			'new_item_name'     => __( 'New use case name', 'hti-engine' ),
+			'parent_item'       => __( 'Parent use case', 'hti-engine' ),
+			'parent_item_colon' => __( 'Parent use case:', 'hti-engine' ),
+			'search_items'      => __( 'Search use cases', 'hti-engine' ),
+			'not_found'         => __( 'No use cases found.', 'hti-engine' ),
+			'back_to_items'     => __( '← Back to use cases', 'hti-engine' ),
+		);
+
+		register_taxonomy(
+			'broker_use_case',
+			array( 'broker' ),
+			array(
+				'labels'            => $labels,
+				'description'       => __( 'Use cases that group broker reviews for the comparison pages.', 'hti-engine' ),
+				'public'            => true,
+				'hierarchical'      => true,
+				'show_ui'           => true,
+				'show_in_menu'      => true,
+				'show_in_nav_menus' => true,
+				'show_in_rest'      => true,
+				'show_admin_column' => true,
+				'rewrite'           => array(
+					'slug'         => 'broker-use-case',
+					'with_front'   => false,
+					'hierarchical' => true,
+				),
+			)
+		);
 	}
 
 	/**

@@ -8,7 +8,7 @@ description: Use when creating or editing social media assets — the hti-social
 The `wp-content/plugins/hti-social/` plugin generates brand-faithful social assets **in the browser** (SVG→canvas→PNG; reels via canvas + MediaRecorder). No server render for the base path. Read `wp-content/plugins/hti-social/README.md` first — it is authoritative.
 
 ## Non-negotiable invariants (same as the whole project)
-- **By asset class only** — never name instruments, tickers, funds, brokers or companies (watch editable "Broker A/B/C" placeholders in the myth templates).
+- **By asset class only** — never name instruments, tickers, funds, brokers or companies (watch editable "Broker A/B/C" placeholders in the myth templates). Social posts never carry affiliate links or broker CTAs — CMVM treats social prospecting for brokers as restricted; the broker editorial section lives on-site only (see `broker-affiliate`).
 - **Educational, conditional tone; disclaimer always present** — `{{disclaimer}}` / `{{#legal}}…{{/legal}}` come from `class-brand.php`, never a bespoke one.
 - **No execution/broker CTAs.** The only CTA is the questionnaire or newsletter/ebook.
 - **Bilingual EN + PT** for any caption/copy.

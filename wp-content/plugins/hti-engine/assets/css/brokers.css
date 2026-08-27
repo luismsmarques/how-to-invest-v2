@@ -1,0 +1,337 @@
+/**
+ * Broker comparison + review components. Uses the theme.json design tokens
+ * with fallbacks, mirroring the deposits comparator conventions.
+ */
+.hti-bk {
+	--bk-primary: var( --wp--preset--color--primary-strong, #C9362C );
+	--bk-text: var( --wp--preset--color--contrast, #2A2438 );
+	--bk-muted: var( --wp--preset--color--muted, #6E6680 );
+	--bk-border: var( --wp--preset--color--border, #F2E4DD );
+	--bk-white: var( --wp--preset--color--white, #fff );
+	--bk-soft: var( --wp--preset--color--primary-soft, #FFEDE9 );
+	--bk-accent: var( --wp--preset--color--accent-strong, #6B46E0 );
+	--bk-accent-soft: var( --wp--preset--color--accent-soft, #EFE9FE );
+	--bk-green: #1E7A5C;
+	--bk-amber: #8A6310;
+	--bk-amber-soft: #FCF3DC;
+	--bk-head: var( --wp--preset--font-family--heading, 'Poppins', sans-serif );
+	--bk-body: var( --wp--preset--font-family--body, 'Plus Jakarta Sans', sans-serif );
+	font-family: var( --bk-body );
+	color: var( --bk-text );
+	display: block;
+	margin: 1.5rem 0 2rem;
+}
+
+/* Disclosure + label ------------------------------------------------------ */
+.hti-bk__disclosure {
+	background: var( --bk-accent-soft );
+	border: 1px solid var( --bk-border );
+	border-radius: 12px;
+	padding: 0.85rem 1rem;
+	font-size: 0.85rem;
+	line-height: 1.5;
+	color: var( --bk-text );
+	margin-bottom: 1.25rem;
+}
+.hti-bk__disclosure a {
+	font-weight: 600;
+	white-space: nowrap;
+}
+.hti-bk__label {
+	display: inline-block;
+	background: var( --bk-accent );
+	color: #fff;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	border-radius: 999px;
+	padding: 0.2rem 0.6rem;
+	vertical-align: middle;
+}
+
+/* Category chips ---------------------------------------------------------- */
+.hti-bk__cats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	align-items: center;
+	margin-bottom: 1rem;
+	font-size: 0.85rem;
+}
+.hti-bk__cats-label {
+	color: var( --bk-muted );
+	margin-right: 0.25rem;
+}
+.hti-bk__cat {
+	border: 1px solid var( --bk-border );
+	border-radius: 999px;
+	padding: 0.3rem 0.8rem;
+	text-decoration: none;
+	color: var( --bk-text );
+	background: var( --bk-white );
+}
+.hti-bk__cat.is-active {
+	background: var( --bk-text );
+	border-color: var( --bk-text );
+	color: #fff;
+	pointer-events: none;
+}
+
+/* Toolbar ----------------------------------------------------------------- */
+.hti-bk__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem 1rem;
+	align-items: center;
+	margin-bottom: 1rem;
+}
+.hti-bk__q {
+	flex: 1 1 200px;
+	max-width: 280px;
+	border: 1px solid var( --bk-border );
+	border-radius: 10px;
+	padding: 0.5rem 0.8rem;
+	font: inherit;
+}
+.hti-bk__switch {
+	display: inline-flex;
+	gap: 0.4rem;
+	align-items: center;
+	font-size: 0.85rem;
+	color: var( --bk-muted );
+	cursor: pointer;
+}
+.hti-bk__sortwrap {
+	font-size: 0.85rem;
+	color: var( --bk-muted );
+	display: inline-flex;
+	gap: 0.4rem;
+	align-items: center;
+}
+.hti-bk__sort {
+	font: inherit;
+	border: 1px solid var( --bk-border );
+	border-radius: 8px;
+	padding: 0.3rem 0.5rem;
+	background: var( --bk-white );
+}
+.hti-bk__count {
+	margin: 0 0 0 auto;
+	font-size: 0.85rem;
+	color: var( --bk-muted );
+}
+
+/* Cards ------------------------------------------------------------------- */
+.hti-bk__list {
+	display: grid;
+	gap: 1rem;
+}
+.hti-bk__card {
+	border: 1px solid var( --bk-border );
+	border-radius: 16px;
+	background: var( --bk-white );
+	padding: 1.1rem 1.25rem;
+}
+.hti-bk__card-head {
+	display: flex;
+	align-items: center;
+	gap: 0.8rem;
+}
+.hti-bk__avatar {
+	flex: 0 0 auto;
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: var( --bk-soft );
+	color: var( --bk-primary );
+	font-family: var( --bk-head );
+	font-weight: 700;
+	display: grid;
+	place-items: center;
+}
+.hti-bk__id {
+	min-width: 0;
+}
+.hti-bk__name {
+	margin: 0;
+	font-family: var( --bk-head );
+	font-size: 1.1rem;
+	line-height: 1.3;
+}
+.hti-bk__reg {
+	margin: 0.1rem 0 0;
+	font-size: 0.78rem;
+	color: var( --bk-muted );
+}
+.hti-bk__card-head .hti-bk__label {
+	margin-left: auto;
+	flex: 0 0 auto;
+}
+.hti-bk__tagline {
+	margin: 0.7rem 0 0;
+	font-size: 0.92rem;
+	line-height: 1.55;
+}
+.hti-bk__facts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem 1rem;
+	margin-top: 0.7rem;
+	font-size: 0.82rem;
+	color: var( --bk-muted );
+}
+.hti-bk__stars {
+	color: var( --bk-amber );
+	font-weight: 600;
+}
+.hti-bk__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin-top: 0.7rem;
+}
+.hti-bk__chip {
+	font-size: 0.72rem;
+	border: 1px solid var( --bk-border );
+	border-radius: 999px;
+	padding: 0.18rem 0.55rem;
+	color: var( --bk-muted );
+	background: var( --bk-white );
+}
+.hti-bk__chip--cfd {
+	background: var( --bk-amber-soft );
+	border-color: var( --bk-amber );
+	color: var( --bk-amber );
+	font-weight: 600;
+}
+.hti-bk__cfd-warning {
+	margin: 0.7rem 0 0;
+	font-size: 0.78rem;
+	line-height: 1.5;
+	color: var( --bk-amber );
+	background: var( --bk-amber-soft );
+	border-radius: 10px;
+	padding: 0.55rem 0.75rem;
+}
+.hti-bk__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin-top: 0.9rem;
+}
+.hti-bk__btn {
+	display: inline-block;
+	border-radius: 999px;
+	padding: 0.5rem 1.1rem;
+	font-size: 0.88rem;
+	font-weight: 600;
+	text-decoration: none;
+	background: var( --bk-primary );
+	color: #fff;
+	border: 1px solid var( --bk-primary );
+}
+.hti-bk__btn--ghost {
+	background: transparent;
+	color: var( --bk-primary );
+}
+.hti-bk__verified {
+	margin: 0.7rem 0 0;
+	font-size: 0.72rem;
+	color: var( --bk-muted );
+}
+
+/* Empty state ------------------------------------------------------------- */
+.hti-bk__empty {
+	text-align: center;
+	border: 1px dashed var( --bk-border );
+	border-radius: 16px;
+	padding: 2rem 1rem;
+	margin-top: 1rem;
+}
+.hti-bk__empty-t {
+	font-family: var( --bk-head );
+	font-weight: 600;
+	margin: 0 0 0.3rem;
+}
+.hti-bk__empty-d {
+	color: var( --bk-muted );
+	margin: 0 0 0.8rem;
+	font-size: 0.9rem;
+}
+.hti-bk__reset {
+	font: inherit;
+	border: 1px solid var( --bk-border );
+	background: var( --bk-white );
+	border-radius: 999px;
+	padding: 0.4rem 1rem;
+	cursor: pointer;
+}
+
+@media ( min-width: 783px ) {
+	.hti-bk__card {
+		padding: 1.25rem 1.5rem;
+	}
+}
+
+/* Single review (single-broker template) ---------------------------------- */
+.hti-bkr__hero {
+	border: 1px solid var( --bk-border );
+	border-radius: 16px;
+	background: var( --bk-white );
+	padding: 1.25rem 1.5rem;
+	margin-bottom: 1.5rem;
+}
+.hti-bkr__title {
+	margin: 0;
+	font-family: var( --bk-head );
+	font-size: clamp( 1.5rem, 3vw, 2rem );
+	line-height: 1.25;
+}
+.hti-bkr__reg {
+	margin: 0.3rem 0 0;
+	font-size: 0.85rem;
+	color: var( --bk-muted );
+}
+.hti-bkr__facts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem 1rem;
+	margin-top: 0.6rem;
+	font-size: 0.85rem;
+	color: var( --bk-muted );
+}
+.hti-bkr__body {
+	margin-bottom: 1.5rem;
+}
+.hti-bkr__cta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	align-items: center;
+	border: 1px solid var( --bk-border );
+	border-radius: 16px;
+	background: var( --bk-soft );
+	padding: 1rem 1.25rem;
+	margin-bottom: 1.25rem;
+}
+.hti-bkr__cta--inline {
+	margin: 1.25rem 0;
+}
+.hti-bkr__cta--inline .hti-bk__disclosure {
+	flex-basis: 100%;
+	margin: 0.5rem 0 0;
+}
+.hti-bkr__foot {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.85rem;
+}
+.hti-bkr__back {
+	font-weight: 600;
+	text-decoration: none;
+	color: var( --bk-primary );
+}

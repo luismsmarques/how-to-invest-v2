@@ -24,12 +24,17 @@ class Validator {
 
 	/**
 	 * Substrings that signal a named instrument/product/company (lowercase).
+	 * Includes broker names: the broker editorial section may name them, but the
+	 * engine/LLM output never does (CLAUDE.md invariant 4 / broker-affiliate).
 	 */
 	private const INSTRUMENT_BLOCKLIST = array(
 		's&p', 's & p', 'sp500', 'sp 500', 'nasdaq', 'dow jones', 'ftse', 'msci',
 		'bitcoin', 'ethereum', 'solana', 'dogecoin',
 		'vwce', 'vusa', 'vti', 'voo', 'spy', 'qqq', 'iwda',
 		'apple', 'tesla', 'microsoft', 'amazon', 'nvidia', 'alphabet', 'berkshire',
+		'xtb', 'etoro', 'degiro', 'trading 212', 'trading212', 'lightyear',
+		'trade republic', 'interactive brokers', 'ibkr', 'revolut', 'activobank',
+		'saxo', 'freedom24', 'webull', 'plus500',
 	);
 
 	/**

@@ -369,6 +369,7 @@ function strings(): array {
 		'nav_classes'      => array( 'en' => 'Asset classes', 'pt' => 'Classes de ativos' ),
 		'nav_tools'        => array( 'en' => 'Tools', 'pt' => 'Ferramentas' ),
 		'nav_deposits'     => array( 'en' => 'Term deposits', 'pt' => 'Depósitos a prazo' ),
+		'nav_brokers'      => array( 'en' => 'Brokers', 'pt' => 'Corretoras' ),
 		'nav_glossary'     => array( 'en' => 'Glossary', 'pt' => 'Glossário' ),
 		'nav_news'         => array( 'en' => 'News', 'pt' => 'Notícias' ),
 		'foot_about'       => array( 'en' => 'About', 'pt' => 'Sobre' ),
@@ -545,6 +546,15 @@ function register_dynamic_blocks(): void {
 			'title'           => __( 'Homepage intro', 'howtoinvest' ),
 			'category'        => 'theme',
 			'render_callback' => __NAMESPACE__ . '\\render_homepage_intro',
+		)
+	);
+	register_block_type(
+		'howtoinvest/broker-review',
+		array(
+			'api_version'     => 3,
+			'title'           => __( 'Broker review', 'howtoinvest' ),
+			'category'        => 'theme',
+			'render_callback' => __NAMESPACE__ . '\\render_broker_review',
 		)
 	);
 	register_block_type(
@@ -3987,6 +3997,136 @@ function append_deposits_menu_item( string $items, $args ): string {
 	return $items . '<li class="menu-item hti-menu-deposits"><a href="' . esc_url( $url ) . '">' . esc_html( t( 'nav_deposits' ) ) . '</a></li>';
 }
 add_filter( 'wp_nav_menu_items', __NAMESPACE__ . '\\append_deposits_menu_item', 10, 2 );
+
+/**
+ * Append the broker comparison pillar to the primary menu (both languages),
+ * mirroring the deposits item. Skipped when the editor already added it, or
+ * while the pillar page hasn't been seeded yet.
+ *
+ * @param string    $items HTML list of <li> menu items.
+ * @param \stdClass $args  wp_nav_menu() arguments.
+ * @return string Augmented menu HTML.
+ */
+function append_brokers_menu_item( string $items, $args ): string {
+	$location = isset( $args->theme_location ) ? (string) $args->theme_location : '';
+	if ( 'primary' !== $location ) {
+		return $items;
+	}
+	if ( ! ( get_page_by_path( 'best-brokers-in-portugal', OBJECT, 'page' ) instanceof \WP_Post ) ) {
+		return $items;
+	}
+	$url = page_url( 'best-brokers-in-portugal' );
+	if ( false !== strpos( $items, 'best-brokers-in-portugal' ) || false !== strpos( $items, 'melhores-corretoras-em-portugal' ) ) {
+		return $items;
+	}
+	return $items . '<li class="menu-item hti-menu-brokers"><a href="' . esc_url( $url ) . '">' . esc_html( t( 'nav_brokers' ) ) . '</a></li>';
+}
+add_filter( 'wp_nav_menu_items', __NAMESPACE__ . '\\append_brokers_menu_item', 10, 2 );
+
+/**
+ * Render one broker review (the single-broker template's only block).
+ *
+ * Presentation (title/body) comes from the current-language post; structured
+ * data comes from the plugin's normalized record (meta lives on the
+ * default-language post — see Broker_Admin). Compliance pieces — the on-page
+ * disclosure, the "Parceria · Publicidade" label, the CFD warning and the /go/
+ * link rel — all come from the plugin so there is a single source of truth.
+ *
+ * @return string Safe HTML.
+ */
+function render_broker_review(): string {
+	if ( ! is_singular( 'broker' ) || ! class_exists( '\HTI\Engine\Brokers' ) ) {
+		return '';
+	}
+	$view = get_queried_object();
+	if ( ! $view instanceof \WP_Post ) {
+		return '';
+	}
+
+	$lang = current_lang();
+	$pt   = 'pt' === $lang;
+
+	// Resolve the default-language twin: the carrier of all broker meta.
+	$source = $view;
+	if ( function_exists( 'pll_get_post' ) && function_exists( 'pll_default_language' ) ) {
+		$default = (string) pll_default_language( 'slug' );
+		$twin    = '' !== $default ? pll_get_post( (int) $view->ID, $default ) : 0;
+		if ( $twin ) {
+			$maybe = get_post( (int) $twin );
+			if ( $maybe instanceof \WP_Post ) {
+				$source = $maybe;
+			}
+		}
+	}
+
+	$r  = \HTI\Engine\Brokers::record( $source, $lang );
+	$l  = \HTI\Engine\Brokers::strings( $lang );
+	$go = \HTI\Engine\Brokers::go_link( $r, 'review' );
+
+	$s = array(
+		'back'    => $pt ? '← Comparador de corretoras' : '← Broker comparison',
+		'guide'   => $pt ? 'Guia: como abrir conta →' : 'Guide: how to open an account →',
+		'visit'   => ( $pt ? 'Visitar ' : 'Visit ' ) . $r['name'],
+		'updated' => $l['verified_label'],
+	);
+
+	$products = \HTI\Engine\Brokers::product_labels( $l );
+
+	ob_start();
+	?>
+	<article class="hti-broker-review hti-bk">
+		<?php echo \HTI\Engine\Brokers::disclosure_html( $lang ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by the plugin component. ?>
+
+		<header class="hti-bkr__hero">
+			<h1 class="hti-bkr__title"><?php echo esc_html( (string) $view->post_title ); ?></h1>
+			<p class="hti-bkr__reg"><?php echo esc_html( $l['regulated'] . ' ' . (string) $r['regulator'] ); ?></p>
+			<div class="hti-bkr__facts">
+				<?php if ( null !== $r['rating'] ) : ?>
+					<span class="hti-bk__stars" role="img" aria-label="<?php echo esc_attr( $l['rating_aria'] . ' ' . number_format_i18n( (float) $r['rating'], 1 ) . '/5' ); ?>"><?php echo esc_html( \HTI\Engine\Brokers::stars( (float) $r['rating'] ) . ' ' . number_format_i18n( (float) $r['rating'], 1 ) ); ?></span>
+				<?php endif; ?>
+				<?php if ( '' !== (string) $r['min_deposit'] ) : ?>
+					<span class="hti-bk__fact"><?php echo esc_html( $l['min_label'] . ': ' . (string) $r['min_deposit'] ); ?></span>
+				<?php endif; ?>
+			</div>
+			<div class="hti-bk__chips">
+				<?php foreach ( (array) $r['products'] as $p ) : ?>
+					<?php if ( isset( $products[ $p ] ) ) : ?>
+						<span class="hti-bk__chip"><?php echo esc_html( $products[ $p ] ); ?></span>
+					<?php endif; ?>
+				<?php endforeach; ?>
+				<?php if ( $r['cfd'] ) : ?>
+					<span class="hti-bk__chip hti-bk__chip--cfd"><?php echo esc_html( $l['cfd_chip'] ); ?></span>
+				<?php endif; ?>
+			</div>
+			<?php if ( $r['cfd'] ) : ?>
+				<?php echo \HTI\Engine\Brokers::cfd_warning_html( $lang, (string) $r['cfd_pct'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by the plugin component. ?>
+			<?php endif; ?>
+		</header>
+
+		<div class="hti-bkr__body">
+			<?php echo apply_filters( 'the_content', (string) $view->post_content ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- standard post content pipeline. ?>
+		</div>
+
+		<div class="hti-bkr__cta">
+			<?php if ( ! empty( $r['affiliate'] ) ) : ?>
+				<span class="hti-bk__label"><?php echo esc_html( $l['label'] ); ?></span>
+			<?php endif; ?>
+			<a class="hti-bk__btn" href="<?php echo esc_url( $go['href'] ); ?>" rel="<?php echo esc_attr( $go['rel'] ); ?>" target="_blank"><?php echo esc_html( $s['visit'] ); ?></a>
+			<?php if ( '' !== (string) $r['guide_url'] ) : ?>
+				<a class="hti-bk__btn hti-bk__btn--ghost" href="<?php echo esc_url( (string) $r['guide_url'] ); ?>"><?php echo esc_html( $s['guide'] ); ?></a>
+			<?php endif; ?>
+		</div>
+
+		<footer class="hti-bkr__foot">
+			<a class="hti-bkr__back" href="<?php echo esc_url( page_url( 'best-brokers-in-portugal' ) ); ?>"><?php echo esc_html( $s['back'] ); ?></a>
+			<?php if ( '' !== (string) $r['verified'] ) : ?>
+				<span class="hti-bk__verified"><?php echo esc_html( $s['updated'] . ' ' . (string) $r['verified'] ); ?></span>
+			<?php endif; ?>
+		</footer>
+	</article>
+	<?php
+	return (string) ob_get_clean();
+}
 
 /**
  * Permalink of a custom post type archive (Learn, Glossary, News), localized

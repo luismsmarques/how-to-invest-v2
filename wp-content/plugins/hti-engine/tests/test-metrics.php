@@ -92,6 +92,28 @@ check( 5 === $total && 60.0 === round( $ok / $total * 100, 1 ), 'flow success-ra
 // LLM-explained rate = ok_llm / ok = 2 / 3 ≈ 66.7%.
 check( 66.7 === round( 2 / $ok * 100, 1 ), 'LLM-explained rate derives from rec buckets' );
 
+// --- broker events (broker-affiliate section) ------------------------------
+$GLOBALS['__hti_options'] = array();
+
+Metrics::bump( 'broker_click', array( 'broker' => 'xtb', 'location' => 'review' ) );
+Metrics::bump( 'broker_click', array( 'broker' => 'xtb', 'location' => 'compare' ) );
+Metrics::bump( 'broker_click', array( 'broker' => 'lightyear', 'location' => 'review' ) );
+Metrics::bump( 'result_broker_view', array( 'archetype' => 3 ) );
+Metrics::bump( 'broker_compare_view' );
+Metrics::bump( 'bogus_broker_event' ); // not allowlisted → ignored.
+
+$day  = gmdate( 'Y-m-d' );
+$data = $GLOBALS['__hti_options']['hti_metrics'][ $day ] ?? array();
+
+check( 3 === (int) ( $data['e']['broker_click'] ?? 0 ), 'broker_click counted' );
+check( 2 === (int) ( $data['bkr']['xtb'] ?? 0 ), 'per-broker breakdown counted (xtb)' );
+check( 1 === (int) ( $data['bkr']['lightyear'] ?? 0 ), 'per-broker breakdown counted (lightyear)' );
+check( 2 === (int) ( $data['bkr_loc']['review'] ?? 0 ), 'per-location breakdown counted' );
+check( 1 === (int) ( $data['e']['result_broker_view'] ?? 0 ), 'result_broker_view counted' );
+check( 1 === (int) ( $data['bkr_arch'][3] ?? 0 ), 'partner-module archetype breakdown counted' );
+check( 1 === (int) ( $data['e']['broker_compare_view'] ?? 0 ), 'broker_compare_view counted' );
+check( ! isset( $data['e']['bogus_broker_event'] ), 'unknown event ignored' );
+
 echo "\n";
 if ( $failures ) {
 	echo "\033[31mFAILED\033[0m {$passes} passed, {$failures} failed\n";
