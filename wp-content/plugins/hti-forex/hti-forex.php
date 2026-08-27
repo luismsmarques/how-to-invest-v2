@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Forex
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Free forex calculators for Indian traders (INR-native position size, pip value and an IST session clock). English-only landing section under /forex/, isolated from the main educational product.
- * Version:           0.2.0
+ * Version:           0.3.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 
 define( 'HTI_FOREX_FILE', __FILE__ );
 define( 'HTI_FOREX_PATH', plugin_dir_path( __FILE__ ) );

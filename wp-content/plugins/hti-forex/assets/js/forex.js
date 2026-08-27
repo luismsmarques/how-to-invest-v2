@@ -1,8 +1,13 @@
 /**
- * HTI Forex — DOM layer. Reads [data-field] inputs, computes via HTIForex
- * (forex-core.js) and writes [data-out] values with en-IN formatting
- * (lakh/crore digit grouping). Also runs the live IST session clock.
- * Recalculates on every input — no submit button, no network.
+ * HTI Forex — DOM layer for the unified tool composition. Reads [data-field]
+ * inputs, computes via HTIForex (forex-core.js) and writes [data-out] values
+ * with en-IN formatting (lakh/crore grouping). Runs the live IST session
+ * clock, the email-capture states and the affiliate sub-id passthrough.
+ * Recalculates on every input — no submit button, no network for the maths.
+ *
+ * States implemented per the design handoff: skeleton before the first
+ * calculation (never a misleading 0.00), inline input errors, the
+ * below-micro box replacing the result, and the risk bar on a 0–2% scale.
  */
 ( function () {
 	'use strict';
@@ -20,7 +25,7 @@
 	var fmtINR = new Intl.NumberFormat( 'en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 } );
 	var fmtINR0 = new Intl.NumberFormat( 'en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 } );
 	var fmtUSD = new Intl.NumberFormat( 'en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 } );
-	var fmtInt = new Intl.NumberFormat( 'en-IN', { maximumFractionDigits: 0 } );
+	var fmtInt = new Intl.NumberFormat( 'en-IN' );
 
 	function fmt( value, format ) {
 		if ( 'number' !== typeof value || ! isFinite( value ) ) {
@@ -49,15 +54,15 @@
 		}
 	}
 
-	function write( form, key, value, formatOverride ) {
+	function write( form, key, value ) {
 		var el = form.querySelector( '[data-out="' + key + '"]' );
 		if ( el ) {
-			el.textContent = 'string' === typeof value ? value : fmt( value, formatOverride || el.getAttribute( 'data-format' ) );
+			el.textContent = 'string' === typeof value ? value : fmt( value, el.getAttribute( 'data-format' ) );
 		}
 	}
 
 	/* -------------------------------------------------------------------
-	 * Calculators
+	 * Field access + validation
 	 * ----------------------------------------------------------------- */
 
 	function num( form, key ) {
@@ -71,6 +76,28 @@
 		return el ? el.value : '';
 	}
 
+	// Inline error state (design: coral-red border + actionable message).
+	// A form with an invalid field keeps its previous result rather than
+	// computing nonsense.
+	function validateFields( form ) {
+		var ok = true;
+		form.querySelectorAll( '.hti-fx-field input[type="number"]' ).forEach( function ( input ) {
+			var field = input.closest( '.hti-fx-field' );
+			var err = field ? field.querySelector( '[data-err]' ) : null;
+			var invalid = '' !== input.value && ! input.checkValidity();
+			if ( field ) {
+				field.classList.toggle( 'is-invalid', invalid );
+			}
+			if ( err ) {
+				err.hidden = ! invalid;
+			}
+			if ( invalid ) {
+				ok = false;
+			}
+		} );
+		return ok;
+	}
+
 	// Editable rate inputs win over the server-provided reference rates.
 	function readRates( form ) {
 		var base = cfg.rates || {};
@@ -82,7 +109,7 @@
 		};
 	}
 
-	function toggleJpyField( form ) {
+	function toggleConditionalFields( form ) {
 		var jpyField = form.querySelector( '.hti-fx-field--jpy' );
 		if ( jpyField ) {
 			jpyField.hidden = 'USDJPY' !== str( form, 'pair' );
@@ -94,37 +121,74 @@
 		}
 	}
 
+	// First successful calculation swaps the skeleton for the result body.
+	function reveal( form ) {
+		var skeleton = form.querySelector( '[data-skeleton]' );
+		var body = form.querySelector( '[data-panelbody]' );
+		if ( skeleton ) {
+			skeleton.hidden = true;
+		}
+		if ( body ) {
+			body.hidden = false;
+		}
+	}
+
+	function showTooSmall( form, on ) {
+		var box = form.querySelector( '[data-toosmall]' );
+		var body = form.querySelector( '[data-panelbody]' );
+		if ( box ) {
+			box.hidden = ! on;
+		}
+		if ( body && on ) {
+			body.hidden = true;
+		}
+	}
+
+	/* -------------------------------------------------------------------
+	 * Calculators
+	 * ----------------------------------------------------------------- */
+
 	function computePositionSize( form ) {
-		var result = core.positionSize( num( form, 'balance' ), num( form, 'risk' ), num( form, 'stop' ), str( form, 'pair' ), readRates( form ) );
-		var tooSmall = form.querySelector( '[data-toosmall]' );
+		var balance = num( form, 'balance' );
+		var riskPct = num( form, 'risk' );
+		var result = core.positionSize( balance, riskPct, num( form, 'stop' ), str( form, 'pair' ), readRates( form ) );
 
 		if ( ! result ) {
-			[ 'lots', 'units', 'risk_inr', 'pip_inr' ].forEach( function ( k ) {
-				write( form, k, '—' );
-			} );
-			if ( tooSmall ) {
-				tooSmall.hidden = true;
-			}
-			return;
+			return false;
 		}
 
-		write( form, 'pip_inr', result.pipInrPerLot );
 		if ( result.tooSmall ) {
-			write( form, 'lots', 'Below one micro lot' );
-			write( form, 'units', '—' );
-			write( form, 'risk_inr', '—' );
-		} else {
-			write( form, 'lots', result.lots );
-			write( form, 'units', result.units );
-			write( form, 'risk_inr', result.actualRiskINR );
+			reveal( form );
+			showTooSmall( form, true );
+			return true;
 		}
-		if ( tooSmall ) {
-			tooSmall.hidden = ! result.tooSmall;
+		showTooSmall( form, false );
+		reveal( form );
+
+		write( form, 'lots', result.lots );
+		write( form, 'units', result.units );
+		write( form, 'risk_inr', result.actualRiskINR );
+		write( form, 'pip_inr', result.pipInrPerLot );
+		write( form, 'risk_pip', result.pipInrPerLot * result.lots );
+
+		// Risk bar: rupees actually at risk on a 0–2%-of-balance scale.
+		var fill = form.querySelector( '[data-riskfill]' );
+		if ( fill && balance > 0 ) {
+			var pct = ( result.actualRiskINR / balance ) * 100;
+			fill.style.width = Math.max( 2, Math.min( 100, ( pct / 2 ) * 100 ) ) + '%';
+		}
+		var of = form.querySelector( '[data-risk-of]' );
+		if ( of ) {
+			of.textContent = fmtINR0.format( balance );
+		}
+		var target = form.querySelector( '[data-risk-target]' );
+		if ( target && isFinite( riskPct ) ) {
+			target.textContent = 'target ' + riskPct.toFixed( 1 ) + '%';
 		}
 
 		// Margin variant: notional + margin for the suggested position.
 		if ( form.querySelector( '[data-field="leverage"]' ) ) {
-			var margin = result.tooSmall ? null : core.marginRequired(
+			var margin = core.marginRequired(
 				str( form, 'pair' ),
 				result.lots,
 				num( form, 'price' ),
@@ -134,10 +198,54 @@
 			write( form, 'notional_inr', margin ? margin.notionalINR : '—' );
 			write( form, 'margin_inr', margin ? margin.marginINR : '—' );
 		}
+		return true;
 	}
 
-	// Plausible per-pair price defaults for the profit/loss tool. Prefill
-	// only — the user always types their own prices.
+	function computePipValue( form ) {
+		var pair = str( form, 'pair' );
+		var rates = readRates( form );
+		var atSize = core.pipValue( pair, num( form, 'lots' ), rates );
+		var perLot = core.pipValue( pair, 1, rates );
+
+		if ( ! atSize || ! perLot ) {
+			return false;
+		}
+		reveal( form );
+		write( form, 'pip_inr', atSize.inr );
+		write( form, 'pip_usd', atSize.usd );
+		write( form, 'standard', perLot.inr );
+		write( form, 'mini', perLot.inr / 10 );
+		write( form, 'micro', perLot.inr / 100 );
+		return true;
+	}
+
+	function computeProfitLoss( form ) {
+		var result = core.profitLoss(
+			str( form, 'pair' ),
+			str( form, 'direction' ),
+			num( form, 'lots' ),
+			num( form, 'entry' ),
+			num( form, 'exit' ),
+			readRates( form )
+		);
+
+		if ( ! result ) {
+			return false;
+		}
+		reveal( form );
+		write( form, 'pl_inr', result.inr );
+		write( form, 'pl_usd', result.usd );
+		write( form, 'pips', result.pips );
+
+		var primary = form.querySelector( '.hti-fx-primary' );
+		if ( primary ) {
+			primary.classList.toggle( 'is-neg', result.inr < 0 );
+		}
+		return true;
+	}
+
+	// Plausible per-pair price defaults for the profit/loss tool and the
+	// margin variant. Prefill only — the user always types their own prices.
 	var PRICE_DEFAULTS = {
 		EURUSD: [ '1.0900', '1.0920' ],
 		GBPUSD: [ '1.2900', '1.2920' ],
@@ -156,41 +264,6 @@
 		}
 	}
 
-	function computeProfitLoss( form ) {
-		var result = core.profitLoss(
-			str( form, 'pair' ),
-			str( form, 'direction' ),
-			num( form, 'lots' ),
-			num( form, 'entry' ),
-			num( form, 'exit' ),
-			readRates( form )
-		);
-
-		write( form, 'pl_inr', result ? result.inr : '—' );
-		write( form, 'pl_usd', result ? result.usd : '—' );
-		write( form, 'pips', result ? result.pips : '—' );
-
-		form.querySelectorAll( '.hti-fx-out' ).forEach( function ( box ) {
-			box.classList.remove( 'hti-fx-out--pos', 'hti-fx-out--neg' );
-			if ( result && 0 !== result.inr && box.querySelector( '[data-out="pl_inr"], [data-out="pl_usd"]' ) ) {
-				box.classList.add( result.inr > 0 ? 'hti-fx-out--pos' : 'hti-fx-out--neg' );
-			}
-		} );
-	}
-
-	function computePipValue( form ) {
-		var pair = str( form, 'pair' );
-		var rates = readRates( form );
-		var atSize = core.pipValue( pair, num( form, 'lots' ), rates );
-		var perLot = core.pipValue( pair, 1, rates );
-
-		write( form, 'pip_inr', atSize ? atSize.inr : '—' );
-		write( form, 'pip_usd', atSize ? atSize.usd : '—' );
-		write( form, 'standard', perLot ? perLot.inr : '—' );
-		write( form, 'mini', perLot ? perLot.inr / 10 : '—' );
-		write( form, 'micro', perLot ? perLot.inr / 100 : '—' );
-	}
-
 	function initCalculator( form ) {
 		var name = form.getAttribute( 'data-tool' );
 		var compute = computePositionSize;
@@ -201,20 +274,22 @@
 		}
 
 		function run() {
-			toggleJpyField( form );
+			toggleConditionalFields( form );
+			if ( ! validateFields( form ) ) {
+				return;
+			}
 			compute( form );
 		}
 
 		if ( 'profit_loss' === name ) {
-			var pairField = form.querySelector( '[data-field="pair"]' );
-			if ( pairField ) {
-				pairField.addEventListener( 'change', function () {
+			var plPair = form.querySelector( '[data-field="pair"]' );
+			if ( plPair ) {
+				plPair.addEventListener( 'change', function () {
 					prefillPrices( form );
 				} );
 			}
 		}
 
-		// Margin variant: keep the price prefill in step with the pair.
 		if ( 'position_size' === name && form.querySelector( '[data-field="price"]' ) ) {
 			var psPair = form.querySelector( '[data-field="pair"]' );
 			if ( psPair ) {
@@ -242,27 +317,22 @@
 	 * ----------------------------------------------------------------- */
 
 	function initSessions( box ) {
-		var clock = box.querySelector( '[data-clock]' );
-		var clockTime = box.querySelector( '[data-clock-time]' );
-		var overlapEl = box.querySelector( '[data-overlap]' );
-
-		box.querySelectorAll( '[data-status-col], [data-status]' ).forEach( function ( el ) {
-			el.hidden = false;
-		} );
-		if ( clock ) {
-			clock.hidden = false;
-		}
+		var hm = box.querySelector( '[data-clock-hm]' );
+		var sec = box.querySelector( '[data-clock-s]' );
+		var pill = box.querySelector( '[data-overlap-pill]' );
+		var overlapLine = box.querySelector( '[data-overlap]' );
 
 		function tickClock() {
-			if ( ! clockTime ) {
-				return;
-			}
 			var now = new Date( Date.now() + 5.5 * 3600000 );
 			var h = now.getUTCHours();
 			var m = now.getUTCMinutes();
 			var s = now.getUTCSeconds();
-			clockTime.textContent =
-				( h < 10 ? '0' + h : h ) + ':' + ( m < 10 ? '0' + m : m ) + ':' + ( s < 10 ? '0' + s : s );
+			if ( hm ) {
+				hm.textContent = ( h < 10 ? '0' + h : h ) + ':' + ( m < 10 ? '0' + m : m );
+			}
+			if ( sec ) {
+				sec.textContent = ':' + ( s < 10 ? '0' + s : s );
+			}
 		}
 
 		function renderStatus() {
@@ -282,18 +352,18 @@
 					close.textContent = w.closeIST + ( w.closesNextDay ? ' +1' : '' );
 				}
 				if ( status ) {
-					var label = w.weekend ? 'Weekend' : ( w.isOpen ? 'Open' : 'Closed' );
-					status.textContent = label;
-					status.className = 'hti-fx-status-col hti-fx-status hti-fx-status--' + ( w.isOpen ? 'open' : 'closed' );
+					status.textContent = w.isOpen ? '● Open' : '— Closed';
+					status.className = 'hti-fx-status ' + ( w.isOpen ? 'hti-fx-status--open' : 'hti-fx-status--closed' );
 				}
 				row.classList.toggle( 'is-open', w.isOpen );
 			} );
 
 			var overlap = core.overlapLondonNY( now );
-			if ( overlapEl ) {
-				overlapEl.innerHTML =
-					'London–New York overlap today: <strong>' + overlap.startIST + '–' + overlap.endIST + ' IST</strong>' +
-					( overlap.active ? ' — <span class="hti-fx-status--open">active now</span>.' : ' — historically the busiest hours of the trading day.' );
+			if ( pill ) {
+				pill.hidden = ! overlap.active;
+			}
+			if ( overlapLine ) {
+				overlapLine.textContent = overlap.startIST + '–' + overlap.endIST + ' IST · busiest hours';
 			}
 		}
 
@@ -353,13 +423,27 @@
 		var form = box.querySelector( '.hti-fx-email__form' );
 		var status = box.querySelector( '.hti-fx-email__status' );
 		var consent = box.querySelector( '[data-consent]' );
+		var button = form ? form.querySelector( 'button[type="submit"]' ) : null;
+		var label = form ? form.querySelector( '.hti-fx-email__btnlabel' ) : null;
 		if ( ! form || ! cfg.subscribeUrl ) {
 			return;
 		}
 
-		function say( message ) {
+		function say( message, kind ) {
 			if ( status ) {
 				status.textContent = message;
+				status.classList.toggle( 'is-ok', 'ok' === kind );
+				status.classList.toggle( 'is-err', 'err' === kind );
+			}
+		}
+
+		function loading( on ) {
+			box.classList.toggle( 'is-loading', on );
+			if ( button ) {
+				button.disabled = on;
+			}
+			if ( label ) {
+				label.textContent = on ? 'Sending…' : 'Subscribe';
 			}
 		}
 
@@ -368,19 +452,16 @@
 
 			var email = ( form.querySelector( 'input[name="email"]' ) || {} ).value || '';
 			if ( ! email || email.indexOf( '@' ) < 1 ) {
-				say( 'Please enter a valid email address.' );
+				say( "That email doesn't look right — check the address and try again.", 'err' );
 				return;
 			}
 			if ( consent && ! consent.checked ) {
-				say( 'Please tick the consent box first.' );
+				say( 'Please tick the consent box first.', 'err' );
 				return;
 			}
 
-			var button = form.querySelector( 'button[type="submit"]' );
-			if ( button ) {
-				button.disabled = true;
-			}
-			say( 'Sending…' );
+			loading( true );
+			say( '', '' );
 
 			fetch( cfg.subscribeUrl, {
 				method: 'POST',
@@ -398,7 +479,7 @@
 			} )
 				.then( function ( res ) {
 					if ( res.ok ) {
-						say( 'Almost there — check your inbox and confirm the subscription.' );
+						say( 'Check your inbox — confirm the subscription to finish.', 'ok' );
 						form.reset();
 						if ( window.HTITrack ) {
 							window.HTITrack.event( 'newsletter_subscribe_submit', {
@@ -408,18 +489,16 @@
 							} );
 						}
 					} else if ( 429 === res.status ) {
-						say( 'Too many attempts — please try again in a while.' );
+						say( 'Too many attempts — please try again in a while.', 'err' );
 					} else {
-						say( 'That did not work — please check the email address and try again.' );
+						say( "That didn't work — check the email address and try again.", 'err' );
 					}
 				} )
 				.catch( function () {
-					say( 'Network problem — please try again.' );
+					say( 'Network problem — please try again.', 'err' );
 				} )
 				.finally( function () {
-					if ( button ) {
-						button.disabled = false;
-					}
+					loading( false );
 				} );
 		} );
 	}
