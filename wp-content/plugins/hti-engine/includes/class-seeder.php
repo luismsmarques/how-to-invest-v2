@@ -329,6 +329,7 @@ class Seeder {
 			// Pages.
 			'investor-profile-quiz'            => 'questionario-perfil-investidor',
 			'my-account'                       => 'a-minha-conta',
+			'subscription-confirmed'           => 'subscricao-confirmada',
 			'about'                            => 'sobre',
 			'contact'                          => 'contacto',
 			'how-to-start-investing'           => 'como-comecar-a-investir',
@@ -1737,6 +1738,18 @@ class Seeder {
 				'pt'      => array(
 					'title'   => 'A minha conta',
 					'content' => '<!-- wp:shortcode -->[hti_account]<!-- /wp:shortcode -->',
+				),
+			),
+			array(
+				// The double opt-in lands here (Subscribe::redirect_result):
+				// thank-you + immediate lead-magnet download. Noindex via the
+				// shortcode (Subscribe::robots).
+				'slug'    => 'subscription-confirmed',
+				'title'   => 'Subscription confirmed',
+				'content' => '<!-- wp:shortcode -->[hti_subscribe_confirmed]<!-- /wp:shortcode -->',
+				'pt'      => array(
+					'title'   => 'Subscrição confirmada',
+					'content' => '<!-- wp:shortcode -->[hti_subscribe_confirmed]<!-- /wp:shortcode -->',
 				),
 			),
 			array(

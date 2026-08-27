@@ -36,6 +36,33 @@ if ( ! function_exists( 'get_option' ) ) {
 if ( ! defined( 'WEEK_IN_SECONDS' ) ) {
 	define( 'WEEK_IN_SECONDS', 7 * DAY_IN_SECONDS );
 }
+if ( ! function_exists( 'add_option' ) ) {
+	/**
+	 * Mimics the real semantics the delivery guard relies on: add fails when
+	 * the option already exists (MySQL unique key on option_name).
+	 *
+	 * @param string $key      Option name.
+	 * @param mixed  $value    Value.
+	 * @param string $dep      Deprecated.
+	 * @param mixed  $autoload Autoload flag.
+	 * @return bool
+	 */
+	function add_option( $key, $value = '', $dep = '', $autoload = true ) {
+		if ( array_key_exists( $key, $GLOBALS['__hti_options'] ) ) {
+			return false;
+		}
+		$GLOBALS['__hti_options'][ $key ] = $value;
+		return true;
+	}
+	/**
+	 * @param string $key Option name.
+	 * @return bool
+	 */
+	function delete_option( $key ) {
+		unset( $GLOBALS['__hti_options'][ $key ] );
+		return true;
+	}
+}
 
 require_once __DIR__ . '/../includes/class-subscribe.php';
 
@@ -116,6 +143,18 @@ check( '' === sub( 'pending_source_take', $email ), 'malformed entry yields empt
 sub( 'ebook_pending_set', $email );
 check( true === sub( 'ebook_pending_take', $email ), 'legacy ebook flag still round-trips' );
 check( false === sub( 'ebook_pending_take', $email ), 'legacy ebook flag consumed on take' );
+
+// --- Delivery guard (the anti-duplicate mutex) ------------------------------
+check( true === sub( 'delivery_guard_pass', $email ), 'first confirmation may deliver' );
+check( false === sub( 'delivery_guard_pass', $email ), 'concurrent/second confirmation may NOT deliver' );
+check( false === sub( 'delivery_guard_pass', 'trader@example.com' ), 'guard keys on the normalized email (variant blocked too)' );
+check( true === sub( 'delivery_guard_pass', 'other@example.com' ), 'other subscribers are unaffected' );
+
+// Expired lock: a genuine re-request after the window delivers again.
+$lock_key = Subscribe::DELIVERY_LOCK_PREFIX . md5( 'trader@example.com' );
+$GLOBALS['__hti_options'][ $lock_key ] = time() - 10;
+check( true === sub( 'delivery_guard_pass', $email ), 'expired lock passes (re-request delivers again)' );
+check( false === sub( 'delivery_guard_pass', $email ), 'and the lock re-arms after passing' );
 
 echo "\n{$passes} passed, {$failures} failed\n";
 exit( $failures > 0 ? 1 : 0 );

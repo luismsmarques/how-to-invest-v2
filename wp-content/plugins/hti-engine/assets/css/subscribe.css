@@ -193,3 +193,20 @@
 .hti-digest__fine { margin: 0; font-size: 12.5px; line-height: 1.4; color: #FFF1ED; }
 .hti-subscribe--digest .hti-subscribe__status { margin: 0; color: #fff; font-weight: 600; }
 .hti-subscribe--digest .hti-subscribe__status.is-success { color: #eafff4; }
+
+/* ---------- Confirmation landing page ([hti_subscribe_confirmed]) ---------- */
+.hti-sub-confirmed { max-width: 640px; }
+.hti-sub-confirmed__lead { font-size: 1.05rem; }
+.hti-sub-confirmed__magnet {
+	background: var(--wp--preset--color--surface, #FFF6F1);
+	border: 1px solid var(--wp--preset--color--border, #F2E4DD);
+	border-radius: 16px;
+	padding: 1.5rem 1.75rem;
+	margin: 1.5rem 0;
+}
+.hti-sub-confirmed__magnet h2 { margin: 0 0 0.25rem; font-size: 1.2rem; }
+.hti-sub-confirmed__magnet p { margin: 0.4rem 0; }
+.hti-sub-confirmed__other a { font-size: 0.9rem; }
+.hti-sub-confirmed__mailed { font-size: 0.85rem; color: var(--wp--preset--color--muted, #6E6680); }
+.hti-sub-confirmed__cta { margin-top: 1.25rem; }
+.hti-sub-confirmed__note { font-size: 0.85rem; color: var(--wp--preset--color--muted, #6E6680); }
