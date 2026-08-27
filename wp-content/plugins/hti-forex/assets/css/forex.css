@@ -610,54 +610,89 @@
 }
 
 /* Partner CTA bar ---------------------------------------------------------- */
+/* The partner card carries the partner's own look — dark, with their logo —
+   so it reads as advertising at a glance and never as our editorial. Its
+   colours are deliberately local, not theme tokens. */
 .hti-fx-cta {
+	display: block;
+	background: #0b0d12;
+	border: 1px solid #1d212b;
+	border-radius: 16px;
+	padding: 20px 24px;
+	margin: 1.25rem 0;
+}
+
+.hti-fx-cta__head {
 	display: flex;
 	align-items: center;
-	gap: 20px;
-	background: var(--fx-bg);
-	border: 1px solid var(--fx-border);
-	border-radius: 16px;
-	padding: 18px 24px;
-	margin: 1.25rem 0;
+	justify-content: space-between;
+	gap: 12px;
 	flex-wrap: wrap;
+	margin-bottom: 12px;
+}
+
+.hti-fx-cta__logo {
+	display: block;
+	height: 26px;
+	width: auto;
+	max-width: 160px;
+}
+
+.hti-fx-cta__wordmark {
+	font: 800 20px/1 var(--fx-heading, inherit);
+	letter-spacing: -0.01em;
+	color: #fff;
 }
 
 .hti-fx-cta__badge {
 	flex: none;
 	font: 600 11px var(--fx-body-font);
-	letter-spacing: 0.06em;
-	color: var(--fx-muted);
-	background: var(--fx-white);
-	border: 1px solid var(--fx-border);
+	letter-spacing: 0.08em;
+	color: #b9c0cc;
+	background: transparent;
+	border: 1px solid #2a303c;
 	border-radius: 999px;
-	padding: 5px 12px;
+	padding: 4px 11px;
+}
+
+.hti-fx-cta__headline {
+	margin: 0 0 14px;
+	font: 700 18px/1.4 var(--fx-body-font);
+	color: #fff;
+	/* Long offer sentences wrap here instead of stretching the button. */
+	overflow-wrap: anywhere;
 }
 
 .hti-fx-cta__risk {
-	flex: 1 1 260px;
-	font: 400 13px/1.55 var(--fx-body-font);
-	color: var(--fx-muted);
+	display: block;
+	margin-top: 12px;
+	font: 400 12px/1.5 var(--fx-body-font);
+	color: #8d95a3;
 }
 
 .hti-fx-cta__btn {
-	flex: none;
+	/* Shrinkable and wrappable: a long label used to overflow the card
+	   because the button could not shrink below its single-line width. */
 	display: inline-block;
-	font: 700 15px var(--fx-body-font);
+	max-width: 100%;
+	font: 700 15px/1.35 var(--fx-body-font);
 	color: #fff;
-	background: var(--fx-coral);
-	border-radius: 999px;
-	padding: 12px 26px;
+	background: #2f8747;
+	border-radius: 10px;
+	padding: 13px 26px;
+	text-align: center;
 	text-decoration: none;
+	overflow-wrap: anywhere;
 	transition: background 0.15s ease;
 }
 
 .hti-fx-cta__btn:hover {
-	background: var(--fx-coral-hover);
+	background: #256d39;
 	color: #fff;
 }
 
 .hti-fx-cta__btn:focus-visible {
-	outline: 2.5px solid var(--fx-coral);
+	outline: 2.5px solid #7fd39a;
 	outline-offset: 2px;
 }
 
