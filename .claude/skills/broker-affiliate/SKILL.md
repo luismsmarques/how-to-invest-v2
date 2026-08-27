@@ -32,6 +32,12 @@ are what keeps the section legal. When in doubt, be more conservative.
    validator's `INSTRUMENT_BLOCKLIST` enforces this → fallback), the result's
    educational block, the PDF export, emails, Learn content, glossary, social
    posts. The partner module renders **after** `.hti-actions`, visually distinct.
+   *One documented exception:* the `/forex/` section (hti-forex — English-only,
+   separate audience, already carrying a partner CTA and banner slots) may also
+   carry a labelled partner block in its own material, including the cheat-sheet
+   PDF, under rules 2–6. Containment still binds the main product's engine
+   result, its PDF export (`hti-engine/includes/class-pdf.php`, guarded in CI by
+   `test-broker-match.php`), emails, Learn and glossary.
 2. **Label.** Every card/module with an active affiliate deal shows
    "Partner · Ad" / "Parceria · Publicidade".
 3. **On-page disclosure.** Every page with broker links carries the canonical
