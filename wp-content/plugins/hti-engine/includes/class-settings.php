@@ -325,17 +325,22 @@ class Settings {
 			),
 		);
 
-		// Newsletter lists per language (used on opt-in confirm).
+		// Newsletter lists per language (used on opt-in confirm). A per-language
+		// id may be missing while the legacy single list silently fills in —
+		// then subscribers still land somewhere, but EN and PT stop being
+		// segmented, so that state is a warning, not an "ok".
 		foreach ( array( 'pt' => __( 'Newsletter list (PT)', 'hti-engine' ), 'en' => __( 'Newsletter list (EN)', 'hti-engine' ) ) as $loc => $label ) {
-			$id     = Brevo::list_id( $loc );
-			$rows[] = array(
-				$id > 0 ? 'ok' : 'fail',
-				$label,
-				$id > 0
-					/* translators: %d: Brevo list id. */
-					? sprintf( __( 'List ID %d.', 'hti-engine' ), $id )
-					: __( 'Not set — confirmed subscribers cannot be added to a list.', 'hti-engine' ),
-			);
+			$id       = Brevo::list_id( $loc );
+			$explicit = ! empty( $settings[ 'brevo_list_id_' . $loc ] );
+			if ( $id > 0 && $explicit ) {
+				/* translators: %d: Brevo list id. */
+				$rows[] = array( 'ok', $label, sprintf( __( 'List ID %d.', 'hti-engine' ), $id ) );
+			} elseif ( $id > 0 ) {
+				/* translators: %d: Brevo list id. */
+				$rows[] = array( 'warn', $label, sprintf( __( 'Falling back to the legacy shared list (ID %d) — set a dedicated list so EN and PT subscribers stay segmented.', 'hti-engine' ), $id ) );
+			} else {
+				$rows[] = array( 'fail', $label, __( 'Not set — confirmed subscribers cannot be added to a list.', 'hti-engine' ) );
+			}
 		}
 
 		// Ebook PDF assets (the download link points to these theme files).
@@ -354,6 +359,15 @@ class Settings {
 				$exists ? __( 'File found in the theme.', 'hti-engine' ) : __( 'Missing — deploy the theme assets/ebook/ folder.', 'hti-engine' ),
 			);
 		}
+
+		/**
+		 * Filter the readiness rows so other plugins can append their own lead
+		 * magnet checks (e.g. hti-forex's cheat-sheet PDF). Each row is
+		 * [ 'ok'|'warn'|'fail', label, message ].
+		 *
+		 * @param array<int,array{0:string,1:string,2:string}> $rows Readiness rows.
+		 */
+		$rows = (array) apply_filters( 'hti_readiness_rows', $rows );
 
 		$colors = array(
 			'ok'   => array( '#15803d', '#dcfce7', '✓' ),

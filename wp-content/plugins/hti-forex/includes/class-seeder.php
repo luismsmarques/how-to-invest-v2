@@ -293,7 +293,7 @@ class Seeder {
 				'content'   => self::p( 'Enter your account balance in rupees, the percentage you are prepared to risk and your stop-loss distance — the calculator returns the position in lots and units, and the exact amount in ₹ actually at risk. It recalculates as you type, natively in INR rather than converting at the end.' )
 					. self::tool( 'position_size' )
 					. self::h2( 'How it works' )
-					. self::p( 'The amount at risk is your balance multiplied by the risk percentage. Dividing it by the stop-loss distance in pips times the pip value in rupees per lot gives the raw position, which is then rounded down to the nearest micro lot (0.01) — rounding down means the rupee risk shown is never higher than the risk you chose. As an example, a ₹1,00,000 account risking 1% with a 20-pip stop on EUR/USD at ₹83 per dollar works out to 0.06 lots, with ₹996 actually at risk.' )
+					. self::p( 'The amount at risk is your balance multiplied by the risk percentage. Dividing it by the stop-loss distance in pips times the pip value in rupees per lot gives the raw position, which is then rounded down to the nearest micro lot (0.01) — rounding down means the rupee risk shown is never higher than the risk you chose. As an example, a ₹1,00,000 account risking 1% with a 20-pip stop on EUR/USD at ₹95.5 per dollar works out to 0.05 lots, with ₹955 actually at risk.' )
 					. self::faq_section( 'position_size' )
 					. self::p( 'Also see the <a href="' . esc_url( $pip_url ) . '">pip value calculator in Indian rupees</a> and the <a href="' . esc_url( $hours_url ) . '">forex market hours in IST</a>. For the idea underneath every position size, read <a href="' . esc_url( $risk_url ) . '">risk and reward, explained calmly</a>.' ),
 			),
@@ -307,9 +307,9 @@ class Seeder {
 				'content'   => self::p( 'How much is one pip worth in Indian rupees? Pick a pair and a position size — the calculator shows the pip value in ₹ and US dollars, plus the value per standard, mini and micro lot. The USD/INR reference rate is shown with its date and stays editable.' )
 					. self::tool( 'pip_value' )
 					. self::h2( 'How it works' )
-					. self::p( 'A pip value is born in the pair\'s quote currency: pip size times contract size times lots. It is converted to US dollars where needed (yen pairs via USD/JPY) and then to rupees at the USD/INR rate. On EUR/USD, one pip on a standard lot is $10 — about ₹830 at ₹83 per dollar.' )
+					. self::p( 'A pip value is born in the pair\'s quote currency: pip size times contract size times lots. It is converted to US dollars where needed (yen pairs via USD/JPY) and then to rupees at the USD/INR rate. On EUR/USD, one pip on a standard lot is $10 — about ₹955 at ₹95.5 per dollar.' )
 					. self::h2( 'Gold (XAUUSD) pip value in rupees', 'xauusd' )
-					. self::p( 'Gold is quoted in dollars per troy ounce and a standard lot is 100 oz. Using the most common retail convention — one pip equals a $0.10 move — one pip on a full gold lot is worth $10, roughly ₹830 at ₹83 per dollar. Some platforms count each $0.01 tick as a pip worth $1 instead; the FAQ below covers the difference.' )
+					. self::p( 'Gold is quoted in dollars per troy ounce and a standard lot is 100 oz. Using the most common retail convention — one pip equals a $0.10 move — one pip on a full gold lot is worth $10, roughly ₹955 at ₹95.5 per dollar. Some platforms count each $0.01 tick as a pip worth $1 instead; the FAQ below covers the difference.' )
 					. self::faq_section( 'pip_value' )
 					. self::p( 'Also see the <a href="' . esc_url( $pos_url ) . '">position size calculator in ₹</a> and the <a href="' . esc_url( $hours_url ) . '">forex market hours in IST</a>.' ),
 			),
@@ -323,7 +323,7 @@ class Seeder {
 				'content'   => self::p( 'Pick a pair and direction, enter the position size, entry and exit prices — the calculator shows the gross profit or loss of the trade in rupees and dollars, plus the pips moved. Prices prefill with plausible values when you switch pairs; overwrite them with your own.' )
 					. self::tool( 'profit_loss' )
 					. self::h2( 'How it works' )
-					. self::p( 'The price difference is multiplied by the contract size and the lots, giving the result in the pair\'s quote currency; that amount is converted to US dollars where needed and then to rupees at the USD/INR reference rate. Buying 0.10 lots of EUR/USD at 1.0900 and closing at 1.0920 gains 20 pips — $20, or about ₹1,660 at ₹83 per dollar. The result is gross: spreads, commissions and swaps are not included.' )
+					. self::p( 'The price difference is multiplied by the contract size and the lots, giving the result in the pair\'s quote currency; that amount is converted to US dollars where needed and then to rupees at the USD/INR reference rate. Buying 0.10 lots of EUR/USD at 1.1650 and closing at 1.1670 gains 20 pips — $20, or about ₹1,910 at ₹95.5 per dollar. The result is gross: spreads, commissions and swaps are not included.' )
 					. self::faq_section( 'profit_loss' )
 					. self::p( 'Also see the <a href="' . esc_url( $pos_url ) . '">position size calculator in ₹</a> and the <a href="' . esc_url( $pip_url ) . '">pip value calculator in Indian rupees</a>.' ),
 			),
@@ -334,10 +334,10 @@ class Seeder {
 				'title'     => 'XAUUSD (gold) lot size calculator in ₹',
 				'seo_title' => 'XAUUSD Lot Size Calculator — Gold Position Size in INR (₹)',
 				'seo_desc'  => 'Gold (XAUUSD) position size calculator with INR as the account currency: 100 oz contracts, $0.10 pips, stop-loss in pips and the exact rupees at risk.',
-				'content'   => self::p( 'Gold is the most-searched instrument among Indian forex traders, and it is also where position sizing goes wrong most often: a standard XAUUSD lot is 100 troy ounces — around $330,000 of exposure at $3,300 per ounce — and the price moves in bigger dollar steps than any major currency pair. This calculator sizes a gold position from your rupee balance, risk percentage and stop distance, preset to XAUUSD.' )
+				'content'   => self::p( 'Gold is the most-searched instrument among Indian forex traders, and it is also where position sizing goes wrong most often: a standard XAUUSD lot is 100 troy ounces — around $465,000 of exposure at $4,650 per ounce — and the price moves in bigger dollar steps than any major currency pair. This calculator sizes a gold position from your rupee balance, risk percentage and stop distance, preset to XAUUSD.' )
 					. self::tool( 'position_size', 'pair="XAUUSD" stop="50"' )
 					. self::h2( 'How gold contracts work' )
-					. self::p( 'XAUUSD is quoted in US dollars per troy ounce. On the common retail convention a pip is a $0.10 move, worth $10 per standard lot (100 oz), about ₹830 at ₹83 per dollar — some platforms count each $0.01 tick as a $1 pip instead, so it is worth checking the contract specification. Because gold\'s daily range is wide, stops tend to be set in larger pip counts than on currency pairs, which shrinks the lot size the same rupee risk can support.' )
+					. self::p( 'XAUUSD is quoted in US dollars per troy ounce. On the common retail convention a pip is a $0.10 move, worth $10 per standard lot (100 oz), about ₹955 at ₹95.5 per dollar — some platforms count each $0.01 tick as a $1 pip instead, so it is worth checking the contract specification. Because gold\'s daily range is wide, stops tend to be set in larger pip counts than on currency pairs, which shrinks the lot size the same rupee risk can support.' )
 					. self::faq_section( 'xauusd' )
 					. self::p( 'Also see the <a href="' . esc_url( $pip_url ) . '#xauusd">gold section of the pip value calculator</a> and the <a href="' . esc_url( $profit_url ) . '">profit calculator in ₹</a>.' ),
 			),
@@ -347,11 +347,11 @@ class Seeder {
 				'slug'      => 'lot-size-for-100-dollar-account',
 				'title'     => 'Lot size for a $100 forex account',
 				'seo_title' => 'What Lot Size for a $100 Forex Account? The Honest Arithmetic (INR)',
-				'seo_desc'  => 'What lot size fits a $100 (≈₹8,500) forex account? The honest answer: often below one micro lot. Run the numbers in rupees for $100, $500 and $1,000 accounts.',
-				'content'   => self::p( 'One of the most-asked questions among new traders is what lot size fits a $100 account — and most pages dodge the honest answer. This calculator is preset to roughly ₹8,500 (about $100), 1% risk and a 20-pip stop; run it and it will tell you the position is below one micro lot, because it is. Change the inputs to see what balances the arithmetic actually supports.' )
-					. self::tool( 'position_size', 'balance="8500" risk="1" stop="20"' )
+				'seo_desc'  => 'What lot size fits a $100 (≈₹9,550) forex account? The honest answer: often below one micro lot. Run the numbers in rupees for $100, $500 and $1,000 accounts.',
+				'content'   => self::p( 'One of the most-asked questions among new traders is what lot size fits a $100 account — and most pages dodge the honest answer. This calculator is preset to roughly ₹9,550 (about $100), 1% risk and a 20-pip stop; run it and it will tell you the position is below one micro lot, because it is. Change the inputs to see what balances the arithmetic actually supports.' )
+					. self::tool( 'position_size', 'balance="9550" risk="1" stop="20"' )
 					. self::h2( 'The honest arithmetic' )
-					. self::p( 'Risking 1% of ₹8,500 is about ₹85 per trade. With a 20-pip stop on EUR/USD, where a micro lot\'s pip is worth about ₹8.30 at ₹83 per dollar, the position that matches ₹85 of risk is roughly half a micro lot — below the smallest size most platforms allow. That is not a flaw in the calculator; it is the reason very small accounts so often blow up: every position they can open risks more than the percentage its owner intended.' )
+					. self::p( 'Risking 1% of ₹9,550 is about ₹95 per trade. With a 20-pip stop on EUR/USD, where a micro lot\'s pip is worth about ₹9.55 at ₹95.5 per dollar, the position that matches ₹95 of risk is roughly half a micro lot — below the smallest size most platforms allow. That is not a flaw in the calculator; it is the reason very small accounts so often blow up: every position they can open risks more than the percentage its owner intended.' )
 					. self::faq_section( 'small_account' )
 					. self::p( 'Also see the <a href="' . esc_url( $pos_url ) . '">full position size calculator in ₹</a> and the <a href="' . esc_url( $pip_url ) . '">pip value calculator in Indian rupees</a>.' ),
 			),
@@ -365,7 +365,7 @@ class Seeder {
 				'content'   => self::p( 'Leverage is the most misunderstood number in forex: it does not decide how large your position should be — your balance, risk percentage and stop-loss do that. What leverage decides is the margin set aside to hold the position. This calculator does both jobs at once: it sizes the position from your risk, then shows the notional value and the margin that size actually requires in rupees at your chosen leverage.' )
 					. self::tool( 'position_size', 'leverage="1"' )
 					. self::h2( 'Position size vs margin' )
-					. self::p( 'The position size comes from the risk arithmetic: rupees at risk divided by stop distance times pip value. The margin comes from the exposure: the position\'s notional value divided by the leverage. At 1:500, a 0.06-lot EUR/USD position (about ₹5.4 lakh of notional at ₹83 per dollar) needs only around ₹1,086 of margin — which is exactly why high leverage makes it dangerously easy to open positions far larger than a risk-based size.' )
+					. self::p( 'The position size comes from the risk arithmetic: rupees at risk divided by stop distance times pip value. The margin comes from the exposure: the position\'s notional value divided by the leverage. At 1:500, a 0.05-lot EUR/USD position (about ₹5.6 lakh of notional at ₹95.5 per dollar) needs only around ₹1,113 of margin — which is exactly why high leverage makes it dangerously easy to open positions far larger than a risk-based size.' )
 					. self::faq_section( 'leverage' )
 					. self::p( 'Also see the <a href="' . esc_url( $pos_url ) . '">position size calculator in ₹</a> and the <a href="' . esc_url( $small_url ) . '">lot size for a $100 account</a>. Leverage also magnifies what you pay — <a href="' . esc_url( $fees_url ) . '">how investing costs compound</a> explains why they matter.' ),
 			),

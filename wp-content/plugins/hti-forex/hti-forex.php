@@ -48,7 +48,7 @@ Settings::init();
 Rates::init();
 
 /**
- * The tools: `[hti_forex_tool name="position_size|pip_value|sessions"]`.
+ * The tools: `[hti_forex_tool name="position_size|pip_value|profit_loss|sessions"]`.
  */
 Tools::init();
 
@@ -88,6 +88,26 @@ add_filter(
 	},
 	10,
 	3
+);
+
+/**
+ * Surface the cheat-sheet PDF in hti-engine's "Lead magnet & email readiness"
+ * panel (Settings → HowToInvest): the /forex/ email offer promises this file,
+ * and without the check a missing deploy would 404 the download link silently.
+ */
+add_filter(
+	'hti_readiness_rows',
+	function ( $rows ) {
+		$exists = file_exists( HTI_FOREX_PATH . 'assets/pdf/hti-forex-lot-size-cheat-sheet.pdf' );
+		$rows[] = array(
+			$exists ? 'ok' : 'fail',
+			__( 'Forex cheat-sheet PDF', 'hti-forex' ),
+			$exists
+				? __( 'File found in hti-forex/assets/pdf/.', 'hti-forex' )
+				: __( 'Missing — the /forex/ email offer would deliver a dead download link.', 'hti-forex' ),
+		);
+		return $rows;
+	}
 );
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {

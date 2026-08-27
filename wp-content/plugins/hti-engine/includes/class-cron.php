@@ -106,5 +106,8 @@ class Cron {
 
 		// Also remove unverified accounts that were never confirmed.
 		Verification::prune_unverified();
+
+		// And the expired one-shot delivery locks from the subscribe flow.
+		Subscribe::prune_delivery_locks();
 	}
 }

@@ -171,10 +171,14 @@ ok( w.london.closeIST === '22:30', 'winter: London closes 22:30 IST' );
 ok( w.new_york.openIST === '18:30', 'winter: New York opens 18:30 IST' );
 ok( w.overlap.startIST === '18:30' && w.overlap.endIST === '22:30', 'winter overlap 18:30–22:30 IST' );
 ok( w.new_york.closesNextDay, 'winter: New York closes after IST midnight' );
+// Australian DST is inverted (AEDT Nov–Mar): the northern winter is when
+// Sydney runs EARLIER in IST — the untested session the first PDF got wrong.
+ok( w.sydney.openIST === '01:30' && w.sydney.closeIST === '10:30', 'winter: Sydney 01:30–10:30 IST (AEDT)' );
 
 // Summer (both on DST): overlap 17:30–21:30 IST.
 w = windowsAt( '2026-07-15T12:00:00Z' );
 ok( w.london.openIST === '12:30', 'summer: London opens 12:30 IST' );
+ok( w.sydney.openIST === '02:30' && w.sydney.closeIST === '11:30', 'summer: Sydney 02:30–11:30 IST (AEST)' );
 ok( w.overlap.startIST === '17:30' && w.overlap.endIST === '21:30', 'summer overlap 17:30–21:30 IST' );
 
 // March desync (US already on DST since Mar 8, UK not until Mar 29).
