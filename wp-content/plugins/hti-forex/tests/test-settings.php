@@ -117,6 +117,17 @@ $r = Settings::normalize_settings( array( 'ad_code_mobile' => str_repeat( 'x', 1
 check( '' === $r['value']['ad_code_mobile'], 'oversized ad code is cleared' );
 check( count( $r['errors'] ) >= 1, 'oversized ad code is reported' );
 
+// --- Propeller pixel --------------------------------------------------------
+check( '' === $d['propeller_partner'], 'Propeller pixel is off by default' );
+$hash = str_repeat( 'ca91f99d', 8 );
+$r    = Settings::normalize_settings( array( 'propeller_partner' => '  ' . strtoupper( $hash ) . '  ' ), $d );
+check( $hash === $r['value']['propeller_partner'], 'valid 64-hex partner id is kept (lowercased, trimmed)' );
+$r = Settings::normalize_settings( array( 'propeller_partner' => 'not-a-hash' ), $d );
+check( '' === $r['value']['propeller_partner'], 'invalid partner id is cleared' );
+check( count( $r['errors'] ) >= 1, 'invalid partner id is reported' );
+$r = Settings::normalize_settings( array( 'propeller_partner' => '<script>' . $hash . '</script>' ), $d );
+check( '' === $r['value']['propeller_partner'], 'markup around the id never survives' );
+
 // --- Flags ------------------------------------------------------------------
 $r = Settings::normalize_settings( array( 'cta_enabled' => '1', 'email_enabled' => '' ), $d );
 check( true === $r['value']['cta_enabled'], 'checkbox "1" maps to true' );

@@ -60,6 +60,7 @@ class Settings {
 			'ad_code_mobile'       => '',
 			'sub_param'            => 'clickid',
 			'sub_sources'          => array( 'clickid', 'utm_campaign' ),
+			'propeller_partner'    => '',
 			'rate_override_usdinr' => 0.0,
 			'rate_override_usdjpy' => 0.0,
 		);
@@ -147,6 +148,19 @@ class Settings {
 			}
 		}
 		$out['sub_sources'] = $sources ? $sources : $defaults['sub_sources'];
+
+		// Propeller Ads partner id: the 64-hex hash from their audience tag.
+		// Only the id is stored — the pixel markup itself is rendered
+		// canonically by the plugin, never free-form HTML.
+		$partner = strtolower( trim( (string) ( $input['propeller_partner'] ?? '' ) ) );
+		if ( '' === $partner ) {
+			$out['propeller_partner'] = '';
+		} elseif ( preg_match( '/^[0-9a-f]{64}$/', $partner ) ) {
+			$out['propeller_partner'] = $partner;
+		} else {
+			$out['propeller_partner'] = '';
+			$errors[]                 = 'The Propeller partner id must be the 64-character hex hash from their tag — cleared.';
+		}
 
 		// Manual rate overrides: 0 (or blank) = automatic; out-of-bounds values
 		// are rejected so a typo can never silently distort every calculation.
@@ -332,6 +346,13 @@ class Settings {
 								<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[email_enabled]" value="1" <?php checked( ! empty( $s['email_enabled'] ) ); ?> />
 								<?php esc_html_e( 'Show the newsletter form on the tool pages (uses the existing double opt-in)', 'hti-forex' ); ?>
 							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-propeller"><?php esc_html_e( 'Propeller partner id', 'hti-forex' ); ?></label></th>
+						<td>
+							<input type="text" id="hti-fx-propeller" class="large-text code" name="<?php echo esc_attr( self::OPTION ); ?>[propeller_partner]" value="<?php echo esc_attr( (string) $s['propeller_partner'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'The 64-character hash from the Propeller Ads audience tag (partner=…). The pixel loads ONLY on the /forex/ pages, without a consent gate — campaign traffic is targeted outside the EU. Leave empty to disable.', 'hti-forex' ); ?></p>
 						</td>
 					</tr>
 					<tr>

@@ -24,11 +24,43 @@ class Tools {
 	private const SHORTCODE = 'hti_forex_tool';
 
 	/**
-	 * Hook the shortcode and assets.
+	 * Hook the shortcode, assets and the campaign pixel.
 	 */
 	public static function init(): void {
 		add_shortcode( self::SHORTCODE, array( __CLASS__, 'render' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
+		add_action( 'wp_footer', array( __CLASS__, 'print_pixel' ) );
+	}
+
+	/**
+	 * Print the Propeller Ads audience pixel — ONLY on the forex pages (the
+	 * paid-campaign landers) and only when a partner id is configured.
+	 * Deliberately not consent-gated: the campaigns target outside the EU and
+	 * the owner accepted the residual exposure for EU visitors to /forex/
+	 * (decision recorded 2026-08; the rest of the site stays consent-gated).
+	 */
+	public static function print_pixel(): void {
+		if ( ! self::is_forex_page() ) {
+			return;
+		}
+		$partner = (string) ( Settings::settings()['propeller_partner'] ?? '' );
+		if ( '' === $partner ) {
+			return;
+		}
+		echo self::pixel_html( $partner ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in pixel_html().
+	}
+
+	/**
+	 * The canonical Propeller sync tag (script + noscript fallback) for a
+	 * validated partner id. Pure so tests can assert the exact markup.
+	 *
+	 * @param string $partner 64-hex partner id (validated by Settings).
+	 */
+	public static function pixel_html( string $partner ): string {
+		$base = 'https://my.rtmark.net/';
+		$qs   = 'f=sync&lr=1&partner=' . rawurlencode( $partner );
+		return '<script src="' . esc_url( $base . 'p.js?' . $qs ) . '" defer></script>'
+			. '<noscript><img src="' . esc_url( $base . 'img.gif?' . $qs ) . '" width="1" height="1" alt="" /></noscript>' . "\n";
 	}
 
 	/**
