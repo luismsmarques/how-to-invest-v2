@@ -1,6 +1,6 @@
 <?php
 /**
- * The forex tools: `[hti_forex_tool name="position_size|pip_value|sessions"]`
+ * The forex tools: `[hti_forex_tool name="position_size|pip_value|profit_loss|sessions"]`
  * and the `/forex/` hub (`[hti_forex_hub]`).
  *
  * Implements the "Ferramenta Forex" / "Forex Hub" design handoff: one unified
@@ -126,7 +126,7 @@ class Tools {
 	}
 
 	/**
-	 * `[hti_forex_tool name="position_size|pip_value|sessions"]`.
+	 * `[hti_forex_tool name="position_size|pip_value|profit_loss|sessions"]`.
 	 *
 	 * Optional default-overrides let the variant pages preconfigure the same
 	 * tool: `pair` (validated against Config::pairs()) and the numeric
@@ -360,7 +360,7 @@ class Tools {
 			if ( 'pair' === $key ) {
 				$fields['price']    = array(
 					'label'   => 'Entry price',
-					'default' => '1.0900',
+					'default' => '1.1650',
 					'min'     => 0,
 					'step'    => 'any',
 					'unit'    => '',
@@ -480,8 +480,8 @@ class Tools {
 							'unit'    => '',
 						),
 						'lots'      => array( 'label' => 'Position size', 'default' => 0.10, 'min' => 0.01, 'step' => 0.01, 'unit' => 'lots' ),
-						'entry'     => array( 'label' => 'Entry price', 'default' => '1.0900', 'min' => 0, 'step' => 'any', 'unit' => '' ),
-						'exit'      => array( 'label' => 'Exit price', 'default' => '1.0920', 'min' => 0, 'step' => 'any', 'unit' => '' ),
+						'entry'     => array( 'label' => 'Entry price', 'default' => '1.1650', 'min' => 0, 'step' => 'any', 'unit' => '' ),
+						'exit'      => array( 'label' => 'Exit price', 'default' => '1.1670', 'min' => 0, 'step' => 'any', 'unit' => '' ),
 					),
 					$rate_fields
 				),
@@ -708,7 +708,14 @@ class Tools {
 			$privacy = home_url( '/privacy-policy/' );
 		}
 
-		return '<div class="hti-fx-email hti-fx-email--' . esc_attr( $variant ) . '" data-email data-source="forex-' . esc_attr( $tool ) . '" data-location="forex_' . esc_attr( $tool ) . '">'
+		// Attribute the opt-in to the PAGE, not the tool: three variant pages
+		// all render position_size, so a tool-keyed source collapses them in
+		// Brevo. The forex- prefix stays (the hti_lead_magnet filter keys on
+		// it); data-location keeps the tool (bounded metrics breakdown keys).
+		$page_slug = is_singular( 'page' ) ? (string) get_post_field( 'post_name', get_queried_object_id() ) : '';
+		$source    = 'forex-' . ( '' !== $page_slug ? $page_slug : $tool );
+
+		return '<div class="hti-fx-email hti-fx-email--' . esc_attr( $variant ) . '" data-email data-source="' . esc_attr( $source ) . '" data-location="forex_' . esc_attr( $tool ) . '">'
 			. '<div class="hti-fx-email__copy">'
 			. '<span class="hti-fx-email__title">' . esc_html( 'Get the free INR lot-size cheat sheet (PDF)' ) . '</span>'
 			. '<span class="hti-fx-email__sub">' . esc_html( 'Pip values in ₹, the position-size formula and market hours in IST on one printable sheet — sent after you confirm. Unsubscribe anytime.' ) . '</span>'
