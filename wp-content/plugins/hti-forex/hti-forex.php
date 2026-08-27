@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Forex
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Free forex calculators for Indian traders (INR-native position size, pip value and an IST session clock). English-only landing section under /forex/, isolated from the main educational product.
- * Version:           0.7.0
+ * Version:           0.7.1
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.7.0';
+const VERSION = '0.7.1';
 
 define( 'HTI_FOREX_FILE', __FILE__ );
 define( 'HTI_FOREX_PATH', plugin_dir_path( __FILE__ ) );
@@ -129,8 +129,10 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 /**
  * Activation: schedule the rates cron and queue an immediate first fetch so
- * a fresh install has real rates without blocking activation. No CPTs or
- * rewrite rules are registered, so there is nothing to flush.
+ * a fresh install has real rates without blocking activation. The /forex/go/
+ * rewrite is not flushed here: Go::add_rewrite() flushes once per plugin
+ * VERSION on init, which also covers the deploy path (cPanel never reactivates
+ * plugins).
  */
 function activate(): void {
 	Rates::schedule();
