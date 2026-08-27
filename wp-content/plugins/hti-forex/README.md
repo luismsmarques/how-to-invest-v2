@@ -107,6 +107,15 @@ is not on the PATH), and commit both files. Chromium keeps `<a href>` as real
 PDF link annotations, which is what makes the sheet's links clickable — check
 the page count after editing, the layout is built to fill exactly two A4 pages.
 
+To put the partner's banner on page 1, drop the creative from the affiliate
+panel at `assets/pdf/src/xm-600x90.png` (600×90) and rebuild: `build.sh`
+injects it at the `<!--XM_BANNER-->` marker, and injects nothing when the file
+is absent, so the sheet is never published with a broken image. The banner
+links through `/forex/go/cheatsheet-banner/` — a different placement from the
+text block's `/forex/go/cheatsheet/`, so the two are told apart both in the
+affiliate panel and in our click counts. Page 1 has room for it; page 2 does
+not, which is why the slot lives there.
+
 The sheet's partner link points at `/forex/go/cheatsheet/`, never at the
 affiliate URL. `includes/class-go.php` resolves that route at click time from
 the CTA settings, appends the configured sub-id (`clickid` by default) so the

@@ -67,6 +67,14 @@
 	.partner .label { font: 700 7pt Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
 	.partner .cta { display: block; margin-top: 1mm; font: 700 10pt Arial, sans-serif; color: var(--accent); }
 	.partner .risk { display: block; margin-top: 1.5mm; font-size: 7.5pt; line-height: 1.4; color: var(--muted); }
+
+	/* Banner slot (page 1). build.sh injects the creative at the
+	   <!--XM_BANNER--> marker when the image file is present, and injects
+	   nothing when it is not — so the sheet never renders a broken image. */
+	.adslot { margin-top: 5mm; text-align: center; }
+	.adslot__label { display: block; margin-bottom: 1.5mm; font: 700 7pt Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--faint, #a89fb5); }
+	.adslot img { display: block; margin: 0 auto; max-width: 100%; height: auto; border-radius: 2mm; }
+	.adslot__risk { display: block; margin-top: 1.5mm; font-size: 7pt; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -111,6 +119,8 @@
 		Pip per lot &asymp; &#8377;955 &nbsp;&rarr;&nbsp; 1,000 &divide; (20 &times; 955) = 0.052 &rarr; <strong>round DOWN to 0.05 lots</strong> (5 micro lots) &middot; actual risk <strong>&#8377;955</strong>.<br>
 		<span class="note">Always round down — rounding up silently risks more than you chose. The 1–2% risk figure is a widely cited convention in trading literature, not a rule.</span>
 	</div>
+
+	<!--XM_BANNER-->
 
 	<footer>Educational content — an illustration of the arithmetic, not investment advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money. Forex in India is regulated under FEMA; the RBI publishes an Alert List of unauthorised platforms — verify the current rules with SEBI/RBI or a professional. <span class="url"><a href="https://howtoinvest.pro/forex/">howtoinvest.pro/forex</a></span></footer>
 </div>
