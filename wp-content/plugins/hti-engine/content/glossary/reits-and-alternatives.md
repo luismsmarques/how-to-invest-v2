@@ -38,6 +38,8 @@ Quando uma parte da carteira desce, outra que se move ao seu próprio ritmo pode
 ## Que dimensão de fatia é habitual?
 Como estes ativos podem ser menos líquidos ou mais difíceis de avaliar, as carteiras ilustrativas costumam apresentá-los como uma fatia modesta e de apoio, e não como posição central. Um perfil que procure diversificação extra pode apoiar-se ligeiramente mais neles, sempre dentro de intervalos curados.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-asset-allocation|O que é a alocação de ativos].
+
 ## Pontos-chave
 - Esta classe abrange imobiliário e outros ativos não tradicionais.
 - Move-se frequentemente fora do ritmo das ações e obrigações, acrescentando diversificação.

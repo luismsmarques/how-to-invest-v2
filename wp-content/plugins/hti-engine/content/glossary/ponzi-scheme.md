@@ -38,6 +38,8 @@ Como os pagamentos só saem dos depósitos que entram, o esquema precisa de cada
 ## Que sinais de alerta ajudam a reconhecê-lo?
 Os sinais clássicos são retornos consistentemente elevados com pouco ou nenhum risco aparente, secretismo sobre como o lucro é gerado e pressão para reinvestir. Verificar a empresa junto do regulador financeiro e manter-se atento a estes sinais é essencial para detetar fraudes.
 
+Para veres o conceito em contexto, lê o capítulo [learn:spotting-scams-and-red-flags|Reconhecer fraudes e sinais de alarme].
+
 ## Pontos-chave
 - Um esquema Ponzi paga aos investidores antigos com o dinheiro dos novos, não com lucro real.
 - Colapsa sempre assim que os depósitos novos abrandam.

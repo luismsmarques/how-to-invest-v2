@@ -38,6 +38,8 @@ Enquanto coproprietário, o valor da tua posição sobe e desce consoante a form
 ## Em que difere uma única ação da classe de ativos?
 Uma só ação concentra o teu resultado numa única empresa, o que pode oscilar bruscamente. Distribuir por muitas empresas acrescenta variedade e atenua o impacto de uma delas cair. É por isso que as carteiras ilustrativas descrevem a classe ampla das ações, e não nomes individuais.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-global-equities|As ações globais mais de perto].
+
 ## Pontos-chave
 - Uma ação é uma unidade de propriedade que te torna acionista.
 - O seu valor move-se com o mercado e pode pagar dividendos.

@@ -9,6 +9,8 @@ title_en: "Risk and reward explained"
 title_pt: "Risco e retorno explicados"
 excerpt_en: "Why higher potential returns always arrive attached to bigger swings — and how to tell real risk apart from the discomfort of watching."
 excerpt_pt: "Porque é que um retorno potencial maior vem sempre agarrado a oscilações maiores — e como distinguir risco real do desconforto de estar a ver."
+seo_title_en: "Risk and Reward in Investing, Explained Calmly"
+seo_title_pt: "Risco e Retorno no Investimento, Explicados"
 glossary: risk-and-reward, volatility, time-horizon, global-equities, bonds, cash
 prev: what-is-investing
 next: why-your-time-horizon-matters

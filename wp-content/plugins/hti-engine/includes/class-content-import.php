@@ -40,6 +40,15 @@ class Content_Import {
 	public const META_GLOSSARY = 'hti_glossary';
 
 	/**
+	 * Language the inline link tokens are being resolved for. Set by
+	 * to_blocks() for the duration of one body conversion ('en' default);
+	 * imports are single-threaded, so a static flag is safe here.
+	 *
+	 * @var string
+	 */
+	private static string $link_lang = 'en';
+
+	/**
 	 * Directory holding the Markdown chapters (bundled with the plugin).
 	 */
 	public static function dir(): string {
@@ -319,9 +328,12 @@ class Content_Import {
 	 * @param string $body        Raw body half.
 	 * @param string $tldr_label  Localized "In one line" label.
 	 * @param array  $takeaway_h  Heading texts that mark the takeaways list.
+	 * @param string $lang        Language the link tokens resolve to ('en'|'pt').
 	 * @return string Block markup.
 	 */
-	public static function to_blocks( string $body, string $tldr_label, array $takeaway_h ): string {
+	public static function to_blocks( string $body, string $tldr_label, array $takeaway_h, string $lang = 'en' ): string {
+		self::$link_lang = 'pt' === $lang ? 'pt' : 'en';
+
 		$lines = explode( "\n", $body );
 		$out   = '';
 		$list  = array();
@@ -382,6 +394,7 @@ class Content_Import {
 		}
 		$flush_list();
 
+		self::$link_lang = 'en';
 		return $out;
 	}
 
@@ -396,12 +409,87 @@ class Content_Import {
 		$html = preg_replace_callback(
 			'/\[(glossary|learn):([a-z0-9-]+)\|(.+?)\]/',
 			static function ( array $m ): string {
-				$base = 'glossary' === $m[1] ? '/investing-glossary/' : '/learn/';
-				return '<a href="' . esc_url( home_url( $base . $m[2] . '/' ) ) . '">' . $m[3] . '</a>';
+				return '<a href="' . esc_url( self::token_url( $m[1], $m[2] ) ) . '">' . $m[3] . '</a>';
+			},
+			(string) $html
+		);
+		// [page:path|Text] links to any internal page by literal path (e.g. the
+		// broker comparison as further reading). The author writes the
+		// language-appropriate path (PT bodies use the pt/... path), so no
+		// translation mapping applies here.
+		$html = preg_replace_callback(
+			'/\[page:([a-z0-9\/-]+)\|(.+?)\]/',
+			static function ( array $m ): string {
+				return '<a href="' . esc_url( home_url( '/' . trim( $m[1], '/' ) . '/' ) ) . '">' . $m[2] . '</a>';
 			},
 			(string) $html
 		);
 		return (string) $html;
+	}
+
+	/**
+	 * Resolve a link token to a URL in the language to_blocks() is converting.
+	 * Tokens always carry the EN slug (the canonical key); for PT bodies the
+	 * target is resolved to its Portuguese permalink — via Polylang when it is
+	 * loaded, else via the slug_pt frontmatter convention (/pt/{base}/{slug_pt}/).
+	 *
+	 * @param string $type Token type: 'glossary' or 'learn' (matches the CPT).
+	 * @param string $slug EN slug of the target.
+	 */
+	private static function token_url( string $type, string $slug ): string {
+		$base = 'glossary' === $type ? '/investing-glossary/' : '/learn/';
+
+		if ( 'pt' !== self::$link_lang ) {
+			return home_url( $base . $slug . '/' );
+		}
+
+		if ( function_exists( 'pll_get_post' ) ) {
+			$post = get_page_by_path( $slug, OBJECT, $type );
+			if ( $post instanceof \WP_Post ) {
+				$pt_id = pll_get_post( (int) $post->ID, self::lang_slugs()['pt'] );
+				$url   = $pt_id ? get_permalink( (int) $pt_id ) : '';
+				if ( $url ) {
+					return (string) $url;
+				}
+			}
+		}
+
+		// Pure fallback (also the test-harness path): the slug_pt convention.
+		$map = self::pt_slug_map();
+		if ( isset( $map[ $type ][ $slug ] ) ) {
+			return home_url( '/pt' . $base . $map[ $type ][ $slug ] . '/' );
+		}
+		return home_url( $base . $slug . '/' ); // Untranslated target: EN URL still works.
+	}
+
+	/**
+	 * EN slug → PT slug maps for both content types, built from the Markdown
+	 * frontmatter alone (no WordPress needed). Cached for the process.
+	 *
+	 * @return array{learn:array<string,string>,glossary:array<string,string>}
+	 */
+	public static function pt_slug_map(): array {
+		static $map = null;
+		if ( null !== $map ) {
+			return $map;
+		}
+		$map = array(
+			'learn'    => array(),
+			'glossary' => array(),
+		);
+		foreach ( self::files() as $path ) {
+			$c = self::parse_file( $path );
+			if ( $c && ! empty( $c['slug'] ) && ! empty( $c['slug_pt'] ) ) {
+				$map['learn'][ (string) $c['slug'] ] = (string) $c['slug_pt'];
+			}
+		}
+		foreach ( Glossary_Import::files() as $path ) {
+			$t = self::parse_file( $path );
+			if ( $t && ! empty( $t['slug'] ) && ! empty( $t['slug_pt'] ) ) {
+				$map['glossary'][ (string) $t['slug'] ] = (string) $t['slug_pt'];
+			}
+		}
+		return $map;
 	}
 
 	/* ---------- quiz ---------- */
@@ -625,12 +713,26 @@ class Content_Import {
 		// the reading flow before the quiz / course nav. Prev/next is rendered
 		// by the howtoinvest/learn-nav block, the quiz by howtoinvest/learn-quiz.
 		$content_en = self::to_blocks( $body_en, 'In one line', array( 'Key takeaways' ) );
-		$content_pt = self::to_blocks( $body_pt, 'Em uma linha', array( 'Pontos-chave' ) );
+		$content_pt = self::to_blocks( $body_pt, 'Em uma linha', array( 'Pontos-chave' ), 'pt' );
 
-		$en_id = self::upsert( $slug, (string) ( $c['title_en'] ?? $slug ), $content_en, (string) ( $c['excerpt_en'] ?? '' ) );
+		$en_id = self::upsert(
+			$slug,
+			(string) ( $c['title_en'] ?? $slug ),
+			$content_en,
+			(string) ( $c['excerpt_en'] ?? '' ),
+			(string) ( $c['seo_title_en'] ?? '' ),
+			(string) ( $c['seo_desc_en'] ?? '' )
+		);
 		$pt_id = 0;
 		if ( ! empty( $c['title_pt'] ) && ! empty( $c['body_pt'] ) ) {
-			$pt_id = self::upsert( $slug_pt, (string) $c['title_pt'], $content_pt, (string) ( $c['excerpt_pt'] ?? '' ) );
+			$pt_id = self::upsert(
+				$slug_pt,
+				(string) $c['title_pt'],
+				$content_pt,
+				(string) ( $c['excerpt_pt'] ?? '' ),
+				(string) ( $c['seo_title_pt'] ?? '' ),
+				(string) ( $c['seo_desc_pt'] ?? '' )
+			);
 		}
 
 		// Store / clear the quiz on each language's post.
@@ -669,9 +771,11 @@ class Content_Import {
 	 * published straight away; an existing post keeps its current status, so a
 	 * re-sync never reverts something an editor unpublished.
 	 *
+	 * @param string $seo_title SEO title (optional; written for RankMath and Yoast).
+	 * @param string $seo_desc  SEO description (optional; falls back to the excerpt).
 	 * @return int Post id (0 on failure).
 	 */
-	private static function upsert( string $slug, string $title, string $content, string $excerpt ): int {
+	private static function upsert( string $slug, string $title, string $content, string $excerpt, string $seo_title = '', string $seo_desc = '' ): int {
 		$existing = get_page_by_path( $slug, OBJECT, self::TYPE );
 
 		$data = array(
@@ -694,11 +798,17 @@ class Content_Import {
 		}
 		$id = (int) $id;
 
-		// SEO meta (description) for whichever plugin is active. RankMath's key is
-		// rank_math_description (no leading underscore), matching the seeder.
-		if ( '' !== $excerpt ) {
-			update_post_meta( $id, 'rank_math_description', $excerpt );
-			update_post_meta( $id, '_yoast_wpseo_metadesc', $excerpt );
+		// SEO meta for whichever plugin is active. RankMath's keys have no
+		// leading underscore, matching the seeder. Re-written on every import
+		// so repo edits converge on the site.
+		if ( '' !== $seo_title ) {
+			update_post_meta( $id, 'rank_math_title', $seo_title );
+			update_post_meta( $id, '_yoast_wpseo_title', $seo_title );
+		}
+		$desc = '' !== $seo_desc ? $seo_desc : $excerpt;
+		if ( '' !== $desc ) {
+			update_post_meta( $id, 'rank_math_description', $desc );
+			update_post_meta( $id, '_yoast_wpseo_metadesc', $desc );
 		}
 		return $id;
 	}

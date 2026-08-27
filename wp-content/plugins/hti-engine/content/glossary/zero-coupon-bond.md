@@ -38,6 +38,8 @@ O lucro vem inteiramente do desconto. Se uma obrigação que vale um certo monta
 ## Porque pode uma zero-coupon bond servir um horizonte longo?
 Como todo o valor chega na maturidade, estes instrumentos são frequentemente descritos no contexto de uma data futura conhecida e de um prazo alargado. O seu preço pode ser sensível às variações das taxas de juro antes da maturidade, acrescentando volatilidade.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-bonds|As obrigações mais de perto].
+
 ## Pontos-chave
 - Uma zero-coupon bond não paga juros periódicos e é vendida com desconto.
 - O retorno é a diferença entre o preço de compra e o valor nominal na maturidade.

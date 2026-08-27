@@ -38,6 +38,8 @@ Na renda fixa, o calendário de pagamentos é conhecido à partida. Na renda var
 ## O que devem os investidores esperar da renda variável?
 Maior volatilidade — os valores podem mover-se bruscamente em curtos períodos. Historicamente, cestos amplos destes ativos recompensaram a paciência em horizontes longos, embora padrões passados nunca garantam resultados futuros. Distribuir a exposição ajuda a gerir as oscilações inevitáveis.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-global-equities|As ações globais mais de perto].
+
 ## Pontos-chave
 - A renda variável tem retornos que não são fixos e dependem do desempenho do mercado.
 - Apresenta mais volatilidade de curto prazo do que a renda fixa, em troca de maior potencial de crescimento.

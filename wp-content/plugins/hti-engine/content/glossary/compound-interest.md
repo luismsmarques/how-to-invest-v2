@@ -42,6 +42,8 @@ Imagine um montante que cresce a uma taxa estável todos os anos. No primeiro an
 
 Começar mais cedo costuma superar contribuir mais tarde, porque cada ano adicional dá mais espaço à bola de neve para crescer. Uma combinação diversificada de classes amplas, como ações globais e obrigações, permite reinvestir e compor os retornos, embora os resultados reais variem e nunca sejam garantidos.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-compound-interest-works|Como funcionam os juros compostos].
+
 ## Pontos-chave
 - Os juros compostos rendem sobre o capital e também sobre os ganhos anteriores.
 - O tempo no mercado costuma ser mais decisivo do que o montante exato investido.

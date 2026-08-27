@@ -38,6 +38,8 @@ Uma empresa pode registar lucro no papel e ainda assim ficar sem dinheiro para p
 ## Como se relaciona o fluxo de caixa com o investimento?
 Para quem estuda uma ação individual, um fluxo de caixa positivo e estável pode sugerir que a empresa se financia com folga, enquanto um fluxo persistentemente negativo pode sinalizar tensão. É uma lente entre muitas e nunca uma garantia de resultados futuros.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-global-equities|As ações globais mais de perto].
+
 ## Pontos-chave
 - O fluxo de caixa acompanha o dinheiro real que entra e sai de um negócio.
 - Uma empresa lucrativa pode ainda assim enfrentar falta de dinheiro.

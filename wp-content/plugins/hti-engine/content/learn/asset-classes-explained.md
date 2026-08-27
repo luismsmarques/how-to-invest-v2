@@ -9,6 +9,8 @@ title_en: "Asset classes explained"
 title_pt: "As classes de ativos explicadas"
 excerpt_en: "The five broad families money can go into — what each one is, how it tends to behave, and why the classes matter more than what sits inside them."
 excerpt_pt: "As cinco famílias amplas onde o dinheiro pode ir — o que é cada uma, como tende a comportar-se, e porque contam mais do que o que está dentro delas."
+seo_title_en: "Asset Classes Explained: The 5 Families of Investments"
+seo_title_pt: "Classes de Ativos: As 5 Famílias do Investimento"
 glossary: asset, global-equities, bonds, cash, reits-and-alternatives, crypto
 prev: what-is-inflation
 next: a-closer-look-at-global-equities

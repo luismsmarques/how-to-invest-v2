@@ -38,6 +38,8 @@ Uma opção "call" concede o direito de comprar a um preço fixo, enquanto uma "
 ## Porque é que os principiantes devem ter cautela com opções?
 As opções têm datas de validade e podem perder todo o seu valor rapidamente, o que as torna mais arriscadas e complexas do que deter ações para o longo prazo. Avaliá-las corretamente exige compreender a volatilidade, a perda de valor com o tempo e a probabilidade. São aqui explicadas para que as saibas reconhecer, e não como algo que um perfil diversificado e de longo prazo precise de usar.
 
+Para veres o conceito em contexto, lê o capítulo [learn:common-beginner-mistakes|Erros comuns de quem começa].
+
 ## Pontos-chave
 - Uma opção é um contrato com o direito de comprar ou vender a um preço fixo.
 - As calls cobrem a compra; as puts cobrem a venda; ambas custam um prémio.

@@ -9,6 +9,8 @@ title_en: "Costs and fees, explained simply"
 title_pt: "Custos e taxas, explicados de forma simples"
 excerpt_en: "Small fees look harmless but compound against you over time — keeping them low is one of the few things you fully control."
 excerpt_pt: "Comissões pequenas parecem inofensivas, mas compõem contra ti com o tempo — mantê-las baixas é das poucas coisas que controlas por inteiro."
+seo_title_en: "Investment Fees Explained: Why Small Costs Compound"
+seo_title_pt: "Custos e Comissões de Investimento, Explicados"
 glossary: compound-interest, investment-fund, spread
 prev: understanding-account-types
 next: how-a-portfolio-is-built
@@ -19,13 +21,13 @@ next: how-a-portfolio-is-built
 You cannot control how markets move, but you can pay attention to what investing costs. Fees rarely feel dramatic in the moment, yet over a long horizon they quietly matter.
 
 ## What might I actually pay?
-Costs come in a few shapes: a charge for running an [glossary:investment-fund|fund], a fee for the account or platform, and sometimes a cost each time money moves. None looks large on its own — often a fraction of a percent — which is exactly why they are easy to overlook.
+Costs come in a few shapes: a charge for running an [glossary:investment-fund|fund], a fee for the account or platform, and sometimes a [glossary:spread|cost each time money moves]. None looks large on its own — often a fraction of a percent — which is exactly why they are easy to overlook.
 
 ## Why do small numbers add up?
 The same [glossary:compound-interest|compounding] that grows your money also works on costs. A fee skims a little off every year, and the amount it skims grows alongside your balance. Over decades, a seemingly tiny difference in cost can quietly change where you end up.
 
 ## Which part of cost can I control?
-Markets are uncertain; costs are not. They are one of the few levers you hold with near-certainty, which is why long-term thinking tends to favour keeping them low and being aware of what you are paying for.
+Markets are uncertain; costs are not. They are one of the few levers you hold with near-certainty, which is why long-term thinking tends to favour keeping them low and being aware of what you are paying for. Comparing what platforms actually charge is part of that control — our factual [page:best-brokers-in-portugal|comparison of brokers available in Portugal] lays the costs out side by side.
 
 ## Is cheaper always better?
 Low cost matters, but it is not the whole story — what something does still counts. The goal is value: paying attention to fees without letting them become the only thing you look at.
@@ -52,13 +54,13 @@ Low cost matters, but it is not the whole story — what something does still co
 Não controlas como os mercados se mexem, mas podes estar atento ao que investir custa. As comissões raramente parecem dramáticas no momento, mas, num horizonte longo, contam em silêncio.
 
 ## O que posso realmente pagar?
-Os custos surgem de algumas formas: um encargo por gerir um fundo, uma taxa pela conta ou plataforma e, por vezes, um custo sempre que o dinheiro se mexe. Nenhum parece grande por si só — muitas vezes uma fração de um por cento — e é precisamente por isso que são fáceis de ignorar.
+Os custos surgem de algumas formas: um encargo por gerir um [glossary:investment-fund|fundo], uma taxa pela conta ou plataforma e, por vezes, um [glossary:spread|custo sempre que o dinheiro se mexe]. Nenhum parece grande por si só — muitas vezes uma fração de um por cento — e é precisamente por isso que são fáceis de ignorar.
 
 ## Porque é que os números pequenos se acumulam?
-Os mesmos juros compostos que fazem o teu dinheiro crescer também trabalham sobre os custos. Uma comissão tira um pouco todos os anos, e o que tira cresce a par do teu saldo. Ao longo de décadas, uma diferença de custo aparentemente minúscula pode mudar, em silêncio, onde acabas.
+Os mesmos [glossary:compound-interest|juros compostos] que fazem o teu dinheiro crescer também trabalham sobre os custos. Uma comissão tira um pouco todos os anos, e o que tira cresce a par do teu saldo. Ao longo de décadas, uma diferença de custo aparentemente minúscula pode mudar, em silêncio, onde acabas.
 
 ## Que parte do custo posso controlar?
-Os mercados são incertos; os custos não. São das poucas alavancas que tens com quase-certeza, e é por isso que o pensamento de longo prazo tende a preferir mantê-los baixos e ter consciência do que estás a pagar.
+Os mercados são incertos; os custos não. São das poucas alavancas que tens com quase-certeza, e é por isso que o pensamento de longo prazo tende a preferir mantê-los baixos e ter consciência do que estás a pagar. Comparar o que as plataformas cobram faz parte desse controlo — a nossa [page:pt/melhores-corretoras-em-portugal|comparação factual de corretoras disponíveis em Portugal] põe os custos lado a lado.
 
 ## Mais barato é sempre melhor?
 O custo baixo conta, mas não é a história toda — o que algo faz também importa. O objetivo é valor: estar atento às comissões sem deixar que sejam a única coisa que olhas.

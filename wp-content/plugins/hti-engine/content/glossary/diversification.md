@@ -42,6 +42,8 @@ Investimentos diferentes raramente sobem e descem ao mesmo tempo. Quando uma par
 
 A diversificação funciona melhor entre classes de ativos amplas do que dentro de uma só. Uma distribuição que combine ações globais, obrigações e liquidez, por exemplo, tende a comportar-se de forma mais estável do que apenas ações. Escolher esses pesos com cuidado é o trabalho de construir uma carteira.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-a-portfolio-is-built|Como se monta uma carteira (passo a passo)].
+
 ## Pontos-chave
 - A diversificação distribui o capital por vários investimentos para gerir o risco.
 - Combinar classes de ativos pode atenuar o impacto de qualquer revés isolado.

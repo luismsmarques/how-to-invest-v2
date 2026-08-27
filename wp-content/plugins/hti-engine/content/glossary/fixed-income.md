@@ -38,6 +38,8 @@ O investidor empresta capital e, em troca, recebe pagamentos periódicos e a dev
 ## Onde encaixa a renda fixa numa carteira?
 Costuma desempenhar um papel estabilizador, tendendo a oscilar menos do que a renda variável. Muitas carteiras equilibradas combinam-na com ativos de crescimento, para que a componente mais estável possa amortecer movimentos mais bruscos. A contrapartida é, em geral, um retorno esperado de longo prazo mais baixo.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-bonds|As obrigações mais de perto].
+
 ## Pontos-chave
 - A renda fixa paga um fluxo de rendimento previsível e calendarizado, normalmente via obrigações.
 - Os retornos são definidos à partida, tornando-os mais estáveis mas geralmente inferiores aos ativos de crescimento.

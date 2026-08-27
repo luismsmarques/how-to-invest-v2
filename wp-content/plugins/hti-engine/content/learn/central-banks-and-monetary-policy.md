@@ -9,6 +9,8 @@ title_en: "Central banks and monetary policy, simply"
 title_pt: "Bancos centrais e política monetária, sem jargão"
 excerpt_en: "What a central bank does, why interest rates move, and what 'quantitative easing' means — in calm, beginner-friendly words."
 excerpt_pt: "O que faz um banco central, porque se mexem as taxas de juro e o que é o 'quantitative easing' — em palavras calmas e para principiantes."
+seo_title_en: "Central Banks and Interest Rates Explained Simply"
+seo_title_pt: "Bancos Centrais e Taxas de Juro Explicados"
 glossary: inflation, interest-rate, quantitative-easing, bonds
 prev: how-markets-work
 next: what-is-diversification

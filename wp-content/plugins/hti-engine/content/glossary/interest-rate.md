@@ -38,6 +38,8 @@ Quando as taxas sobem, a nova dívida emitida paga mais, o que tende a baixar o 
 ## Porque é a taxa de juro importante para a inflação?
 Os bancos centrais sobem frequentemente as taxas para travar o consumo e conter a subida de preços, e baixam-nas para estimular a atividade. Como taxas e preços estão tão interligados, acompanhá-las ajuda a explicar por que mudam ao longo do tempo os retornos da liquidez e das obrigações.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-bonds|As obrigações mais de perto].
+
 ## Pontos-chave
 - A taxa de juro é o custo de pedir emprestado ou a recompensa por emprestar.
 - Taxas a subir tendem a baixar o preço das obrigações já existentes.

@@ -38,6 +38,8 @@ A cada momento, um ativo tem dois preços cotados: um bid ligeiramente mais baix
 ## Porque é que o spread importa aos investidores?
 Spreads mais largos surgem normalmente em mercados menos transacionados, enquanto ativos muito líquidos tendem a tê-los estreitos. Para investidores de longo prazo que transacionam raramente, o spread importa pouco; para quem negoceia com frequência, vai-se acumulando. É uma das razões pelas quais investir com paciência e pouca rotação mantém os custos baixos.
 
+Para veres o conceito em contexto, lê o capítulo [learn:costs-and-fees-explained|Custos e taxas, explicados de forma simples].
+
 ## Pontos-chave
 - O spread é a diferença entre o preço de compra (bid) e de venda (ask) de um ativo.
 - Atravessá-lo é um custo real, muitas vezes oculto, em cada transação.

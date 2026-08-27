@@ -38,6 +38,8 @@ O banco central compra ativos a bancos e outros detentores, pagando com reservas
 ## Porque é que o QE importa aos investidores?
 Porque pode influenciar o pano de fundo de quase todas as classes de ativos. Períodos de flexibilização coincidiram muitas vezes com mercados em alta e taxas de rendimento comprimidas, enquanto a sua reversão pode fazer o contrário. Compreender o QE ajuda a explicar porque as condições gerais de mercado mudam por vezes mesmo sem alterações nas empresas.
 
+Para veres o conceito em contexto, lê o capítulo [learn:central-banks-and-monetary-policy|Bancos centrais e política monetária, sem jargão].
+
 ## Pontos-chave
 - O QE é um banco central a comprar ativos com dinheiro recém-criado para aliviar as condições financeiras.
 - Costuma baixar o custo do crédito e apoiar os preços nas várias classes de ativos.

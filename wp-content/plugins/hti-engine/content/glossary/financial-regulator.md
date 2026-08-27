@@ -38,6 +38,8 @@ A maioria das empresas legítimas tem de estar registada antes de poder oferecer
 ## O que um regulador não promete?
 Estar regulada não significa que um investimento seja seguro ou que não possas perder dinheiro. Qualquer classe de ativos continua a envolver risco e retorno, e uma empresa registada pode na mesma ver os preços cair. O regulador protege contra fraude e má conduta, não contra perdas normais de mercado, pelo que o registo é uma verificação de base e não uma garantia.
 
+Para veres o conceito em contexto, lê o capítulo [learn:spotting-scams-and-red-flags|Reconhecer fraudes e sinais de alarme].
+
 ## Pontos-chave
 - Um regulador financeiro supervisiona e licencia empresas e mercados financeiros.
 - Confirmar que uma empresa está registada é uma defesa rápida e básica contra fraudes.
