@@ -41,8 +41,8 @@ class Rates {
 	 * stale and the user can always edit the rate inline.
 	 */
 	private const FALLBACK = array(
-		'USDINR' => 88.0,
-		'USDJPY' => 150.0,
+		'USDINR' => 95.5,
+		'USDJPY' => 159.0,
 	);
 
 	private const STALE_AFTER = 7 * DAY_IN_SECONDS;

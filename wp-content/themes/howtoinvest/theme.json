@@ -474,6 +474,11 @@
 			"name": "page-ebook",
 			"title": "Ebook landing",
 			"postTypes": [ "page" ]
+		},
+		{
+			"name": "page-confirmation",
+			"title": "Confirmation page",
+			"postTypes": [ "page" ]
 		}
 	]
 }

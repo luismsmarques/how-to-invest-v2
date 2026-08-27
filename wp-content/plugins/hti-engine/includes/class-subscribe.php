@@ -27,9 +27,41 @@ class Subscribe {
 	 */
 	public static function init(): void {
 		add_shortcode( self::SHORTCODE, array( __CLASS__, 'render' ) );
+		add_shortcode( 'hti_subscribe_confirmed', array( __CLASS__, 'render_confirmed' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_action( 'template_redirect', array( __CLASS__, 'handle_link' ) );
 		add_action( 'wp_footer', array( __CLASS__, 'result_toast' ) );
+		// Unsubscribe executes only on POST (the GET link renders a confirm
+		// page) — see render_unsub_confirm() for why.
+		add_action( 'admin_post_hti_unsub', array( __CLASS__, 'handle_unsub_post' ) );
+		add_action( 'admin_post_nopriv_hti_unsub', array( __CLASS__, 'handle_unsub_post' ) );
+		add_filter( 'wp_robots', array( __CLASS__, 'robots' ) );
+	}
+
+	/**
+	 * Whether the current view is the dedicated confirmation landing page
+	 * (the seeded page carrying [hti_subscribe_confirmed]).
+	 */
+	private static function on_confirmed_page(): bool {
+		if ( ! is_singular( 'page' ) ) {
+			return false;
+		}
+		$content = (string) get_post_field( 'post_content', get_queried_object_id() );
+		return has_shortcode( $content, 'hti_subscribe_confirmed' );
+	}
+
+	/**
+	 * Keep the confirmation landing page out of the index (it is a flow page,
+	 * like the questionnaire/result).
+	 *
+	 * @param array<string,bool|string> $robots Robots directives.
+	 * @return array<string,bool|string>
+	 */
+	public static function robots( array $robots ): array {
+		if ( self::on_confirmed_page() ) {
+			$robots['noindex'] = true;
+		}
+		return $robots;
 	}
 
 	/* ---------- stateless tokens ---------- */
@@ -385,6 +417,67 @@ class Subscribe {
 	}
 
 	/**
+	 * Prefix of the per-email one-shot delivery locks (individual options, so
+	 * MySQL's unique key on option_name is the mutex).
+	 */
+	public const DELIVERY_LOCK_PREFIX = 'hti_dlv_';
+
+	/**
+	 * How long one confirmation "owns" the delivery, in seconds (15 min). A
+	 * genuine re-request after this window delivers again.
+	 */
+	private const DELIVERY_LOCK_TTL = 900;
+
+	/**
+	 * Whether THIS request is the one allowed to send the post-confirmation
+	 * email. Mail scanners (Outlook SafeLinks, Proofpoint…) prefetch the
+	 * confirmation link several times within the same second, and the
+	 * pending-source store is a non-atomic read-modify-write — so without a
+	 * real mutex two concurrent confirmations both read the source and both
+	 * send the ebook/lead magnet. `add_option()` is an INSERT guarded by the
+	 * unique key on option_name: of N concurrent calls exactly one succeeds.
+	 *
+	 * @param string $email Email.
+	 */
+	private static function delivery_guard_pass( string $email ): bool {
+		$key    = self::DELIVERY_LOCK_PREFIX . self::ebook_pending_hash( $email );
+		$expiry = time() + self::DELIVERY_LOCK_TTL;
+		if ( add_option( $key, $expiry, '', false ) ) {
+			return true;
+		}
+		// Lock exists: pass only when it expired (a stale lock is not the
+		// scanner-burst case, so the small race here is acceptable).
+		if ( (int) get_option( $key, 0 ) < time() ) {
+			update_option( $key, $expiry, false );
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Delete expired delivery locks (called from the daily Cron::prune()).
+	 * Each lock is its own option row, so the store cleans itself here rather
+	 * than on every write.
+	 */
+	public static function prune_delivery_locks(): void {
+		global $wpdb;
+		if ( ! $wpdb instanceof \wpdb ) {
+			return; // Test harness / early bootstrap.
+		}
+		$names = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- options table cleanup, no WP API for LIKE on names.
+			$wpdb->prepare(
+				"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+				$wpdb->esc_like( self::DELIVERY_LOCK_PREFIX ) . '%'
+			)
+		);
+		foreach ( (array) $names as $name ) {
+			if ( (int) get_option( (string) $name, 0 ) < time() ) {
+				delete_option( (string) $name );
+			}
+		}
+	}
+
+	/**
 	 * Public URL of the ebook PDF for a locale. Themes/plugins can override via
 	 * the `hti_ebook_url` filter; defaults to the file bundled in the theme.
 	 *
@@ -445,19 +538,104 @@ class Subscribe {
 				// lead magnet: the ebook for ebook-* sources, whatever a plugin
 				// offers via `hti_lead_magnet` otherwise, or the plain welcome.
 				// The source is carried into the redirect so the analytics
-				// event can attribute the confirmation.
-				$magnet = str_starts_with( $src, 'ebook' ) ? null : apply_filters( 'hti_lead_magnet', null, $src, $locale );
+				// event can attribute the confirmation. Exactly ONE of the
+				// concurrent confirmations of the same link may send email
+				// (delivery_guard_pass) — the lock is only taken after a
+				// successful upsert so a failed attempt can be retried.
+				$deliver = self::delivery_guard_pass( $email );
+				$magnet  = str_starts_with( $src, 'ebook' ) ? null : apply_filters( 'hti_lead_magnet', null, $src, $locale );
 				if ( str_starts_with( $src, 'ebook' ) ) {
 					$source = 'ebook';
-					self::send_ebook_email( $email, $locale );
+					if ( $deliver ) {
+						self::send_ebook_email( $email, $locale );
+					}
 				} elseif ( is_array( $magnet ) && ! empty( $magnet['url'] ) ) {
 					$source = strtok( $src, '-' );
-					self::send_lead_magnet_email( $email, $locale, (string) $magnet['url'], (string) ( $magnet['name'] ?? 'your download' ) );
-				} else {
+					if ( $deliver ) {
+						self::send_lead_magnet_email( $email, $locale, (string) $magnet['url'], (string) ( $magnet['name'] ?? 'your download' ) );
+					}
+				} elseif ( $deliver ) {
 					self::send_confirmed_email( $email, $locale );
 				}
 			}
 			self::redirect_result( $ok ? 'confirmed' : 'error', $locale, $source );
+		}
+
+		// Unsubscribe: the GET link only renders a confirmation page — mail
+		// scanners prefetch every GET link in an email, and executing here
+		// would let a scanner silently remove the contact from the list. The
+		// actual removal happens in handle_unsub_post() (scanners don't POST).
+		self::render_unsub_confirm( $email, $token, $locale );
+	}
+
+	/**
+	 * Minimal standalone confirmation page for the unsubscribe link (GET).
+	 * Prints and exits.
+	 *
+	 * @param string $email  Email (token-verified).
+	 * @param string $token  The unsub token, re-embedded in the POST form.
+	 * @param string $locale Locale.
+	 */
+	private static function render_unsub_confirm( string $email, string $token, string $locale ): void {
+		$pt    = 'pt' === $locale;
+		$title = $pt ? 'Cancelar subscrição' : 'Unsubscribe';
+		$lead  = $pt
+			? sprintf( 'Queres deixar de receber os emails da HowToInvest em %s?', $email )
+			: sprintf( 'Stop receiving HowToInvest emails at %s?', $email );
+		$btn   = $pt ? 'Sim, cancelar subscrição' : 'Yes, unsubscribe';
+		$back  = $pt ? 'Afinal não — voltar ao site' : 'Never mind — back to the site';
+		$home  = home_url( $pt ? '/pt/' : '/' );
+
+		nocache_headers();
+		header( 'X-Robots-Tag: noindex, nofollow' );
+		status_header( 200 );
+		?>
+<!doctype html>
+<html lang="<?php echo esc_attr( $pt ? 'pt' : 'en' ); ?>">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title><?php echo esc_html( $title ); ?> — HowToInvest</title>
+<style>
+	body{margin:0;font:400 16px/1.6 system-ui,Arial,sans-serif;background:#FFF6F1;color:#2A2438;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
+	.card{background:#fff;border:1px solid #F2E4DD;border-radius:16px;padding:36px 32px;max-width:420px;text-align:center}
+	h1{font-size:22px;margin:0 0 10px}
+	p{margin:0 0 22px;color:#6E6680}
+	button{background:#C9362C;color:#fff;border:0;border-radius:999px;font:700 15px system-ui,Arial,sans-serif;padding:12px 26px;cursor:pointer}
+	a{display:block;margin-top:16px;color:#7C5CFC;font-size:14px}
+</style>
+</head>
+<body>
+	<div class="card">
+		<h1><?php echo esc_html( $title ); ?></h1>
+		<p><?php echo esc_html( $lead ); ?></p>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="hti_unsub">
+			<input type="hidden" name="e" value="<?php echo esc_attr( $email ); ?>">
+			<input type="hidden" name="t" value="<?php echo esc_attr( $token ); ?>">
+			<input type="hidden" name="l" value="<?php echo esc_attr( $pt ? 'pt' : 'en' ); ?>">
+			<button type="submit"><?php echo esc_html( $btn ); ?></button>
+		</form>
+		<a href="<?php echo esc_url( $home ); ?>"><?php echo esc_html( $back ); ?></a>
+	</div>
+</body>
+</html>
+		<?php
+		exit;
+	}
+
+	/**
+	 * Execute the unsubscribe (POST from the confirmation page above). The
+	 * HMAC token is the capability, same as the GET handler.
+	 */
+	public static function handle_unsub_post(): void {
+		$email  = isset( $_POST['e'] ) ? sanitize_email( wp_unslash( $_POST['e'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- token is the capability.
+		$token  = isset( $_POST['t'] ) ? sanitize_text_field( wp_unslash( $_POST['t'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$locale = ( isset( $_POST['l'] ) && 'pt' === $_POST['l'] ) ? 'pt' : 'en'; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		if ( ! is_email( $email ) || ! self::token_valid( $email, 'unsub', $token ) ) {
+			self::redirect_result( 'error', $locale );
 		}
 
 		// Unsubscribe from the language list they subscribed via.
@@ -466,7 +644,8 @@ class Subscribe {
 	}
 
 	/**
-	 * Redirect home with a flag the footer toast renders, then stop.
+	 * Redirect to the confirmation landing page (confirmed state) or home
+	 * (everything else, rendered as the footer toast), then stop.
 	 *
 	 * @param string $state  Result state.
 	 * @param string $locale Locale.
@@ -476,8 +655,204 @@ class Subscribe {
 		if ( '' !== $source ) {
 			$args['src'] = $source;
 		}
-		wp_safe_redirect( add_query_arg( $args, home_url( '/' ) ) );
+		$target = 'confirmed' === $state ? self::confirmed_page_url( $locale ) : '';
+		if ( '' === $target ) {
+			$target = home_url( '/' );
+		}
+		wp_safe_redirect( add_query_arg( $args, $target ) );
 		exit;
+	}
+
+	/**
+	 * URL of the seeded confirmation landing page in a locale ('' when the
+	 * page doesn't exist yet — the caller falls back to the home toast).
+	 *
+	 * @param string $locale Locale.
+	 */
+	private static function confirmed_page_url( string $locale ): string {
+		$page = get_page_by_path( 'subscription-confirmed', OBJECT, 'page' );
+		if ( ! $page instanceof \WP_Post ) {
+			return '';
+		}
+		$id = (int) $page->ID;
+		if ( 'pt' === $locale && function_exists( 'pll_get_post' ) ) {
+			$pt_id = (int) pll_get_post( $id, 'pt' );
+			if ( $pt_id > 0 ) {
+				$id = $pt_id;
+			}
+		}
+		return (string) get_permalink( $id );
+	}
+
+	/**
+	 * `[hti_subscribe_confirmed]` — body of the confirmation landing page:
+	 * welcome copy, the immediate lead-magnet download when this confirmation
+	 * owes one (resolved from the redirect's `src`, never from user input
+	 * beyond that key), a funnel CTA and the unsubscribe note.
+	 */
+	public static function render_confirmed(): string {
+		wp_enqueue_style( 'hti-subscribe' );
+
+		$pt    = 'pt' === self::locale();
+		$state = isset( $_GET['hti_sub_done'] ) ? sanitize_key( wp_unslash( $_GET['hti_sub_done'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only state set by our own redirect.
+		$src   = isset( $_GET['src'] ) ? sanitize_key( wp_unslash( $_GET['src'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$done  = 'confirmed' === $state;
+
+		// The page carries no wp:post-title (page-confirmation template), so
+		// the component owns the H1 — and it can differ per state.
+		$title = $done
+			? ( $pt ? 'Subscrição confirmada' : 'You’re subscribed' )
+			: ( $pt ? 'Confirmação de subscrição' : 'Subscription confirmation' );
+		$lead  = $done
+			? ( $pt
+				? 'Bem-vindo. A partir de agora recebes as nossas novidades e aprendizagem financeira — sem jargão, sem produtos, sem promessas.'
+				: 'Welcome aboard. From now on you’ll get our updates and jargon-free financial learning — no products, no promises.' )
+			: ( $pt
+				? 'Esta é a página que confirma subscrições da newsletter. Para subscreveres, usa um dos formulários do site: enviamos-te primeiro um email para confirmares.'
+				: 'This is the page that confirms newsletter subscriptions. To subscribe, use one of the forms on the site — we email you a confirmation link first.' );
+
+		$out  = '<div class="hti-sub-confirmed">';
+		$out .= '<div class="hti-sub-confirmed__hero">';
+
+		if ( $done ) {
+			$out .= '<span class="hti-sub-confirmed__eyebrow"><span class="hti-sub-confirmed__dot"></span>'
+				. esc_html( $pt ? 'Estás dentro' : 'You’re in' ) . '</span>';
+			$out .= '<span class="hti-sub-confirmed__check">' . self::icon( '<path d="M20 6 9 17l-5-5"/>' ) . '</span>';
+		}
+
+		$out .= '<h1 class="hti-sub-confirmed__h">' . esc_html( $title ) . '</h1>';
+		$out .= '<p class="hti-sub-confirmed__lead">' . esc_html( $lead ) . '</p>';
+		$out .= '</div>';
+
+		if ( $done ) {
+			$out .= self::confirmed_magnet_html( $src, $pt );
+			$out .= self::confirmed_next_html( $pt );
+		}
+
+		$out .= '<p class="hti-sub-confirmed__note">'
+			. esc_html(
+				$pt
+					? 'Podes cancelar quando quiseres — todos os nossos emails trazem um link de cancelamento.'
+					: 'You can unsubscribe anytime — every email we send carries an unsubscribe link.'
+			)
+			. '</p>';
+		$out .= '</div>';
+
+		return $out;
+	}
+
+	/**
+	 * The immediate-download panel for the lead magnet owed by this
+	 * confirmation, '' when the source owes none (plain newsletter). Uses the
+	 * dark lead-magnet treatment the Learn hub already uses for the ebook.
+	 *
+	 * @param string $src Source key from the redirect ('ebook', 'forex', …).
+	 * @param bool   $pt  Whether the page is Portuguese.
+	 */
+	private static function confirmed_magnet_html( string $src, bool $pt ): string {
+		$locale  = $pt ? 'pt' : 'en';
+		$url     = '';
+		$name    = '';
+		$other   = '';
+		$other_l = '';
+
+		if ( str_starts_with( $src, 'ebook' ) ) {
+			$url     = self::ebook_url( $locale );
+			$name    = $pt ? 'Como começar a investir' : 'How to start investing';
+			$other   = self::ebook_url( $pt ? 'en' : 'pt' );
+			$other_l = $pt ? 'Prefiro a versão em inglês' : 'I’d prefer the Portuguese version';
+		} elseif ( '' !== $src && 'newsletter' !== $src ) {
+			$magnet = apply_filters( 'hti_lead_magnet', null, $src, $locale );
+			if ( is_array( $magnet ) && ! empty( $magnet['url'] ) ) {
+				$url  = (string) $magnet['url'];
+				$name = (string) ( $magnet['name'] ?? ( $pt ? 'O teu download' : 'Your download' ) );
+			}
+		}
+
+		if ( '' === $url ) {
+			return '';
+		}
+
+		$html  = '<section class="hti-sub-confirmed__magnet" aria-labelledby="hti-sub-magnet-h">';
+		$html .= '<span class="hti-sub-confirmed__tile">' . self::icon( '<path d="M12 3v12"/><path d="m7 14 5 5 5-5"/><path d="M5 21h14"/>' ) . '</span>';
+		$html .= '<div class="hti-sub-confirmed__magnet-body">';
+		$html .= '<h2 class="hti-sub-confirmed__magnet-h" id="hti-sub-magnet-h">' . esc_html( $pt ? 'O teu download está pronto' : 'Your download is ready' ) . '</h2>';
+		$html .= '<p class="hti-sub-confirmed__magnet-name">' . esc_html( $name ) . ' <span>(PDF)</span></p>';
+		$html .= '<p class="hti-sub-confirmed__actions">'
+			. '<a class="hti-sub-confirmed__btn" href="' . esc_url( $url ) . '" target="_blank" rel="noopener">'
+			. esc_html( $pt ? 'Descarregar o PDF' : 'Download the PDF' ) . '</a>';
+		if ( '' !== $other ) {
+			$html .= '<a class="hti-sub-confirmed__btn hti-sub-confirmed__btn--ghost" href="' . esc_url( $other ) . '" target="_blank" rel="noopener">'
+				. esc_html( $other_l ) . '</a>';
+		}
+		$html .= '</p>';
+		$html .= '<p class="hti-sub-confirmed__mailed">'
+			. esc_html( $pt ? 'Também to enviámos por email, para o teres sempre à mão.' : 'We also emailed it to you, so it’s always at hand.' )
+			. '</p>';
+		$html .= '</div></section>';
+
+		return $html;
+	}
+
+	/**
+	 * The "next step" card pointing at the questionnaire ('' when the page
+	 * isn't seeded). Mirrors the Learn hub's purple next-step card.
+	 *
+	 * @param bool $pt Whether the page is Portuguese.
+	 */
+	private static function confirmed_next_html( bool $pt ): string {
+		$url = self::quiz_url( $pt );
+		if ( '' === $url ) {
+			return '';
+		}
+
+		$html  = '<section class="hti-sub-confirmed__next" aria-labelledby="hti-sub-next-h">';
+		$html .= '<span class="hti-sub-confirmed__tile hti-sub-confirmed__tile--accent">'
+			. self::icon( '<path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>' ) . '</span>';
+		$html .= '<div>';
+		$html .= '<h2 class="hti-sub-confirmed__next-h" id="hti-sub-next-h">' . esc_html( $pt ? 'Enquanto esperas pelo próximo email' : 'While you wait for the next email' ) . '</h2>';
+		$html .= '<p class="hti-sub-confirmed__next-p">'
+			. esc_html(
+				$pt
+					? 'Responde ao questionário e vê que perfil de investidor te descreve — e um exemplo ilustrativo de carteira por classes de ativos. Leva cerca de 3 minutos.'
+					: 'Take the questionnaire to see which investor profile describes you — and an illustrative portfolio by asset class. It takes about 3 minutes.'
+			)
+			. '</p>';
+		$html .= '<p class="hti-sub-confirmed__actions"><a class="hti-sub-confirmed__btn hti-sub-confirmed__btn--accent" href="' . esc_url( $url ) . '">'
+			. esc_html( $pt ? 'Descobrir o meu perfil' : 'Discover my profile' ) . '</a></p>';
+		$html .= '</div></section>';
+
+		return $html;
+	}
+
+	/**
+	 * Inline Feather-style icon, using the theme's icon signature.
+	 *
+	 * @param string $path Raw SVG path markup (author-controlled, never input).
+	 */
+	private static function icon( string $path ): string {
+		return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'
+			. $path . '</svg>';
+	}
+
+	/**
+	 * Localized URL of the questionnaire page ('' when unseeded).
+	 *
+	 * @param bool $pt Whether Portuguese.
+	 */
+	private static function quiz_url( bool $pt ): string {
+		$page = get_page_by_path( 'investor-profile-quiz', OBJECT, 'page' );
+		if ( ! $page instanceof \WP_Post ) {
+			return '';
+		}
+		$id = (int) $page->ID;
+		if ( $pt && function_exists( 'pll_get_post' ) ) {
+			$pt_id = (int) pll_get_post( $id, 'pt' );
+			if ( $pt_id > 0 ) {
+				$id = $pt_id;
+			}
+		}
+		return (string) get_permalink( $id );
 	}
 
 	/**
@@ -498,12 +873,16 @@ class Subscribe {
 		if ( '' === $msg ) {
 			return;
 		}
-		$bg = 'error' === $state ? '#C0392B' : '#147A57';
-		printf(
-			'<div role="status" style="position:fixed;left:50%%;bottom:24px;transform:translateX(-50%%);z-index:9999;max-width:90vw;background:%s;color:#fff;font:600 14px system-ui,Arial,sans-serif;padding:12px 20px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.18);">%s</div>',
-			esc_attr( $bg ),
-			esc_html( $msg )
-		);
+		// On the dedicated confirmation landing page the content says it all —
+		// keep only the analytics event below, not the floating toast.
+		if ( ! self::on_confirmed_page() ) {
+			$bg = 'error' === $state ? '#C0392B' : '#147A57';
+			printf(
+				'<div role="status" style="position:fixed;left:50%%;bottom:24px;transform:translateX(-50%%);z-index:9999;max-width:90vw;background:%s;color:#fff;font:600 14px system-ui,Arial,sans-serif;padding:12px 20px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.18);">%s</div>',
+				esc_attr( $bg ),
+				esc_html( $msg )
+			);
+		}
 
 		// Report the confirm / unsubscribe outcome to analytics (first-party +
 		// GTM dataLayer), once the tracking helper has loaded. Carries source

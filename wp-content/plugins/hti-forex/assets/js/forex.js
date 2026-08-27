@@ -254,11 +254,11 @@
 	// Plausible per-pair price defaults for the profit/loss tool and the
 	// margin variant. Prefill only — the user always types their own prices.
 	var PRICE_DEFAULTS = {
-		EURUSD: [ '1.0900', '1.0920' ],
-		GBPUSD: [ '1.2900', '1.2920' ],
-		USDJPY: [ '147.00', '147.30' ],
-		XAUUSD: [ '3300.00', '3305.00' ],
-		USDINR: [ '88.0000', '88.1000' ]
+		EURUSD: [ '1.1650', '1.1670' ],
+		GBPUSD: [ '1.3620', '1.3640' ],
+		USDJPY: [ '159.00', '159.30' ],
+		XAUUSD: [ '4650.00', '4655.00' ],
+		USDINR: [ '95.5000', '95.6000' ]
 	};
 
 	function prefillPrices( form ) {
