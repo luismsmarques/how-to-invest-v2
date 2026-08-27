@@ -306,6 +306,24 @@ class Brokers {
 	}
 
 	/**
+	 * Compact variant of the on-page disclosure for the single-review page:
+	 * the SAME canonical content (label + Disclaimer::affiliate + methodology
+	 * link — never bespoke wording), presented as one discreet line next to
+	 * the CTA instead of the boxed block the comparison pages use.
+	 *
+	 * @param string $lang 'en' or 'pt'.
+	 * @return string Safe HTML.
+	 */
+	public static function disclosure_compact_html( string $lang ): string {
+		$l = self::strings( $lang );
+		return '<p class="hti-bk__disclosure hti-bk__disclosure--compact" role="note">'
+			. '<span class="hti-bk__label">' . esc_html( $l['label'] ) . '</span> '
+			. '<span>' . esc_html( Disclaimer::affiliate( $lang ) ) . '</span> '
+			. '<a href="' . esc_url( self::money_page_url( $lang ) ) . '">' . esc_html( $l['how_link'] ) . ' →</a>'
+			. '</p>';
+	}
+
+	/**
 	 * The ESMA CFD risk warning for one record.
 	 *
 	 * @param string $lang 'en' or 'pt'.

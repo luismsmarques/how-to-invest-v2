@@ -4075,8 +4075,6 @@ function render_broker_review(): string {
 	ob_start();
 	?>
 	<article class="hti-broker-review hti-bk">
-		<?php echo \HTI\Engine\Brokers::disclosure_html( $lang ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by the plugin component. ?>
-
 		<header class="hti-bkr__hero">
 			<h1 class="hti-bkr__title"><?php echo esc_html( (string) $view->post_title ); ?></h1>
 			<p class="hti-bkr__reg"><?php echo esc_html( $l['regulated'] . ' ' . (string) $r['regulator'] ); ?></p>
@@ -4115,6 +4113,7 @@ function render_broker_review(): string {
 			<?php if ( '' !== (string) $r['guide_url'] ) : ?>
 				<a class="hti-bk__btn hti-bk__btn--ghost" href="<?php echo esc_url( (string) $r['guide_url'] ); ?>"><?php echo esc_html( $s['guide'] ); ?></a>
 			<?php endif; ?>
+			<?php echo \HTI\Engine\Brokers::disclosure_compact_html( $lang ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by the plugin component. ?>
 		</div>
 
 		<footer class="hti-bkr__foot">

@@ -37,6 +37,17 @@
 	font-weight: 600;
 	white-space: nowrap;
 }
+/* Single-review page: same canonical content, one discreet line by the CTA. */
+.hti-bk__disclosure--compact {
+	background: none;
+	border: 0;
+	border-radius: 0;
+	padding: 0;
+	margin: 0.5rem 0 0;
+	flex-basis: 100%;
+	font-size: 0.78rem;
+	color: var( --bk-muted, #6e6680 );
+}
 .hti-bk__label {
 	display: inline-block;
 	background: var( --bk-accent );
