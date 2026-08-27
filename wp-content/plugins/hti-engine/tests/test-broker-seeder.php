@@ -171,6 +171,46 @@ check( 'trading-212-analise' === Broker_Seeder::pt_slug( 'trading-212' ), 'pt_sl
 check( 'como-abrir-conta-xtb' === Broker_Seeder::page_pt_slug( 'how-to-open-an-account-with-xtb', '' ), 'guide PT slug derived from the EN slug' );
 check( 'melhores-corretoras-em-portugal' === Broker_Seeder::page_pt_slug( 'best-brokers-in-portugal', '' ), 'pillar PT slug mapped' );
 
+echo "\nSync (syncable_meta + hash)\n";
+
+// On CREATE: compliant defaults merged in (deal inactive, verified date).
+$create = Broker_Seeder::syncable_meta( array( 'regulator' => 'CMVM' ), false );
+check( '' === (string) ( $create['affiliate_url'] ?? 'x' ), 'create merges an empty affiliate_url default' );
+check( '' === (string) ( $create['affiliate_active'] ?? 'x' ), 'create merges the deal-inactive default' );
+check( '' !== (string) ( $create['verified'] ?? '' ), 'create carries the verification date' );
+check( 'CMVM' === ( $create['regulator'] ?? '' ), 'create keeps the entry meta' );
+
+// On UPDATE: the admin-managed deal fields are NEVER written by a sync — even
+// if a future entry mistakenly ships them.
+$update = Broker_Seeder::syncable_meta(
+	array(
+		'regulator'         => 'CMVM',
+		'affiliate_url'     => 'https://evil.example/aff',
+		'affiliate_active'  => '1',
+		'affiliate_network' => 'impact',
+		'cfd_risk_pct'      => '75',
+	),
+	true
+);
+$leaked = array_intersect( array_keys( $update ), Broker_Seeder::PROTECTED_META );
+check( array() === $leaked, 'update strips every PROTECTED_META deal field (' . implode( ',', $leaked ) . ')' );
+check( 'CMVM' === ( $update['regulator'] ?? '' ), 'update keeps the repo-managed facts' );
+check( '' !== (string) ( $update['verified'] ?? '' ), 'update refreshes the verification date' );
+$stray = array();
+foreach ( $brokers as $b ) {
+	// affiliate_network is seeded once as the study default; the others may
+	// appear as empty placeholders but must never carry a value in the repo.
+	foreach ( array_diff( Broker_Seeder::PROTECTED_META, array( 'affiliate_network' ) ) as $key ) {
+		if ( '' !== (string) ( $b['meta'][ $key ] ?? '' ) ) {
+			$stray[] = ( $b['slug'] ?? '?' ) . ':' . $key;
+		}
+	}
+}
+check( array() === $stray, 'no entry ships a value in a protected deal field (' . implode( ',', $stray ) . ')' );
+
+check( Broker_Seeder::sync_hash( array( 'a' => 1 ) ) === Broker_Seeder::sync_hash( array( 'a' => 1 ) ), 'sync_hash is deterministic' );
+check( Broker_Seeder::sync_hash( array( 'a' => 1 ) ) !== Broker_Seeder::sync_hash( array( 'a' => 2 ) ), 'sync_hash changes with the content' );
+
 echo "\nGuides\n";
 $guides = Broker_Seeder::guides();
 check( count( $guides ) === count( $brokers ), 'one guide per broker (' . count( $guides ) . ')' );

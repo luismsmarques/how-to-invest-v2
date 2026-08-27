@@ -72,8 +72,18 @@ are what keeps the section legal. When in doubt, be more conservative.
 - `includes/class-broker-match.php` — pure deterministic matching (tested in
   `tests/test-broker-match.php`).
 - `includes/class-broker-admin.php` — the "Broker data" metabox (all meta).
-- `includes/class-broker-seeder.php` — seeds the broker CPT posts + section
-  pages (pillar, categories, guides, "How we make money"), EN+PT via Polylang.
+- `includes/class-broker-seeder.php` — seeds AND syncs the broker CPT posts +
+  section pages (pillar, categories, guides, "How we make money"), EN+PT via
+  Polylang. Upsert by slug with a content hash-guard: repo changes update posts
+  in place (status/slug preserved); `PROTECTED_META` (affiliate_url,
+  affiliate_active, affiliate_network, cfd_risk_pct) is **never written on
+  update** — those fields belong to the wp-admin metabox. Never delete + re-seed
+  to update content.
+- `includes/class-content-sync.php` — the sync central (Tools → Content sync,
+  `wp hti sync-content`): auto-detects a deploy (file-manifest signature) and
+  runs brokers + Learn + glossary in one background cron event. Auto mode never
+  seeds the broker section on a site where it was never seeded (launch stays a
+  manual owner decision).
 - CPT `broker` + taxonomy `broker_use_case` — `class-cpt.php` / `class-taxonomy.php`.
 - Theme: `templates/single-broker.html` + `render_broker_review()`.
 - Canonical copy: `docs/Textos_Finais_HowToInvest_MVP.md` §Bloco 6.
@@ -88,4 +98,6 @@ are what keeps the section legal. When in doubt, be more conservative.
 - [ ] All outbound links via `/go/` with the correct `rel`
 - [ ] Matching deterministic and server-side; module after `.hti-actions`
 - [ ] `verified` dates current; no unconfirmed numbers published
+- [ ] Content changes ship via deploy → Content_Sync (or Tools → Content sync);
+      never delete + re-seed, and sync never touches the deal fields
 - [ ] EN + PT parity; tests green (`tests/run.php`)

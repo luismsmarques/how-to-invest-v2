@@ -15,6 +15,7 @@ Hosting is cPanel (Apache + LiteSpeed). We own cache, backups and security. Read
 - rsync/cp of the three plugins (`hti-engine`, `hti-rss-ai`, `hti-social`) + the `howtoinvest` theme into `$DEPLOYPATH/wp-content`. **WordPress core, `wp-config.php` and `uploads/` are never touched.**
 - Runs `composer install --no-dev --no-interaction --optimize-autoloader` (timeout 180) in `hti-engine`, with `|| true` — so `vendor/` (Dompdf) may legitimately be absent; the PDF path degrades to printable HTML.
 - After deploy: **clear the page cache** (LiteSpeed + WP) — HTML/PHP changes are not busted by asset versions.
+- **Content converges on its own**: `Content_Sync` (hti-engine) detects the deploy via a file-manifest signature and schedules one background sync (brokers upsert + Learn/glossary imports) — needs a site visit for WP-Cron to fire. Merging content to `main` = publishing it. Status/override: Tools → Content sync. Broker deal fields (affiliate/CFD %) are never touched by sync.
 
 ## Cache-busting (assets)
 - The theme const `VERSION` (`wp-content/themes/howtoinvest/functions.php:19`) is the `?ver=` on every `wp_register_style`/`wp_register_script`. **Bump it whenever you change CSS/JS**, or caches serve stale assets. (It does NOT bust server-rendered HTML — that needs a page-cache purge.)
@@ -31,4 +32,4 @@ Hosting is cPanel (Apache + LiteSpeed). We own cache, backups and security. Read
 - [ ] **`VERSION` bumped** if any CSS/JS changed
 - [ ] No secrets committed; env keys in `wp-config.php` only
 - [ ] Post-deploy page cache cleared (LiteSpeed/WP)
-- [ ] DB migrations self-run on load; new pages/content re-imported/seeded as needed (see `content-editorial`)
+- [ ] DB migrations self-run on load; content converges via the Content_Sync auto-run after deploy — verify in Tools → Content sync (see `content-editorial`)
