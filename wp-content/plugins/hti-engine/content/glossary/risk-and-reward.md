@@ -9,7 +9,7 @@ excerpt_pt: "O princípio de que retornos potenciais mais altos vêm geralmente 
 seo_title_en: "What Is Risk and Reward in Investing?"
 seo_title_pt: "O Que É Risco e Retorno no Investimento?"
 seo_desc_en: "Understand the risk and reward principle: why higher potential returns usually come with bigger swings and a greater chance of loss across asset classes."
-seo_desc_pt: "Compreende o princípio de risco e retorno: porque retornos potenciais mais altos vêm com oscilações maiores e maior probabilidade de perda nas classes de ativos."
+seo_desc_pt: "Compreende o princípio de risco e retorno: porque retornos potenciais mais altos vêm com oscilações maiores e mais probabilidade de perda."
 ---
 <!-- EN -->
 > The principle that higher potential returns generally come with greater risk — bigger swings and a greater chance of loss.

@@ -7,9 +7,9 @@ term_pt: "Conta com Benefícios Fiscais"
 excerpt_en: "An account, often aimed at long-term goals like retirement, that offers tax benefits in exchange for rules on when and how you can withdraw."
 excerpt_pt: "Uma conta, muitas vezes orientada para objetivos de longo prazo como a reforma, que oferece benefícios fiscais em troca de regras sobre quando e como podes levantar."
 seo_title_en: "What Is a Tax-Advantaged Account? A Beginner's Guide"
-seo_title_pt: "O Que É uma Conta com Benefícios Fiscais? Guia para Iniciantes"
+seo_title_pt: "O Que É uma Conta com Benefícios Fiscais? Guia Simples"
 seo_desc_en: "Learn what a tax-advantaged account is, how it offers tax benefits for long-term goals, and the withdrawal rules you usually accept in return."
-seo_desc_pt: "Descobre o que é uma conta com benefícios fiscais, como oferece vantagens fiscais para objetivos de longo prazo e as regras de levantamento que costumas aceitar em troca."
+seo_desc_pt: "Descobre o que é uma conta com benefícios fiscais, as vantagens para objetivos de longo prazo e as regras de levantamento aceites em troca."
 ---
 <!-- EN -->
 > An account, often aimed at long-term goals like retirement, that offers tax benefits in exchange for rules on when and how you can withdraw.

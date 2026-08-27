@@ -1,15 +1,19 @@
 <?php
 /**
- * Seeds the /forex/ section: the hub page (around the [hti_forex_hub]
- * shortcode) plus the tool pages, as ordinary WordPress pages with block
- * markup around the [hti_forex_tool] shortcode. Create-only and idempotent
- * (matched by path) — re-running never
- * overwrites an editor's changes. English-only: when Polylang is active each
- * page is assigned the "en" language with no PT counterpart, which the
- * theme's hreflang/language-switcher code tolerates.
+ * Seeds and syncs the /forex/ section: the hub page (around the
+ * [hti_forex_hub] shortcode) plus the tool pages, as ordinary WordPress
+ * pages with block markup around the [hti_forex_tool] shortcode. Pages are
+ * upserted (matched by path) under a per-page content hash, so repo edits
+ * converge on the site while slugs, statuses and unrelated editor changes
+ * are preserved. A cheap deploy gate (same design as hti-engine's
+ * Content_Sync) schedules one background sync when this file changes;
+ * auto mode only updates pages that already exist — creating them stays a
+ * manual owner action (admin button or `wp hti-forex seed`). English-only:
+ * when Polylang is active each page is assigned the "en" language with no
+ * PT counterpart, which the theme's hreflang/language-switcher tolerates.
  *
  * FAQ sections are rendered from Config::faqs() — the same array the
- * FAQPage JSON-LD uses — so page copy and schema agree at seed time.
+ * FAQPage JSON-LD uses — so page copy and schema agree at sync time.
  *
  * @package HTI_Forex
  */
@@ -19,68 +23,187 @@ namespace HTI\Forex;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Idempotent page seeder (admin button + `wp hti-forex seed`).
+ * Upserting page seeder (admin button, `wp hti-forex seed`, deploy sync).
  */
 class Seeder {
 
 	private const SEED_FLAG = '_hti_forex_seeded';
 
 	/**
-	 * Hook the admin surface.
+	 * Meta key holding the hash of the repo content last written to a page.
+	 * When it matches the current build the page is skipped (no revisions,
+	 * no post_modified churn).
+	 */
+	private const HASH_META = '_hti_forex_synced_hash';
+
+	/**
+	 * Cron hook fired once, shortly after a deploy changes this file.
+	 */
+	public const HOOK = 'hti_forex_content_sync';
+
+	/**
+	 * Option holding the last observed content signature.
+	 */
+	private const OPTION_SIG = 'hti_forex_sync_sig';
+
+	/**
+	 * Transient throttling the filesystem check to once per interval.
+	 */
+	private const THROTTLE = 'hti_forex_sync_checked';
+
+	/**
+	 * Hook the admin surface and the deploy gate.
 	 */
 	public static function init(): void {
 		add_action( 'hti_forex_settings_panels', array( __CLASS__, 'render_panel' ) );
 		add_action( 'admin_post_hti_forex_seed', array( __CLASS__, 'handle_form' ) );
+		add_action( 'init', array( __CLASS__, 'maybe_schedule' ), 20 );
+		add_action( self::HOOK, array( __CLASS__, 'run_auto' ) );
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Deploy detection (mirrors hti-engine's Content_Sync, scoped to forex).
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Cheap gate, run on init at most once per 10 minutes: when the content
+	 * signature no longer matches the stored one, record it and schedule one
+	 * background sync event.
+	 */
+	public static function maybe_schedule(): void {
+		if ( false !== get_transient( self::THROTTLE ) ) {
+			return;
+		}
+		set_transient( self::THROTTLE, 1, 10 * MINUTE_IN_SECONDS );
+
+		$sig = self::signature();
+		if ( (string) get_option( self::OPTION_SIG ) === $sig ) {
+			return;
+		}
+		update_option( self::OPTION_SIG, $sig, false );
+
+		if ( ! wp_next_scheduled( self::HOOK ) ) {
+			wp_schedule_single_event( time() + 30, self::HOOK );
+		}
 	}
 
 	/**
-	 * Create the missing pages. Safe to re-run.
-	 *
-	 * @return array{created:int,skipped:int}
+	 * Signature of everything the page content is built from: this file and
+	 * the FAQ/config source, keyed by mtime|size, plus the plugin version.
+	 * (The cPanel deploy rewrites files, so a deploy always changes mtimes.)
 	 */
-	public static function seed(): array {
-		$created = 0;
-		$skipped = 0;
+	public static function signature(): string {
+		$entries = array();
+		foreach ( array( __FILE__, __DIR__ . '/class-config.php' ) as $path ) {
+			$entries[] = is_readable( $path )
+				? $path . '|' . (int) filemtime( $path ) . '|' . (int) filesize( $path )
+				: $path . '|missing';
+		}
+		sort( $entries );
+		return md5( implode( "\n", $entries ) . "\n" . VERSION );
+	}
+
+	/**
+	 * Background sync: update-only, so a site where the section was never
+	 * seeded (or where the owner deleted a page) is left alone.
+	 */
+	public static function run_auto(): void {
+		self::seed( false );
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Upsert
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Upsert every page. Safe to re-run: unchanged pages (hash match) are
+	 * skipped untouched.
+	 *
+	 * @param bool $create_missing Create pages that don't exist (manual seed).
+	 *                             False in auto mode: update-only.
+	 * @return array{created:int,updated:int,unchanged:int,missing:int}
+	 */
+	public static function seed( bool $create_missing = true ): array {
+		$report = array(
+			'created'   => 0,
+			'updated'   => 0,
+			'unchanged' => 0,
+			'missing'   => 0,
+		);
 
 		// The hub first, so children can hang off it.
-		$hub    = self::page_defs()['hub'];
-		$hub_id = self::insert( $hub, 0 );
-		if ( $hub_id > 0 ) {
-			++$created;
-		} else {
-			++$skipped;
-			$existing = get_page_by_path( $hub['path'], OBJECT, 'page' );
-			$hub_id   = $existing instanceof \WP_Post ? (int) $existing->ID : 0;
-		}
+		$hub = self::page_defs()['hub'];
+		++$report[ self::upsert( $hub, 0, $create_missing ) ];
+		$existing = get_page_by_path( $hub['path'], OBJECT, 'page' );
+		$hub_id   = $existing instanceof \WP_Post ? (int) $existing->ID : 0;
 
 		foreach ( self::page_defs() as $key => $def ) {
 			if ( 'hub' === $key ) {
 				continue;
 			}
-			$id = self::insert( $def, $hub_id );
-			if ( $id > 0 ) {
-				++$created;
-			} else {
-				++$skipped;
-			}
+			++$report[ self::upsert( $def, $hub_id, $create_missing ) ];
 		}
 
-		return array(
-			'created' => $created,
-			'skipped' => $skipped,
+		return $report;
+	}
+
+	/**
+	 * Deterministic hash of the fields the sync manages. Pure (testable
+	 * without WordPress).
+	 *
+	 * @param array<string,mixed> $def Page definition.
+	 */
+	public static function sync_hash( array $def ): string {
+		return md5(
+			(string) json_encode( // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- pure helper, must run without WordPress.
+				array(
+					'title'     => (string) ( $def['title'] ?? '' ),
+					'content'   => (string) ( $def['content'] ?? '' ),
+					'seo_title' => (string) ( $def['seo_title'] ?? '' ),
+					'seo_desc'  => (string) ( $def['seo_desc'] ?? '' ),
+					'page'      => (string) ( $def['page'] ?? '' ),
+				)
+			)
 		);
 	}
 
 	/**
-	 * Insert one page unless its path already exists.
+	 * Create or update one page, matched by path. Updates preserve the slug,
+	 * status and parent; only title, content, schema key and SEO meta are
+	 * written, and only when the repo content actually changed.
 	 *
-	 * @param array<string,mixed> $def    Page definition.
-	 * @param int                 $parent Parent page ID (0 for the hub).
-	 * @return int New post ID, or 0 if skipped/failed.
+	 * @param array<string,mixed> $def            Page definition.
+	 * @param int                 $parent         Parent page ID (0 for the hub).
+	 * @param bool                $create_missing Create the page if absent.
+	 * @return string Report bucket: created|updated|unchanged|missing.
 	 */
-	private static function insert( array $def, int $parent ): int {
-		if ( get_page_by_path( $def['path'], OBJECT, 'page' ) instanceof \WP_Post ) {
-			return 0;
+	private static function upsert( array $def, int $parent, bool $create_missing ): string {
+		$hash     = self::sync_hash( $def );
+		$existing = get_page_by_path( $def['path'], OBJECT, 'page' );
+
+		if ( $existing instanceof \WP_Post ) {
+			if ( get_post_meta( (int) $existing->ID, self::HASH_META, true ) === $hash ) {
+				return 'unchanged';
+			}
+			$res = wp_update_post(
+				wp_slash(
+					array(
+						'ID'           => (int) $existing->ID,
+						'post_title'   => $def['title'],
+						'post_content' => $def['content'],
+					)
+				),
+				true
+			);
+			if ( is_wp_error( $res ) || 0 === $res ) {
+				return 'unchanged';
+			}
+			self::write_meta( (int) $existing->ID, $def, $hash );
+			return 'updated';
+		}
+
+		if ( ! $create_missing ) {
+			return 'missing';
 		}
 
 		$id = wp_insert_post(
@@ -97,10 +220,28 @@ class Seeder {
 			true
 		);
 		if ( is_wp_error( $id ) || 0 === $id ) {
-			return 0;
+			return 'missing';
+		}
+		self::write_meta( (int) $id, $def, $hash );
+
+		// English-only by design: assign the EN language, link no translation.
+		if ( function_exists( 'pll_set_post_language' ) ) {
+			pll_set_post_language( (int) $id, 'en' );
 		}
 
+		return 'created';
+	}
+
+	/**
+	 * Write the seed flag, schema page key, SEO meta and sync hash.
+	 *
+	 * @param int                 $id   Page ID.
+	 * @param array<string,mixed> $def  Page definition.
+	 * @param string              $hash Sync hash for the definition.
+	 */
+	private static function write_meta( int $id, array $def, string $hash ): void {
 		update_post_meta( $id, self::SEED_FLAG, VERSION );
+		update_post_meta( $id, self::HASH_META, $hash );
 		update_post_meta( $id, Schema::PAGE_META, $def['page'] );
 		if ( ! empty( $def['seo_title'] ) ) {
 			update_post_meta( $id, 'rank_math_title', $def['seo_title'] );
@@ -110,13 +251,6 @@ class Seeder {
 			update_post_meta( $id, 'rank_math_description', $def['seo_desc'] );
 			update_post_meta( $id, '_yoast_wpseo_metadesc', $def['seo_desc'] );
 		}
-
-		// English-only by design: assign the EN language, link no translation.
-		if ( function_exists( 'pll_set_post_language' ) ) {
-			pll_set_post_language( (int) $id, 'en' );
-		}
-
-		return (int) $id;
 	}
 
 	/* ---------------------------------------------------------------------
@@ -334,20 +468,21 @@ class Seeder {
 	 */
 	public static function render_panel(): void {
 		?>
-		<h2><?php esc_html_e( 'Seed the /forex/ pages', 'hti-forex' ); ?></h2>
+		<h2><?php esc_html_e( 'Seed / sync the /forex/ pages', 'hti-forex' ); ?></h2>
 		<?php if ( isset( $_GET['hti_forex_seeded'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 			<div class="notice notice-success"><p>
 				<?php
 				printf(
-					/* translators: 1: pages created, 2: pages skipped. */
-					esc_html__( 'Seeder ran: %1$s created, %2$s already existed.', 'hti-forex' ),
+					/* translators: 1: pages created, 2: pages updated, 3: pages unchanged. */
+					esc_html__( 'Seeder ran: %1$s created, %2$s updated, %3$s unchanged.', 'hti-forex' ),
 					esc_html( sanitize_key( wp_unslash( $_GET['hti_forex_seeded'] ) ) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-					esc_html( sanitize_key( wp_unslash( $_GET['hti_forex_skipped'] ?? '0' ) ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+					esc_html( sanitize_key( wp_unslash( $_GET['hti_forex_updated'] ?? '0' ) ) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+					esc_html( sanitize_key( wp_unslash( $_GET['hti_forex_unchanged'] ?? '0' ) ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				);
 				?>
 			</p></div>
 		<?php endif; ?>
-		<p><?php esc_html_e( 'Creates the /forex/ hub and the three tool pages (English only). Existing pages (matched by path) are skipped, so your edits are safe.', 'hti-forex' ); ?></p>
+		<p><?php esc_html_e( 'Creates the /forex/ pages (English only) and updates the ones whose repo content changed. Slugs, statuses and pages you deleted are never touched; after a deploy the update runs automatically in the background.', 'hti-forex' ); ?></p>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="hti_forex_seed" />
 			<?php wp_nonce_field( 'hti_forex_seed' ); ?>
@@ -370,9 +505,10 @@ class Seeder {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'              => 'hti-forex',
-					'hti_forex_seeded'  => (string) $report['created'],
-					'hti_forex_skipped' => (string) $report['skipped'],
+					'page'                => 'hti-forex',
+					'hti_forex_seeded'    => (string) $report['created'],
+					'hti_forex_updated'   => (string) $report['updated'],
+					'hti_forex_unchanged' => (string) $report['unchanged'],
 				),
 				admin_url( 'options-general.php' )
 			)
