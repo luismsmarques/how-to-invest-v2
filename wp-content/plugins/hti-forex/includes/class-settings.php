@@ -32,6 +32,12 @@ class Settings {
 	public const TOOLS = array( 'position_size', 'pip_value', 'sessions', 'profit_loss' );
 
 	/**
+	 * Longest label that still reads as a button. Above this it is treated as
+	 * an offer sentence and moved to the headline (see cta_for()).
+	 */
+	public const LABEL_MAX = 48;
+
+	/**
 	 * Hook the admin page and setting registration.
 	 */
 	public static function init(): void {
@@ -50,6 +56,8 @@ class Settings {
 			'cta_enabled'          => false,
 			'cta_url'              => '',
 			'cta_label'            => 'See how these numbers behave on a demo account',
+			'cta_brand'            => '',
+			'cta_logo_url'         => '',
 			'cta_position_size'    => true,
 			'cta_pip_value'        => true,
 			'cta_sessions'         => true,
@@ -128,7 +136,25 @@ class Settings {
 
 		$label = sanitize_text_field( (string) ( $input['cta_label'] ?? '' ) );
 		if ( '' !== $label ) {
-			$out['cta_label'] = mb_substr( $label, 0, 120 );
+			$out['cta_label'] = mb_substr( $label, 0, 160 );
+		}
+
+		// Partner name: the logo's alt text, and the wordmark shown when no
+		// logo image is configured.
+		$brand             = sanitize_text_field( (string) ( $input['cta_brand'] ?? '' ) );
+		$out['cta_brand']  = mb_substr( $brand, 0, 24 );
+
+		// Partner logo: https image URL, taken from the affiliate panel. Same
+		// posture as the affiliate URL — anything that is not https is dropped
+		// and reported, and the CTA simply falls back to the wordmark.
+		$logo = trim( (string) ( $input['cta_logo_url'] ?? '' ) );
+		if ( '' === $logo ) {
+			$out['cta_logo_url'] = '';
+		} elseif ( ! preg_match( '#^https://#i', $logo ) ) {
+			$out['cta_logo_url'] = '';
+			$errors[]            = 'The partner logo URL must start with https:// — it was cleared.';
+		} else {
+			$out['cta_logo_url'] = esc_url_raw( $logo );
 		}
 
 		$param            = sanitize_key( (string) ( $input['sub_param'] ?? '' ) );
@@ -191,9 +217,14 @@ class Settings {
 	 * CTA config for one tool, or null when the CTA must not render.
 	 * Null when: global kill-switch off, the tool's toggle off, or no URL.
 	 *
+	 * Short labels stay on the button. A long one is an offer sentence, not a
+	 * button: it becomes the headline and the button falls back to a plain
+	 * action, which is what stops a 90-character label from stretching the
+	 * button past the edge of its card.
+	 *
 	 * @param string                   $tool     Tool name (position_size|pip_value|sessions).
 	 * @param array<string,mixed>|null $settings Optional settings (defaults to stored).
-	 * @return array{url:string,label:string}|null
+	 * @return array{url:string,label:string,headline:string,brand:string,logo:string}|null
 	 */
 	public static function cta_for( string $tool, ?array $settings = null ): ?array {
 		$s = $settings ?? self::settings();
@@ -205,9 +236,19 @@ class Settings {
 			return null;
 		}
 
+		$label    = (string) $s['cta_label'];
+		$headline = '';
+		if ( mb_strlen( $label ) > self::LABEL_MAX ) {
+			$headline = $label;
+			$label    = 'Open a free account';
+		}
+
 		return array(
-			'url'   => (string) $s['cta_url'],
-			'label' => (string) $s['cta_label'],
+			'url'      => (string) $s['cta_url'],
+			'label'    => $label,
+			'headline' => $headline,
+			'brand'    => (string) ( $s['cta_brand'] ?? '' ),
+			'logo'     => (string) ( $s['cta_logo_url'] ?? '' ),
 		);
 	}
 
@@ -287,8 +328,30 @@ class Settings {
 					<tr>
 						<th scope="row"><label for="hti-fx-cta-label"><?php esc_html_e( 'CTA label', 'hti-forex' ); ?></label></th>
 						<td>
-							<input type="text" id="hti-fx-cta-label" class="regular-text" name="<?php echo esc_attr( self::OPTION ); ?>[cta_label]" value="<?php echo esc_attr( $s['cta_label'] ); ?>" />
-							<p class="description"><?php esc_html_e( 'Keep it conditional and demo-first — never imperative "trade/invest now" copy.', 'hti-forex' ); ?></p>
+							<input type="text" id="hti-fx-cta-label" class="large-text" name="<?php echo esc_attr( self::OPTION ); ?>[cta_label]" value="<?php echo esc_attr( $s['cta_label'] ); ?>" />
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %d: maximum characters that still fit on a button. */
+									esc_html__( 'Up to %d characters stays on the button. Anything longer is an offer sentence, so it moves to the headline above the button and the button reads "Open a free account" — that is what keeps a long offer from stretching the button past the card.', 'hti-forex' ),
+									(int) self::LABEL_MAX
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-cta-brand"><?php esc_html_e( 'Partner name', 'hti-forex' ); ?></label></th>
+						<td>
+							<input type="text" id="hti-fx-cta-brand" class="regular-text" name="<?php echo esc_attr( self::OPTION ); ?>[cta_brand]" value="<?php echo esc_attr( (string) $s['cta_brand'] ); ?>" placeholder="XM" />
+							<p class="description"><?php esc_html_e( 'Shown as the wordmark when no logo image is set, and used as the logo\'s alt text.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-cta-logo"><?php esc_html_e( 'Partner logo URL (https)', 'hti-forex' ); ?></label></th>
+						<td>
+							<input type="url" id="hti-fx-cta-logo" class="large-text code" name="<?php echo esc_attr( self::OPTION ); ?>[cta_logo_url]" value="<?php echo esc_attr( (string) $s['cta_logo_url'] ); ?>" placeholder="https://…/logo.svg" />
+							<p class="description"><?php esc_html_e( 'The partner logo from their affiliate panel (SVG or PNG, transparent or dark background). Displayed at 26px tall inside the CTA card. Leave empty to show the partner name as text.', 'hti-forex' ); ?></p>
 						</td>
 					</tr>
 					<tr>

@@ -90,7 +90,16 @@ $on = array_merge(
 );
 
 check( null !== Settings::cta_for( 'position_size', $on ), 'CTA renders when enabled + URL + tool toggle on' );
-check( array( 'url' => 'https://partner.example.com/x', 'label' => 'Demo' ) === Settings::cta_for( 'pip_value', $on ), 'cta_for returns url+label' );
+check(
+	array(
+		'url'      => 'https://partner.example.com/x',
+		'label'    => 'Demo',
+		'headline' => '',
+		'brand'    => '',
+		'logo'     => '',
+	) === Settings::cta_for( 'pip_value', $on ),
+	'cta_for returns url, label, headline, brand and logo'
+);
 
 $off = array_merge( $on, array( 'cta_enabled' => false ) );
 check( null === Settings::cta_for( 'position_size', $off ), 'global kill-switch beats everything' );
@@ -106,6 +115,29 @@ check( null === Settings::cta_for( 'unknown_tool', $on ), 'unknown tool never ge
 check( null !== Settings::cta_for( 'profit_loss', $on ), 'profit_loss is a CTA-capable tool' );
 $pl_off = array_merge( $on, array( 'cta_profit_loss' => false ) );
 check( null === Settings::cta_for( 'profit_loss', $pl_off ), 'profit_loss toggle disables its CTA' );
+
+// --- Long labels become headlines (the button-overflow fix) -----------------
+$short = Settings::cta_for( 'pip_value', $on );
+check( 'Demo' === $short['label'] && '' === $short['headline'], 'a short label stays on the button' );
+
+$long_text = 'Claim a $30 no-deposit trading bonus by opening and verifying a new real account on XM';
+$long      = Settings::cta_for( 'pip_value', array_merge( $on, array( 'cta_label' => $long_text ) ) );
+check( $long_text === $long['headline'], 'a long label becomes the headline' );
+check( 'Open a free account' === $long['label'], 'the button falls back to a short action' );
+check( mb_strlen( $long['label'] ) <= Settings::LABEL_MAX, 'the button label never exceeds the button budget' );
+
+$edge = Settings::cta_for( 'pip_value', array_merge( $on, array( 'cta_label' => str_repeat( 'a', Settings::LABEL_MAX ) ) ) );
+check( '' === $edge['headline'], 'a label exactly at the limit still stays on the button' );
+
+// --- Brand + logo -----------------------------------------------------------
+check( '' === $d['cta_brand'] && '' === $d['cta_logo_url'], 'brand and logo are empty by default' );
+$r = Settings::normalize_settings( array( 'cta_logo_url' => 'https://cdn.example/xm-logo.svg' ), $d );
+check( 'https://cdn.example/xm-logo.svg' === $r['value']['cta_logo_url'], 'https logo URL is kept' );
+$r = Settings::normalize_settings( array( 'cta_logo_url' => 'http://cdn.example/xm-logo.svg' ), $d );
+check( '' === $r['value']['cta_logo_url'], 'plain-http logo URL is cleared' );
+check( count( $r['errors'] ) >= 1, 'plain-http logo URL is reported' );
+$r = Settings::normalize_settings( array( 'cta_brand' => '  <b>XM</b>  ' ), $d );
+check( 'XM' === $r['value']['cta_brand'], 'brand name is sanitized and trimmed' );
 
 // --- Ad slots ---------------------------------------------------------------
 check( false === $d['ads_enabled'], 'ads are disabled by default' );
