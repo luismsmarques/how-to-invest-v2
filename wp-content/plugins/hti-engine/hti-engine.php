@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.10.1
+ * Version:           0.11.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.10.1';
+const VERSION = '0.11.0';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -43,6 +43,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-redirects.php';
 require_once HTI_ENGINE_PATH . 'includes/class-seeder.php';
 require_once HTI_ENGINE_PATH . 'includes/class-content-import.php';
 require_once HTI_ENGINE_PATH . 'includes/class-glossary-import.php';
+require_once HTI_ENGINE_PATH . 'includes/class-content-sync.php';
 require_once HTI_ENGINE_PATH . 'includes/class-config.php';
 require_once HTI_ENGINE_PATH . 'includes/class-engine.php';
 require_once HTI_ENGINE_PATH . 'includes/class-fallback.php';
@@ -189,13 +190,20 @@ Tools::init();
 Deposits::init();
 
 /**
- * Broker editorial section: the "Broker data" metabox and its seeder
- * (Tools → Seed brokers, `wp hti seed-brokers`). Rules: broker-affiliate skill.
+ * Broker editorial section: the "Broker data" metabox, the /go/ redirector
+ * and the comparator. Rules: broker-affiliate skill. Seeding/updating the
+ * content runs through the Content_Sync central below.
  */
 Broker_Admin::init();
-Broker_Seeder::register();
 Broker_Go::init();
 Brokers::init();
+
+/**
+ * Content sync central (Tools → Content sync, `wp hti sync-content`): after a
+ * deploy, converges brokers + Learn + glossary to the repo content in place —
+ * no delete + re-seed, and the admin-managed deal fields are never touched.
+ */
+Content_Sync::register();
 
 /**
  * Admin settings (Settings → HowToInvest): Gemini key/model + scoring/archetypes.
@@ -306,11 +314,37 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$report = Broker_Seeder::seed();
 			\WP_CLI::success(
 				sprintf(
-					'%d brokers and %d section pages created, %d PT translations linked, %d skipped.',
+					'Brokers %d created / %d updated, pages %d created / %d updated, PT %d created / %d updated, %d unchanged, %d failed. Deal fields are never written on update.',
 					$report['brokers_created'],
-					$report['pages_created'] ?? 0,
+					$report['brokers_updated'],
+					$report['pages_created'],
+					$report['pages_updated'],
 					$report['translations_created'],
-					$report['skipped']
+					$report['translations_updated'],
+					$report['unchanged'],
+					$report['failed']
+				)
+			);
+		}
+	);
+
+	\WP_CLI::add_command(
+		'hti sync-content',
+		function () {
+			$report  = Content_Sync::run( 'cli' );
+			$brokers = is_array( $report['brokers'] )
+				? sprintf(
+					'brokers %d created / %d updated',
+					$report['brokers']['brokers_created'],
+					$report['brokers']['brokers_updated']
+				)
+				: 'brokers skipped (section not seeded)';
+			\WP_CLI::success(
+				sprintf(
+					'Content sync done: %s; Learn %d items; glossary %d items.',
+					$brokers,
+					$report['learn']['total'],
+					$report['glossary']['total']
 				)
 			);
 		}
