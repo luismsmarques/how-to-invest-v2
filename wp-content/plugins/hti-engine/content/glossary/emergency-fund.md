@@ -38,6 +38,8 @@ Investir resulta melhor quando consegues deixar o dinheiro intocado durante anos
 ## Quanto deve ter e onde?
 Uma regra prática comum é o suficiente para cobrir vários meses de despesas essenciais, ainda que o valor certo dependa da tua situação. Como o objetivo é o acesso rápido, costuma estar em formas estáveis e líquidas, e não em ativos voláteis como ações ou cripto.
 
+Para veres o conceito em contexto, lê o capítulo [learn:budgeting-basics|O orçamento base antes de investires].
+
 ## Pontos-chave
 - Um fundo de emergência é dinheiro acessível para custos inesperados.
 - Costuma vir antes de investir, para não seres forçado a vender num mau momento.

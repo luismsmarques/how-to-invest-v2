@@ -38,6 +38,8 @@ Uma conta de corretora oferece liberdade de acesso mas sem vantagens fiscais esp
 ## O que pode deter?
 Através dela podes deter uma mistura de classes de ativos — ações, obrigações e liquidez, entre outras — que é como ganha forma um tipo de conta diversificado. A conta em si é apenas o invólucro; o que importa é o que pões lá dentro e porquê.
 
+Para veres o conceito em contexto, lê o capítulo [learn:understanding-account-types|Perceber os tipos de conta].
+
 ## Pontos-chave
 - Uma conta de corretora é uma conta de investimento flexível e de uso geral.
 - O dinheiro costuma entrar e sair livremente, sem limites especiais.

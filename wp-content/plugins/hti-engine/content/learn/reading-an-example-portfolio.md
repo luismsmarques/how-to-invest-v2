@@ -9,6 +9,8 @@ title_en: "How to read an example portfolio"
 title_pt: "Como ler um exemplo de carteira"
 excerpt_en: "An example portfolio is a set of asset-class slices that add up to 100% — illustrative only, and here is how to read one."
 excerpt_pt: "Um exemplo de carteira é um conjunto de fatias por classe que somam 100% — apenas ilustrativo, e aqui aprendes a lê-lo."
+seo_title_en: "How to Read an Example Portfolio (Asset-Class Slices)"
+seo_title_pt: "Como Ler um Exemplo de Carteira por Classes"
 glossary: asset-allocation, portfolio, diversification, global-equities, bonds, cash
 prev: what-is-asset-allocation
 next: what-is-rebalancing

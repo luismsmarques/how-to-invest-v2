@@ -38,6 +38,8 @@ O tempo muda o conforto com que uma carteira absorve as oscilações. Com anos p
 ## Como é que molda uma combinação de ativos?
 Um horizonte longo pode muitas vezes suportar mais ações, cujas oscilações mais bruscas têm tempo para se equilibrar. Um horizonte curto costuma inclinar-se para ativos mais estáveis como obrigações e liquidez, onde é menos provável que o valor esteja em baixa justamente quando é preciso. O equilíbrio certo segue os anos disponíveis.
 
+Para veres o conceito em contexto, lê o capítulo [learn:set-your-goals|Define primeiro os teus objetivos].
+
 ## Pontos-chave
 - O horizonte temporal é quanto tempo falta até precisares do dinheiro.
 - Um horizonte mais longo pode suportar mais risco e oscilações de forma sensata.

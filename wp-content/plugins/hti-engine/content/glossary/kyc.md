@@ -38,6 +38,8 @@ O KYC existe para prevenir fraude, branqueamento de capitais e o financiamento d
 ## O que envolve o processo de KYC?
 Normalmente entregas um documento de identificação oficial, um comprovativo de morada e respondes a algumas perguntas sobre a tua situação e objetivos financeiros. Saber que o KYC é normal ajuda-te a distinguir um fornecedor legítimo de uma fraude: uma plataforma de confiança segue regras claras, enquanto uma que ignora totalmente a verificação é um sinal de alerta.
 
+Para veres o conceito em contexto, lê o capítulo [learn:understanding-account-types|Perceber os tipos de conta].
+
 ## Pontos-chave
 - KYC significa verificar a identidade de um cliente antes de poder transacionar.
 - Protege o sistema financeiro contra fraude e branqueamento de capitais.

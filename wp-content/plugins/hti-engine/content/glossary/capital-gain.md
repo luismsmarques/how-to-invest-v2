@@ -38,6 +38,8 @@ Um ganho de capital só surge quando se vende efetivamente, pelo que difere de u
 ## E quanto a perdas e impostos?
 O reverso de um ganho é uma perda de capital, que ocorre quando se vende por menos do que se pagou. Em muitos lugares, os ganhos realizados podem ser tributados, com regras que variam consoante o país e o tipo de ativo. O tratamento fiscal é um fator a compreender, embora os detalhes dependam da lei local.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-global-equities|As ações globais mais de perto].
+
 ## Pontos-chave
 - Um ganho de capital é o lucro da venda de um ativo acima do preço de compra.
 - Só se realiza quando se vende, ao contrário de um rendimento contínuo.

@@ -9,6 +9,8 @@ title_en: "Budgeting basics before you invest"
 title_pt: "O orçamento base antes de investires"
 excerpt_en: "A simple budget — money in, money out, a little set aside — is what frees you to invest without stress."
 excerpt_pt: "Um orçamento simples — o que entra, o que sai, e algo de parte — é o que te liberta para investir sem stress."
+seo_title_en: "Budgeting Before Investing: A Simple 3-Step Base"
+seo_title_pt: "Orçamento Antes de Investir: A Base Simples"
 glossary: emergency-fund, inflation, cash, asset
 prev: why-an-emergency-fund-comes-first
 next: what-is-investing
@@ -25,7 +27,7 @@ Start with what comes in each month, then list the regular costs that go out —
 A simple habit helps more than any spreadsheet: set a small amount aside as soon as money comes in, before you spend the rest. The amount matters far less than the routine — small and steady, repeated for years, is what does the work.
 
 ## Why keep a buffer before investing?
-A budget makes room for an emergency fund — money kept somewhere safe and easy to reach. With that cushion in place, you only ever invest money you will not need soon, which is what stops a surprise from forcing a sale at a bad time.
+A budget makes room for an [glossary:emergency-fund|emergency fund] — money kept somewhere safe and easy to reach. With that cushion in place, you only ever invest money you will not need soon, which is what stops a surprise from forcing a sale at a bad time.
 
 ## How should time guide what I invest?
 Money you may need within a year or two usually stays in [glossary:cash|cash]. Money for far-off goals is where investing fits, because [glossary:inflation|inflation] slowly eats at idle savings over long periods. A budget is simply how you tell those two pots apart.
@@ -58,10 +60,10 @@ Começa pelo que entra todos os meses e lista depois os custos regulares que sae
 Um hábito simples ajuda mais do que qualquer folha de cálculo: separa uma pequena quantia assim que o dinheiro entra, antes de gastares o resto. O valor importa muito menos do que a rotina — pouco e constante, repetido durante anos, é o que faz o trabalho.
 
 ## Porque guardar um colchão antes de investir?
-Um orçamento abre espaço para um fundo de emergência — dinheiro guardado num sítio seguro e de fácil acesso. Com essa almofada montada, só investes dinheiro de que não vais precisar tão cedo, o que evita que um imprevisto te obrigue a vender num mau momento.
+Um orçamento abre espaço para um [glossary:emergency-fund|fundo de emergência] — dinheiro guardado num sítio seguro e de fácil acesso. Com essa almofada montada, só investes dinheiro de que não vais precisar tão cedo, o que evita que um imprevisto te obrigue a vender num mau momento.
 
 ## Como deve o tempo guiar o que invisto?
-O dinheiro de que podes precisar dentro de um ano ou dois costuma ficar em liquidez. O dinheiro para objetivos distantes é onde o investimento encaixa, porque a inflação vai corroendo devagar as poupanças paradas ao longo do tempo. Um orçamento é simplesmente a forma de distinguir esses dois bolsos.
+O dinheiro de que podes precisar dentro de um ano ou dois costuma ficar em [glossary:cash|liquidez]. O dinheiro para objetivos distantes é onde o investimento encaixa, porque a [glossary:inflation|inflação] vai corroendo devagar as poupanças paradas ao longo do tempo. Um orçamento é simplesmente a forma de distinguir esses dois bolsos.
 
 ## Pontos-chave
 - Um orçamento dá uma função a cada euro; a diferença entre o que entra e sai é o que podes investir.

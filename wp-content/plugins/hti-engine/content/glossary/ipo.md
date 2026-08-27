@@ -38,6 +38,8 @@ As empresas recorrem a um IPO para levantar capital para expansão, pagar dívid
 ## O que deve um principiante saber sobre investir em IPOs?
 Uma empresa recém-listada tem um historial público curto, pelo que o preço das suas ações pode oscilar bruscamente nos primeiros tempos. Um perfil focado em ações diversificadas de longo prazo costuma ganhar pouco em perseguir estreias individuais. Encarar um IPO como apenas mais um nome entre milhares, e não como um ganho garantido, é uma forma mais ponderada de o ver.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-markets-work|Como funcionam os mercados (e o que é a 'Wall Street')].
+
 ## Pontos-chave
 - Um IPO é a primeira venda de ações de uma empresa privada ao público.
 - Serve para levantar capital e dar saída a investidores iniciais.

@@ -38,6 +38,8 @@ A fórmula é simples: preço da ação multiplicado pelo número total de açõ
 ## Porque é que os investidores agrupam empresas por dimensão?
 Ordenar empresas por market cap ajuda a descrever o seu risco e comportamento. As empresas maiores são muitas vezes vistas como mais estáveis, enquanto as mais pequenas podem crescer mais depressa mas oscilar mais no preço. Uma carteira diversificada costuma abranger várias dimensões em vez de se concentrar numa só.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-a-portfolio-is-built|Como se monta uma carteira (passo a passo)].
+
 ## Pontos-chave
 - Market cap é o preço da ação multiplicado pelas ações em circulação.
 - Dá uma leitura rápida da dimensão global de uma empresa.

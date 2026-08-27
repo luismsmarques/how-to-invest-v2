@@ -9,6 +9,8 @@ title_en: "Your next steps from here"
 title_pt: "Os teus próximos passos a partir daqui"
 excerpt_en: "You have the whole picture now — here is how to turn it into a simple, calm plan that is yours."
 excerpt_pt: "Já tens o quadro completo — eis como transformá-lo num plano simples, calmo e teu."
+seo_title_en: "How to Start Investing: Your Calm Next Steps"
+seo_title_pt: "Como Começar a Investir: Os Próximos Passos"
 glossary: portfolio, asset, diversification
 prev: what-is-an-investor-profile
 next:
@@ -25,7 +27,7 @@ You have seen why investing matters, what the [glossary:asset|asset classes] are
 A natural next step is to discover your investor profile. The questionnaire takes a few minutes and turns your answers into an archetype, with an illustrative example [glossary:portfolio|portfolio] by asset class — a clear, personal place to start from.
 
 ## How do you keep a plan simple and steady?
-The best plan is the one you can stick with: a base in place, a mix that fits your situation, regular contributions, and an occasional rebalance. Simple and steady, repeated over years, is what does the work.
+The best plan is the one you can stick with: a base in place, a mix that fits your situation, [learn:what-is-periodic-investing|regular contributions], and an [learn:what-is-rebalancing|occasional rebalance]. Simple and steady, repeated over years, is what does the work. When the moment comes to open an account, our factual [page:best-brokers-in-portugal|comparison of regulated brokers] shows the practical options calmly, side by side.
 
 ## How can you keep learning at your own pace?
 You do not have to know everything at once. The glossary is there for any term, and you can revisit any chapter whenever you like — including the free ebook, which gathers the basics in one place.
@@ -58,7 +60,7 @@ Viste porque é que investir importa, quais são as classes de ativos, como uma 
 Um próximo passo natural é descobrir o teu perfil de investidor. O questionário leva poucos minutos e transforma as tuas respostas num arquétipo, com um exemplo ilustrativo de carteira por classe de ativos — um ponto de partida claro e teu.
 
 ## Como manténs um plano simples e constante?
-O melhor plano é o que consegues manter: uma base no sítio, uma mistura que encaixa na tua situação, contribuições regulares e um rebalanceamento de vez em quando. Simples e constante, repetido durante anos, é o que faz o trabalho.
+O melhor plano é o que consegues manter: uma base no sítio, uma mistura que encaixa na tua situação, [learn:what-is-periodic-investing|contribuições regulares] e um [learn:what-is-rebalancing|rebalanceamento de vez em quando]. Simples e constante, repetido durante anos, é o que faz o trabalho. Quando chegar o momento de abrir conta, a nossa [page:pt/melhores-corretoras-em-portugal|comparação factual de corretoras reguladas] mostra as opções práticas com calma, lado a lado.
 
 ## Como podes continuar a aprender ao teu ritmo?
 Não tens de saber tudo de uma vez. O glossário está lá para qualquer termo, e podes voltar a qualquer capítulo sempre que quiseres — incluindo o ebook gratuito, que reúne as bases num só sítio.

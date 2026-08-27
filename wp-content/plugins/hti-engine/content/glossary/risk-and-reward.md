@@ -9,7 +9,7 @@ excerpt_pt: "O princípio de que retornos potenciais mais altos vêm geralmente 
 seo_title_en: "What Is Risk and Reward in Investing?"
 seo_title_pt: "O Que É Risco e Retorno no Investimento?"
 seo_desc_en: "Understand the risk and reward principle: why higher potential returns usually come with bigger swings and a greater chance of loss across asset classes."
-seo_desc_pt: "Compreende o princípio de risco e retorno: porque retornos potenciais mais altos vêm com oscilações maiores e maior probabilidade de perda nas classes de ativos."
+seo_desc_pt: "Compreende o princípio de risco e retorno: porque retornos potenciais mais altos vêm com oscilações maiores e mais probabilidade de perda."
 ---
 <!-- EN -->
 > The principle that higher potential returns generally come with greater risk — bigger swings and a greater chance of loss.
@@ -37,6 +37,8 @@ Os investidores esperam ser compensados pela incerteza. Um ativo cujo valor osci
 
 ## Como é que isto aparece nas classes de ativos?
 As ações globais ofereceram historicamente retornos potenciais mais altos a par de oscilações mais bruscas, enquanto as obrigações e a liquidez tendem a ser mais estáveis, mas mais modestas. A cripto fica no extremo — movimentos potenciais grandes nos dois sentidos. Nenhuma combinação é "a melhor"; depende das oscilações que um perfil consegue suportar de forma sensata.
+
+Para veres o conceito em contexto, lê o capítulo [learn:why-invest|Porque é que vale a pena investir].
 
 ## Pontos-chave
 - Retornos potenciais mais altos vêm geralmente com maior risco.

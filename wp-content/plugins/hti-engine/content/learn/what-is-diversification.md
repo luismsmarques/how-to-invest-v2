@@ -9,6 +9,8 @@ title_en: "What is diversification?"
 title_pt: "O que é a diversificação?"
 excerpt_en: "Spreading money so no single outcome decides everything — what diversification actually protects against, and what it does not."
 excerpt_pt: "Espalhar o dinheiro para que nenhum resultado isolado decida tudo — do que a diversificação protege mesmo, e do que não protege."
+seo_title_en: "What Is Diversification? What It Protects (and What Not)"
+seo_title_pt: "O Que É a Diversificação? O Que Protege de Facto"
 glossary: diversification, portfolio, asset-allocation, volatility, global-equities, bonds
 prev: central-banks-and-monetary-policy
 next: what-is-asset-allocation

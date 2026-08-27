@@ -38,6 +38,8 @@ Como metáfora, Wall Street representa as finanças institucionais: a negociaç�
 ## Como se relaciona Wall Street com os mercados globais?
 Porque as maiores bolsas dos EUA e muitas instituições influentes ali se concentram, os movimentos associados a Wall Street podem propagar-se aos mercados globais e moldar o ânimo dos investidores em todo o mundo. Entendê-la como símbolo ajuda a decifrar as notícias, mas não diz a ninguém o que deve comprar ou vender.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-markets-work|Como funcionam os mercados (e o que é a 'Wall Street')].
+
 ## Pontos-chave
 - Wall Street é uma rua de Manhattan e também o nome da indústria financeira dos EUA.
 - Simboliza as finanças institucionais, em contraste com a "Main Street".

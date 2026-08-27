@@ -38,6 +38,8 @@ Como os retornos são calculados sobre a posição total e não sobre a tua cont
 ## Porque é normalmente desadequada para iniciantes?
 Investir com dinheiro emprestado introduz custos de juros, vendas forçadas e o risco de perder mais do que investiste. Numa abordagem de longo prazo e diversificada, a alavancagem raramente encaixa, privilegiando-se antes a paciência.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-a-portfolio-is-built|Como se monta uma carteira (passo a passo)].
+
 ## Pontos-chave
 - A alavancagem usa dinheiro emprestado para aumentar uma posição.
 - Tanto os ganhos como as perdas potenciais são ampliados.

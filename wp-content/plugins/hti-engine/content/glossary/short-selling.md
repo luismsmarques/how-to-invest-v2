@@ -38,6 +38,8 @@ Num short típico, o investidor pede um ativo emprestado, vende-o ao preço atua
 ## Porque é o short selling tão arriscado?
 Uma compra normal só pode cair até zero, mas um preço que continua a subir significa que as perdas de uma posição curta podem crescer sem um teto claro. Os custos de empréstimo e as recompras forçadas podem agravar o prejuízo. Por isso, o short selling é geralmente domínio de profissionais experientes, e não um ponto de partida.
 
+Para veres o conceito em contexto, lê o capítulo [learn:common-beginner-mistakes|Erros comuns de quem começa].
+
 ## Pontos-chave
 - O short selling é uma aposta na queda do preço de um ativo, o oposto de comprar.
 - As perdas são potencialmente ilimitadas, o que o torna muito mais arriscado do que investir de forma comum.

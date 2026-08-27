@@ -9,6 +9,8 @@ title_en: "How compound interest works"
 title_pt: "Como funcionam os juros compostos"
 excerpt_en: "Compound interest is growth on your growth — over time your money can snowball because past gains start earning too."
 excerpt_pt: "Os juros compostos são crescimento sobre o teu crescimento — com o tempo, o dinheiro pode fazer bola de neve porque os ganhos passados também rendem."
+seo_title_en: "Compound Interest Explained: Growth on Your Growth"
+seo_title_pt: "Juros Compostos: Como Funcionam e Porque Importam"
 glossary: compound-interest, interest-rate, inflation
 prev: why-invest
 next: why-an-emergency-fund-comes-first
@@ -22,10 +24,10 @@ Compound interest is the single idea that makes long-term investing powerful. On
 Imagine a small snowball rolling downhill. It picks up snow, gets bigger, and because it is bigger it picks up even more. [glossary:compound-interest|Compounding] works the same way: any growth your money earns can itself go on to earn more. Early on it feels slow; given enough time, it can build momentum.
 
 ## Why does time matter more than amount?
-Because the snowball feeds on itself, the length of the hill — your time horizon — often matters more than how big the snowball starts. Starting earlier with a little can, over many years, do more than starting later with a lot. There are no guarantees, but time is the ingredient compounding needs most.
+Because the snowball feeds on itself, the length of the hill — your [glossary:time-horizon|time horizon] — often matters more than how big the snowball starts. Starting earlier with a little can, over many years, do more than starting later with a lot. There are no guarantees, but time is the ingredient compounding needs most.
 
 ## Does compounding cut both ways?
-The same force works against you when it comes to costs and [glossary:inflation|inflation]: high fees and rising prices also compound over time, quietly eating into growth. That is why long-term thinking tends to favour keeping costs low and staying patient.
+The same force works against you when it comes to costs and [glossary:inflation|inflation]: high fees and rising prices also compound over time, quietly eating into growth. That is why long-term thinking tends to favour [learn:costs-and-fees-explained|keeping costs low] and staying patient.
 
 ## Key takeaways
 - Compounding means your gains start earning gains of their own.
@@ -49,13 +51,13 @@ The same force works against you when it comes to costs and [glossary:inflation|
 Os juros compostos são a ideia que torna o investimento de longo prazo tão poderoso. Quando a percebes, o valor de começar cedo encaixa de imediato.
 
 ## O que significa crescimento sobre crescimento?
-Imagina uma pequena bola de neve a descer uma encosta. Vai apanhando neve, fica maior e, por ser maior, apanha ainda mais. Os juros compostos funcionam da mesma forma: qualquer crescimento que o teu dinheiro gera pode, por sua vez, gerar mais. Ao início parece lento; com tempo suficiente, ganha balanço.
+Imagina uma pequena bola de neve a descer uma encosta. Vai apanhando neve, fica maior e, por ser maior, apanha ainda mais. Os [glossary:compound-interest|juros compostos] funcionam da mesma forma: qualquer crescimento que o teu dinheiro gera pode, por sua vez, gerar mais. Ao início parece lento; com tempo suficiente, ganha balanço.
 
 ## Porque é que o tempo conta mais do que o montante?
-Como a bola de neve se alimenta a si própria, o comprimento da encosta — o teu horizonte temporal — costuma contar mais do que o tamanho com que ela começa. Começar mais cedo com pouco pode, ao longo de muitos anos, fazer mais do que começar mais tarde com muito. Não há garantias, mas o tempo é o ingrediente de que os juros compostos mais precisam.
+Como a bola de neve se alimenta a si própria, o comprimento da encosta — o teu [glossary:time-horizon|horizonte temporal] — costuma contar mais do que o tamanho com que ela começa. Começar mais cedo com pouco pode, ao longo de muitos anos, fazer mais do que começar mais tarde com muito. Não há garantias, mas o tempo é o ingrediente de que os juros compostos mais precisam.
 
 ## Os juros compostos funcionam nos dois sentidos?
-A mesma força joga contra ti nos custos e na inflação: comissões altas e preços a subir também compõem ao longo do tempo, corroendo o crescimento em silêncio. É por isso que o pensamento de longo prazo tende a preferir manter os custos baixos e ter paciência.
+A mesma força joga contra ti nos custos e na [glossary:inflation|inflação]: comissões altas e preços a subir também compõem ao longo do tempo, corroendo o crescimento em silêncio. É por isso que o pensamento de longo prazo tende a preferir [learn:costs-and-fees-explained|manter os custos baixos] e ter paciência.
 
 ## Pontos-chave
 - Os juros compostos fazem com que os teus ganhos passem a gerar ganhos próprios.

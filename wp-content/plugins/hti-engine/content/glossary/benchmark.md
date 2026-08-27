@@ -38,6 +38,8 @@ Um retorno isolado diz pouco sem contexto. Ganhar 6% parece bom até descobrires
 ## Como se escolhe o benchmark certo?
 Um benchmark útil corresponde à composição de ativos com que está a ser comparado: uma carteira de ações globais deve ser medida contra um índice de ações globais, não contra um índice de obrigações. Comparar com o benchmark errado pode favorecer ou penalizar injustamente uma estratégia.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-asset-allocation|O que é a alocação de ativos].
+
 ## Pontos-chave
 - Um benchmark é um índice de referência para medir desempenho.
 - Acrescenta contexto que um número de retorno isolado não tem.

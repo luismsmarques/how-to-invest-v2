@@ -38,6 +38,8 @@ A liquidez funciona como estabilizador e como fonte de dinheiro disponível. Com
 ## Há desvantagens em deter demasiada?
 Em períodos longos, a liquidez pode ter dificuldade em acompanhar a subida dos preços, perdendo gradualmente poder de compra. É por isso que as carteiras ilustrativas tratam a liquidez como uma reserva, e não como instrumento de crescimento.
 
+Para veres o conceito em contexto, lê o capítulo [learn:cash-and-when-it-helps|Liquidez, e quando ajuda].
+
 ## Pontos-chave
 - A liquidez é a classe de ativos mais estável e acessível.
 - Estabiliza a carteira e fornece dinheiro disponível.

@@ -38,6 +38,8 @@ Estudam fundamentos como lucros, fluxo de caixa e valor contabilístico, recorre
 ## Porque é a paciência central no value investing?
 Ativos subvalorizados podem permanecer baratos durante muito tempo, pelo que esta abordagem costuma pressupor um horizonte longo e tolerância à volatilidade. O mercado pode levar anos a reconhecer o valor, e não há garantia de que o faça. Esta é a descrição de um estilo, não uma recomendação para o seguir.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-investing|O que é, afinal, investir].
+
 ## Pontos-chave
 - O value investing procura ativos cotados abaixo do seu valor intrínseco estimado.
 - Apoia-se em fundamentos e numa margem de segurança, não em movimentos de curto prazo.

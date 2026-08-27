@@ -38,6 +38,8 @@ Quando uma empresa obtém lucro, a sua administração pode decidir distribuir p
 ## Porque é que alguns investidores se focam em dividendos?
 Para alguns, os pagamentos regulares assemelham-se a um fluxo de rendimento. Um perfil focado em retornos estáveis em dinheiro pode inclinar-se neste sentido, enquanto outros preferem empresas que reinvestem os lucros para crescer. Ambas as abordagens envolvem risco.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-global-equities|As ações globais mais de perto].
+
 ## Pontos-chave
 - Um dividendo é uma parte do lucro pago aos acionistas, muitas vezes em dinheiro.
 - Os dividendos são decididos pela empresa e nunca estão garantidos.

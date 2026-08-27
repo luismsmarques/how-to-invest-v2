@@ -42,6 +42,8 @@ Cada classe de ativos comporta-se de forma diferente. As ações globais costuma
 
 Uma combinação que serve a uma pessoa pode não servir a outra, pois costuma refletir o conforto com o risco e o tempo que o dinheiro pode ficar investido. Decidir esses pesos com intenção é o cerne de construir uma carteira. O objetivo é o equilíbrio, não perseguir uma única classe.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-asset-allocation|O que é a alocação de ativos].
+
 ## Pontos-chave
 - A alocação de ativos é a divisão pelas grandes classes de ativos.
 - Tende a moldar o risco e o retorno mais do que qualquer ativo isolado.

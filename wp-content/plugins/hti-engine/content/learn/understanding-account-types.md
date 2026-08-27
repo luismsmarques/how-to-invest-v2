@@ -9,6 +9,8 @@ title_en: "Understanding account types"
 title_pt: "Perceber os tipos de conta"
 excerpt_en: "Investments live inside an account, and the type you use mostly changes the tax treatment — here is the plain-language version."
 excerpt_pt: "Os investimentos vivem dentro de uma conta, e o tipo que usas muda sobretudo o tratamento fiscal — aqui fica a versão simples."
+seo_title_en: "Investment Account Types Explained in Plain Language"
+seo_title_pt: "Tipos de Conta de Investimento, em Linguagem Simples"
 glossary: brokerage-account, tax-advantaged-account, asset
 prev: what-is-rebalancing
 next: costs-and-fees-explained
@@ -22,13 +24,13 @@ People often picture "buying investments" as the whole story, but there is a con
 Whatever [glossary:asset|asset] classes you hold sit inside an account, the way water sits inside a glass. The investments are the same; the account is the wrapper around them. The main thing the wrapper changes is how the money is treated for tax and what the account is meant for.
 
 ## What are the two broad families of accounts?
-At a high level, accounts tend to fall into two families. General accounts are flexible — money goes in and out freely, with ordinary tax rules. Tax-advantaged accounts, often aimed at long-term goals like retirement, may offer tax benefits in exchange for rules about when and how you can take the money out.
+At a high level, accounts tend to fall into two families. General [glossary:brokerage-account|brokerage accounts] are flexible — money goes in and out freely, with ordinary tax rules. [glossary:tax-advantaged-account|Tax-advantaged accounts], often aimed at long-term goals like retirement, may offer tax benefits in exchange for rules about when and how you can take the money out.
 
 ## Why does the choice of account matter?
 The wrapper does not change which asset classes exist, but it can affect what you keep after tax over the long run. Matching the account to the goal — flexible money in a general account, long-term money in a tax-advantaged one — is the practical decision here.
 
 ## Why does it depend on where you live?
-The exact names, limits and tax rules vary from country to country, and they change over time. This guide stays general on purpose: the idea is to understand the categories, then check the specific options that apply where you live before deciding.
+The exact names, limits and tax rules vary from country to country, and they change over time. This guide stays general on purpose: the idea is to understand the categories, then check the specific options that apply where you live before deciding. When you reach that practical step, our factual [page:best-brokers-in-portugal|comparison of regulated brokers in Portugal] shows the account options side by side.
 
 ## Key takeaways
 - Investments sit inside an account — the wrapper around your asset classes.
@@ -55,13 +57,13 @@ As pessoas imaginam muitas vezes "comprar investimentos" como sendo a história 
 Sejam quais forem as classes de ativos que tens, ficam dentro de uma conta, como a água fica dentro de um copo. Os investimentos são os mesmos; a conta é o invólucro à volta deles. O que o invólucro muda, sobretudo, é a forma como o dinheiro é tratado para efeitos fiscais e para que serve a conta.
 
 ## Quais são as duas grandes famílias de contas?
-A um nível geral, as contas costumam pertencer a duas famílias. As contas gerais são flexíveis — o dinheiro entra e sai livremente, com regras fiscais comuns. As contas com vantagens fiscais, muitas vezes pensadas para objetivos de longo prazo como a reforma, podem oferecer benefícios fiscais em troca de regras sobre quando e como podes levantar o dinheiro.
+A um nível geral, as contas costumam pertencer a duas famílias. As [glossary:brokerage-account|contas de corretagem] gerais são flexíveis — o dinheiro entra e sai livremente, com regras fiscais comuns. As [glossary:tax-advantaged-account|contas com vantagens fiscais], muitas vezes pensadas para objetivos de longo prazo como a reforma, podem oferecer benefícios fiscais em troca de regras sobre quando e como podes levantar o dinheiro.
 
 ## Porque é que a escolha da conta importa?
 O invólucro não muda quais as classes de ativos que existem, mas pode afetar o que ficas a ganhar depois de impostos no longo prazo. Encaixar a conta no objetivo — dinheiro flexível numa conta geral, dinheiro de longo prazo numa com vantagens fiscais — é a decisão prática aqui.
 
 ## Porque é que depende de onde vives?
-Os nomes exatos, os limites e as regras fiscais variam de país para país, e mudam ao longo do tempo. Este guia mantém-se geral de propósito: a ideia é perceber as categorias e depois confirmar as opções específicas que se aplicam onde vives antes de decidir.
+Os nomes exatos, os limites e as regras fiscais variam de país para país, e mudam ao longo do tempo. Este guia mantém-se geral de propósito: a ideia é perceber as categorias e depois confirmar as opções específicas que se aplicam onde vives antes de decidir. Quando chegares a esse passo prático, a nossa [page:pt/melhores-corretoras-em-portugal|comparação factual de corretoras reguladas em Portugal] mostra as opções de conta lado a lado.
 
 ## Pontos-chave
 - Os investimentos ficam dentro de uma conta — o invólucro à volta das tuas classes de ativos.

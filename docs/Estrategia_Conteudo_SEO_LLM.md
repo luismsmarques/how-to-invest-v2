@@ -27,9 +27,12 @@ Três camadas que se reforçam:
 
 | Camada | CPT | Papel SEO | Intenção |
 |---|---|---|---|
-| **Pilar** — curso "Do zero à primeira carteira" | `learn` (7 módulos / ~26 capítulos) | Autoridade tópica, guias passo-a-passo | "como investir", "o que é X", how-to |
-| **Definições** — glossário | `glossary` (~42 termos) | Captura "o que é/significa X", `DefinedTerm` | informacional, long-tail |
+| **Pilar** — curso "Do zero à primeira carteira" | `learn` (7 módulos / 24 capítulos `.md` + 5 seeded-legacy) | Autoridade tópica, guias passo-a-passo | "como investir", "o que é X", how-to |
+| **Definições** — glossário | `glossary` (54 termos `.md`) | Captura "o que é/significa X", `DefinedTerm` | informacional, long-tail |
 | **Frescura** — notícias | `news` (+ RSS AI Feed) | Top Stories, recência, trending | navegacional/news |
+| **Money** — corretoras | páginas + CPT `broker` (6 pillar/categoria, 10 reviews, 10 guias) | Comparativa/transacional, "Parceria · Publicidade" | "melhores corretoras", "análise X", "abrir conta" |
+| **Satélite** — forex Índia | páginas `/forex/` (hub + 7 ferramentas, EN-only) | Landing de campanhas, calculadoras INR/IST | transacional-educativa, mercado Índia |
+| **Editorial PT** — depósitos | comparador `[hti_depositos]` | Comparativa factual PT | "melhores depósitos a prazo" |
 
 **Conversão:** o **questionário de perfil** (5 arquétipos → carteira ilustrativa)
 é o destino de intenção mais "decisional" — ligado de capítulos, glossário e CTAs.
@@ -75,28 +78,39 @@ O que faz o conteúdo ser **citado** por IA — estado atual e plano:
 
 ## 5. Sistema de ligação interna (topical signals)
 
-Já construído:
-- **Hub → spoke:** o hub `/learn/` lista módulos/capítulos.
-- **Spoke ↔ spoke:** bloco "continuar a ler" (capítulos irmãos por tópico).
-- **Spoke → glossário:** rail "Termos relacionados" (capítulo→glossário, por-língua)
-  + tokens `[glossary:…]` inline na prosa.
-- **Glossário → glossário/deep:** pills "Related terms" + "Learn more".
+Regras em vigor (enforced pelo `tests/test-seo-structure.php` na CI):
+- **Todo o capítulo Learn** tem `seo_title_en/pt` curado (≤60 chars) e **≥3
+  links internos contextuais** na secção EN (tokens `[learn:]`/`[glossary:]`/
+  `[page:]`); descrições ≤160.
+- **Todo o termo de glossário** liga ao seu capítulo-pilar via `[learn:]` — nas
+  duas línguas (a secção PT fecha com a frase-pilar antes dos Pontos-chave).
+- **Zero tokens pendentes** (alvo tem de existir nos `.md`).
 
-A completar:
-- **Glossário → Learn:** cada termo deve ligar ao capítulo-pilar do seu cluster
-  (token `[learn:slug|…]`, já suportado pelo conversor).
-- **Auditoria de cobertura:** garantir que nenhum termo/capítulo fica órfão (sem
-  ligações de entrada nem de saída dentro do cluster).
+Matriz de linkagem por cluster:
+- **Learn ↔ Learn:** tokens inline na prosa + prev/next derivado do currículo.
+- **Learn ↔ glossário:** tokens inline + rail "Termos relacionados" (frontmatter
+  `glossary`).
+- **Educativo → money:** capítulos com intenção prática
+  (`understanding-account-types`, `costs-and-fees-explained`, `your-next-steps`)
+  linkam a comparação de corretoras via `[page:…]` — sempre a página de
+  comparação, nunca CTA de broker (regra `seo-content`/`broker-affiliate`).
+- **Money → educativo:** reviews ("Keep reading/Continuar a ler") linkam
+  `custos-e-taxas-explicados`; guias de abertura linkam
+  `perceber-os-tipos-de-conta`; tudo gerado pelo broker seeder (upsert →
+  propaga em cada deploy).
+- **Forex → educativo (EN):** position-size → risco/retorno; leverage → custos.
+  A entrada para `/forex/` a partir do site principal é manual (página Tools).
+- **Tokens PT:** o conversor resolve `[glossary:]`/`[learn:]` na secção PT para
+  o permalink PT — os corpos PT têm links inline próprios, não só rails.
 
 ---
 
 ## 6. Roadmap de produção (priorizado)
 
-1. **P0 — Expandir o glossário** (em curso): de 1 linha para ~150–220 palavras por
-   termo, mantendo a definição como lead, com H2-pergunta, exemplo ao nível de
-   classe, tokens de glossário e ligação ao capítulo-pilar. Via **pipeline `.md`**
-   (igual ao learn): `content/glossary/*.md` + importador idempotente + botão em
-   Ferramentas. Piloto de 5–6 termos → validar → escalar aos ~36 restantes.
+1. ✅ **P0 — Expandir o glossário (feito):** 54 termos `.md` completos (definição
+   como lead, H2-pergunta, exemplo ao nível de classe, tokens e ligação ao
+   capítulo-pilar nas duas línguas), via pipeline `content/glossary/*.md` +
+   importador idempotente.
 2. ✅ **P0 — Ligação inter-cluster (feito):** todos os termos de glossário ligam ao
    capítulo-pilar do seu cluster via token `[learn:slug|…]` (na secção EN, a que o
    conversor resolve). Para dar casa aos termos avançados/macro sem pilar natural,
@@ -126,10 +140,13 @@ A completar:
 
 **Feito ✓:** schema completo (entidade + Course/LearningResource/Quiz/DefinedTerm),
 hreflang EN↔PT + canonical por-língua, sitemaps submetidos, llms.txt (RankMath),
-H2 em pergunta + tokens de glossário (19 capítulos), rail de termos relacionados,
-byline/datas (E-E-A-T), quizzes em todos os capítulos, badges/progresso.
+H2 em pergunta + TL;DR, rail de termos relacionados, byline/datas (E-E-A-T),
+quizzes em todos os capítulos, badges/progresso; glossário expandido (54 termos
+`.md`, seo_title/desc EN+PT); meta titles curados nos 24 capítulos Learn;
+malha de linkagem completa nas duas línguas (Learn↔Learn, glossário↔pilar EN+PT,
+educativo↔corretoras nos dois sentidos, forex→Learn) com auditoria em CI
+(`test-seo-structure.php`); sync de conteúdo em cada deploy (brokers/Learn/
+glossário via Content_Sync; /forex/ via o gate do hti-forex).
 
-**Em curso:** expansão do glossário (pipeline `.md` + piloto).
-
-**A seguir:** completar ligação inter-cluster → análise de lacunas → cadência de
-notícias.
+**A seguir:** análise de lacunas de cluster (queries de alto valor sem página) →
+cadência de notícias → conteúdo comparativo/decisional.

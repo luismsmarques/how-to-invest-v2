@@ -38,6 +38,8 @@ Quando operas com margem, a corretora empresta-te parte do valor da compra, usan
 ## Porque é que a margem é arriscada para a maioria dos investidores?
 Como as perdas são amplificadas, a margem pode esgotar o teu capital mais depressa do que uma posição sem alavancagem, e continuas a dever o montante emprestado mais juros. Para um perfil que constrói riqueza a longo prazo, uma carteira simples e totalmente detida evita esta fragilidade adicional. A margem é aqui descrita para que a saibas reconhecer, não como uma ferramenta a utilizar.
 
+Para veres o conceito em contexto, lê o capítulo [learn:common-beginner-mistakes|Erros comuns de quem começa].
+
 ## Pontos-chave
 - A margem é dinheiro emprestado por uma corretora para comprar investimentos.
 - Amplifica ganhos e perdas e pode desencadear uma chamada de margem.

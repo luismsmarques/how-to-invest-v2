@@ -42,6 +42,8 @@ Se os preços sobem mais depressa do que as suas poupanças crescem, a sua rique
 
 Historicamente, classes amplas que podem crescer ao longo do tempo, como ações globais e imobiliário, tenderam a superar a inflação em horizontes longos, enquanto as obrigações e a liquidez desempenham um papel mais estável. Os resultados variam e nunca são garantidos, mas compreender a inflação ajuda a enquadrar estes equilíbrios.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-inflation|O que a inflação faz ao teu dinheiro].
+
 ## Pontos-chave
 - A inflação é o ritmo a que os preços gerais sobem ao longo do tempo.
 - A subida dos preços corrói o poder de compra do dinheiro parado.

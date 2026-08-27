@@ -38,6 +38,8 @@ Divide-se o preço da ação pelo lucro por ação. Um P/E de 20, por exemplo, s
 ## Quais são os limites do P/E ratio?
 O P/E ignora a dívida, o fluxo de caixa e o contexto mais amplo do setor, pelo que é mais útil ao comparar empresas semelhantes do que isoladamente. Os lucros também podem ser distorcidos por acontecimentos pontuais. Para um perfil construído sobre ações globais diversificadas, o P/E é uma lente de aprendizagem, e não um gatilho para comprar ou vender.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-global-equities|As ações globais mais de perto].
+
 ## Pontos-chave
 - O P/E ratio compara o preço da ação com o lucro por ação.
 - Um P/E elevado reflete expectativas de crescimento; um baixo, expectativas modestas.

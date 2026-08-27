@@ -38,6 +38,8 @@ O yield capta apenas o fluxo de rendimento, enquanto o retorno total inclui tamb
 ## Porque varia o yield quando os preços mudam?
 O yield é o rendimento dividido pelo preço, por isso quando o preço de uma obrigação desce, o seu yield sobe, e vice-versa. É esta ligação inversa que faz os yields mover-se quando as taxas de juro mudam.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-bonds|As obrigações mais de perto].
+
 ## Pontos-chave
 - O yield é o rendimento que um investimento devolve, em percentagem do preço.
 - Difere do retorno total, que inclui também as variações de preço.

@@ -38,6 +38,8 @@ A proteção aplica-se tipicamente por pessoa, por banco, até um montante fixo 
 ## Porque importa para quem investe?
 Explica porque a liquidez numa conta abrangida é tratada como um lugar estável e de baixo risco para guardar dinheiro — por exemplo um fundo de emergência que queres manter seguro. Vale a pena saber onde termina esta proteção quando pensas em quanta liquidez deter.
 
+Para veres o conceito em contexto, lê o capítulo [learn:cash-and-when-it-helps|Liquidez, e quando ajuda].
+
 ## Pontos-chave
 - A garantia de depósitos protege os depósitos bancários se o banco falir.
 - Aplica-se normalmente por pessoa, por banco, até um limite definido.

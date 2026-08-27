@@ -38,6 +38,8 @@ O hedging envolve normalmente combinar uma posição existente com algo que se e
 ## Um hedge tem um custo?
 A proteção raramente é gratuita. Um hedge pode reduzir perdas potenciais, mas muitas vezes limita ganhos ou tem um custo contínuo, tal como o prémio de um seguro. Também acrescenta complexidade. Para a maioria dos principiantes, a simples diversificação por classes de ativos faz grande parte deste trabalho sem ferramentas especializadas.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-a-portfolio-is-built|Como se monta uma carteira (passo a passo)].
+
 ## Pontos-chave
 - Um hedge é uma posição tomada para compensar o risco de movimentos adversos de preços.
 - Funciona como um seguro: reduz o risco de queda, normalmente com um custo ou ganho limitado.

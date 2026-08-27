@@ -1017,6 +1017,10 @@ class Broker_Seeder {
 				array(
 					array( $review_href, $pt ? 'Análise completa à ' . $brand : 'Full ' . $brand . ' review' ),
 					array( $pillar_href, $pt ? 'Comparar todas as corretoras' : 'Compare all brokers' ),
+					array(
+						$pt ? '/pt/learn/perceber-os-tipos-de-conta/' : '/learn/understanding-account-types/',
+						$pt ? 'Como funcionam as contas de investimento' : 'How investment accounts work',
+					),
 				)
 			);
 
@@ -1627,7 +1631,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Não. A conta de investimento em ações e ETFs reais é independente; os CFDs são um produto separado, de risco elevado, dirigido a traders experientes.' )
 				. self::h3( 'A XTB paga juros sobre o dinheiro parado?' )
 				. self::paragraph( 'Paga, com taxa variável por moeda e condições publicadas na plataforma — vale a pena confirmar a taxa em vigor antes de contar com ela.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-xtb/">como abrir conta na XTB, passo a passo</a> · <a href="/pt/melhores-corretoras-em-portugal/">comparação de todas as corretoras</a> · <a href="/pt/melhores-corretoras-para-etfs/">melhores corretoras para ETFs</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-xtb/">como abrir conta na XTB, passo a passo</a> · <a href="/pt/melhores-corretoras-em-portugal/">comparação de todas as corretoras</a> · <a href="/pt/melhores-corretoras-para-etfs/">melhores corretoras para ETFs</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'XTB is one of Europe\'s largest listed brokers and the only one in this comparison with a <strong>Lisbon branch under direct CMVM supervision (register nº 341)</strong>. For investors in Portugal it combines three things rarely found together: commission-free stocks and ETFs up to a monthly limit, automatic investment plans from €15, and local support in Portuguese. The CFD arm exists and looms large in the marketing — but it is optional and lives in a separate account.' )
@@ -1673,7 +1677,7 @@ class Broker_Seeder {
 			. self::paragraph( 'No. The real stock and ETF investment account is independent; CFDs are a separate, high-risk product aimed at experienced traders.' )
 			. self::h3( 'Does XTB pay interest on idle cash?' )
 			. self::paragraph( 'It does, at a variable per-currency rate with conditions published in the platform — worth confirming the current rate before counting on it.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-xtb/">how to open an XTB account, step by step</a> · <a href="/best-brokers-in-portugal/">the full broker comparison</a> · <a href="/best-etf-brokers-portugal/">best brokers for ETFs</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-xtb/">how to open an XTB account, step by step</a> · <a href="/best-brokers-in-portugal/">the full broker comparison</a> · <a href="/best-etf-brokers-portugal/">best brokers for ETFs</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
@@ -1725,7 +1729,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Não. A Invest compra ativos reais; a CFD negoceia derivados alavancados de risco elevado. Para investir a longo prazo, é a Invest que interessa.' )
 				. self::h3( 'O saldo em euros rende juros?' )
 				. self::paragraph( 'Sim, com pagamento diário e taxa variável publicada na app. Confirma a taxa em vigor e as condições de onde o dinheiro é guardado.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-trading-212/">como abrir conta na Trading 212</a> · <a href="/pt/melhores-corretoras-para-iniciantes/">melhores corretoras para iniciantes</a> · <a href="/pt/brokers/xtb-analise/">análise completa à XTB</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-trading-212/">como abrir conta na Trading 212</a> · <a href="/pt/melhores-corretoras-para-iniciantes/">melhores corretoras para iniciantes</a> · <a href="/pt/brokers/xtb-analise/">análise completa à XTB</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'Trading 212 popularised commission-free investing in Europe and remains one of the cheapest ways to buy stocks and ETFs from Portugal: <strong>0% commission, fractional shares from €1 and "pies" that automate your portfolio</strong>. The account is multi-currency, idle cash earns daily interest, and the CFD arm — which exists — is well separated from the Invest account.' )
@@ -1770,7 +1774,7 @@ class Broker_Seeder {
 			. self::paragraph( 'No. Invest buys real assets; CFD trades leveraged, high-risk derivatives. For long-term investing, Invest is the one that matters.' )
 			. self::h3( 'Does the euro balance earn interest?' )
 			. self::paragraph( 'Yes, paid daily at a variable rate published in the app. Check the current rate and where the cash is held.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-trading-212/">how to open a Trading 212 account</a> · <a href="/best-brokers-for-beginners-portugal/">best brokers for beginners</a> · <a href="/brokers/xtb/">full XTB review</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-trading-212/">how to open a Trading 212 account</a> · <a href="/best-brokers-for-beginners-portugal/">best brokers for beginners</a> · <a href="/brokers/xtb/">full XTB review</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
@@ -1822,7 +1826,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Cada ordem manual paga 1 € de taxa externa, independentemente do valor. Nos planos de poupança a execução é gratuita.' )
 				. self::h3( 'Os juros são fixos?' )
 				. self::paragraph( 'Não — seguem a taxa de depósito do BCE e podem mudar com ela; há também variações por mercado e promoções para contas novas. A taxa em vigor está na app.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-trade-republic/">como abrir conta na Trade Republic</a> · <a href="/pt/melhores-corretoras-com-juros-sobre-o-saldo/">corretoras que pagam juros sobre o saldo</a> · <a href="/pt/melhores-corretoras-para-etfs/">melhores corretoras para ETFs</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-trade-republic/">como abrir conta na Trade Republic</a> · <a href="/pt/melhores-corretoras-com-juros-sobre-o-saldo/">corretoras que pagam juros sobre o saldo</a> · <a href="/pt/melhores-corretoras-para-etfs/">melhores corretoras para ETFs</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'Trade Republic is a <strong>fully licensed German bank</strong> that turned the phone into an investment account: free savings plans across stocks, ETFs, bonds and crypto, <strong>interest on cash that tracks the ECB deposit rate</strong>, and a card that invests part of what you spend. It offers no CFDs — making it one of the most temptation-proof houses on this list.' )
@@ -1867,7 +1871,7 @@ class Broker_Seeder {
 			. self::paragraph( 'Each manual order carries a flat €1 external fee, regardless of size. Savings-plan executions are free.' )
 			. self::h3( 'Is the interest rate fixed?' )
 			. self::paragraph( 'No — it tracks the ECB deposit rate and moves with it; there are also per-market variations and new-account promotions. The live rate is in the app.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-trade-republic/">how to open a Trade Republic account</a> · <a href="/best-interest-on-cash-accounts-portugal/">brokers that pay interest on cash</a> · <a href="/best-etf-brokers-portugal/">best brokers for ETFs</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-trade-republic/">how to open a Trade Republic account</a> · <a href="/best-interest-on-cash-accounts-portugal/">brokers that pay interest on cash</a> · <a href="/best-etf-brokers-portugal/">best brokers for ETFs</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
@@ -1920,7 +1924,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Uma forma de pôr o dinheiro parado a render num fundo do mercado monetário, com taxa variável líquida de comissões, resgatável a qualquer momento. Chegaram a Portugal em junho de 2026.' )
 				. self::h3( 'A Lightyear tem CFDs?' )
 				. self::paragraph( 'Não — é a única corretora desta comparação sem qualquer produto alavancado, o que a torna especialmente simples de entender e de explicar.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-lightyear/">como abrir conta na Lightyear</a> · <a href="/pt/melhores-corretoras-para-iniciantes/">melhores corretoras para iniciantes</a> · <a href="/pt/brokers/trade-republic-analise/">análise completa à Trade Republic</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-lightyear/">como abrir conta na Lightyear</a> · <a href="/pt/melhores-corretoras-para-iniciantes/">melhores corretoras para iniciantes</a> · <a href="/pt/brokers/trade-republic-analise/">análise completa à Trade Republic</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'Lightyear is the calmest broker in this comparison: a simple interface, low costs and <strong>zero CFDs anywhere in the product</strong> — there is no wrong door to walk through. Founded by ex-Wise leaders and regulated in Estonia, it serves Portugal with stocks, ETFs, automatic plans and, since June 2026, <strong>Vaults: money-market funds for idle cash</strong>.' )
@@ -1966,7 +1970,7 @@ class Broker_Seeder {
 			. self::paragraph( 'A way to put idle cash to work in a money-market fund, at a variable rate net of fees, redeemable any time. They reached Portugal in June 2026.' )
 			. self::h3( 'Does Lightyear offer CFDs?' )
 			. self::paragraph( 'No — it is the only broker in this comparison with no leveraged product at all, which makes it unusually easy to understand and explain.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-lightyear/">how to open a Lightyear account</a> · <a href="/best-brokers-for-beginners-portugal/">best brokers for beginners</a> · <a href="/brokers/trade-republic/">full Trade Republic review</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-lightyear/">how to open a Lightyear account</a> · <a href="/best-brokers-for-beginners-portugal/">best brokers for beginners</a> · <a href="/brokers/trade-republic/">full Trade Republic review</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
@@ -2019,7 +2023,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Não. Se manter liquidez a render é importante para ti, compara com a Trade Republic, a Trading 212 ou os Vaults da Lightyear.' )
 				. self::h3( 'A DEGIRO mudou de dono?' )
 				. self::paragraph( 'Não — continua no grupo flatexDEGIRO; apenas a forma jurídica do banco mudou para SE (europeia) no final de 2025, sem impacto para clientes.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-degiro/">como abrir conta na DEGIRO</a> · <a href="/pt/melhores-corretoras-para-etfs/">melhores corretoras para ETFs</a> · <a href="/pt/melhores-corretoras-para-acoes/">melhores corretoras para ações</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-degiro/">como abrir conta na DEGIRO</a> · <a href="/pt/melhores-corretoras-para-etfs/">melhores corretoras para ETFs</a> · <a href="/pt/melhores-corretoras-para-acoes/">melhores corretoras para ações</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'DEGIRO is Europe\'s low-cost veteran: access to <strong>dozens of exchanges at low commissions</strong>, a <strong>"Core Selection" of commission-free ETFs</strong> (fair-use policy) and the solidity of belonging to flatexDEGIRO Bank SE, a German bank. It has no CFDs, pays no interest on cash, and the interface is more functional than pretty — a buy-and-hold tool, not a lifestyle app.' )
@@ -2065,7 +2069,7 @@ class Broker_Seeder {
 			. self::paragraph( 'No. If earning on liquidity matters to you, compare Trade Republic, Trading 212 or Lightyear\'s Vaults.' )
 			. self::h3( 'Did DEGIRO change owners?' )
 			. self::paragraph( 'No — it remains part of the flatexDEGIRO group; only the bank\'s legal form changed to SE (European company) at the end of 2025, with no client impact.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-degiro/">how to open a DEGIRO account</a> · <a href="/best-etf-brokers-portugal/">best brokers for ETFs</a> · <a href="/best-stock-brokers-portugal/">best brokers for stocks</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-degiro/">how to open a DEGIRO account</a> · <a href="/best-etf-brokers-portugal/">best brokers for ETFs</a> · <a href="/best-stock-brokers-portugal/">best brokers for stocks</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
@@ -2117,7 +2121,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Instrumentos segregados na entidade irlandesa, com o regime irlandês de compensação de investidores nos limites publicados, e um grupo cotado com décadas de solidez por trás.' )
 				. self::h3( 'A IBKR paga juros sobre o saldo?' )
 				. self::paragraph( 'Paga, a taxas competitivas, mas apenas na parte do saldo acima de um limiar de elegibilidade — os detalhes estão publicados no site.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-interactive-brokers/">como abrir conta na IBKR</a> · <a href="/pt/melhores-corretoras-para-acoes/">melhores corretoras para ações</a> · <a href="/pt/brokers/saxo-analise/">análise completa ao Saxo Bank</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-interactive-brokers/">como abrir conta na IBKR</a> · <a href="/pt/melhores-corretoras-para-acoes/">melhores corretoras para ações</a> · <a href="/pt/brokers/saxo-analise/">análise completa ao Saxo Bank</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'Interactive Brokers (IBKR) is the professionals\' broker that also welcomes patient beginners: <strong>access to more markets, currencies and products than anything else on this list</strong>, very low costs and institutional-grade tools. The price you pay isn\'t in euros — it\'s in learning curve.' )
@@ -2162,7 +2166,7 @@ class Broker_Seeder {
 			. self::paragraph( 'Instruments are segregated at the Irish entity, the Irish investor-compensation regime applies within its published limits, and a listed group with decades of solidity stands behind it.' )
 			. self::h3( 'Does IBKR pay interest on cash?' )
 			. self::paragraph( 'It does, at competitive rates, but only on the portion of the balance above an eligibility threshold — details are published on the site.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-interactive-brokers/">how to open an IBKR account</a> · <a href="/best-stock-brokers-portugal/">best brokers for stocks</a> · <a href="/brokers/saxo/">full Saxo Bank review</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-interactive-brokers/">how to open an IBKR account</a> · <a href="/best-stock-brokers-portugal/">best brokers for stocks</a> · <a href="/brokers/saxo/">full Saxo Bank review</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
@@ -2213,7 +2217,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Não — é denominada em dólares. Depósitos e levantamentos em euros passam por conversão cambial, um custo real para quem reforça com frequência.' )
 				. self::h3( 'Quando compro uma ação na eToro é mesmo uma ação?' )
 				. self::paragraph( 'Comprando sem alavancagem e sem posição curta, sim, é o ativo real. Com alavancagem ou a descoberto, passa a ser um CFD — produto de risco elevado.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-etoro/">como abrir conta na eToro</a> · <a href="/pt/melhores-corretoras-para-cripto/">melhores plataformas para cripto</a> · <a href="/pt/melhores-corretoras-em-portugal/">comparação de todas as corretoras</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-etoro/">como abrir conta na eToro</a> · <a href="/pt/melhores-corretoras-para-cripto/">melhores plataformas para cripto</a> · <a href="/pt/melhores-corretoras-em-portugal/">comparação de todas as corretoras</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'eToro is the social broker par excellence: real stocks and ETFs, one of the <strong>broadest crypto ranges among regulated brokers</strong>, and the copy trading that made it famous. Since May 2025 it is <strong>listed on the Nasdaq (ticker ETOR)</strong>, adding transparency to a house that has always divided opinion. The account is dollar-denominated and the CFD arm is significant — two details to understand before walking in.' )
@@ -2257,7 +2261,7 @@ class Broker_Seeder {
 			. self::paragraph( 'No — it is dollar-denominated. Euro deposits and withdrawals go through currency conversion, a real cost for frequent top-ups.' )
 			. self::h3( 'When I buy a stock on eToro, is it a real stock?' )
 			. self::paragraph( 'Buying without leverage and without shorting, yes, it is the real asset. With leverage or short, it becomes a CFD — a high-risk product.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-etoro/">how to open an eToro account</a> · <a href="/best-crypto-brokers-portugal/">best regulated crypto platforms</a> · <a href="/best-brokers-in-portugal/">the full broker comparison</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-etoro/">how to open an eToro account</a> · <a href="/best-crypto-brokers-portugal/">best regulated crypto platforms</a> · <a href="/best-brokers-in-portugal/">the full broker comparison</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
@@ -2307,7 +2311,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Menos do que já foi: o preçário por escalões tornou-o competitivo, sobretudo a partir dos escalões superiores. Continua a não ser a escolha de custo mínimo para ordens pequenas e esporádicas.' )
 				. self::h3( 'Serve para quem está a começar?' )
 				. self::paragraph( 'O SaxoInvestor é acessível, mas há casas mais simples nesta comparação para uma primeira carteira; o Saxo brilha quando a exigência sobe.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-saxo/">como abrir conta no Saxo</a> · <a href="/pt/melhores-corretoras-para-acoes/">melhores corretoras para ações</a> · <a href="/pt/brokers/interactive-brokers-analise/">análise completa à Interactive Brokers</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-saxo/">como abrir conta no Saxo</a> · <a href="/pt/melhores-corretoras-para-acoes/">melhores corretoras para ações</a> · <a href="/pt/brokers/interactive-brokers-analise/">análise completa à Interactive Brokers</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'Saxo Bank is the "investment bank" of this comparison: professional-grade platforms, deep research and a range spanning stocks to bonds, options and futures. In 2026 it changed hands — Swiss private-banking group <strong>J. Safra Sarasin bought a majority stake in March and agreed in July to reach 100%</strong> (pending approvals), reinforcing the shareholder base of a house still supervised by the Danish regulator.' )
@@ -2350,7 +2354,7 @@ class Broker_Seeder {
 			. self::paragraph( 'Less than it used to be: tiered pricing has made it competitive, especially from the higher tiers. It is still not the minimum-cost choice for small, sporadic orders.' )
 			. self::h3( 'Does it suit someone starting out?' )
 			. self::paragraph( 'SaxoInvestor is approachable, but simpler houses exist in this comparison for a first portfolio; Saxo shines as requirements grow.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-saxo/">how to open a Saxo account</a> · <a href="/best-stock-brokers-portugal/">best brokers for stocks</a> · <a href="/brokers/interactive-brokers/">full Interactive Brokers review</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-saxo/">how to open a Saxo account</a> · <a href="/best-stock-brokers-portugal/">best brokers for stocks</a> · <a href="/brokers/interactive-brokers/">full Interactive Brokers review</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
@@ -2401,7 +2405,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Não — o plano gratuito inclui ordens sem comissão todos os meses; os planos pagos aumentam esse número e outros limites.' )
 				. self::h3( 'Posso comprar ETFs europeus na Revolut?' )
 				. self::paragraph( 'Sim, a oferta inclui ETFs europeus e tem vindo a alargar — confirma na app se os que procuras estão disponíveis.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-revolut/">como ativar os investimentos na Revolut</a> · <a href="/pt/melhores-corretoras-para-iniciantes/">melhores corretoras para iniciantes</a> · <a href="/pt/brokers/trading-212-analise/">análise completa à Trading 212</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-revolut/">como ativar os investimentos na Revolut</a> · <a href="/pt/melhores-corretoras-para-iniciantes/">melhores corretoras para iniciantes</a> · <a href="/pt/brokers/trading-212-analise/">análise completa à Trading 212</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'Revolut isn\'t a broker that became an app — it\'s the everyday app that kept adding investments. Inside the same account it now offers <strong>thousands of stocks, ETFs, bonds, money-market funds, crypto and metals</strong>, with a handful of free monthly orders depending on your plan. For the first step from saving to investing, the convenience is unbeatable; for a serious portfolio, there are limits worth knowing.' )
@@ -2445,7 +2449,7 @@ class Broker_Seeder {
 			. self::paragraph( 'No — the free plan includes commission-free orders every month; paid plans raise that number and other limits.' )
 			. self::h3( 'Can I buy European ETFs on Revolut?' )
 			. self::paragraph( 'Yes, the range includes European ETFs and keeps widening — check in the app whether the ones you want are available.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-revolut/">how to activate investing on Revolut</a> · <a href="/best-brokers-for-beginners-portugal/">best brokers for beginners</a> · <a href="/brokers/trading-212/">full Trading 212 review</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-revolut/">how to activate investing on Revolut</a> · <a href="/best-brokers-for-beginners-portugal/">best brokers for beginners</a> · <a href="/brokers/trading-212/">full Trading 212 review</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
@@ -2496,7 +2500,7 @@ class Broker_Seeder {
 				. self::paragraph( 'Sim — as instituições portuguesas reportam à Autoridade Tributária e tratam retenções nos termos legais, evitando os anexos de contas no estrangeiro que as corretoras internacionais implicam.' )
 				. self::h3( 'Há comissão de custódia?' )
 				. self::paragraph( 'Sim, mensal, sobre a guarda de títulos — consulta o valor no preçário antes de decidir, porque pesa mais em carteiras pequenas.' )
-				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-activobank/">como abrir conta no ActivoBank</a> · <a href="/pt/melhores-corretoras-em-portugal/">comparação de todas as corretoras</a> · <a href="/pt/comparador-de-depositos-a-prazo/">comparador de depósitos a prazo</a>' );
+				. self::phtml( 'Continuar a ler: <a href="/pt/como-abrir-conta-activobank/">como abrir conta no ActivoBank</a> · <a href="/pt/melhores-corretoras-em-portugal/">comparação de todas as corretoras</a> · <a href="/pt/comparador-de-depositos-a-prazo/">comparador de depósitos a prazo</a> · <a href="/pt/learn/custos-e-taxas-explicados/">perceber os custos de investir</a>' );
 		}
 
 		return self::phtml( 'ActivoBank is the fully domestic route in this comparison: a Portuguese digital bank (Millennium bcp group) where the current account, savings and investments live under Banco de Portugal and CMVM supervision. Its current headline is clear: <strong>the first stock-exchange order of each month costs €0</strong> — a once-a-month investor pays essentially no brokerage. Beyond that, bank-level costs kick in.' )
@@ -2540,7 +2544,7 @@ class Broker_Seeder {
 			. self::paragraph( 'Yes — Portuguese institutions report to the tax authority and handle withholdings under local rules, avoiding the foreign-account annexes that international brokers imply.' )
 			. self::h3( 'Is there a custody fee?' )
 			. self::paragraph( 'Yes, monthly, on the safekeeping of securities — check the amount on the price list before deciding, as it weighs more on small portfolios.' )
-			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-activobank/">how to open an ActivoBank account</a> · <a href="/best-brokers-in-portugal/">the full broker comparison</a> · <a href="/term-deposit-comparison-portugal/">the term-deposit comparison</a>' );
+			. self::phtml( 'Keep reading: <a href="/how-to-open-an-account-with-activobank/">how to open an ActivoBank account</a> · <a href="/best-brokers-in-portugal/">the full broker comparison</a> · <a href="/term-deposit-comparison-portugal/">the term-deposit comparison</a> · <a href="/learn/costs-and-fees-explained/">understanding investment costs</a>' );
 	}
 
 	/**
