@@ -13,7 +13,7 @@ seo_title_en: "Budgeting Before Investing: A Simple 3-Step Base"
 seo_title_pt: "Orçamento Antes de Investir: A Base Simples"
 glossary: emergency-fund, inflation, cash, asset
 prev: why-an-emergency-fund-comes-first
-next: what-is-investing
+next: investing-with-little-money
 ---
 <!-- EN -->
 > A simple budget — money in, money out, a little set aside — is what frees you to invest later without stress.
