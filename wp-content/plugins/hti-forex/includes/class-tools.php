@@ -95,10 +95,21 @@ class Tools {
 
 		wp_enqueue_style( 'hti-forex', HTI_FOREX_URL . 'assets/css/forex.css', array(), VERSION );
 		wp_register_script( 'hti-forex-core', HTI_FOREX_URL . 'assets/js/forex-core.js', array(), VERSION, array( 'in_footer' => true ) );
+
+		// forex.js calls HTITrack.event() for forex_tool_use, so it must load
+		// after hti-track or the call is a silent no-op. Declared only when the
+		// handle exists: hti-engine provides it, and a missing dependency would
+		// make WordPress drop our script entirely, taking the calculators with
+		// it.
+		$deps = array( 'hti-forex-core' );
+		if ( wp_script_is( 'hti-track', 'registered' ) ) {
+			$deps[] = 'hti-track';
+		}
+
 		wp_enqueue_script(
 			'hti-forex',
 			HTI_FOREX_URL . 'assets/js/forex.js',
-			array( 'hti-forex-core' ),
+			$deps,
 			VERSION,
 			array(
 				'in_footer' => true,
