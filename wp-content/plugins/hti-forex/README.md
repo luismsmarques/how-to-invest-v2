@@ -101,8 +101,22 @@ Still open:
   withdrawal costs) — research gap #4, defensible because it needs upkeep.
 
 The cheat sheet's reference rates are baked into the PDF (dated August
-2026). To refresh: edit `assets/pdf/src/cheat-sheet.html`, regenerate with
-the Chromium command in its header comment, and commit both files.
+2026). To refresh: edit `assets/pdf/src/cheat-sheet.html`, run
+`assets/pdf/src/build.sh` (headless Chromium; `CHROMIUM=/path/to/chrome` if it
+is not on the PATH), and commit both files. Chromium keeps `<a href>` as real
+PDF link annotations, which is what makes the sheet's links clickable — check
+the page count after editing, the layout is built to fill exactly two A4 pages.
+
+The sheet's partner link points at `/forex/go/cheatsheet/`, never at the
+affiliate URL. `includes/class-go.php` resolves that route at click time from
+the CTA settings, appends the configured sub-id (`clickid` by default) so the
+placement is attributable, counts a `cta_click` under `forex_go_{slot}`, and
+falls back to the `/forex/` hub whenever the CTA kill-switch is off — a
+printed link must never dead-end. The route is `noindex` and robots-disallowed.
+Adding a placement is just a new slot in the URL: `/forex/go/{slot}/`.
+
+Rewrite rules are flushed once per plugin VERSION (the cPanel deploy never
+reactivates plugins), so bump `VERSION` when touching the route.
 
 ## Tests
 
