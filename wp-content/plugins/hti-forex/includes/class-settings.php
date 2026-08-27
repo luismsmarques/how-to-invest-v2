@@ -55,6 +55,9 @@ class Settings {
 			'cta_sessions'         => true,
 			'cta_profit_loss'      => true,
 			'email_enabled'        => true,
+			'ads_enabled'          => false,
+			'ad_code_desktop'      => '',
+			'ad_code_mobile'       => '',
 			'sub_param'            => 'clickid',
 			'sub_sources'          => array( 'clickid', 'utm_campaign' ),
 			'rate_override_usdinr' => 0.0,
@@ -87,8 +90,21 @@ class Settings {
 		$errors = array();
 		$out    = $defaults;
 
-		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'email_enabled' ) as $flag ) {
+		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'email_enabled', 'ads_enabled' ) as $flag ) {
 			$out[ $flag ] = ! empty( $input[ $flag ] );
+		}
+
+		// Ad codes are third-party banner HTML (iframe/script from the ad
+		// network) pasted by an admin: stored as-is apart from a trim and a
+		// size cap — never printed anywhere except the forex ad slots, and
+		// only editable with manage_options.
+		foreach ( array( 'ad_code_desktop', 'ad_code_mobile' ) as $slot ) {
+			$code = trim( (string) ( $input[ $slot ] ?? '' ) );
+			if ( strlen( $code ) > 10000 ) {
+				$code     = '';
+				$errors[] = sprintf( '%s is longer than 10,000 characters — cleared (paste one banner tag, not a page).', $slot );
+			}
+			$out[ $slot ] = $code;
 		}
 
 		// Affiliate URL: https only. Anything else is dropped (and reported),
@@ -276,6 +292,33 @@ class Settings {
 									<?php echo esc_html( $label ); ?>
 								</label>
 							<?php endforeach; ?>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Banner ads (XM)', 'hti-forex' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Show banners', 'hti-forex' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[ads_enabled]" value="1" <?php checked( ! empty( $s['ads_enabled'] ) ); ?> />
+								<?php esc_html_e( 'Render the banner slot on the forex tool pages (below the tool)', 'hti-forex' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-ad-desktop"><?php esc_html_e( 'Banner code — desktop', 'hti-forex' ); ?></label></th>
+						<td>
+							<textarea id="hti-fx-ad-desktop" class="large-text code" rows="4" name="<?php echo esc_attr( self::OPTION ); ?>[ad_code_desktop]"><?php echo esc_textarea( (string) $s['ad_code_desktop'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Paste the banner tag from the ad network (468×60 or 300×250 fit the 680px content column — 728×90 does not).', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-ad-mobile"><?php esc_html_e( 'Banner code — mobile', 'hti-forex' ); ?></label></th>
+						<td>
+							<textarea id="hti-fx-ad-mobile" class="large-text code" rows="4" name="<?php echo esc_attr( self::OPTION ); ?>[ad_code_mobile]"><?php echo esc_textarea( (string) $s['ad_code_mobile'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Mobile size (300×250, 320×100 or 320×50). Leave one field empty to show the other everywhere.', 'hti-forex' ); ?></p>
 						</td>
 					</tr>
 				</table>

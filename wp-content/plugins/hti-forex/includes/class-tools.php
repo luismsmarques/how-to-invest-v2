@@ -115,7 +115,39 @@ class Tools {
 
 		// Conversion blocks are siblings of the tool (the calculator is a
 		// <form>; nesting the email form inside it would be invalid HTML).
-		return $body . self::cta_block( $name ) . self::email_block( $name );
+		return $body . self::cta_block( $name ) . self::email_block( $name ) . self::ad_block();
+	}
+
+	/**
+	 * The banner-ad slot, after the conversion blocks. Renders NOTHING unless
+	 * the toggle is on and at least one code is configured. The codes are
+	 * third-party banner tags pasted by an admin in Settings → HTI Forex
+	 * (stored raw, manage_options-only) and are echoed as-is on purpose —
+	 * an escaped ad tag is a dead ad tag. With both codes set they swap at
+	 * the 560px breakpoint; with one, it shows everywhere.
+	 */
+	private static function ad_block(): string {
+		$s = Settings::settings();
+		if ( empty( $s['ads_enabled'] ) ) {
+			return '';
+		}
+
+		$desktop = (string) $s['ad_code_desktop'];
+		$mobile  = (string) $s['ad_code_mobile'];
+		if ( '' === $desktop && '' === $mobile ) {
+			return '';
+		}
+
+		$out = '<div class="hti-fx-ad"><span class="hti-fx-ad__label">' . esc_html( 'Advertisement' ) . '</span>';
+
+		if ( '' !== $desktop && '' !== $mobile ) {
+			$out .= '<div class="hti-fx-ad__slot hti-fx-ad__slot--desktop">' . $desktop . '</div>';
+			$out .= '<div class="hti-fx-ad__slot hti-fx-ad__slot--mobile">' . $mobile . '</div>';
+		} else {
+			$out .= '<div class="hti-fx-ad__slot">' . ( '' !== $desktop ? $desktop : $mobile ) . '</div>';
+		}
+
+		return $out . '</div>';
 	}
 
 	/* ---------------------------------------------------------------------

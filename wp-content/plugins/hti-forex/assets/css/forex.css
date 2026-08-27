@@ -336,6 +336,40 @@
 	color: #2a2438;
 }
 
+/* Banner-ad slot */
+.hti-fx-ad {
+	max-width: 720px;
+	margin: 1.5rem 0;
+	display: grid;
+	gap: 0.35rem;
+	justify-items: center;
+}
+
+.hti-fx-ad__label {
+	font: 600 0.68rem/1 'Plus Jakarta Sans', system-ui, sans-serif;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #b7aec4;
+}
+
+.hti-fx-ad__slot {
+	max-width: 100%;
+	overflow: hidden;
+}
+
+.hti-fx-ad__slot--mobile {
+	display: none;
+}
+
+@media (max-width: 560px) {
+	.hti-fx-ad__slot--desktop {
+		display: none;
+	}
+	.hti-fx-ad__slot--mobile {
+		display: block;
+	}
+}
+
 /* Mobile-first: single screen, no horizontal scroll */
 @media (max-width: 560px) {
 	.hti-fx-tool,

@@ -107,6 +107,16 @@ check( null !== Settings::cta_for( 'profit_loss', $on ), 'profit_loss is a CTA-c
 $pl_off = array_merge( $on, array( 'cta_profit_loss' => false ) );
 check( null === Settings::cta_for( 'profit_loss', $pl_off ), 'profit_loss toggle disables its CTA' );
 
+// --- Ad slots ---------------------------------------------------------------
+check( false === $d['ads_enabled'], 'ads are disabled by default' );
+$r = Settings::normalize_settings( array( 'ads_enabled' => '1', 'ad_code_desktop' => '  <iframe src="https://x.example/468x60"></iframe>  ' ), $d );
+check( true === $r['value']['ads_enabled'], 'ads_enabled maps to true' );
+check( '<iframe src="https://x.example/468x60"></iframe>' === $r['value']['ad_code_desktop'], 'ad code stored raw, only trimmed' );
+check( '' === $r['value']['ad_code_mobile'], 'missing ad code stays empty' );
+$r = Settings::normalize_settings( array( 'ad_code_mobile' => str_repeat( 'x', 10001 ) ), $d );
+check( '' === $r['value']['ad_code_mobile'], 'oversized ad code is cleared' );
+check( count( $r['errors'] ) >= 1, 'oversized ad code is reported' );
+
 // --- Flags ------------------------------------------------------------------
 $r = Settings::normalize_settings( array( 'cta_enabled' => '1', 'email_enabled' => '' ), $d );
 check( true === $r['value']['cta_enabled'], 'checkbox "1" maps to true' );
