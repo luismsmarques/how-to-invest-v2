@@ -34,6 +34,7 @@ SEO is the **whole point** of the WordPress rebuild. Strategy doc: `docs/Estrate
 - Broker pages are indexable editorial content with the affiliate disclosure on-page (see `broker-affiliate`).
 
 ## Checklist
+- [ ] Content-layer work (metas, keywords, headings, bolds, internal-link mesh) handed to `seo-content`
 - [ ] Schema valid per page type (Rich Results tested); Person author consistent with visible byline
 - [ ] Broker pages: `/go/` links with correct `rel`; no Review schema; disclosure present
 - [ ] New content: TL;DR + question H2s + pillar/spoke links (no orphans)
