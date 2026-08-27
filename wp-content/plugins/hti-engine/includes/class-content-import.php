@@ -413,6 +413,17 @@ class Content_Import {
 			},
 			(string) $html
 		);
+		// [page:path|Text] links to any internal page by literal path (e.g. the
+		// broker comparison as further reading). The author writes the
+		// language-appropriate path (PT bodies use the pt/... path), so no
+		// translation mapping applies here.
+		$html = preg_replace_callback(
+			'/\[page:([a-z0-9\/-]+)\|(.+?)\]/',
+			static function ( array $m ): string {
+				return '<a href="' . esc_url( home_url( '/' . trim( $m[1], '/' ) . '/' ) ) . '">' . $m[2] . '</a>';
+			},
+			(string) $html
+		);
 		return (string) $html;
 	}
 

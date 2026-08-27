@@ -182,10 +182,11 @@ if ( HTI_SEO_STRICT ) {
 	}
 	check( array() === $missing_meta, 'every learn chapter has seo_title_en/pt' . ( $missing_meta ? ' (' . implode( ', ', array_slice( $missing_meta, 0, 5 ) ) . ')' : '' ) );
 
-	// Every chapter meets the inline-link minimum in its EN body.
+	// Every chapter meets the inline-link minimum in its EN body ([page:]
+	// tokens — e.g. the broker-comparison further-reading link — count too).
 	$thin = array();
 	foreach ( $learn as $file => $c ) {
-		$n = count( tokens_in( $c['en'] ) );
+		$n = count( tokens_in( $c['en'] ) ) + preg_match_all( '/\[page:[a-z0-9\/-]+\|/', $c['en'] );
 		if ( $n < HTI_MIN_LINKS ) {
 			$thin[] = "{$file} ({$n})";
 		}
