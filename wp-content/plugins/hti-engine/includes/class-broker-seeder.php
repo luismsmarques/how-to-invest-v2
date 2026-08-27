@@ -1,20 +1,25 @@
 <?php
 /**
- * Seeder for the broker editorial section (broker-affiliate skill).
+ * Seeder/sync for the broker editorial section (broker-affiliate skill).
  *
- * Creates the `broker_use_case` terms and the ten curated broker review
- * skeletons (EN + linked PT translation via Polylang), with the structured
- * data from the affiliate reference study (verified 2026-06-26) stored as
- * `hti_broker_*` meta on the default-language post. Idempotent like the main
- * Seeder: entries are matched by slug and skipped when they exist, so
- * editorial rewrites in wp-admin are never overwritten.
+ * Creates the `broker_use_case` terms and the ten curated broker reviews
+ * (EN + linked PT translation via Polylang), with the structured data from
+ * the affiliate reference study stored as `hti_broker_*` meta on the
+ * default-language post — and keeps them in sync with this file: entries are
+ * matched by slug and, when the repo content changes, updated IN PLACE
+ * (title/content/excerpt/SEO/terms). A per-post content hash makes re-runs
+ * cheap no-ops, `post_status` and slugs are never touched on update, and the
+ * admin-managed deal fields (PROTECTED_META: affiliate URL/state/network and
+ * the CFD loss %) are NEVER written on update — a sync cannot clobber a deal
+ * configured in the "Broker data" metabox.
  *
  * Deliberately conservative with data: commission values and anything marked
  * "not confirmed" in the study is NOT seeded — only qualitative, verifiable
  * facts (regulator, products, CFD yes/no). Affiliate URLs start empty and
  * deals start inactive; both are flipped in the metabox once signed.
  *
- * Run from Tools → Seed brokers, or `wp hti seed-brokers`.
+ * Runs via the Content_Sync central (auto after deploy, Tools → Content sync,
+ * or `wp hti seed-brokers` / `wp hti sync-content`).
  *
  * @package HTI_Engine
  */
@@ -34,67 +39,84 @@ class Broker_Seeder {
 	private const SEED_FLAG = '_hti_seeded';
 
 	/**
+	 * Meta key holding the hash of the repo content last written to a post.
+	 * When the stored hash matches the current repo build, sync skips the post
+	 * entirely — no update, no revision, no `post_modified` churn.
+	 */
+	private const HASH_META = '_hti_synced_hash';
+
+	/**
+	 * Admin-managed deal fields (unprefixed `hti_broker_*` keys) that a sync
+	 * update must NEVER write: they are owned by the "Broker data" metabox
+	 * (deals signed, CFD loss % confirmed on the broker's own page) and would
+	 * otherwise be clobbered by every deploy.
+	 */
+	public const PROTECTED_META = array(
+		'affiliate_url',
+		'affiliate_active',
+		'affiliate_network',
+		'cfd_risk_pct',
+	);
+
+	/**
 	 * Date the seeded facts were last re-verified against primary sources
 	 * (financial-analyst protocol). Bump whenever the data below is re-checked.
 	 */
 	private const VERIFIED = '2026-08-27';
 
 	/**
-	 * Register the admin tools page and its form handler.
-	 */
-	public static function register(): void {
-		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
-		add_action( 'admin_post_hti_run_broker_seeder', array( __CLASS__, 'handle_form' ) );
-		add_action( 'admin_notices', array( __CLASS__, 'admin_notice' ) );
-	}
-
-	/**
-	 * Seed everything. Returns a report: created/skipped counts.
+	 * Seed/sync everything: create what is missing, update in place what the
+	 * repo changed, skip what already matches (hash-guard).
 	 *
-	 * @return array{brokers_created:int,translations_created:int,skipped:int}
+	 * @return array{brokers_created:int,brokers_updated:int,pages_created:int,pages_updated:int,translations_created:int,translations_updated:int,unchanged:int,failed:int}
 	 */
 	public static function seed(): array {
 		$report = array(
 			'brokers_created'      => 0,
+			'brokers_updated'      => 0,
 			'pages_created'        => 0,
+			'pages_updated'        => 0,
 			'translations_created' => 0,
-			'skipped'              => 0,
+			'translations_updated' => 0,
+			'unchanged'            => 0,
+			'failed'               => 0,
 		);
 
 		self::ensure_use_cases();
 
 		foreach ( self::brokers() as $entry ) {
-			$id = self::insert_broker( $entry );
-			if ( $id > 0 ) {
-				++$report['brokers_created'];
-			} else {
-				++$report['skipped'];
-			}
+			self::tally( $report, 'brokers', self::upsert_broker( $entry ) );
 		}
 
-		foreach ( self::pages() as $entry ) {
-			$id = self::insert_page( $entry );
-			if ( $id > 0 ) {
-				++$report['pages_created'];
-			} else {
-				++$report['skipped'];
-			}
-		}
-
-		foreach ( self::guides() as $entry ) {
-			$id = self::insert_page( $entry );
-			if ( $id > 0 ) {
-				++$report['pages_created'];
-			} else {
-				++$report['skipped'];
-			}
+		foreach ( array_merge( self::pages(), self::guides() ) as $entry ) {
+			self::tally( $report, 'pages', self::upsert_page( $entry ) );
 		}
 
 		self::link_guides();
 
-		$report['translations_created'] = self::seed_translations();
+		$translations                    = self::seed_translations();
+		$report['translations_created'] += $translations['created'];
+		$report['translations_updated'] += $translations['updated'];
+		$report['unchanged']            += $translations['unchanged'];
 
 		return $report;
+	}
+
+	/**
+	 * Fold one upsert outcome into the report.
+	 *
+	 * @param array<string,int> $report Report (by reference).
+	 * @param string            $group  'brokers' or 'pages'.
+	 * @param string            $result 'created', 'updated', 'unchanged' or 'failed'.
+	 */
+	private static function tally( array &$report, string $group, string $result ): void {
+		if ( 'created' === $result || 'updated' === $result ) {
+			++$report[ $group . '_' . $result ];
+		} elseif ( 'failed' === $result ) {
+			++$report['failed'];
+		} else {
+			++$report['unchanged'];
+		}
 	}
 
 	/**
@@ -1043,14 +1065,41 @@ class Broker_Seeder {
 	}
 
 	/**
-	 * Insert one section page (EN). Skips existing.
+	 * Upsert one section/guide page (EN): create when missing, update in place
+	 * when the repo content changed, skip otherwise.
 	 *
 	 * @param array<string,mixed> $entry Page entry.
-	 * @return int New post ID, or 0 if skipped/failed.
+	 * @return string 'created', 'updated', 'unchanged' or 'failed'.
 	 */
-	private static function insert_page( array $entry ): int {
-		if ( get_page_by_path( $entry['slug'], OBJECT, 'page' ) instanceof \WP_Post ) {
-			return 0;
+	private static function upsert_page( array $entry ): string {
+		$existing = get_page_by_path( $entry['slug'], OBJECT, 'page' );
+		$hash     = self::sync_hash( self::page_projection( $entry ) );
+
+		if ( $existing instanceof \WP_Post ) {
+			$id = (int) $existing->ID;
+			if ( get_post_meta( $id, self::HASH_META, true ) === $hash ) {
+				return 'unchanged';
+			}
+			// Update in place: content the repo owns only. Status and slug are
+			// never touched, so an unpublish or a slug decision in wp-admin
+			// survives every sync.
+			$updated = wp_update_post(
+				wp_slash(
+					array(
+						'ID'           => $id,
+						'post_title'   => $entry['title'],
+						'post_content' => $entry['content'],
+					)
+				),
+				true
+			);
+			if ( is_wp_error( $updated ) || 0 === $updated ) {
+				return 'failed';
+			}
+			self::write_seo_meta( $id, (array) ( $entry['seo'] ?? array() ) );
+			update_post_meta( $id, self::SEED_FLAG, VERSION );
+			update_post_meta( $id, self::HASH_META, $hash );
+			return 'updated';
 		}
 
 		$postarr = array(
@@ -1066,34 +1115,63 @@ class Broker_Seeder {
 
 		$id = wp_insert_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $id ) || 0 === $id ) {
-			return 0;
+			return 'failed';
 		}
 		$id = (int) $id;
 
-		// Same Polylang trap as insert_broker(): tag the EN page explicitly.
+		// Same Polylang trap as upsert_broker(): tag the EN page explicitly.
 		if ( function_exists( 'pll_set_post_language' ) && '' !== self::default_lang() ) {
 			pll_set_post_language( $id, self::default_lang() );
 		}
 
 		update_post_meta( $id, self::SEED_FLAG, VERSION );
+		update_post_meta( $id, self::HASH_META, $hash );
 		self::write_seo_meta( $id, (array) ( $entry['seo'] ?? array() ) );
 
-		return $id;
+		return 'created';
 	}
 
 	/* -------------------------------------------------------------------------
-	 * Insertion + translation.
+	 * Upsert + translation.
 	 * ---------------------------------------------------------------------- */
 
 	/**
-	 * Insert one broker post (EN) with meta + use-case terms. Skips existing.
+	 * Upsert one broker post (EN) with meta + use-case terms: create when
+	 * missing, update in place when the repo content changed, skip otherwise.
 	 *
 	 * @param array<string,mixed> $entry Broker entry.
-	 * @return int New post ID, or 0 if skipped/failed.
+	 * @return string 'created', 'updated', 'unchanged' or 'failed'.
 	 */
-	private static function insert_broker( array $entry ): int {
-		if ( get_page_by_path( $entry['slug'], OBJECT, 'broker' ) instanceof \WP_Post ) {
-			return 0;
+	private static function upsert_broker( array $entry ): string {
+		$existing = get_page_by_path( $entry['slug'], OBJECT, 'broker' );
+		$hash     = self::sync_hash( self::broker_projection( $entry ) );
+
+		if ( $existing instanceof \WP_Post ) {
+			$id = (int) $existing->ID;
+			if ( get_post_meta( $id, self::HASH_META, true ) === $hash ) {
+				return 'unchanged';
+			}
+			$updated = wp_update_post(
+				wp_slash(
+					array(
+						'ID'           => $id,
+						'post_title'   => $entry['title'],
+						'post_content' => $entry['content'],
+						'post_excerpt' => $entry['excerpt'] ?? '',
+						'menu_order'   => (int) ( $entry['menu_order'] ?? 0 ),
+					)
+				),
+				true
+			);
+			if ( is_wp_error( $updated ) || 0 === $updated ) {
+				return 'failed';
+			}
+			self::write_seo_meta( $id, (array) ( $entry['seo'] ?? array() ) );
+			self::apply_meta( $id, (array) ( $entry['meta'] ?? array() ), true );
+			self::apply_use_cases( $id, $entry, '' );
+			update_post_meta( $id, self::SEED_FLAG, VERSION );
+			update_post_meta( $id, self::HASH_META, $hash );
+			return 'updated';
 		}
 
 		$postarr = array(
@@ -1108,7 +1186,7 @@ class Broker_Seeder {
 
 		$id = wp_insert_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $id ) || 0 === $id ) {
-			return 0;
+			return 'failed';
 		}
 		$id = (int) $id;
 
@@ -1121,12 +1199,27 @@ class Broker_Seeder {
 		}
 
 		update_post_meta( $id, self::SEED_FLAG, VERSION );
+		update_post_meta( $id, self::HASH_META, $hash );
 		self::write_seo_meta( $id, (array) ( $entry['seo'] ?? array() ) );
 		self::apply_meta( $id, (array) ( $entry['meta'] ?? array() ) );
+		self::apply_use_cases( $id, $entry, '' );
 
+		return 'created';
+	}
+
+	/**
+	 * File a broker post under its use-case terms (EN terms, or their PT twins
+	 * when a language suffix is given). Replaces the whole term set — use-case
+	 * curation lives in this file.
+	 *
+	 * @param int                 $id     Post ID.
+	 * @param array<string,mixed> $entry  Broker entry.
+	 * @param string              $suffix '' for the EN terms, '-{pt}' for PT twins.
+	 */
+	private static function apply_use_cases( int $id, array $entry, string $suffix ): void {
 		$terms = array();
 		foreach ( (array) ( $entry['use_cases'] ?? array() ) as $slug ) {
-			$term = get_term_by( 'slug', $slug, 'broker_use_case' );
+			$term = get_term_by( 'slug', $slug . $suffix, 'broker_use_case' );
 			if ( $term instanceof \WP_Term ) {
 				$terms[] = (int) $term->term_id;
 			}
@@ -1134,27 +1227,20 @@ class Broker_Seeder {
 		if ( $terms ) {
 			wp_set_object_terms( $id, $terms, 'broker_use_case', false );
 		}
-
-		return $id;
 	}
 
 	/**
 	 * Write the hti_broker_* meta for a seeded record. Defaults keep the record
-	 * compliant: no affiliate URL, deal inactive, study verification date.
+	 * compliant: no affiliate URL, deal inactive, study verification date. On
+	 * update, the PROTECTED_META deal fields are never written (see
+	 * syncable_meta()) — those belong to the metabox.
 	 *
-	 * @param int                  $id   Post ID.
-	 * @param array<string,string> $meta Field key (unprefixed) → value.
+	 * @param int                  $id     Post ID.
+	 * @param array<string,string> $meta   Field key (unprefixed) → value.
+	 * @param bool                 $update Whether this is a sync update of an existing post.
 	 */
-	private static function apply_meta( int $id, array $meta ): void {
-		$meta = array_merge(
-			array(
-				'affiliate_url'    => '',
-				'affiliate_active' => '',
-				'verified'         => self::VERIFIED,
-			),
-			$meta
-		);
-		foreach ( $meta as $key => $value ) {
+	private static function apply_meta( int $id, array $meta, bool $update = false ): void {
+		foreach ( self::syncable_meta( $meta, $update ) as $key => $value ) {
 			if ( '' === (string) $value ) {
 				continue;
 			}
@@ -1163,15 +1249,129 @@ class Broker_Seeder {
 	}
 
 	/**
-	 * Create linked PT translations for the use-case terms and broker posts.
-	 * Translations are CONTENT-ONLY: broker meta stays on the EN post (the
-	 * single source renderers read), so a deal flip is one edit.
+	 * The meta a seed/sync run may write. Pure (testable without WordPress):
+	 * merges the compliant defaults and, on update, strips the PROTECTED_META
+	 * deal fields so a sync can never overwrite what the metabox manages.
 	 *
-	 * @return int Number of PT posts created.
+	 * @param array<string,string> $meta   Field key (unprefixed) → value.
+	 * @param bool                 $update Whether this is an update of an existing post.
+	 * @return array<string,string>
 	 */
-	private static function seed_translations(): int {
+	public static function syncable_meta( array $meta, bool $update = false ): array {
+		$meta = array_merge(
+			array(
+				'affiliate_url'    => '',
+				'affiliate_active' => '',
+				'verified'         => self::VERIFIED,
+			),
+			$meta
+		);
+		if ( $update ) {
+			foreach ( self::PROTECTED_META as $key ) {
+				unset( $meta[ $key ] );
+			}
+		}
+		return $meta;
+	}
+
+	/* -------------------------------------------------------------------------
+	 * Sync projections + hashes (what "the repo content changed" means).
+	 * ---------------------------------------------------------------------- */
+
+	/**
+	 * Deterministic hash of a sync projection. Pure.
+	 *
+	 * @param array<string,mixed> $data Projection.
+	 */
+	public static function sync_hash( array $data ): string {
+		return md5( (string) json_encode( $data ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- pure helper, must run without WordPress.
+	}
+
+	/**
+	 * Everything a sync writes to the EN broker post. The slug is excluded on
+	 * purpose (it is the match key, never updated) and the meta view is the
+	 * UPDATE view, so admin edits to the protected deal fields can never make
+	 * a record look out of sync.
+	 *
+	 * @param array<string,mixed> $entry Broker entry.
+	 * @return array<string,mixed>
+	 */
+	private static function broker_projection( array $entry ): array {
+		return array(
+			'title'      => (string) $entry['title'],
+			'content'    => (string) $entry['content'],
+			'excerpt'    => (string) ( $entry['excerpt'] ?? '' ),
+			'menu_order' => (int) ( $entry['menu_order'] ?? 0 ),
+			'seo'        => (array) ( $entry['seo'] ?? array() ),
+			'meta'       => self::syncable_meta( (array) ( $entry['meta'] ?? array() ), true ),
+			'use_cases'  => array_values( (array) ( $entry['use_cases'] ?? array() ) ),
+		);
+	}
+
+	/**
+	 * Everything a sync writes to the PT twin of a broker post.
+	 *
+	 * @param array<string,mixed> $entry Broker entry.
+	 * @return array<string,mixed>
+	 */
+	private static function broker_pt_projection( array $entry ): array {
+		$pt = (array) ( $entry['pt'] ?? array() );
+		return array(
+			'title'      => (string) ( $pt['title'] ?? '' ),
+			'content'    => (string) ( $pt['content'] ?? '' ),
+			'excerpt'    => (string) ( $pt['excerpt'] ?? '' ),
+			'menu_order' => (int) ( $entry['menu_order'] ?? 0 ),
+			'seo'        => (array) ( $pt['seo'] ?? array() ),
+			'use_cases'  => array_values( (array) ( $entry['use_cases'] ?? array() ) ),
+		);
+	}
+
+	/**
+	 * Everything a sync writes to an EN section/guide page.
+	 *
+	 * @param array<string,mixed> $entry Page entry.
+	 * @return array<string,mixed>
+	 */
+	private static function page_projection( array $entry ): array {
+		return array(
+			'title'   => (string) $entry['title'],
+			'content' => (string) $entry['content'],
+			'seo'     => (array) ( $entry['seo'] ?? array() ),
+		);
+	}
+
+	/**
+	 * Everything a sync writes to the PT twin of a section/guide page.
+	 *
+	 * @param array<string,mixed> $entry Page entry.
+	 * @return array<string,mixed>
+	 */
+	private static function page_pt_projection( array $entry ): array {
+		$pt = (array) ( $entry['pt'] ?? array() );
+		return array(
+			'title'   => (string) ( $pt['title'] ?? '' ),
+			'content' => (string) ( $pt['content'] ?? '' ),
+			'seo'     => (array) ( $pt['seo'] ?? array() ),
+		);
+	}
+
+	/**
+	 * Create or update the linked PT translations for the use-case terms and
+	 * the broker/page posts. Translations are CONTENT-ONLY: broker meta stays
+	 * on the EN post (the single source renderers read), so a deal flip is one
+	 * edit. Existing twins are updated in place under the same hash-guard as
+	 * the EN posts; their slug is never touched after creation.
+	 *
+	 * @return array{created:int,updated:int,unchanged:int}
+	 */
+	private static function seed_translations(): array {
+		$result = array(
+			'created'   => 0,
+			'updated'   => 0,
+			'unchanged' => 0,
+		);
 		if ( ! self::polylang_active() ) {
-			return 0;
+			return $result;
 		}
 
 		$en = (string) pll_default_language( 'slug' );
@@ -1180,12 +1380,11 @@ class Broker_Seeder {
 		}
 		$pt = self::portuguese_slug( $en );
 		if ( '' === $pt || $pt === $en ) {
-			return 0;
+			return $result;
 		}
 
 		self::translate_use_cases( $en, $pt );
 
-		$created = 0;
 		foreach ( self::brokers() as $entry ) {
 			$en_post = get_page_by_path( $entry['slug'], OBJECT, 'broker' );
 			if ( ! $en_post instanceof \WP_Post ) {
@@ -1203,12 +1402,38 @@ class Broker_Seeder {
 				pll_set_post_language( $en_id, $en );
 			}
 
-			if ( pll_get_post( $en_id, $pt ) ) {
-				continue;
-			}
-
 			$pt_data = (array) ( $entry['pt'] ?? array() );
 			if ( empty( $pt_data['title'] ) ) {
+				continue;
+			}
+			$hash = self::sync_hash( self::broker_pt_projection( $entry ) );
+
+			$pt_id = (int) pll_get_post( $en_id, $pt );
+			if ( $pt_id > 0 ) {
+				if ( get_post_meta( $pt_id, self::HASH_META, true ) === $hash ) {
+					++$result['unchanged'];
+					continue;
+				}
+				$updated = wp_update_post(
+					wp_slash(
+						array(
+							'ID'           => $pt_id,
+							'post_title'   => $pt_data['title'],
+							'post_content' => (string) ( $pt_data['content'] ?? '' ),
+							'post_excerpt' => (string) ( $pt_data['excerpt'] ?? '' ),
+							'menu_order'   => (int) ( $entry['menu_order'] ?? 0 ),
+						)
+					),
+					true
+				);
+				if ( is_wp_error( $updated ) || 0 === $updated ) {
+					continue;
+				}
+				self::write_seo_meta( $pt_id, (array) ( $pt_data['seo'] ?? array() ) );
+				self::apply_use_cases( $pt_id, $entry, '-' . $pt );
+				update_post_meta( $pt_id, self::SEED_FLAG, VERSION );
+				update_post_meta( $pt_id, self::HASH_META, $hash );
+				++$result['updated'];
 				continue;
 			}
 
@@ -1237,21 +1462,13 @@ class Broker_Seeder {
 			pll_save_post_translations( array( $en => $en_id, $pt => $pt_id ) );
 
 			update_post_meta( $pt_id, self::SEED_FLAG, VERSION );
+			update_post_meta( $pt_id, self::HASH_META, $hash );
 			self::write_seo_meta( $pt_id, (array) ( $pt_data['seo'] ?? array() ) );
 
 			// File under the PT twins of the EN use-case terms.
-			$terms = array();
-			foreach ( (array) ( $entry['use_cases'] ?? array() ) as $slug ) {
-				$term = get_term_by( 'slug', $slug . '-' . $pt, 'broker_use_case' );
-				if ( $term instanceof \WP_Term ) {
-					$terms[] = (int) $term->term_id;
-				}
-			}
-			if ( $terms ) {
-				wp_set_object_terms( $pt_id, $terms, 'broker_use_case', false );
-			}
+			self::apply_use_cases( $pt_id, $entry, '-' . $pt );
 
-			++$created;
+			++$result['created'];
 		}
 
 		foreach ( array_merge( self::pages(), self::guides() ) as $entry ) {
@@ -1266,12 +1483,35 @@ class Broker_Seeder {
 				pll_set_post_language( $en_id, $en );
 			}
 
-			if ( pll_get_post( $en_id, $pt ) ) {
-				continue;
-			}
-
 			$pt_data = (array) ( $entry['pt'] ?? array() );
 			if ( empty( $pt_data['title'] ) ) {
+				continue;
+			}
+			$hash = self::sync_hash( self::page_pt_projection( $entry ) );
+
+			$pt_id = (int) pll_get_post( $en_id, $pt );
+			if ( $pt_id > 0 ) {
+				if ( get_post_meta( $pt_id, self::HASH_META, true ) === $hash ) {
+					++$result['unchanged'];
+					continue;
+				}
+				$updated = wp_update_post(
+					wp_slash(
+						array(
+							'ID'           => $pt_id,
+							'post_title'   => $pt_data['title'],
+							'post_content' => (string) ( $pt_data['content'] ?? '' ),
+						)
+					),
+					true
+				);
+				if ( is_wp_error( $updated ) || 0 === $updated ) {
+					continue;
+				}
+				self::write_seo_meta( $pt_id, (array) ( $pt_data['seo'] ?? array() ) );
+				update_post_meta( $pt_id, self::SEED_FLAG, VERSION );
+				update_post_meta( $pt_id, self::HASH_META, $hash );
+				++$result['updated'];
 				continue;
 			}
 
@@ -1301,12 +1541,13 @@ class Broker_Seeder {
 			pll_save_post_translations( array( $en => $en_id, $pt => $pt_id ) );
 
 			update_post_meta( $pt_id, self::SEED_FLAG, VERSION );
+			update_post_meta( $pt_id, self::HASH_META, $hash );
 			self::write_seo_meta( $pt_id, (array) ( $pt_data['seo'] ?? array() ) );
 
-			++$created;
+			++$result['created'];
 		}
 
-		return $created;
+		return $result;
 	}
 
 	/* -------------------------------------------------------------------------
@@ -2422,80 +2663,76 @@ class Broker_Seeder {
 	}
 
 	/* -------------------------------------------------------------------------
-	 * Admin (Tools → Seed brokers).
+	 * Sync status (rendered by the Content_Sync Tools page).
 	 * ---------------------------------------------------------------------- */
 
 	/**
-	 * Register the Tools page.
+	 * One status row per seeded entry: does the EN post exist, is the PT twin
+	 * linked, and does each match the current repo content (hash-guard)?
+	 *
+	 * States: 'missing' (post not created yet), 'pending' (repo content differs
+	 * from what was last synced — the next sync run will update it) and 'ok'.
+	 *
+	 * @return array<int,array{title:string,type:string,en:string,pt:string}>
 	 */
-	public static function admin_menu(): void {
-		add_management_page(
-			__( 'HowToInvest — Seed brokers', 'hti-engine' ),
-			__( 'Seed brokers', 'hti-engine' ),
-			'manage_options',
-			'hti-seed-brokers',
-			array( __CLASS__, 'render_page' )
+	public static function status_rows(): array {
+		$pt_lang = self::polylang_active() ? self::portuguese_slug( self::default_lang() ) : '';
+
+		$rows = array();
+		foreach ( self::brokers() as $entry ) {
+			$rows[] = self::status_row(
+				$entry,
+				'broker',
+				self::sync_hash( self::broker_projection( $entry ) ),
+				self::sync_hash( self::broker_pt_projection( $entry ) ),
+				$pt_lang
+			);
+		}
+		foreach ( array_merge( self::pages(), self::guides() ) as $entry ) {
+			$rows[] = self::status_row(
+				$entry,
+				'page',
+				self::sync_hash( self::page_projection( $entry ) ),
+				self::sync_hash( self::page_pt_projection( $entry ) ),
+				$pt_lang
+			);
+		}
+		return $rows;
+	}
+
+	/**
+	 * Build one status row (see status_rows()).
+	 *
+	 * @param array<string,mixed> $entry   Seed entry.
+	 * @param string              $type    Post type.
+	 * @param string              $en_hash Current repo hash for the EN post.
+	 * @param string              $pt_hash Current repo hash for the PT twin.
+	 * @param string              $pt_lang PT language slug ('' when unavailable).
+	 * @return array{title:string,type:string,en:string,pt:string}
+	 */
+	private static function status_row( array $entry, string $type, string $en_hash, string $pt_hash, string $pt_lang ): array {
+		$en_post = get_page_by_path( (string) $entry['slug'], OBJECT, $type );
+		$en_id   = $en_post instanceof \WP_Post ? (int) $en_post->ID : 0;
+
+		$en = 'missing';
+		if ( $en_id > 0 ) {
+			$en = get_post_meta( $en_id, self::HASH_META, true ) === $en_hash ? 'ok' : 'pending';
+		}
+
+		$pt    = 'missing';
+		$pt_id = 0;
+		if ( $en_id > 0 && '' !== $pt_lang && function_exists( 'pll_get_post' ) ) {
+			$pt_id = (int) pll_get_post( $en_id, $pt_lang );
+		}
+		if ( $pt_id > 0 ) {
+			$pt = get_post_meta( $pt_id, self::HASH_META, true ) === $pt_hash ? 'ok' : 'pending';
+		}
+
+		return array(
+			'title' => (string) $entry['title'],
+			'type'  => $type,
+			'en'    => $en,
+			'pt'    => $pt,
 		);
-	}
-
-	/**
-	 * Render the seeder form.
-	 */
-	public static function render_page(): void {
-		?>
-		<div class="wrap">
-			<h1><?php echo esc_html__( 'HowToInvest — Seed brokers', 'hti-engine' ); ?></h1>
-			<p><?php echo esc_html__( 'Create the broker review skeletons (EN + linked PT) and the use-case terms with the reference-study data. Existing entries (matched by slug) are skipped, so editorial rewrites are safe.', 'hti-engine' ); ?></p>
-			<p><?php echo esc_html__( 'Seeded records start with NO affiliate URL and the deal inactive — flip each in the broker\'s "Broker data" box once a deal is signed and verified.', 'hti-engine' ); ?></p>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-				<input type="hidden" name="action" value="hti_run_broker_seeder" />
-				<?php wp_nonce_field( 'hti_run_broker_seeder' ); ?>
-				<?php submit_button( __( 'Run broker seeder', 'hti-engine' ) ); ?>
-			</form>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Handle the form submission.
-	 */
-	public static function handle_form(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'hti-engine' ) );
-		}
-		check_admin_referer( 'hti_run_broker_seeder' );
-
-		$report = self::seed();
-		set_transient( 'hti_broker_seed_report', $report, 60 );
-
-		wp_safe_redirect( add_query_arg( 'page', 'hti-seed-brokers', admin_url( 'tools.php' ) ) );
-		exit;
-	}
-
-	/**
-	 * Show the result notice after seeding.
-	 */
-	public static function admin_notice(): void {
-		$screen = get_current_screen();
-		if ( ! $screen || 'tools_page_hti-seed-brokers' !== $screen->id ) {
-			return;
-		}
-
-		$report = get_transient( 'hti_broker_seed_report' );
-		if ( ! is_array( $report ) ) {
-			return;
-		}
-		delete_transient( 'hti_broker_seed_report' );
-
-		$message = sprintf(
-			/* translators: 1: brokers created, 2: section pages, 3: PT translations, 4: skipped. */
-			__( 'Broker seeding complete: %1$d brokers and %2$d section pages created, %3$d Portuguese translations linked, %4$d skipped (already existed).', 'hti-engine' ),
-			(int) $report['brokers_created'],
-			(int) ( $report['pages_created'] ?? 0 ),
-			(int) $report['translations_created'],
-			(int) $report['skipped']
-		);
-
-		printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( $message ) );
 	}
 }

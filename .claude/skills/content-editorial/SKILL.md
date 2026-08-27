@@ -13,6 +13,7 @@ Covers the editorial surface **around** the Learn hub. For Learn chapters themse
 ## Two-stage content model
 - **Seeder = install-only** (`includes/class-seeder.php`): starter glossary + institutional/legal pages (301 targets). Idempotent, create-only — it never updates existing posts. Don't use it for ongoing edits.
 - **Importers = ongoing editorial** (idempotent by slug, Polylang-linked, publish immediately; a re-sync never reverts an editor's status change).
+- **Auto-sync after deploy** (`includes/class-content-sync.php`): a file-manifest gate detects each deploy and runs the Learn/glossary importers **and** the broker seeder (upsert) in one background cron event — merging a `.md` (or broker content) to `main` publishes it on the site within minutes. Manual override: Tools → Content sync / `wp hti sync-content`.
 
 ## Glossary authoring
 - One Markdown file per term: `wp-content/plugins/hti-engine/content/glossary/<slug>.md`.
@@ -29,7 +30,7 @@ Covers the editorial surface **around** the Learn hub. For Learn chapters themse
 ## Pipeline reference
 - `class-content-import.php` (Learn) + `class-glossary-import.php` (reuses `to_blocks`) — parse `.md` → upsert EN+PT, taxonomy, TL;DR + takeaways, quiz meta.
 - Spine: `content/learn-plan.csv` (`module,order,slug,…,prev,next`); nav (prev/next) is derived from module/order order, not the frontmatter fields.
-- Commands: `wp hti import-learn | import-glossary | seed` (or the Tools screen).
+- Commands: `wp hti import-learn | import-glossary | seed | sync-content` (or the Tools screens; Tools → Content sync is the central).
 
 ## Broker editorial cluster
 The broker section (comparison pillar + use-case categories + per-broker reviews + "how to open an account" guides) is a distinct editorial cluster with its own rules — factual/comparative language, on-page affiliate disclosure, "Parceria · Publicidade" label, CFD risk warning, `/go/{slug}` links only, verification dates on data. Full rules: `broker-affiliate`. It interlinks with Learn ("account types", "costs & fees") and the glossary, but Learn/glossary content never embeds broker CTAs.
