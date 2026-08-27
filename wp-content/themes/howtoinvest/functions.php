@@ -103,6 +103,15 @@ function hreflang_x_default(): void {
 add_action( 'wp_head', __NAMESPACE__ . '\\hreflang_x_default', 2 );
 
 /**
+ * Impact (impact.com) affiliate-network site verification. Public token by
+ * design — it only proves ownership of the domain to Impact's crawler.
+ */
+function impact_site_verification(): void {
+	echo '<meta name="impact-site-verification" value="016d2247-e3a4-485f-a176-eb62e75167fc">' . "\n";
+}
+add_action( 'wp_head', __NAMESPACE__ . '\\impact_site_verification', 1 );
+
+/**
  * Enqueue the child theme stylesheet after the parent's styles.
  */
 function enqueue_styles(): void {
