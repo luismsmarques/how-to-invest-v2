@@ -1972,6 +1972,18 @@ class Seeder {
 				. self::paragraph( 'Não vendemos os teus dados.' )
 				. self::heading( 'Cookies e consentimento' )
 				. self::paragraph( 'Usamos cookies/armazenamento essenciais para fazer funcionar o questionário e recordar as tuas escolhas. A analítica não-essencial só carrega depois de a aceitares no banner de consentimento; podes mudar a tua escolha a qualquer momento.' )
+				. self::heading( 'Como contamos as visitas' )
+				. self::paragraph( 'Contamos as visitas de duas formas diferentes, e só uma delas envolve a Google.' )
+				. self::legal_list(
+					array(
+						'O nosso contador anónimo (sempre ativo): um contador alojado por nós regista que uma página foi vista e até onde as pessoas chegam no questionário. Não cria cookies, não guarda endereço IP nem identificador nenhum, e retém apenas totais diários — não há ali nada que possa ser ligado a uma pessoa, e é por isso que não precisa de consentimento.',
+						'Google Analytics 4 (só com o teu consentimento): se aceitares a analítica no banner, carregamos o Google Analytics, que cria cookies próprios e partilha dados de utilização com a Google; os endereços IP são anonimizados. Se recusares, ou simplesmente ignorares o banner, o Google Analytics ou não carrega de todo ou — quando o usamos no modo de consentimento da Google — carrega num estado em que não guarda nada no teu dispositivo e não envia identificadores, apenas contagens anónimas que a Google usa para modelação estatística. Em qualquer dos casos, nada é guardado no teu dispositivo para fins de analítica antes de aceitares.',
+						'O armazenamento para publicidade está sempre negado: nunca damos autorização para usar os teus dados para publicidade ou personalização, aceites tu a analítica ou não.',
+					)
+				)
+				. self::paragraph( 'A tua escolha fica registada num cookie chamado hti_consent durante 180 dias. Podes alterá-la ou retirá-la a qualquer momento no banner de consentimento.' )
+				. self::heading( 'Publicidade nas ferramentas de forex' )
+				. self::paragraph( 'As calculadoras de forex gratuitas em /forex/ são financiadas por publicidade. Mostram banners claramente identificados e um link de parceiro para uma corretora, e enquanto houver campanha a decorrer essas páginas podem também carregar um pixel de medição de audiência do nosso parceiro publicitário. Seguir um link de parceiro leva-te ao site dessa empresa, onde se aplica a política de privacidade dela; podemos ser pagos se lá abrires conta, sem custo para ti. O que escreves nas calculadoras fica no teu navegador — as contas são feitas no teu dispositivo e esses números nunca nos são enviados.' )
 				. self::heading( 'Durante quanto tempo guardamos' )
 				. self::legal_list(
 					array(
@@ -2039,6 +2051,18 @@ class Seeder {
 			. self::paragraph( 'We do not sell your data.' )
 			. self::heading( 'Cookies and consent' )
 			. self::paragraph( 'We use essential cookies/storage to run the questionnaire and remember your choices. Non-essential analytics load only after you accept them in the consent banner; you can change your choice at any time.' )
+			. self::heading( 'How we measure visits' )
+			. self::paragraph( 'We count visits in two different ways, and only one of them involves Google.' )
+			. self::legal_list(
+				array(
+					'Our own anonymous counter (always on): a counter we host ourselves records that a page was viewed and how far through the questionnaire people get. It sets no cookies, stores no IP address and no identifier of any kind, and keeps daily totals only — there is nothing in it that could be traced back to a person, which is why it needs no consent.',
+					'Google Analytics 4 (only with your consent): if you accept analytics in the banner, we load Google Analytics, which sets its own cookies and shares usage data with Google; IP addresses are anonymised. If you decline or simply ignore the banner, Google Analytics either does not load at all or — where we run it in Google’s consent mode — loads in a state where it stores nothing on your device and sends no identifiers, only anonymous counts Google uses for statistical modelling. Either way, nothing is stored on your device for analytics until you accept.',
+					'Advertising storage is always denied: we never grant permission to use your data for advertising or personalisation, whether or not you accept analytics.',
+				)
+			)
+			. self::paragraph( 'Your choice is remembered in a cookie named hti_consent for 180 days. You can change or withdraw it at any time in the consent banner.' )
+			. self::heading( 'Advertising on the forex tools' )
+			. self::paragraph( 'The free forex calculators at /forex/ are funded by advertising. They show clearly labelled banners and a partner link to a broker, and while an advertising campaign is running those pages may also load an audience-measurement pixel from our advertising partner. Following a partner link takes you to that company’s own site, where their privacy policy applies; we may be paid if you open an account there, at no cost to you. Whatever you type into the calculators stays in your browser — the arithmetic runs on your device and those numbers are never sent to us.' )
 			. self::heading( 'How long we keep it' )
 			. self::legal_list(
 				array(
