@@ -38,6 +38,8 @@ Os retornos vêm de assumir risco: os preços oscilam, as empresas falham e os m
 ## Como verificar antes de entregar dinheiro?
 Trata a palavra "garantido" como um sinal para abrandar e verificar. Confirma que a empresa está registada junto do regulador financeiro, pergunta exatamente como é gerado o lucro e desconfia de pressão para agir depressa. Se as respostas forem vagas, afasta-te.
 
+Para veres o conceito em contexto, lê o capítulo [learn:spotting-scams-and-red-flags|Reconhecer fraudes e sinais de alarme].
+
 ## Pontos-chave
 - Retornos garantidos, elevados e sem risco não existem em investimento honesto.
 - O retorno real implica sempre risco; o compromisso não pode ser eliminado.

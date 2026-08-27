@@ -42,6 +42,8 @@ Como o valor se mantém fixo, o mesmo dinheiro compra mais unidades quando os pr
 
 Investir de forma constante pode tornar a volatilidade mais fácil de gerir, já que os altos e baixos passam a fazer parte da rotina em vez de serem um motivo para hesitar. Criar este hábito regular faz parte de construir uma carteira. É um processo, não uma previsão sobre o rumo dos preços.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-periodic-investing|O que é o investimento periódico (DCA)].
+
 ## Pontos-chave
 - O custo médio investe um valor fixo numa periodicidade regular.
 - O mesmo dinheiro compra mais unidades quando os preços descem e menos quando sobem.

@@ -38,6 +38,8 @@ Não exatamente. A volatilidade mede a dimensão das oscilações de preço, enq
 ## Como podem os investidores de longo prazo lidar com a volatilidade?
 Uma carteira diversificada combina classes de ativos para que as posições mais calmas amorteçam as mais agitadas. Repor periodicamente esses pesos pode transformar a volatilidade numa oportunidade de comprar ativos quando os preços caem, em vez de um motivo de pânico.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-rebalancing|O que é o rebalanceamento].
+
 ## Pontos-chave
 - A volatilidade mede a dispersão dos retornos, não a sua direção.
 - Diferentes classes de ativos têm níveis de volatilidade muito distintos.

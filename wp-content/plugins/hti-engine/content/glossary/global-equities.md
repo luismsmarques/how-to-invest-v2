@@ -38,6 +38,8 @@ Em horizontes longos, as ações têm historicamente apresentado retornos mais a
 ## Porquê distribuí-las globalmente?
 Deter empresas de muitas regiões pode atenuar o impacto de um único país ou setor em dificuldades. Esta forma de diversificação é uma das razões pelas quais as carteiras ilustrativas descrevem as ações de forma ampla, e não por nomes individuais.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-global-equities|As ações globais mais de perto].
+
 ## Pontos-chave
 - As ações representam parte da propriedade de empresas e tendem a impulsionar o crescimento de longo prazo.
 - Têm maior volatilidade do que as obrigações ou a liquidez.

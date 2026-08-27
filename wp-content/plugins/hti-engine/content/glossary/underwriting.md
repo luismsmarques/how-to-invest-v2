@@ -38,6 +38,8 @@ Numa oferta pública inicial (IPO), os underwriters avaliam a procura, ajudam a 
 ## Porque é o underwriting importante para os investidores?
 Para o investidor comum, o underwriting é um sinal de que uma nova emissão foi analisada e cotada por profissionais, embora nunca elimine o risco de mercado. As obrigações e ações trazidas ao mercado desta forma continuam a subir e a descer assim que a negociação começa. Compreender o processo ajuda a explicar por que o preço de um novo ativo pode oscilar fortemente nos primeiros dias.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-markets-work|Como funcionam os mercados (e o que é a 'Wall Street')].
+
 ## Pontos-chave
 - O underwriting é como as instituições avaliam e assumem o risco de novos títulos.
 - Num IPO, os underwriters ajudam a fixar o preço e podem comprar ações não colocadas.

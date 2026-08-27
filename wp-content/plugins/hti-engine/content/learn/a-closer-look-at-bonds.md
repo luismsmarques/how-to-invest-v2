@@ -9,6 +9,8 @@ title_en: "A closer look at bonds"
 title_pt: "As obrigações mais de perto"
 excerpt_en: "Bonds are loans to governments or companies that pay interest — usually steadier than equities, and a portfolio's ballast."
 excerpt_pt: "As obrigações são empréstimos a governos ou empresas que pagam juros — costumam ser mais estáveis que as ações, e o lastro de uma carteira."
+seo_title_en: "What Are Bonds? How They Work for Steadier Portfolios"
+seo_title_pt: "O Que São Obrigações? Como Funcionam na Carteira"
 glossary: bonds, interest-rate, fixed-income, portfolio
 prev: a-closer-look-at-global-equities
 next: cash-and-when-it-helps

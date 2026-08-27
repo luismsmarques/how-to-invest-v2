@@ -38,6 +38,8 @@ Por remover os efeitos das decisões de financiamento e de impostos, o EBITDA pe
 ## Quais são os limites do EBITDA?
 O EBITDA não é o mesmo que o dinheiro que uma empresa efetivamente retém, pois ignora custos reais como juros e desgaste de equipamentos. Uma empresa pode apresentar um EBITDA saudável e ainda assim ter dificuldades. É um sinal entre muitos, nunca o quadro completo.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-global-equities|As ações globais mais de perto].
+
 ## Pontos-chave
 - O EBITDA mostra o lucro operacional antes de juros, impostos, depreciação e amortização.
 - Ajuda a comparar empresas, mas ignora alguns custos muito reais.

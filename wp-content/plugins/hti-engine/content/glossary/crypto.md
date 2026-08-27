@@ -38,6 +38,8 @@ As suas oscilações de preço podem ser muito maiores do que as dos ativos trad
 ## Toda a gente precisa de exposição a cripto?
 Não. É opcional por definição. Muitas alocações ilustrativas não incluem nenhuma, e esse é um resultado perfeitamente razoável. Quando presente, fica na margem da carteira como uma pequena fatia especulativa, e não como posição central.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-asset-allocation|O que é a alocação de ativos].
+
 ## Pontos-chave
 - A cripto é uma classe de ativos jovem e muito volátil.
 - Se incluída, é sempre apenas uma fatia muito pequena e opcional.

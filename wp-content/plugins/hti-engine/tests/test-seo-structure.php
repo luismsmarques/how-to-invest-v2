@@ -19,8 +19,8 @@
 
 require_once __DIR__ . '/bootstrap.php';
 
-// Flipped to true by the content pass that adds meta titles + the link mesh.
-const HTI_SEO_STRICT = false;
+// Content mesh landed: every chapter needs curated titles + the link minimum.
+const HTI_SEO_STRICT = true;
 const HTI_MIN_LINKS  = 3;
 
 $failures = 0;

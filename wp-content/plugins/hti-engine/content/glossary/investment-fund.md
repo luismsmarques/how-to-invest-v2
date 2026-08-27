@@ -38,6 +38,8 @@ Um gestor ou um conjunto de regras decide o que o dinheiro reunido compra, e cad
 ## O que deve ponderar antes de considerar um fundo?
 Os custos, o tipo de ativos detidos e a forma como o fundo está estruturado importam, pois as comissões reduzem os retornos ao longo do tempo. Alguns fundos limitam-se a seguir um índice de referência, enquanto outros são geridos de forma ativa. Nenhum elimina o risco, e o desempenho passado nunca garante o futuro.
 
+Para veres o conceito em contexto, lê o capítulo [learn:costs-and-fees-explained|Custos e taxas, explicados de forma simples].
+
 ## Pontos-chave
 - Um fundo de investimento reúne dinheiro de muitos investidores numa carteira coletiva.
 - Oferece diversificação incorporada, mas cobra comissões que reduzem os retornos.

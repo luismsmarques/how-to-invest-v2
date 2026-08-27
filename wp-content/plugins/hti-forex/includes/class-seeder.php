@@ -270,6 +270,8 @@ class Seeder {
 		$hours_url  = home_url( '/forex/market-hours-ist/' );
 		$profit_url = home_url( '/forex/profit-calculator/' );
 		$small_url  = home_url( '/forex/lot-size-for-100-dollar-account/' );
+		$risk_url   = home_url( '/learn/risk-and-reward-explained/' );
+		$fees_url   = home_url( '/learn/costs-and-fees-explained/' );
 
 		return array(
 			'hub'           => array(
@@ -293,7 +295,7 @@ class Seeder {
 					. self::h2( 'How it works' )
 					. self::p( 'The amount at risk is your balance multiplied by the risk percentage. Dividing it by the stop-loss distance in pips times the pip value in rupees per lot gives the raw position, which is then rounded down to the nearest micro lot (0.01) — rounding down means the rupee risk shown is never higher than the risk you chose. As an example, a ₹1,00,000 account risking 1% with a 20-pip stop on EUR/USD at ₹83 per dollar works out to 0.06 lots, with ₹996 actually at risk.' )
 					. self::faq_section( 'position_size' )
-					. self::p( 'Also see the <a href="' . esc_url( $pip_url ) . '">pip value calculator in Indian rupees</a> and the <a href="' . esc_url( $hours_url ) . '">forex market hours in IST</a>.' ),
+					. self::p( 'Also see the <a href="' . esc_url( $pip_url ) . '">pip value calculator in Indian rupees</a> and the <a href="' . esc_url( $hours_url ) . '">forex market hours in IST</a>. For the idea underneath every position size, read <a href="' . esc_url( $risk_url ) . '">risk and reward, explained calmly</a>.' ),
 			),
 			'pip_value'     => array(
 				'page'      => 'pip_value',
@@ -365,7 +367,7 @@ class Seeder {
 					. self::h2( 'Position size vs margin' )
 					. self::p( 'The position size comes from the risk arithmetic: rupees at risk divided by stop distance times pip value. The margin comes from the exposure: the position\'s notional value divided by the leverage. At 1:500, a 0.06-lot EUR/USD position (about ₹5.4 lakh of notional at ₹83 per dollar) needs only around ₹1,086 of margin — which is exactly why high leverage makes it dangerously easy to open positions far larger than a risk-based size.' )
 					. self::faq_section( 'leverage' )
-					. self::p( 'Also see the <a href="' . esc_url( $pos_url ) . '">position size calculator in ₹</a> and the <a href="' . esc_url( $small_url ) . '">lot size for a $100 account</a>.' ),
+					. self::p( 'Also see the <a href="' . esc_url( $pos_url ) . '">position size calculator in ₹</a> and the <a href="' . esc_url( $small_url ) . '">lot size for a $100 account</a>. Leverage also magnifies what you pay — <a href="' . esc_url( $fees_url ) . '">how investing costs compound</a> explains why they matter.' ),
 			),
 			'sessions'      => array(
 				'page'      => 'sessions',

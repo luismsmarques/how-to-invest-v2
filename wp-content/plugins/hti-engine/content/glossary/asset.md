@@ -42,6 +42,8 @@ A maioria das carteiras é construída a partir de algumas categorias amplas. Es
 
 Agrupar por classe facilita a compreensão e a comparação de opções sem nos perdermos nos detalhes. Uma carteira mais inclinada para obrigações e liquidez, por exemplo, tende a oscilar de forma mais suave do que outra com peso em ações ou cripto. Definir o peso de cada classe é o centro da alocação de ativos.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-asset-allocation|O que é a alocação de ativos].
+
 ## Pontos-chave
 - Um ativo é um recurso que se possui e que se espera que traga benefício futuro.
 - Os ativos costumam ser agrupados em grandes classes, em vez de produtos isolados.

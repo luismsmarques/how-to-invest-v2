@@ -38,6 +38,8 @@ A vantagem fiscal raramente é gratuita. Em troca, estas contas costumam definir
 ## Como se encaixa ao lado de outras contas?
 Muitas pessoas combinam uma com uma conta de corretora flexível, usando cada uma para o que faz melhor. Os nomes específicos das contas, as regras fiscais e os limites variam muito de país para país e mudam ao longo do tempo, por isso vale a pena verificar o que se aplica onde vives antes de escolher.
 
+Para veres o conceito em contexto, lê o capítulo [learn:understanding-account-types|Perceber os tipos de conta].
+
 ## Pontos-chave
 - Uma conta com benefícios fiscais oferece vantagens fiscais, muitas vezes para objetivos de longo prazo.
 - Em troca, define regras sobre contribuições e levantamentos.

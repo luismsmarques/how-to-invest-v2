@@ -38,6 +38,8 @@ Ao contrário das antigas salas de negociação, a NASDAQ opera como uma rede el
 ## Porque é que a NASDAQ importa para um investidor global?
 Para quem detém ações globais diversificadas, a NASDAQ importa como uma peça importante do mercado mundial e não como um sítio para escolher vencedores individuais. A sua forte inclinação para a tecnologia pode torná-la mais oscilante do que um índice mais amplo. Compreendê-la como um espaço de mercado, e não como uma recomendação, mantém o foco na diversificação.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-markets-work|Como funcionam os mercados (e o que é a 'Wall Street')].
+
 ## Pontos-chave
 - A NASDAQ é uma grande bolsa eletrónica dos EUA.
 - Está fortemente concentrada em empresas tecnológicas.

@@ -42,6 +42,8 @@ As classes de ativos raramente crescem ao mesmo ritmo. Se as ações globais sub
 
 Normalmente significa reduzir as classes que cresceram além do alvo e reforçar as que encolheram, regressando aos pesos planeados. As pessoas costumam fazê-lo numa periodicidade definida ou quando uma classe ultrapassa um limite escolhido. Conhecer o seu alvo faz parte de construir uma carteira.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-rebalancing|O que é o rebalanceamento].
+
 ## Pontos-chave
 - O rebalanceamento repõe a carteira na combinação-alvo por classe de ativos.
 - Os pesos desviam-se porque as classes crescem a ritmos diferentes.

@@ -38,6 +38,8 @@ Os bear markets surgem frequentemente de condições económicas mais fracas: cr
 ## Como pode um investidor de longo prazo encarar uma queda?
 Para quem investe ao longo de décadas, as quedas fazem parte do percurso e não são um sinal para abandonar o plano. Uma carteira diversificada por classes de ativos foi pensada para atravessar estas fases. Historicamente os mercados recuperaram em horizontes longos, embora o passado nunca garanta o futuro.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-a-portfolio-is-built|Como se monta uma carteira (passo a passo)].
+
 ## Pontos-chave
 - Um bear market é uma queda prolongada, muitas vezes de 20% ou mais.
 - É normalmente impulsionado por condições mais fracas e perda de confiança.

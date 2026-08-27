@@ -38,6 +38,8 @@ Os preços das commodities respondem a forças físicas: clima, colheitas, produ
 ## Como encaixam as commodities numa carteira diversificada?
 Como classe de ativos, as commodities podem acrescentar um padrão de retorno diferente, mas não geram juros nem lucros e podem ser muito voláteis. Numa alocação de ativos curada tendem a surgir como uma fatia pequena e opcional, refletindo tanto os seus potenciais benefícios como as suas oscilações.
 
+Para veres o conceito em contexto, lê o capítulo [learn:what-is-asset-allocation|O que é a alocação de ativos].
+
 ## Pontos-chave
 - As commodities são matérias-primas padronizadas negociadas globalmente.
 - Os seus preços são impulsionados pela oferta e procura físicas.

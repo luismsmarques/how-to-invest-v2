@@ -9,6 +9,8 @@ title_en: "How a portfolio is built (step by step)"
 title_pt: "Como se monta uma carteira (passo a passo)"
 excerpt_en: "A portfolio comes together in a few calm steps — base first, then a mix by asset class, then a steady habit."
 excerpt_pt: "Uma carteira monta-se em poucos passos calmos — a base primeiro, depois a mistura por classe, depois um hábito constante."
+seo_title_en: "How to Build a Portfolio Step by Step (By Asset Class)"
+seo_title_pt: "Como Montar uma Carteira Passo a Passo"
 glossary: asset-allocation, rebalancing, portfolio, diversification, bonds, global-equities
 prev: costs-and-fees-explained
 next: what-is-periodic-investing

@@ -38,6 +38,8 @@ Como os pagamentos de juros são acordados antecipadamente, as obrigações tend
 ## Porquê deter obrigações numa carteira?
 As obrigações podem oferecer um fluxo de rendimento mais previsível e ajudar a suavizar o percurso global. Um perfil mais cauteloso costuma deter uma fatia maior desta classe de ativos.
 
+Para veres o conceito em contexto, lê o capítulo [learn:a-closer-look-at-bonds|As obrigações mais de perto].
+
 ## Pontos-chave
 - Uma obrigação é um empréstimo a um governo ou empresa que paga juros.
 - As obrigações são geralmente mais estáveis do que as ações, mas não isentas de risco.

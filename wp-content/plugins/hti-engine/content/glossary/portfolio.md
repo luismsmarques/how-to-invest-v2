@@ -38,6 +38,8 @@ Um portfólio pode combinar várias classes de ativos — ações globais, obrig
 ## Porque pensar no portfólio como um todo?
 Porque os ativos individuais raramente se movem na mesma direção ao mesmo tempo. Distribuir o capital por categorias pode suavizar a trajetória global. O objetivo é um todo equilibrado, e não um cesto de escolhas isoladamente "melhores".
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-a-portfolio-is-built|Como se monta uma carteira (passo a passo)].
+
 ## Pontos-chave
 - Um portfólio é o conjunto de todos os seus investimentos visto como um grupo único.
 - Costuma descrever-se por uma alocação entre classes de ativos que soma 100%.

@@ -38,6 +38,8 @@ Os investidores esperam ser compensados pela incerteza. Um ativo cujo valor osci
 ## Como é que isto aparece nas classes de ativos?
 As ações globais ofereceram historicamente retornos potenciais mais altos a par de oscilações mais bruscas, enquanto as obrigações e a liquidez tendem a ser mais estáveis, mas mais modestas. A cripto fica no extremo — movimentos potenciais grandes nos dois sentidos. Nenhuma combinação é "a melhor"; depende das oscilações que um perfil consegue suportar de forma sensata.
 
+Para veres o conceito em contexto, lê o capítulo [learn:why-invest|Porque é que vale a pena investir].
+
 ## Pontos-chave
 - Retornos potenciais mais altos vêm geralmente com maior risco.
 - O padrão reflete a compensação por suportar incerteza.

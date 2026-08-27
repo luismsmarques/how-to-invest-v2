@@ -9,6 +9,8 @@ title_en: "How markets work (and what 'Wall Street' means)"
 title_pt: "Como funcionam os mercados (e o que é a 'Wall Street')"
 excerpt_en: "A plain-words tour of how markets match buyers and sellers, what 'Wall Street' really means, and how companies reach the market."
 excerpt_pt: "Um passeio em palavras simples por como os mercados juntam compradores e vendedores, o que é a 'Wall Street' e como as empresas chegam ao mercado."
+seo_title_en: "How Stock Markets Work: Exchanges, IPOs, Wall Street"
+seo_title_pt: "Como Funcionam os Mercados: Bolsas, IPO e Wall Street"
 glossary: global-equities, stock, wall-street, nasdaq, ipo, underwriting
 prev: what-is-esg-investing
 next: central-banks-and-monetary-policy

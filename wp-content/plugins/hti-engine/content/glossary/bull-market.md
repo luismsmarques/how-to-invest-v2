@@ -38,6 +38,8 @@ Os mercados em alta são tipicamente sustentados por uma economia saudável: cre
 ## Como deve um investidor de longo prazo encarar uma alta?
 Os retornos fortes podem tentar os investidores a perseguir desempenho ou a abandonar o plano, mas investir com disciplina significa manter a diversificação em todas as fases. Uma carteira equilibrada participa no crescimento sem apostar tudo na continuação dos ganhos. Nenhuma alta dura para sempre.
 
+Para veres o conceito em contexto, lê o capítulo [learn:how-a-portfolio-is-built|Como se monta uma carteira (passo a passo)].
+
 ## Pontos-chave
 - Um bull market é uma subida prolongada, muitas vezes de 20% ou mais.
 - É normalmente sustentado por crescimento, lucros e confiança.

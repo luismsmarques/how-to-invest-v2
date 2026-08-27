@@ -38,6 +38,8 @@ Uma participação de ETF representa uma fatia de tudo o que o fundo detém. Se 
 ## Porque são os ETF populares entre investidores de longo prazo?
 Os ETF que replicam índices tendem a ter custos correntes mais baixos do que os fundos de gestão ativa, e os custos acumulam-se ao longo do tempo. Também facilitam a distribuição do dinheiro por classes de ativos como ações, obrigações ou liquidez num único produto transparente.
 
+Para veres o conceito em contexto, lê o capítulo [learn:costs-and-fees-explained|Custos e taxas, explicados de forma simples].
+
 ## Pontos-chave
 - Um ETF agrupa muitos ativos numa participação negociada em bolsa.
 - Os ETF de índice oferecem exposição alargada e de baixo custo a uma classe de ativos.

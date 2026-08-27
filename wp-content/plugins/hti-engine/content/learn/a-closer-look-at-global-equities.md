@@ -9,6 +9,8 @@ title_en: "A closer look at global equities"
 title_pt: "As ações globais mais de perto"
 excerpt_en: "Global equities mean owning small slices of many companies worldwide — the growth engine of most portfolios, and the most variable."
 excerpt_pt: "As ações globais são possuir pequenas fatias de muitas empresas pelo mundo — o motor de crescimento da maioria das carteiras, e o mais variável."
+seo_title_en: "Global Equities Explained: The Growth Engine of Portfolios"
+seo_title_pt: "Ações Globais: O Motor de Crescimento da Carteira"
 glossary: global-equities, volatility, diversification, portfolio, stock
 prev: asset-classes-explained
 next: a-closer-look-at-bonds
