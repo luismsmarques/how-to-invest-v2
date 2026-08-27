@@ -696,30 +696,37 @@ class Subscribe {
 		$pt    = 'pt' === self::locale();
 		$state = isset( $_GET['hti_sub_done'] ) ? sanitize_key( wp_unslash( $_GET['hti_sub_done'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only state set by our own redirect.
 		$src   = isset( $_GET['src'] ) ? sanitize_key( wp_unslash( $_GET['src'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$done  = 'confirmed' === $state;
 
-		if ( 'confirmed' === $state ) {
-			$lead = $pt
-				? 'A tua subscrição está confirmada — bem-vindo! A partir de agora vais receber as nossas novidades e aprendizagem financeira, sem jargão.'
-				: 'Your subscription is confirmed — welcome aboard! From now on you’ll receive our updates and jargon-free financial learning.';
-		} else {
-			// Visited directly, without the confirmation redirect.
-			$lead = $pt
-				? 'Esta página confirma subscrições da newsletter. Para subscrever, usa um dos formulários do site — enviamos-te um email de confirmação primeiro.'
-				: 'This page confirms newsletter subscriptions. To subscribe, use one of the forms on the site — we send a confirmation email first.';
-		}
+		// The page carries no wp:post-title (page-confirmation template), so
+		// the component owns the H1 — and it can differ per state.
+		$title = $done
+			? ( $pt ? 'Subscrição confirmada' : 'You’re subscribed' )
+			: ( $pt ? 'Confirmação de subscrição' : 'Subscription confirmation' );
+		$lead  = $done
+			? ( $pt
+				? 'Bem-vindo. A partir de agora recebes as nossas novidades e aprendizagem financeira — sem jargão, sem produtos, sem promessas.'
+				: 'Welcome aboard. From now on you’ll get our updates and jargon-free financial learning — no products, no promises.' )
+			: ( $pt
+				? 'Esta é a página que confirma subscrições da newsletter. Para subscreveres, usa um dos formulários do site: enviamos-te primeiro um email para confirmares.'
+				: 'This is the page that confirms newsletter subscriptions. To subscribe, use one of the forms on the site — we email you a confirmation link first.' );
 
 		$out  = '<div class="hti-sub-confirmed">';
-		$out .= '<p class="hti-sub-confirmed__lead">' . esc_html( $lead ) . '</p>';
+		$out .= '<div class="hti-sub-confirmed__hero">';
 
-		if ( 'confirmed' === $state ) {
-			$out .= self::confirmed_magnet_html( $src, $pt );
+		if ( $done ) {
+			$out .= '<span class="hti-sub-confirmed__eyebrow"><span class="hti-sub-confirmed__dot"></span>'
+				. esc_html( $pt ? 'Estás dentro' : 'You’re in' ) . '</span>';
+			$out .= '<span class="hti-sub-confirmed__check">' . self::icon( '<path d="M20 6 9 17l-5-5"/>' ) . '</span>';
 		}
 
-		$quiz_url = self::quiz_url( $pt );
-		if ( '' !== $quiz_url ) {
-			$out .= '<p class="hti-sub-confirmed__cta"><a class="wp-element-button" href="' . esc_url( $quiz_url ) . '">'
-				. esc_html( $pt ? 'Descobre o teu perfil de investidor' : 'Discover your investor profile' )
-				. '</a></p>';
+		$out .= '<h1 class="hti-sub-confirmed__h">' . esc_html( $title ) . '</h1>';
+		$out .= '<p class="hti-sub-confirmed__lead">' . esc_html( $lead ) . '</p>';
+		$out .= '</div>';
+
+		if ( $done ) {
+			$out .= self::confirmed_magnet_html( $src, $pt );
+			$out .= self::confirmed_next_html( $pt );
 		}
 
 		$out .= '<p class="hti-sub-confirmed__note">'
@@ -735,8 +742,9 @@ class Subscribe {
 	}
 
 	/**
-	 * The immediate-download box for the lead magnet owed by this
-	 * confirmation, '' when the source owes none (plain newsletter).
+	 * The immediate-download panel for the lead magnet owed by this
+	 * confirmation, '' when the source owes none (plain newsletter). Uses the
+	 * dark lead-magnet treatment the Learn hub already uses for the ebook.
 	 *
 	 * @param string $src Source key from the redirect ('ebook', 'forex', …).
 	 * @param bool   $pt  Whether the page is Portuguese.
@@ -750,14 +758,14 @@ class Subscribe {
 
 		if ( str_starts_with( $src, 'ebook' ) ) {
 			$url     = self::ebook_url( $locale );
-			$name    = $pt ? 'Ebook — Como começar a investir' : 'Ebook — How to start investing';
+			$name    = $pt ? 'Como começar a investir' : 'How to start investing';
 			$other   = self::ebook_url( $pt ? 'en' : 'pt' );
-			$other_l = $pt ? 'Prefere a versão em inglês? Descarrega aqui.' : 'Prefer the Portuguese version? Download here.';
+			$other_l = $pt ? 'Prefiro a versão em inglês' : 'I’d prefer the Portuguese version';
 		} elseif ( '' !== $src && 'newsletter' !== $src ) {
 			$magnet = apply_filters( 'hti_lead_magnet', null, $src, $locale );
 			if ( is_array( $magnet ) && ! empty( $magnet['url'] ) ) {
 				$url  = (string) $magnet['url'];
-				$name = (string) ( $magnet['name'] ?? ( $pt ? 'o teu download' : 'your download' ) );
+				$name = (string) ( $magnet['name'] ?? ( $pt ? 'O teu download' : 'Your download' ) );
 			}
 		}
 
@@ -765,20 +773,66 @@ class Subscribe {
 			return '';
 		}
 
-		$html  = '<div class="hti-sub-confirmed__magnet">';
-		$html .= '<h2>' . esc_html( $pt ? 'O teu download' : 'Your download' ) . '</h2>';
-		$html .= '<p>' . esc_html( $name ) . '</p>';
-		$html .= '<p><a class="wp-element-button" href="' . esc_url( $url ) . '" target="_blank" rel="noopener">'
-			. esc_html( $pt ? 'Descarregar (PDF)' : 'Download (PDF)' ) . '</a></p>';
+		$html  = '<section class="hti-sub-confirmed__magnet" aria-labelledby="hti-sub-magnet-h">';
+		$html .= '<span class="hti-sub-confirmed__tile">' . self::icon( '<path d="M12 3v12"/><path d="m7 14 5 5 5-5"/><path d="M5 21h14"/>' ) . '</span>';
+		$html .= '<div class="hti-sub-confirmed__magnet-body">';
+		$html .= '<h2 class="hti-sub-confirmed__magnet-h" id="hti-sub-magnet-h">' . esc_html( $pt ? 'O teu download está pronto' : 'Your download is ready' ) . '</h2>';
+		$html .= '<p class="hti-sub-confirmed__magnet-name">' . esc_html( $name ) . ' <span>(PDF)</span></p>';
+		$html .= '<p class="hti-sub-confirmed__actions">'
+			. '<a class="hti-sub-confirmed__btn" href="' . esc_url( $url ) . '" target="_blank" rel="noopener">'
+			. esc_html( $pt ? 'Descarregar o PDF' : 'Download the PDF' ) . '</a>';
 		if ( '' !== $other ) {
-			$html .= '<p class="hti-sub-confirmed__other"><a href="' . esc_url( $other ) . '" target="_blank" rel="noopener">' . esc_html( $other_l ) . '</a></p>';
+			$html .= '<a class="hti-sub-confirmed__btn hti-sub-confirmed__btn--ghost" href="' . esc_url( $other ) . '" target="_blank" rel="noopener">'
+				. esc_html( $other_l ) . '</a>';
 		}
+		$html .= '</p>';
 		$html .= '<p class="hti-sub-confirmed__mailed">'
 			. esc_html( $pt ? 'Também to enviámos por email, para o teres sempre à mão.' : 'We also emailed it to you, so it’s always at hand.' )
 			. '</p>';
-		$html .= '</div>';
+		$html .= '</div></section>';
 
 		return $html;
+	}
+
+	/**
+	 * The "next step" card pointing at the questionnaire ('' when the page
+	 * isn't seeded). Mirrors the Learn hub's purple next-step card.
+	 *
+	 * @param bool $pt Whether the page is Portuguese.
+	 */
+	private static function confirmed_next_html( bool $pt ): string {
+		$url = self::quiz_url( $pt );
+		if ( '' === $url ) {
+			return '';
+		}
+
+		$html  = '<section class="hti-sub-confirmed__next" aria-labelledby="hti-sub-next-h">';
+		$html .= '<span class="hti-sub-confirmed__tile hti-sub-confirmed__tile--accent">'
+			. self::icon( '<path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>' ) . '</span>';
+		$html .= '<div>';
+		$html .= '<h2 class="hti-sub-confirmed__next-h" id="hti-sub-next-h">' . esc_html( $pt ? 'Enquanto esperas pelo próximo email' : 'While you wait for the next email' ) . '</h2>';
+		$html .= '<p class="hti-sub-confirmed__next-p">'
+			. esc_html(
+				$pt
+					? 'Responde ao questionário e vê que perfil de investidor te descreve — e um exemplo ilustrativo de carteira por classes de ativos. Leva cerca de 3 minutos.'
+					: 'Take the questionnaire to see which investor profile describes you — and an illustrative portfolio by asset class. It takes about 3 minutes.'
+			)
+			. '</p>';
+		$html .= '<p class="hti-sub-confirmed__actions"><a class="hti-sub-confirmed__btn hti-sub-confirmed__btn--accent" href="' . esc_url( $url ) . '">'
+			. esc_html( $pt ? 'Descobrir o meu perfil' : 'Discover my profile' ) . '</a></p>';
+		$html .= '</div></section>';
+
+		return $html;
+	}
+
+	/**
+	 * Inline Feather-style icon, using the theme's icon signature.
+	 *
+	 * @param string $path Raw SVG path markup (author-controlled, never input).
+	 */
+	private static function icon( string $path ): string {
+		return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'
+			. $path . '</svg>';
 	}
 
 	/**

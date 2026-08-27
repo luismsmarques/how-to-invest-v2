@@ -194,19 +194,162 @@
 .hti-subscribe--digest .hti-subscribe__status { margin: 0; color: #fff; font-weight: 600; }
 .hti-subscribe--digest .hti-subscribe__status.is-success { color: #eafff4; }
 
-/* ---------- Confirmation landing page ([hti_subscribe_confirmed]) ---------- */
-.hti-sub-confirmed { max-width: 640px; }
-.hti-sub-confirmed__lead { font-size: 1.05rem; }
-.hti-sub-confirmed__magnet {
-	background: var(--wp--preset--color--surface, #FFF6F1);
-	border: 1px solid var(--wp--preset--color--border, #F2E4DD);
-	border-radius: 16px;
-	padding: 1.5rem 1.75rem;
-	margin: 1.5rem 0;
+/* ---------- Confirmation landing page ([hti_subscribe_confirmed]) ----------
+   The end of the double opt-in funnel: hero with the success mark, the lead
+   magnet as the focal point (the Learn hub's dark treatment), and the
+   questionnaire as the next step (the purple next-step card). Tokens are
+   aliased locally with hex fallbacks, as in brokers.css / deposits.css. */
+.hti-sub-confirmed {
+	--sc-white: var(--wp--preset--color--white, #ffffff);
+	--sc-ink: var(--wp--preset--color--contrast, #2A2438);
+	--sc-muted: var(--wp--preset--color--muted, #6E6680);
+	--sc-border: var(--wp--preset--color--border, #F2E4DD);
+	--sc-coral: var(--wp--preset--color--primary-strong, #C9362C);
+	--sc-coral-hover: var(--wp--preset--color--primary-hover, #FF5544);
+	--sc-coral-soft: var(--wp--preset--color--primary-soft, #FFEDE9);
+	--sc-accent: var(--wp--preset--color--accent, #7C5CFC);
+	--sc-accent-strong: var(--wp--preset--color--accent-strong, #6B46E0);
+	--sc-accent-soft: var(--wp--preset--color--accent-soft, #EFE9FE);
+	--sc-accent-border: var(--wp--preset--color--accent-border, #E7DCFB);
+	--sc-success: var(--wp--preset--color--success, #22C3A6);
+	--sc-success-soft: var(--wp--preset--color--success-surface, #E6F7EF);
+	--sc-dark: var(--wp--preset--color--dark, #2A2438);
+	--sc-head: var(--wp--preset--font-family--heading, "Poppins", system-ui, sans-serif);
 }
-.hti-sub-confirmed__magnet h2 { margin: 0 0 0.25rem; font-size: 1.2rem; }
-.hti-sub-confirmed__magnet p { margin: 0.4rem 0; }
-.hti-sub-confirmed__other a { font-size: 0.9rem; }
-.hti-sub-confirmed__mailed { font-size: 0.85rem; color: var(--wp--preset--color--muted, #6E6680); }
-.hti-sub-confirmed__cta { margin-top: 1.25rem; }
-.hti-sub-confirmed__note { font-size: 0.85rem; color: var(--wp--preset--color--muted, #6E6680); }
+
+/* --- Hero --- */
+.hti-sub-confirmed__hero { text-align: center; }
+.hti-sub-confirmed__eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--sc-coral-soft);
+	color: var(--sc-coral);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	padding: 6px 14px;
+	border-radius: 999px;
+}
+.hti-sub-confirmed__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sc-accent); }
+.hti-sub-confirmed__check {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 56px;
+	height: 56px;
+	margin: 1.25rem auto 0;
+	border-radius: 50%;
+	background: var(--sc-success-soft);
+	color: var(--sc-success);
+	box-shadow: 0 0 0 6px rgba(34, 195, 166, 0.08);
+}
+.hti-sub-confirmed__check svg { width: 26px; height: 26px; stroke-width: 2.5; }
+.hti-sub-confirmed__h {
+	font-family: var(--sc-head);
+	font-size: clamp(2rem, 5vw, 2.75rem);
+	font-weight: 700;
+	line-height: 1.06;
+	letter-spacing: -0.03em;
+	margin: 1rem 0 0;
+}
+.hti-sub-confirmed__lead {
+	color: var(--sc-muted);
+	font-size: 1.0625rem;
+	line-height: 1.6;
+	margin: 0.75rem auto 0;
+	max-width: 46ch;
+}
+
+/* --- Lead magnet (the payoff) --- */
+.hti-sub-confirmed__magnet,
+.hti-sub-confirmed__next {
+	display: flex;
+	gap: 18px;
+	align-items: flex-start;
+	margin: 2rem 0 0;
+	padding: clamp(1.35rem, 3vw, 1.75rem);
+}
+.hti-sub-confirmed__magnet {
+	background: var(--sc-dark);
+	border-radius: 28px;
+	color: #fff;
+}
+.hti-sub-confirmed__next {
+	background: var(--sc-accent-soft);
+	border: 1px solid var(--sc-accent-border);
+	border-radius: 20px;
+}
+.hti-sub-confirmed__tile {
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 13px;
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+}
+.hti-sub-confirmed__tile--accent { background: var(--sc-accent); }
+.hti-sub-confirmed__magnet-h,
+.hti-sub-confirmed__next-h {
+	font-family: var(--sc-head);
+	font-size: 1.25rem;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	margin: 0;
+}
+.hti-sub-confirmed__next-h { color: var(--sc-ink); }
+.hti-sub-confirmed__magnet-name { margin: 0.35rem 0 0; font-weight: 600; }
+.hti-sub-confirmed__magnet-name span { font-weight: 400; color: rgba(255, 255, 255, 0.72); }
+.hti-sub-confirmed__next-p { margin: 0.35rem 0 0; color: var(--sc-muted); line-height: 1.55; }
+.hti-sub-confirmed__mailed { margin: 0.85rem 0 0; font-size: 0.85rem; color: rgba(255, 255, 255, 0.72); }
+
+/* --- Buttons --- */
+.hti-sub-confirmed__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem;
+	margin: 1.1rem 0 0;
+}
+.hti-sub-confirmed__btn {
+	display: inline-block;
+	background: var(--sc-coral);
+	color: #fff;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+	padding: 0.85rem 1.5rem;
+	border: 1.5px solid transparent;
+	border-radius: 12px;
+	box-shadow: 0 2px 8px rgba(201, 54, 44, 0.22);
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+.hti-sub-confirmed__btn:hover { background: var(--sc-coral-hover); color: #fff; }
+.hti-sub-confirmed__btn--ghost {
+	background: transparent;
+	color: rgba(255, 255, 255, 0.86);
+	border-color: rgba(255, 255, 255, 0.28);
+	box-shadow: none;
+}
+.hti-sub-confirmed__btn--ghost:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.hti-sub-confirmed__btn--accent { background: var(--sc-accent-strong); box-shadow: 0 2px 8px rgba(107, 70, 224, 0.22); }
+.hti-sub-confirmed__btn--accent:hover { background: var(--sc-accent); }
+
+/* --- Fine print --- */
+.hti-sub-confirmed__note {
+	margin: 1.75rem 0 0;
+	font-size: 0.8125rem;
+	color: var(--sc-muted);
+	text-align: center;
+}
+
+@media (max-width: 600px) {
+	.hti-sub-confirmed__magnet,
+	.hti-sub-confirmed__next { flex-direction: column; gap: 14px; }
+	.hti-sub-confirmed__btn { width: 100%; text-align: center; }
+}
