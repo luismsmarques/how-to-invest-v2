@@ -77,6 +77,8 @@ are what keeps the section legal. When in doubt, be more conservative.
 - CPT `broker` + taxonomy `broker_use_case` — `class-cpt.php` / `class-taxonomy.php`.
 - Theme: `templates/single-broker.html` + `render_broker_review()`.
 - Canonical copy: `docs/Textos_Finais_HowToInvest_MVP.md` §Bloco 6.
+- Writing the reviews/analyses themselves: `financial-analyst` (fact protocol);
+  on-page optimization: `seo-content`.
 
 ## Checklist (before "done")
 
