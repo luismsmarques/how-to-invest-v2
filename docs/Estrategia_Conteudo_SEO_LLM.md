@@ -11,7 +11,7 @@ de ativos, sem instrumentos/empresas nomeados, linguagem condicional, disclaimer
 ## 1. Princípios (guardrails de conteúdo)
 
 Todo o conteúdo, para SEO e para citação por IA, obedece a:
-- **Só classes de ativos** (global_equity, bonds, cash, reits_alt, crypto) — nunca tickers, fundos, corretoras ou empresas.
+- **Só classes de ativos** (global_equity, bonds, cash, reits_alt, crypto) no conteúdo educativo e no output do motor — nunca tickers, fundos ou empresas. **Exceção controlada:** a secção editorial de corretoras (comparador, reviews, guias de abertura de conta) nomeia corretoras reguladas em conteúdo comparativo factual, sempre com rótulo "Parceria · Publicidade", disclosure de afiliação na página, links só via `/go/{slug}` com `rel="sponsored nofollow"` e aviso de risco CFD quando aplicável (ver skill `broker-affiliate`).
 - **Educativo, não aconselhamento.** Linguagem condicional e ilustrativa.
 - **Disclaimer associado** a qualquer exemplo de carteira.
 - **Paridade EN/PT** — cada peça existe nas duas línguas, ligada por Polylang.

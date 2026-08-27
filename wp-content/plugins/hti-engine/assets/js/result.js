@@ -40,6 +40,57 @@
 	}
 
 	/**
+	 * Render the labelled partner module ("Putting it into practice") AFTER the
+	 * educational block. Everything arrives server-built and localized in
+	 * res.partner_module (deterministic, curated — see broker-affiliate);
+	 * this only paints it. Absent module → nothing renders.
+	 *
+	 * @param {Element} root Result root.
+	 * @param {Object}  res  Server response.
+	 */
+	function partnerModule( root, res ) {
+		var pm = res.partner_module;
+		if ( ! pm || ! pm.items || ! pm.items.length ) {
+			return;
+		}
+
+		var sec = el( 'section', { class: 'hti-partner', role: 'complementary', 'aria-label': pm.heading } );
+		sec.appendChild( el( 'span', { class: 'hti-partner__eyebrow' }, pm.eyebrow ) );
+		sec.appendChild( el( 'h3', { class: 'hti-partner__title' }, pm.heading ) );
+		sec.appendChild( el( 'p', { class: 'hti-partner__intro' }, pm.intro ) );
+
+		var list = el( 'div', { class: 'hti-partner__list' } );
+		pm.items.forEach( function ( it ) {
+			var card = el( 'div', { class: 'hti-partner__card' } );
+			card.appendChild( el( 'p', { class: 'hti-partner__name' }, it.name ) );
+			if ( it.regulator ) {
+				card.appendChild( el( 'p', { class: 'hti-partner__reg' }, it.regulator ) );
+			}
+			if ( it.tagline ) {
+				card.appendChild( el( 'p', { class: 'hti-partner__tag' }, it.tagline ) );
+			}
+			if ( it.cfd_warning ) {
+				card.appendChild( el( 'p', { class: 'hti-partner__cfd' }, it.cfd_warning ) );
+			}
+			var actions = el( 'div', { class: 'hti-partner__actions' } );
+			actions.appendChild( el( 'a', { class: 'hti-btn hti-btn-secondary', href: it.url, rel: it.rel, target: '_blank' }, it.visit_label ) );
+			actions.appendChild( el( 'a', { class: 'hti-partner__review', href: it.review_url }, pm.review_label + ' →' ) );
+			card.appendChild( actions );
+			list.appendChild( card );
+		} );
+		sec.appendChild( list );
+
+		var disc = el( 'p', { class: 'hti-partner__disclosure' }, pm.disclosure + ' ' );
+		if ( pm.how_link && pm.how_link.url ) {
+			disc.appendChild( el( 'a', { href: pm.how_link.url }, pm.how_link.label + ' →' ) );
+		}
+		sec.appendChild( disc );
+
+		root.appendChild( sec );
+		track( 'result_broker_view', { archetype: res.archetype && res.archetype.id } );
+	}
+
+	/**
 	 * Build the donut as a conic-gradient ring with a hollow centre label.
 	 * Decorative (aria-hidden) — the text list below is the accessible view.
 	 *
@@ -234,7 +285,8 @@
 			root.appendChild( esg );
 		}
 
-		// Closing actions (educational only — never execution/brokerage).
+		// Closing actions (educational only — no execution/brokerage in this block;
+	// the labelled partner module, when present, renders separately after it).
 		var actions = el( 'div', { class: 'hti-actions' } );
 
 		// Export PDF — POST to admin-post.php (keeps the token out of the URL).
@@ -286,6 +338,10 @@
 		actions.appendChild( retake );
 		root.appendChild( actions );
 		root.appendChild( el( 'p', { class: 'hti-fineprint' }, ui.start_over_note ) );
+
+		// Labelled partner module — separate from (and after) the educational
+		// block; server-decided, absent when nothing applies.
+		partnerModule( root, res );
 
 		// "Save my profile" flow (register/login → claim-profile).
 		if ( window.HTIAccount && res.session_token ) {

@@ -8,7 +8,7 @@ description: Use when working on growth, email marketing or conversion — the n
 The growth engine is **SEO/content → funnel → email**. This site converts through education, never a hard sell. Read `docs/Estrategia_Conteudo_SEO_LLM.md` (the content/SEO strategy) and `docs/PRD_HowToInvest_WordPress_MVP.md §7` (success metrics) first.
 
 ## Non-negotiable invariants
-- **Only two conversion CTAs exist:** the **questionnaire** and the **newsletter/ebook**. **Never** an execution/broker CTA.
+- **Two conversion CTAs exist site-wide:** the **questionnaire** and the **newsletter/ebook**. Broker CTAs exist **only** inside the labelled broker editorial section (comparison/reviews/guides + the post-result "Putting it into practice" module) under the `broker-affiliate` skill's rules — never in the engine result, PDF, emails, Learn or campaigns.
 - **Educational, conditional tone; disclaimer always present; asset-class only** (no named instruments) — applies to every email, landing page and campaign.
 - **Bilingual EN + PT** for all subscriber-facing copy; voice mirrors `docs/Textos_Finais_HowToInvest_MVP.md`.
 - **No subscriber PII stored on-site** — Brevo is the source of truth; keys server-side (`HTI_BREVO_API_KEY` in `wp-config.php`).
@@ -30,7 +30,7 @@ The growth engine is **SEO/content → funnel → email**. This site converts th
 - Use the AI **news** sparingly and human-reviewed (see `content-editorial`) — mass thin AI content risks Helpful-Content penalties.
 
 ## Checklist (before "done")
-- [ ] Only questionnaire / newsletter-ebook CTAs; no execution CTA
+- [ ] Only questionnaire / newsletter-ebook CTAs in emails/campaigns/landing pages; broker CTAs only in the labelled broker section (see `broker-affiliate`)
 - [ ] Bilingual EN + PT; disclaimer present; asset-class only
 - [ ] Subscriber data via Brevo only (no on-site PII); keys server-side
 - [ ] Double opt-in respected; ebook delivered only after confirmation

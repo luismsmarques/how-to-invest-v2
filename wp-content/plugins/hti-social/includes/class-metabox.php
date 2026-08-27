@@ -85,6 +85,7 @@ class Metabox {
 
 		return array(
 			'postType' => $post->post_type,
+			'lang'     => self::post_lang( $post ),
 			'fields'   => array(
 				'headline'   => $title,
 				'dek'        => $dek,
@@ -94,6 +95,34 @@ class Metabox {
 			),
 			'image'    => $img,
 		);
+	}
+
+	/**
+	 * The language of the post itself, not of the admin looking at it.
+	 *
+	 * The card carries a legal disclaimer, so it has to be written in the
+	 * language of the article it promotes. Falling back to the site locale
+	 * meant a Portuguese article defaulted to an English disclaimer whenever
+	 * the admin happened to be browsing in English.
+	 *
+	 * @param \WP_Post $post The post.
+	 * @return string 'pt' or 'en'.
+	 */
+	private static function post_lang( \WP_Post $post ): string {
+		// The news pipeline records the language it generated in.
+		$meta = (string) get_post_meta( $post->ID, 'rssai_lang', true );
+		if ( '' !== $meta ) {
+			return str_starts_with( strtolower( $meta ), 'pt' ) ? 'pt' : 'en';
+		}
+
+		if ( function_exists( 'pll_get_post_language' ) ) {
+			$pll = (string) pll_get_post_language( $post->ID, 'slug' );
+			if ( '' !== $pll ) {
+				return str_starts_with( strtolower( $pll ), 'pt' ) ? 'pt' : 'en';
+			}
+		}
+
+		return Plugin::locale();
 	}
 
 	/**

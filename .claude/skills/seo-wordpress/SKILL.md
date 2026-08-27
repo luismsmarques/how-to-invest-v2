@@ -28,8 +28,14 @@ SEO is the **whole point** of the WordPress rebuild. Strategy doc: `docs/Estrate
 ## CWV & measurement
 - Self-hosted fonts, lazy images, minimal CSS; keep LCP/CLS/INP green (Search Console). Measure clicks/impressions per cluster in GSC; KPIs and tracking live in `analytics-measurement`.
 
+## Broker section (affiliate) rules
+- Affiliate links only via `/go/{slug}` (302; `noindex`; `Disallow: /go/` in robots.txt; never in the sitemap) with `rel="sponsored nofollow noopener"` when a deal is active, `rel="nofollow noopener"` otherwise.
+- **No `Review`/`AggregateRating` schema on broker pages** (YMYL; self-serving reviews of FinancialService risk manual actions). Comparison pages emit `ItemList`; reviews/guides emit `Article`. Editorial ratings stay visual-only.
+- Broker pages are indexable editorial content with the affiliate disclosure on-page (see `broker-affiliate`).
+
 ## Checklist
 - [ ] Schema valid per page type (Rich Results tested); Person author consistent with visible byline
+- [ ] Broker pages: `/go/` links with correct `rel`; no Review schema; disclosure present
 - [ ] New content: TL;DR + question H2s + pillar/spoke links (no orphans)
 - [ ] Sitemaps current; new legacy URLs 301-mapped and verified
 - [ ] noindex on questionnaire/result/account/staging intact

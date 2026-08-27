@@ -31,8 +31,11 @@ Covers the editorial surface **around** the Learn hub. For Learn chapters themse
 - Spine: `content/learn-plan.csv` (`module,order,slug,…,prev,next`); nav (prev/next) is derived from module/order order, not the frontmatter fields.
 - Commands: `wp hti import-learn | import-glossary | seed` (or the Tools screen).
 
+## Broker editorial cluster
+The broker section (comparison pillar + use-case categories + per-broker reviews + "how to open an account" guides) is a distinct editorial cluster with its own rules — factual/comparative language, on-page affiliate disclosure, "Parceria · Publicidade" label, CFD risk warning, `/go/{slug}` links only, verification dates on data. Full rules: `broker-affiliate`. It interlinks with Learn ("account types", "costs & fees") and the glossary, but Learn/glossary content never embeds broker CTAs.
+
 ## Checklist (before "done")
-- [ ] Asset-class only; conditional tone; disclaimer; **EN + PT**
+- [ ] Asset-class only; conditional tone; disclaimer; **EN + PT** (broker cluster: see `broker-affiliate`)
 - [ ] Glossary tokens in the EN section only; **no dangling `[learn:]`/`[glossary:]`**
 - [ ] Term linked to its pillar; pillar links back (cluster complete)
 - [ ] News reviewed by a human before publish; few-and-good, not thin

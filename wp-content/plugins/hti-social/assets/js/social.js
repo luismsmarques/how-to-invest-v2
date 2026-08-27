@@ -247,7 +247,8 @@
 			handleTw: CFG.brand.handleTw,
 			domain: CFG.brand.domain,
 			showLegal: true,
-			lang: L,
+			// The card speaks the article's language; L is only the admin UI.
+			lang: ( prefill && ( 'pt' === prefill.lang || 'en' === prefill.lang ) ) ? prefill.lang : L,
 			perTpl: {},
 			images: {},
 			templateId: templates[ 0 ].id

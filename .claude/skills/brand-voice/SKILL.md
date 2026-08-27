@@ -12,9 +12,9 @@ Warm, calm, plain-spoken, second person ("you" / PT informal "tu"). A knowledgea
 
 ## Non-negotiables (the invariants, expressed as copy)
 - **Educational, never advice.** Conditional & illustrative, never imperative. Write "a profile like this usually…", "an example for this profile tends to…", "you might explore…" — **never** "you should buy", "do this", "the best…".
-- **By asset class only** — never name instruments, tickers, funds, brokers or companies; say "steadier classes", "global shares", not products.
-- **A disclaimer is always present** on anything with a portfolio example — use the canonical variants (contextual / short / footer), never a bespoke one.
-- **No execution/broker CTAs.** The only CTAs are the questionnaire and the newsletter/ebook.
+- **By asset class only** in engine output and educational content — never name instruments, tickers, funds, brokers or companies; say "steadier classes", "global shares", not products. **Sole exception:** the broker editorial section (comparison/reviews/guides/partner module) names regulated brokers factually — its copy rules live in `broker-affiliate`.
+- **A disclaimer is always present** on anything with a portfolio example — use the canonical variants (contextual / short / footer), never a bespoke one. Broker pages additionally carry the canonical affiliate disclosure (Textos §6.1) on the page itself.
+- **No execution/broker CTAs in the engine result, PDF, emails, Learn or educational content.** The conversion CTAs there are the questionnaire and the newsletter/ebook. Broker CTAs exist only inside the labelled "Partner · Ad" editorial section, phrased factually ("Visit XTB →"), never with urgency ("open an account now").
 - **No promises, urgency or fear.** No "guaranteed", "you'll make", "don't miss", "act now", "beat the market". Investing "carries risk, including loss of capital."
 - **Define jargon on first use;** prefer everyday analogies.
 
@@ -35,8 +35,8 @@ Warm, calm, plain-spoken, second person ("you" / PT informal "tu"). A knowledgea
 
 ## Checklist (before "done")
 - [ ] Conditional/illustrative; **no imperative money advice**; no promises/urgency/fear
-- [ ] Asset-class only; **no named instruments/brokers/companies**
-- [ ] Disclaimer present where a portfolio example appears (canonical variant)
-- [ ] Only questionnaire / newsletter-ebook CTAs
+- [ ] Asset-class only; **no named instruments/brokers/companies** (exception: broker editorial section per `broker-affiliate` — labelled, disclosed, factual)
+- [ ] Disclaimer present where a portfolio example appears (canonical variant); affiliate disclosure present on broker pages
+- [ ] Only questionnaire / newsletter-ebook CTAs outside the labelled broker section
 - [ ] Second person, warm, jargon defined on first use
 - [ ] EN + PT written (pt-PT, "tu"); consistent with `docs/Textos_Finais…`

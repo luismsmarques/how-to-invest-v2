@@ -251,8 +251,48 @@ minúscula e opcional.
 ## Notas de integração
 
 - **Versionar:** cada alteração a disclaimers incrementa `disclaimer_version` (Modelo de Dados §3) para auditoria.
-- **CTA de encerramento:** o resultado termina sempre a apontar para conteúdo educativo ("Aprende mais sobre X →"), nunca para execução/corretora.
+- **CTA de encerramento:** o bloco educativo do resultado termina sempre a apontar para conteúdo educativo ("Aprende mais sobre X →"), nunca para execução/corretora. O módulo de parceria ("Passar à prática", Bloco 6) só aparece **depois** do bloco de ações educativas, visualmente separado e rotulado — nunca dentro do resultado, do PDF ou dos emails.
 - **Reutilização para SEO:** estes textos são sementes naturais de artigos e termos de glossário (ex.: a nota de "Obrigações" → página de glossário "O que é uma obrigação?").
+
+## Bloco 6 — Secção editorial de corretoras (parceria)
+
+Textos canónicos da camada de afiliação. Fonte única: `Disclaimer::affiliate()` /
+`Disclaimer::cfd_risk()` no plugin (versionados via `AFFILIATE_VERSION`); qualquer
+alteração de redação passa por lá e por aqui.
+
+### 6.1 Disclosure de afiliação (obrigatória em cada página com links de corretora)
+**EN** Partner disclosure: some links on this page are affiliate links. If you
+open an account through them, we may earn a commission — at no extra cost to you.
+This never changes our comparisons or reviews, which follow a public methodology.
+This is educational information, not financial advice or a personal
+recommendation. [How we make money →]
+**PT** Divulgação de parceria: alguns links nesta página são links de afiliado.
+Se abrires conta através deles, podemos receber uma comissão — sem custo extra
+para ti. Isso nunca altera as nossas comparações ou análises, que seguem uma
+metodologia pública. Isto é informação educativa, não é aconselhamento financeiro
+nem uma recomendação pessoal. [Como ganhamos dinheiro →]
+
+### 6.2 Rótulo
+**EN** `Partner · Ad` · **PT** `Parceria · Publicidade` — visível em todos os
+cards/módulos com link de afiliado ativo.
+
+### 6.3 Aviso de risco CFD (quando a corretora oferece CFDs)
+**EN** {pct}% of retail investor accounts lose money when trading CFDs with this
+provider. CFDs are complex, leveraged products — consider whether you understand
+how they work and whether you can afford the high risk of losing your money.
+**PT** {pct}% das contas de investidores de retalho perdem dinheiro ao negociar
+CFDs com este fornecedor. Os CFDs são produtos complexos e alavancados —
+considera se compreendes como funcionam e se podes suportar o risco elevado de
+perder o teu dinheiro.
+
+### 6.4 Módulo "Passar à prática" (pós-resultado)
+**EN** — eyebrow: `Partner · Ad` — heading: `Putting it into practice` — intro:
+`Platforms that profiles like this often use to hold these asset classes.
+Editorial information with a public methodology — not a personal recommendation.`
+**PT** — eyebrow: `Parceria · Publicidade` — heading: `Passar à prática` — intro:
+`Plataformas que perfis como este costumam usar para deter estas classes de
+ativos. Informação editorial com metodologia pública — não é uma recomendação
+pessoal.`
 
 ## O que falta a seguir (via completa)
 Fechado: ✅ dados+API · ✅ prompt+schema · ✅ textos finais.

@@ -25,7 +25,63 @@ class CPT {
 		self::register_glossary();
 		self::register_news();
 		self::register_learn();
+		self::register_broker();
 		self::register_profile();
+	}
+
+	/**
+	 * Broker — public, indexable per-broker review pages (the broker editorial
+	 * section). Single pages render via the theme's `single-broker.html`; the
+	 * comparison pillar is a normal page with the `[hti_brokers]` shortcode, so
+	 * no archive is registered. Structured data (regulator, costs, affiliate
+	 * state…) lives in `hti_broker_*` meta managed by Broker_Admin — and only on
+	 * the default-language (EN) post; translations are content-only. Rules:
+	 * `.claude/skills/broker-affiliate/SKILL.md`.
+	 */
+	private static function register_broker(): void {
+		$labels = array(
+			'name'               => _x( 'Brokers', 'post type general name', 'hti-engine' ),
+			'singular_name'      => _x( 'Broker', 'post type singular name', 'hti-engine' ),
+			'menu_name'          => _x( 'Brokers', 'admin menu', 'hti-engine' ),
+			'name_admin_bar'     => _x( 'Broker', 'add new on admin bar', 'hti-engine' ),
+			'add_new'            => __( 'Add new', 'hti-engine' ),
+			'add_new_item'       => __( 'Add new broker', 'hti-engine' ),
+			'new_item'           => __( 'New broker', 'hti-engine' ),
+			'edit_item'          => __( 'Edit broker', 'hti-engine' ),
+			'view_item'          => __( 'View broker', 'hti-engine' ),
+			'view_items'         => __( 'View brokers', 'hti-engine' ),
+			'all_items'          => __( 'All brokers', 'hti-engine' ),
+			'search_items'       => __( 'Search brokers', 'hti-engine' ),
+			'not_found'          => __( 'No brokers found.', 'hti-engine' ),
+			'not_found_in_trash' => __( 'No brokers found in Trash.', 'hti-engine' ),
+			'archives'           => __( 'Brokers', 'hti-engine' ),
+			'item_published'     => __( 'Broker published.', 'hti-engine' ),
+			'item_updated'       => __( 'Broker updated.', 'hti-engine' ),
+		);
+
+		register_post_type(
+			'broker',
+			array(
+				'labels'              => $labels,
+				'description'         => __( 'Broker reviews (the labelled affiliate editorial section).', 'hti-engine' ),
+				'public'              => true,
+				'publicly_queryable'  => true,
+				'show_ui'             => true,
+				'show_in_menu'        => true,
+				'show_in_nav_menus'   => true,
+				'show_in_rest'        => true,
+				'exclude_from_search' => false,
+				'has_archive'         => false,
+				'hierarchical'        => false,
+				'menu_position'       => 23,
+				'menu_icon'           => 'dashicons-building',
+				'supports'            => array( 'title', 'editor', 'excerpt', 'thumbnail', 'revisions', 'custom-fields', 'page-attributes' ),
+				'rewrite'             => array(
+					'slug'       => 'brokers',
+					'with_front' => false,
+				),
+			)
+		);
 	}
 
 	/**

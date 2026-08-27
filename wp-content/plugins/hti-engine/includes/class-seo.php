@@ -67,9 +67,20 @@ class SEO {
 		}
 
 		$post = get_queried_object();
-		if ( is_singular( array( 'glossary', 'news', 'learn' ) ) && $post instanceof \WP_Post ) {
+		if ( is_singular( array( 'glossary', 'news', 'learn', 'broker' ) ) && $post instanceof \WP_Post ) {
 			if ( 'glossary' === $post->post_type ) {
 				$graph[] = self::defined_term( $post );
+			} elseif ( 'broker' === $post->post_type ) {
+				// Broker reviews are editorial articles ABOUT an organization.
+				// Deliberately plain Article — never Review/AggregateRating:
+				// FinancialService isn't review-snippet eligible and self-serving
+				// YMYL reviews risk manual actions (broker-affiliate skill).
+				$node          = self::article( $post );
+				$node['about'] = array(
+					'@type' => 'Organization',
+					'name'  => wp_strip_all_tags( get_the_title( $post ) ),
+				);
+				$graph[] = $node;
 			} elseif ( 'news' === $post->post_type ) {
 				// News needs a reliable, correct NewsArticle for Google News —
 				// emit it even when an SEO plugin is active (its free tier rarely

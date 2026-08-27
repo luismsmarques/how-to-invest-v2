@@ -52,7 +52,7 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
   passa a `?profile=…&token=…` (history.replaceState); recarregar/partilhar reabre
   o resultado guardado. Dashboard liga cada perfil ao seu resultado. *(L-A fechada)*
 - [x] ✅ Export PDF contém alocação, justificações, gráfico e disclaimer — `class-pdf` (Dompdf)
-- [x] ✅ CTA de encerramento aponta para conteúdo educativo, nunca corretora
+- [x] ✅ CTA de encerramento do bloco educativo aponta para conteúdo educativo, nunca corretora (o módulo de parceria pós-resultado é uma secção separada e rotulada — gates próprios na secção "Corretoras & afiliados" abaixo)
 
 ## 5. Conta e RGPD (gate duro)
 > **Validação ponta-a-ponta:** correr `docs/QA_RGPD_Checklist.md` em staging
@@ -119,6 +119,22 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 - [ ] ⚠️ Decisões em aberto: Gemini ✅ · **validação dos intervalos/pesos (Q2)** — revisão de negócio · **enquadramento legal (Q3)** — decisão do cliente/jurista
 
 ---
+
+## Corretoras & afiliados (gate próprio — antes de ativar a secção em produção)
+
+> A camada de afiliação tem revisão jurídica **obrigatória** (estende a L-D:
+> disclosure CMVM 13/03/2025, publicidade a serviços de investimento, ESMA/CFD)
+> e validação direta dos dados "NÃO CONFIRMADO" do estudo de corretoras.
+
+- [ ] Disclosure de afiliação visível em **cada** página com links de corretora (comparador, categorias, reviews, guias, módulo pós-resultado), a linkar "Como ganhamos dinheiro"
+- [ ] Rótulo "Parceria · Publicidade" em todos os cards/módulos com deal ativo
+- [ ] Aviso de risco CFD com % em toda a menção a corretora que ofereça CFDs
+- [ ] Links de saída só via `/go/{slug}` (302, `noindex`, `Disallow: /go/`), `rel="sponsored nofollow noopener"` com deal ativo, `rel="nofollow noopener"` sem deal
+- [ ] Motor limpo: `test-explainer`/`test-llm` verdes (corretoras no blocklist do validator); resultado, PDF e email sem qualquer corretora
+- [ ] Módulo "Passar à prática" aparece depois das ações educativas, visualmente separado e rotulado
+- [ ] Páginas EN+PT ligadas (hreflang) e no sitemap; `/go/` fora do sitemap
+- [ ] Dados por corretora com `verified` atual; números "não confirmado" não publicados
+- [ ] Revisão jurídica da camada de afiliação concluída (L-D estendida)
 
 ## Lacunas conhecidas no código (a decidir antes do lançamento)
 
