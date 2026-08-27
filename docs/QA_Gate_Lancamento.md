@@ -68,6 +68,10 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 - [x] ✅ **Exportar dados** devolve tudo (`GET /export`)
 - [x] ✅ **Apagar conta** remove conta + perfis + resultados em cascata (`DELETE /account`)
 - [x] ✅ Consentimento registado **antes** de qualquer analítica (GA só após opt-in)
+  — com o **Consent Mode v2** ligado (Definições → Analytics, desligado por omissão)
+  o gtag carrega para todos mas com todos os sinais de armazenamento negados: o que
+  se verifica passa a ser **nenhum cookie `_ga` antes do aceite**, e não a ausência
+  de pedidos. Os sinais de publicidade ficam negados nos dois modos.
 - [x] ✅ Logs do motor sem PII
 - [x] ✅ Banner recusa não-essenciais por omissão (privacy-first)
 - [ ] ⚠️ Política de privacidade e termos **publicados e ligados** — **rascunhos

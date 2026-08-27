@@ -82,6 +82,13 @@ hook `hti_account_deletions`), `includes/class-consent.php` (cookie `hti_consent
       → o Google Analytics **não** carrega (cookie `hti_consent` sem analytics; sem
       pedidos a `google-analytics`/`gtag`).
 - [ ] **Aceitar** → o GA passa a carregar; a escolha persiste no cookie `hti_consent`.
+- [ ] **Se o Consent Mode v2 estiver ligado** (Definições → Analytics; desligado por
+      omissão): o gtag carrega logo, por isso o que se verifica é outro — antes do
+      aceite **não existe nenhum cookie `_ga`** e o `dataLayer` tem um
+      `consent default` com `ad_storage`, `ad_user_data`, `ad_personalization` e
+      `analytics_storage` a `denied`; depois do aceite chega um `consent update` que
+      concede **apenas** `analytics_storage`. Requisito prévio: a política de
+      privacidade tem de nomear o Google Analytics.
 - [ ] A **Política de Privacidade** está ligada **no banner** e **no footer**, e abre.
 - [ ] Os **Termos** abrem a partir do footer.
 

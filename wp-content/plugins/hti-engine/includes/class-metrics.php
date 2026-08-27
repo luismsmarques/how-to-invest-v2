@@ -71,6 +71,7 @@ class Metrics {
 			'contact_submit',
 			'account_delete_request',
 			'cta_click',
+			'forex_tool_use',
 			'feedback_widget_open',
 			'feedback_submitted',
 			'feedback_invite_click',

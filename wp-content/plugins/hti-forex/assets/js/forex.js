@@ -280,12 +280,23 @@
 			compute = computeProfitLoss;
 		}
 
-		function run() {
+		// Fired once per page, on the first calculation the visitor actually
+		// drives — the initial render calls run() too, and counting that would
+		// just duplicate page_view. Tells "used the tool" apart from "saw it".
+		var counted = false;
+
+		function run( interactive ) {
 			toggleConditionalFields( form );
 			if ( ! validateFields( form ) ) {
 				return;
 			}
-			compute( form );
+			var ok = compute( form );
+			if ( interactive && ok && ! counted ) {
+				counted = true;
+				if ( window.HTITrack ) {
+					window.HTITrack.event( 'forex_tool_use', { location: 'forex_' + name } );
+				}
+			}
 		}
 
 		if ( 'profit_loss' === name ) {
@@ -310,13 +321,17 @@
 			}
 		}
 
-		form.addEventListener( 'input', run );
-		form.addEventListener( 'change', run );
+		form.addEventListener( 'input', function () {
+			run( true );
+		} );
+		form.addEventListener( 'change', function () {
+			run( true );
+		} );
 		form.addEventListener( 'submit', function ( e ) {
 			e.preventDefault();
-			run();
+			run( true );
 		} );
-		run();
+		run( false );
 	}
 
 	/* -------------------------------------------------------------------
