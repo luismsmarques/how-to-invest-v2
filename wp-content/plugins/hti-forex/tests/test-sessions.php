@@ -62,6 +62,10 @@ check( '22:30' === $w['london']['close_ist'], 'winter: London closes 22:30 IST' 
 check( '18:30' === $w['new_york']['open_ist'], 'winter: New York opens 18:30 IST' );
 check( '03:30' === $w['new_york']['close_ist'] && $w['new_york']['closes_next_day'], 'winter: New York closes 03:30 IST next day' );
 check( '05:30' === $w['tokyo']['open_ist'] && '14:30' === $w['tokyo']['close_ist'], 'Tokyo 05:30–14:30 IST (no DST in Japan)' );
+// Australian DST is inverted: Nov–Mar is AEDT (UTC+11), so the northern
+// winter is when Sydney runs EARLIER in IST. This was wrong in the first
+// cheat-sheet PDF precisely because no test pinned it.
+check( '01:30' === $w['sydney']['open_ist'] && '10:30' === $w['sydney']['close_ist'], 'winter: Sydney 01:30–10:30 IST (AEDT)' );
 
 $o = Config::overlap_london_ny_ist( new DateTimeImmutable( '2026-01-15 12:00', new DateTimeZone( 'UTC' ) ) );
 check( '18:30' === $o['start_ist'] && '22:30' === $o['end_ist'], 'winter overlap 18:30–22:30 IST' );
@@ -69,6 +73,7 @@ check( '18:30' === $o['start_ist'] && '22:30' === $o['end_ist'], 'winter overlap
 // --- Summer (both on DST) ---------------------------------------------------
 $w = windows_at( '2026-07-15 12:00' );
 check( '12:30' === $w['london']['open_ist'], 'summer: London opens 12:30 IST' );
+check( '02:30' === $w['sydney']['open_ist'] && '11:30' === $w['sydney']['close_ist'], 'summer: Sydney 02:30–11:30 IST (AEST)' );
 $o = Config::overlap_london_ny_ist( new DateTimeImmutable( '2026-07-15 12:00', new DateTimeZone( 'UTC' ) ) );
 check( '17:30' === $o['start_ist'] && '21:30' === $o['end_ist'], 'summer overlap 17:30–21:30 IST' );
 

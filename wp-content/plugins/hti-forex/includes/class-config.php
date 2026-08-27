@@ -179,8 +179,8 @@ class Config {
 			),
 			'position_size' => array(
 				array(
-					'q' => 'What lot size should I use for a $100 (about ₹8,500) account?',
-					'a' => 'As an illustration: with a $100 account, risking 1% per trade (about ₹85) with a 20-pip stop-loss on EUR/USD works out to roughly 0.005 lots — below one micro lot (0.01), which is the smallest size most brokers allow. An account that small usually cannot hold a position at that risk level, which is why many traders first grow the account until at least one micro lot fits inside their chosen risk. This is an example of how the arithmetic works, not a recommendation.',
+					'q' => 'What lot size should I use for a $100 (about ₹9,550) account?',
+					'a' => 'As an illustration: with a $100 account, risking 1% per trade (about ₹95) with a 20-pip stop-loss on EUR/USD works out to roughly 0.005 lots — below one micro lot (0.01), which is the smallest size most brokers allow. An account that small usually cannot hold a position at that risk level, which is why many traders first grow the account until at least one micro lot fits inside their chosen risk. This is an example of how the arithmetic works, not a recommendation.',
 				),
 				array(
 					'q' => 'How much do traders typically risk per trade?',
@@ -198,11 +198,11 @@ class Config {
 			'pip_value'     => array(
 				array(
 					'q' => 'How much is 1 pip in Indian rupees?',
-					'a' => 'It depends on the pair and the lot size. On EUR/USD, one pip on a standard lot (100,000 units) is worth $10 — about ₹830 at a rate of ₹83 per US dollar. On a mini lot it is about ₹83, and on a micro lot about ₹8.30. The calculator above converts pip value to rupees using a published USD/INR reference rate that you can edit.',
+					'a' => 'It depends on the pair and the lot size. On EUR/USD, one pip on a standard lot (100,000 units) is worth $10 — about ₹955 at a rate of ₹95.5 per US dollar. On a mini lot it is about ₹95.50, and on a micro lot about ₹9.55. The calculator above converts pip value to rupees using a published USD/INR reference rate that you can edit.',
 				),
 				array(
 					'q' => 'How much is 1 pip on XAUUSD (gold)?',
-					'a' => 'Using the most common retail convention — one pip equals a $0.10 move on a 100 oz contract — one pip on a standard gold lot is worth $10, or roughly ₹830 at ₹83 per dollar. Some brokers instead count each $0.01 tick as a "pip" worth $1, so it is worth checking the contract specifications of the platform you use. This calculator uses the $0.10 convention.',
+					'a' => 'Using the most common retail convention — one pip equals a $0.10 move on a 100 oz contract — one pip on a standard gold lot is worth $10, or roughly ₹955 at ₹95.5 per dollar. Some brokers instead count each $0.01 tick as a "pip" worth $1, so it is worth checking the contract specifications of the platform you use. This calculator uses the $0.10 convention.',
 				),
 				array(
 					'q' => 'Why is pip value different on USD/JPY?',
@@ -216,7 +216,7 @@ class Config {
 			'profit_loss'   => array(
 				array(
 					'q' => 'How is forex profit calculated in Indian rupees?',
-					'a' => 'The price difference between entry and exit is multiplied by the contract size and the number of lots, giving the profit or loss in the pair\'s quote currency. That amount is converted to US dollars where needed and then to rupees at the USD/INR reference rate. For example, buying 0.10 lots of EUR/USD at 1.0900 and closing at 1.0920 gains 20 pips — $20, or about ₹1,660 at ₹83 per dollar.',
+					'a' => 'The price difference between entry and exit is multiplied by the contract size and the number of lots, giving the profit or loss in the pair\'s quote currency. That amount is converted to US dollars where needed and then to rupees at the USD/INR reference rate. For example, buying 0.10 lots of EUR/USD at 1.1650 and closing at 1.1670 gains 20 pips — $20, or about ₹1,910 at ₹95.5 per dollar.',
 				),
 				array(
 					'q' => 'Why is my USD/JPY profit different from EUR/USD for the same pips?',
@@ -234,15 +234,15 @@ class Config {
 			'xauusd'        => array(
 				array(
 					'q' => 'What is the lot size of XAUUSD (gold)?',
-					'a' => 'On most global platforms a standard lot of XAUUSD is 100 troy ounces, a mini lot is 10 ounces and a micro lot is 1 ounce. At $3,300 per ounce a standard lot is about $330,000 of notional exposure — which is why gold positions are usually sized in micro and mini lots.',
+					'a' => 'On most global platforms a standard lot of XAUUSD is 100 troy ounces, a mini lot is 10 ounces and a micro lot is 1 ounce. At $4,650 per ounce a standard lot is about $465,000 of notional exposure — which is why gold positions are usually sized in micro and mini lots.',
 				),
 				array(
 					'q' => 'How much is 1 pip on gold in Indian rupees?',
-					'a' => 'Using the common convention of one pip being a $0.10 move, a pip on a standard XAUUSD lot is worth $10 — about ₹830 at ₹83 per dollar. On a micro lot (1 oz) the same pip is about ₹8.30. Some platforms count each $0.01 tick as a pip worth $1; the calculator above uses the $0.10 convention and shows the value at your rate.',
+					'a' => 'Using the common convention of one pip being a $0.10 move, a pip on a standard XAUUSD lot is worth $10 — about ₹955 at ₹95.5 per dollar. On a micro lot (1 oz) the same pip is about ₹9.55. Some platforms count each $0.01 tick as a pip worth $1; the calculator above uses the $0.10 convention and shows the value at your rate.',
 				),
 				array(
 					'q' => 'What lot size of gold fits a smaller account?',
-					'a' => 'As an illustration: an ₹85,000 account risking 1% (₹850) with a 50-pip ($5) stop on XAUUSD works out to about 0.02 lots — 2 ounces. Gold moves in bigger dollar steps than major currency pairs, so stops tend to be wider and positions smaller for the same rupee risk. This is an example of the arithmetic, not a recommendation.',
+					'a' => 'As an illustration: a ₹95,500 account risking 1% (₹955) with a 50-pip ($5) stop on XAUUSD works out to about 0.02 lots — 2 ounces. Gold moves in bigger dollar steps than major currency pairs, so stops tend to be wider and positions smaller for the same rupee risk. This is an example of the arithmetic, not a recommendation.',
 				),
 				array(
 					'q' => 'Is XAUUSD the same as MCX gold?',
@@ -252,15 +252,15 @@ class Config {
 			'small_account' => array(
 				array(
 					'q' => 'What lot size should I use for a $100 forex account?',
-					'a' => 'A $100 account is roughly ₹8,500. Risking 1% (about ₹85) with a 20-pip stop on EUR/USD works out to about 0.005 lots — below one micro lot (0.01), the smallest size most platforms allow. In practice an account this small cannot hold a position at that risk level; the calculator above shows this honestly instead of rounding up. This is a description of the arithmetic, not advice.',
+					'a' => 'A $100 account is roughly ₹9,550. Risking 1% (about ₹95) with a 20-pip stop on EUR/USD works out to about 0.005 lots — below one micro lot (0.01), the smallest size most platforms allow. In practice an account this small cannot hold a position at that risk level; the calculator above shows this honestly instead of rounding up. This is a description of the arithmetic, not advice.',
 				),
 				array(
 					'q' => 'What lot size is good for a $1,000 account?',
-					'a' => 'As an illustration: $1,000 is roughly ₹85,000. At 1% risk (₹850) with a 20-pip stop on EUR/USD at ₹83 per dollar, the arithmetic gives about 0.05 lots (5 micro lots), with the rupee risk capped near ₹830. Different stops, pairs and risk percentages change the number — that is exactly what the calculator recomputes as you type.',
+					'a' => 'As an illustration: $1,000 is roughly ₹95,500. At 1% risk (₹955) with a 20-pip stop on EUR/USD at ₹95.5 per dollar, the arithmetic gives about 0.05 lots (5 micro lots), with the rupee risk capped near ₹955. Different stops, pairs and risk percentages change the number — that is exactly what the calculator recomputes as you type.',
 				),
 				array(
 					'q' => 'What is the minimum amount needed to trade forex?',
-					'a' => 'Two different minimums matter: the platform\'s minimum deposit, and the arithmetic minimum — the balance at which your chosen risk percentage covers at least one micro lot at your typical stop distance. With a 20-pip stop on EUR/USD and 1% risk, one micro lot needs roughly ₹17,000 of balance at ₹83 per dollar. Below that, every trade risks more than the chosen percentage.',
+					'a' => 'Two different minimums matter: the platform\'s minimum deposit, and the arithmetic minimum — the balance at which your chosen risk percentage covers at least one micro lot at your typical stop distance. With a 20-pip stop on EUR/USD and 1% risk, one micro lot needs roughly ₹19,100 of balance at ₹95.5 per dollar. Below that, every trade risks more than the chosen percentage.',
 				),
 				array(
 					'q' => 'Why do micro lots matter for small accounts?',

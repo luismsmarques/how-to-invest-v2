@@ -106,8 +106,10 @@ class Seeder {
 		// Portuguese translation (built from the hti_*_pt variants).
 		$report['translations_created'] = self::seed_translations();
 
-		// Render the About page(s) with the designed template/block.
-		self::ensure_about_template();
+		// Render the About page(s) with the designed template/block, and give
+		// the double opt-in landing pages their confirmation template.
+		self::ensure_page_template( 'about', 'page-about' );
+		self::ensure_page_template( 'subscription-confirmed', 'page-confirmation' );
 
 		// Ensure the contact form shortcode is present on existing Contact pages
 		// (the seeder is otherwise create-only).
@@ -197,16 +199,19 @@ class Seeder {
 	}
 
 	/**
-	 * Point the About page (and its PT translation) at the custom
-	 * "About page" template, which renders the designed howtoinvest/about
-	 * block. Idempotent.
+	 * Point a seeded page (and its PT translation) at one of the theme's
+	 * custom templates. Idempotent, and applied on every run — pages created
+	 * before the template existed pick it up on the next seed.
+	 *
+	 * @param string $slug     English page slug.
+	 * @param string $template Template file name, without the .html extension.
 	 */
-	private static function ensure_about_template(): void {
-		$en = get_page_by_path( 'about', OBJECT, 'page' );
+	private static function ensure_page_template( string $slug, string $template ): void {
+		$en = get_page_by_path( $slug, OBJECT, 'page' );
 		if ( ! $en instanceof \WP_Post ) {
 			return;
 		}
-		update_post_meta( $en->ID, '_wp_page_template', 'page-about' );
+		update_post_meta( $en->ID, '_wp_page_template', $template );
 
 		if ( self::polylang_active() ) {
 			$default = (string) pll_default_language( 'slug' );
@@ -214,7 +219,7 @@ class Seeder {
 			if ( '' !== $pt ) {
 				$pt_id = pll_get_post( (int) $en->ID, $pt );
 				if ( $pt_id ) {
-					update_post_meta( (int) $pt_id, '_wp_page_template', 'page-about' );
+					update_post_meta( (int) $pt_id, '_wp_page_template', $template );
 				}
 			}
 		}
@@ -329,6 +334,7 @@ class Seeder {
 			// Pages.
 			'investor-profile-quiz'            => 'questionario-perfil-investidor',
 			'my-account'                       => 'a-minha-conta',
+			'subscription-confirmed'           => 'subscricao-confirmada',
 			'about'                            => 'sobre',
 			'contact'                          => 'contacto',
 			'how-to-start-investing'           => 'como-comecar-a-investir',
@@ -1737,6 +1743,18 @@ class Seeder {
 				'pt'      => array(
 					'title'   => 'A minha conta',
 					'content' => '<!-- wp:shortcode -->[hti_account]<!-- /wp:shortcode -->',
+				),
+			),
+			array(
+				// The double opt-in lands here (Subscribe::redirect_result):
+				// thank-you + immediate lead-magnet download. Noindex via the
+				// shortcode (Subscribe::robots).
+				'slug'    => 'subscription-confirmed',
+				'title'   => 'Subscription confirmed',
+				'content' => '<!-- wp:shortcode -->[hti_subscribe_confirmed]<!-- /wp:shortcode -->',
+				'pt'      => array(
+					'title'   => 'Subscrição confirmada',
+					'content' => '<!-- wp:shortcode -->[hti_subscribe_confirmed]<!-- /wp:shortcode -->',
 				),
 			),
 			array(
