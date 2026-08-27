@@ -55,8 +55,12 @@ class Settings {
 			'cta_sessions'         => true,
 			'cta_profit_loss'      => true,
 			'email_enabled'        => true,
+			'ads_enabled'          => false,
+			'ad_code_desktop'      => '',
+			'ad_code_mobile'       => '',
 			'sub_param'            => 'clickid',
 			'sub_sources'          => array( 'clickid', 'utm_campaign' ),
+			'propeller_partner'    => '',
 			'rate_override_usdinr' => 0.0,
 			'rate_override_usdjpy' => 0.0,
 		);
@@ -87,8 +91,21 @@ class Settings {
 		$errors = array();
 		$out    = $defaults;
 
-		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'email_enabled' ) as $flag ) {
+		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'email_enabled', 'ads_enabled' ) as $flag ) {
 			$out[ $flag ] = ! empty( $input[ $flag ] );
+		}
+
+		// Ad codes are third-party banner HTML (iframe/script from the ad
+		// network) pasted by an admin: stored as-is apart from a trim and a
+		// size cap — never printed anywhere except the forex ad slots, and
+		// only editable with manage_options.
+		foreach ( array( 'ad_code_desktop', 'ad_code_mobile' ) as $slot ) {
+			$code = trim( (string) ( $input[ $slot ] ?? '' ) );
+			if ( strlen( $code ) > 10000 ) {
+				$code     = '';
+				$errors[] = sprintf( '%s is longer than 10,000 characters — cleared (paste one banner tag, not a page).', $slot );
+			}
+			$out[ $slot ] = $code;
 		}
 
 		// Affiliate URL: https only. Anything else is dropped (and reported),
@@ -131,6 +148,19 @@ class Settings {
 			}
 		}
 		$out['sub_sources'] = $sources ? $sources : $defaults['sub_sources'];
+
+		// Propeller Ads partner id: the 64-hex hash from their audience tag.
+		// Only the id is stored — the pixel markup itself is rendered
+		// canonically by the plugin, never free-form HTML.
+		$partner = strtolower( trim( (string) ( $input['propeller_partner'] ?? '' ) ) );
+		if ( '' === $partner ) {
+			$out['propeller_partner'] = '';
+		} elseif ( preg_match( '/^[0-9a-f]{64}$/', $partner ) ) {
+			$out['propeller_partner'] = $partner;
+		} else {
+			$out['propeller_partner'] = '';
+			$errors[]                 = 'The Propeller partner id must be the 64-character hex hash from their tag — cleared.';
+		}
 
 		// Manual rate overrides: 0 (or blank) = automatic; out-of-bounds values
 		// are rejected so a typo can never silently distort every calculation.
@@ -280,6 +310,33 @@ class Settings {
 					</tr>
 				</table>
 
+				<h2><?php esc_html_e( 'Banner ads (XM)', 'hti-forex' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Show banners', 'hti-forex' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[ads_enabled]" value="1" <?php checked( ! empty( $s['ads_enabled'] ) ); ?> />
+								<?php esc_html_e( 'Render the banner slot on the forex tool pages (below the tool)', 'hti-forex' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-ad-desktop"><?php esc_html_e( 'Banner code — desktop', 'hti-forex' ); ?></label></th>
+						<td>
+							<textarea id="hti-fx-ad-desktop" class="large-text code" rows="4" name="<?php echo esc_attr( self::OPTION ); ?>[ad_code_desktop]"><?php echo esc_textarea( (string) $s['ad_code_desktop'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Paste the banner tag from the ad network (468×60 or 300×250 fit the 680px content column — 728×90 does not).', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-ad-mobile"><?php esc_html_e( 'Banner code — mobile', 'hti-forex' ); ?></label></th>
+						<td>
+							<textarea id="hti-fx-ad-mobile" class="large-text code" rows="4" name="<?php echo esc_attr( self::OPTION ); ?>[ad_code_mobile]"><?php echo esc_textarea( (string) $s['ad_code_mobile'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Mobile size (300×250, 320×100 or 320×50). Leave one field empty to show the other everywhere.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
 				<h2><?php esc_html_e( 'Email capture & campaign tracking', 'hti-forex' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr>
@@ -289,6 +346,13 @@ class Settings {
 								<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[email_enabled]" value="1" <?php checked( ! empty( $s['email_enabled'] ) ); ?> />
 								<?php esc_html_e( 'Show the newsletter form on the tool pages (uses the existing double opt-in)', 'hti-forex' ); ?>
 							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-propeller"><?php esc_html_e( 'Propeller partner id', 'hti-forex' ); ?></label></th>
+						<td>
+							<input type="text" id="hti-fx-propeller" class="large-text code" name="<?php echo esc_attr( self::OPTION ); ?>[propeller_partner]" value="<?php echo esc_attr( (string) $s['propeller_partner'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'The 64-character hash from the Propeller Ads audience tag (partner=…). The pixel loads ONLY on the /forex/ pages, without a consent gate — campaign traffic is targeted outside the EU. Leave empty to disable.', 'hti-forex' ); ?></p>
 						</td>
 					</tr>
 					<tr>

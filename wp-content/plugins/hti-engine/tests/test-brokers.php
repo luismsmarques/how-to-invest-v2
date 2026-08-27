@@ -124,5 +124,53 @@ check( ! str_contains( Disclaimer::cfd_risk( 'en', '' ), '%' ) && str_contains( 
 check( ! str_contains( Disclaimer::cfd_risk( 'pt', '' ), '%' ) && str_contains( Disclaimer::cfd_risk( 'pt', '' ), 'maioria' ), 'empty % → generic PT wording' );
 check( 1 === preg_match( '/^\d+\.\d+\.\d+$/', Disclaimer::AFFILIATE_VERSION ), 'AFFILIATE_VERSION is semver (audit trail)' );
 
+echo "\nCompact disclosure (single-review page)\n";
+
+// Extra shims for the disclosure renderers (page lookup falls back to home_url).
+if ( ! defined( 'OBJECT' ) ) {
+	define( 'OBJECT', 'OBJECT' );
+}
+if ( ! function_exists( 'get_page_by_path' ) ) {
+	/**
+	 * @param string $path      Path.
+	 * @param mixed  $output    Output type.
+	 * @param string $post_type Post type.
+	 * @return null
+	 */
+	function get_page_by_path( $path, $output = null, $post_type = 'page' ) {
+		return null;
+	}
+}
+if ( ! function_exists( 'esc_html' ) ) {
+	/**
+	 * @param string $text Text.
+	 * @return string
+	 */
+	function esc_html( $text ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES );
+	}
+}
+if ( ! function_exists( 'esc_url' ) ) {
+	/**
+	 * @param string $url URL.
+	 * @return string
+	 */
+	function esc_url( $url ) {
+		return htmlspecialchars( (string) $url, ENT_QUOTES );
+	}
+}
+
+$compact_en = Brokers::disclosure_compact_html( 'en' );
+$compact_pt = Brokers::disclosure_compact_html( 'pt' );
+
+check( str_contains( $compact_en, 'hti-bk__disclosure--compact' ), 'compact variant carries its modifier class' );
+check( str_contains( $compact_en, 'hti-bk__disclosure' ), 'compact variant keeps the base disclosure class' );
+check( str_contains( $compact_en, 'Partner · Ad' ), 'compact EN carries the label' );
+check( str_contains( $compact_pt, 'Parceria · Publicidade' ), 'compact PT carries the label' );
+check( str_contains( $compact_en, 'affiliate links' ), 'compact EN carries the CANONICAL affiliate disclosure (never bespoke)' );
+check( str_contains( $compact_pt, 'links de afiliado' ), 'compact PT carries the canonical affiliate disclosure' );
+check( str_contains( $compact_en, 'How we make money' ), 'compact EN links the methodology page' );
+check( str_contains( $compact_pt, 'Como ganhamos dinheiro' ), 'compact PT links the methodology page' );
+
 echo "\n=== {$passes} passed, {$failures} failed ===\n";
 exit( $failures > 0 ? 1 : 0 );
