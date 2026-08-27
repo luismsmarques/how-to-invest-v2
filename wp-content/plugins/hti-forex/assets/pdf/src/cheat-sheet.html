@@ -5,8 +5,13 @@
 <title>INR Lot Size Cheat Sheet — HowToInvest</title>
 <style>
 	/* Print source for assets/pdf/hti-forex-lot-size-cheat-sheet.pdf.
-	   Regenerate with:
-	   chromium --headless --no-sandbox --print-to-pdf=../hti-forex-lot-size-cheat-sheet.pdf --no-pdf-header-footer cheat-sheet.html */
+	   Regenerate with ./build.sh, or directly:
+	   chromium --headless --no-sandbox --print-to-pdf=../hti-forex-lot-size-cheat-sheet.pdf --no-pdf-header-footer cheat-sheet.html
+
+	   Links: Chromium turns <a href> into real PDF link annotations, so every
+	   address here is clickable on a computer. The partner link points at our
+	   own /forex/go/ redirector — never at the affiliate URL, which would be
+	   frozen into every downloaded copy and impossible to change later. */
 	@page { size: A4; margin: 0; }
 	* { margin: 0; padding: 0; box-sizing: border-box; }
 	:root {
@@ -27,17 +32,17 @@
 	.tagline { font: 600 9pt Arial, sans-serif; color: var(--muted); text-align: right; }
 
 	h1 { font: 800 17pt Arial, sans-serif; margin-bottom: 2mm; }
-	h2 { font: 800 11.5pt Arial, sans-serif; margin: 6mm 0 2.5mm; color: var(--ink); }
+	h2 { font: 800 11.5pt Arial, sans-serif; margin: 5mm 0 2.5mm; color: var(--ink); }
 	h2 .no { display: inline-block; width: 6.5mm; height: 6.5mm; line-height: 6.5mm; text-align: center; background: var(--coral); color: #fff; border-radius: 50%; font-size: 9.5pt; margin-right: 2mm; }
 	p.lead { color: var(--muted); font-size: 10pt; margin-bottom: 2mm; }
 
 	table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
-	th, td { padding: 1.8mm 2.5mm; text-align: left; border-bottom: 1px solid var(--line); }
+	th, td { padding: 1.5mm 2.5mm; text-align: left; border-bottom: 1px solid var(--line); }
 	thead th { background: var(--surface); font: 700 8.5pt Arial, sans-serif; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
 	td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 	tr.hl td { background: #fff1ee; font-weight: 700; }
 
-	.box { background: var(--surface); border: 1px solid var(--line); border-radius: 4mm; padding: 4mm 5mm; margin: 2mm 0; }
+	.box { background: var(--surface); border: 1px solid var(--line); border-radius: 4mm; padding: 3mm 4.5mm; margin: 2mm 0; }
 	.formula { font: 700 11pt "Courier New", monospace; color: var(--ink); background: #fff; border: 1.5px dashed var(--coral); border-radius: 2mm; padding: 3mm 4mm; margin: 2mm 0; text-align: center; }
 	.example { font-size: 9.5pt; color: var(--ink); }
 	.example strong { color: var(--coral); }
@@ -45,11 +50,23 @@
 	.cols { display: flex; gap: 6mm; }
 	.cols > div { flex: 1; }
 
-	.note { font-size: 8pt; color: var(--muted); }
+	.note { font-size: 8pt; line-height: 1.4; color: var(--muted); }
 	.ratebar { font: 600 8.5pt Arial, sans-serif; color: var(--muted); background: var(--surface); border-radius: 2mm; padding: 2mm 3mm; margin-bottom: 4mm; }
 
-	footer { position: absolute; left: 16mm; right: 16mm; bottom: 10mm; border-top: 1px solid var(--line); padding-top: 3mm; font-size: 7.5pt; color: var(--muted); }
+	footer { position: absolute; left: 16mm; right: 16mm; bottom: 8mm; border-top: 1px solid var(--line); padding-top: 3mm; font-size: 7.5pt; color: var(--muted); }
 	footer .url { color: var(--coral); font-weight: 700; }
+
+	/* Links keep the document's look — no browser blue, no underline. */
+	a { color: inherit; text-decoration: none; }
+	a.link { color: var(--coral); font-weight: 700; }
+	.tagline a, footer .url a { color: inherit; }
+
+	/* Partner block: clearly labelled advertising, after the educational
+	   content, with the CFD risk warning the tool pages carry. */
+	.partner { border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 3mm; padding: 3mm 4mm; margin-top: 3.5mm; background: #fbfaff; }
+	.partner .label { font: 700 7pt Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
+	.partner .cta { display: block; margin-top: 1mm; font: 700 10pt Arial, sans-serif; color: var(--accent); }
+	.partner .risk { display: block; margin-top: 1.5mm; font-size: 7.5pt; line-height: 1.4; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -57,12 +74,12 @@
 <div class="page">
 	<header>
 		<div class="brand">How<em>To</em>Invest</div>
-		<div class="tagline">Free forex tools for Indian traders<br>howtoinvest.pro/forex</div>
+		<div class="tagline">Free forex tools for Indian traders<br><a href="https://howtoinvest.pro/forex/">howtoinvest.pro/forex</a></div>
 	</header>
 
 	<h1>The INR Lot Size Cheat Sheet</h1>
 	<p class="lead">Position sizing, pip values and market hours — in rupees, on one sheet. Educational reference, not advice.</p>
-	<div class="ratebar">Reference rates used below: USD/INR 88.00 &middot; USD/JPY 147.00 (August 2026). Rates move — recompute live at howtoinvest.pro/forex.</div>
+	<div class="ratebar">Reference rates used below: USD/INR 88.00 &middot; USD/JPY 147.00 (August 2026). Rates move — recompute live at <a class="link" href="https://howtoinvest.pro/forex/">howtoinvest.pro/forex</a>.</div>
 
 	<h2><span class="no">1</span>Lot sizes</h2>
 	<table>
@@ -95,13 +112,13 @@
 		<span class="note">Always round down — rounding up silently risks more than you chose. The 1–2% risk figure is a widely cited convention in trading literature, not a rule.</span>
 	</div>
 
-	<footer>Educational content — an illustration of the arithmetic, not investment advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money. Forex in India is regulated under FEMA; the RBI publishes an Alert List of unauthorised platforms — verify the current rules with SEBI/RBI or a professional. <span class="url">howtoinvest.pro/forex</span></footer>
+	<footer>Educational content — an illustration of the arithmetic, not investment advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money. Forex in India is regulated under FEMA; the RBI publishes an Alert List of unauthorised platforms — verify the current rules with SEBI/RBI or a professional. <span class="url"><a href="https://howtoinvest.pro/forex/">howtoinvest.pro/forex</a></span></footer>
 </div>
 
 <div class="page">
 	<header>
 		<div class="brand">How<em>To</em>Invest</div>
-		<div class="tagline">Free forex tools for Indian traders<br>howtoinvest.pro/forex</div>
+		<div class="tagline">Free forex tools for Indian traders<br><a href="https://howtoinvest.pro/forex/">howtoinvest.pro/forex</a></div>
 	</header>
 
 	<h2 style="margin-top:0"><span class="no">4</span>Forex market hours in IST</h2>
@@ -132,7 +149,7 @@
 			</table>
 		</div>
 	</div>
-	<p class="note">For ~3 weeks each March and late October/November the US and UK change clocks on different dates and the overlap temporarily runs about 17:30–22:30 IST. The live clock at howtoinvest.pro/forex computes today&rsquo;s exact windows. Market closed on weekends.</p>
+	<p class="note">For ~3 weeks each March and late October/November the US and UK change clocks on different dates and the overlap temporarily runs about 17:30–22:30 IST. The <a class="link" href="https://howtoinvest.pro/forex/market-hours-ist/">live clock at howtoinvest.pro/forex</a> computes today&rsquo;s exact windows. Market closed on weekends.</p>
 
 	<h2><span class="no">5</span>Five numbers worth memorising</h2>
 	<div class="box">
@@ -151,15 +168,21 @@
 	<p class="lead" style="margin-bottom:1mm">Every number on this sheet, recomputed live with today&rsquo;s rates — INR-native, no sign-up:</p>
 	<table>
 		<tbody>
-			<tr><td>Position size in &#8377;</td><td class="num">howtoinvest.pro/forex/position-size-calculator/</td></tr>
-			<tr><td>Pip value in &#8377;</td><td class="num">howtoinvest.pro/forex/pip-value-calculator/</td></tr>
-			<tr><td>Profit/loss in &#8377;</td><td class="num">howtoinvest.pro/forex/profit-calculator/</td></tr>
-			<tr><td>Gold (XAUUSD) lot size</td><td class="num">howtoinvest.pro/forex/xauusd-lot-size-calculator/</td></tr>
-			<tr><td>Market hours in IST (live)</td><td class="num">howtoinvest.pro/forex/market-hours-ist/</td></tr>
+			<tr><td>Position size in &#8377;</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/position-size-calculator/">howtoinvest.pro/forex/position-size-calculator/</a></td></tr>
+			<tr><td>Pip value in &#8377;</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/pip-value-calculator/">howtoinvest.pro/forex/pip-value-calculator/</a></td></tr>
+			<tr><td>Profit/loss in &#8377;</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/profit-calculator/">howtoinvest.pro/forex/profit-calculator/</a></td></tr>
+			<tr><td>Gold (XAUUSD) lot size</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/xauusd-lot-size-calculator/">howtoinvest.pro/forex/xauusd-lot-size-calculator/</a></td></tr>
+			<tr><td>Market hours in IST (live)</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/market-hours-ist/">howtoinvest.pro/forex/market-hours-ist/</a></td></tr>
 		</tbody>
 	</table>
 
-	<footer>Educational content — an illustration of the arithmetic, not investment advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money. Forex in India is regulated under FEMA; the RBI publishes an Alert List of unauthorised platforms — verify the current rules with SEBI/RBI or a professional. <span class="url">howtoinvest.pro/forex</span></footer>
+	<div class="partner">
+		<span class="label">Partner &middot; Ad</span>
+		<a class="cta" href="https://howtoinvest.pro/forex/go/cheatsheet/">See how these numbers behave on a demo account &rarr;</a>
+		<span class="risk">Advertising link &mdash; we may be paid if you open an account, at no cost to you. Forex and CFDs are high-risk leveraged products; most retail accounts lose money. Check any platform against the RBI Alert List first.</span>
+	</div>
+
+	<footer>Educational content — an illustration of the arithmetic, not investment advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money. Forex in India is regulated under FEMA; the RBI publishes an Alert List of unauthorised platforms — verify the current rules with SEBI/RBI or a professional. <span class="url"><a href="https://howtoinvest.pro/forex/">howtoinvest.pro/forex</a></span></footer>
 </div>
 
 </body>
