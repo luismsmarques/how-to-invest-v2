@@ -13,7 +13,7 @@ seo_title_en: "Central Banks and Interest Rates Explained Simply"
 seo_title_pt: "Bancos Centrais e Taxas de Juro Explicados"
 glossary: inflation, interest-rate, quantitative-easing, bonds
 prev: how-markets-work
-next: what-is-diversification
+next: index-funds-and-etfs-explained
 ---
 <!-- EN -->
 > A central bank manages a country's money — mainly by nudging interest rates up or down to keep prices stable and the economy steady.

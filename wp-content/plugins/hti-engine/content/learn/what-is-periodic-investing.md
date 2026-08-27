@@ -13,7 +13,7 @@ seo_title_en: "Periodic Investing (DCA): The Calm Habit Explained"
 seo_title_pt: "Investimento Periódico (DCA): O Hábito Explicado"
 glossary: dollar-cost-averaging, volatility
 prev: how-a-portfolio-is-built
-next: staying-calm-when-markets-fall
+next: how-to-open-an-investment-account
 ---
 <!-- EN -->
 > Periodic investing means adding a fixed amount on a regular schedule — a calm habit that takes the timing stress out of investing.
