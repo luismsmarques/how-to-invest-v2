@@ -79,12 +79,19 @@
 	// Inline error state (design: coral-red border + actionable message).
 	// A form with an invalid field keeps its previous result rather than
 	// computing nonsense.
+	//
+	// Only out-of-range and unparseable values count as invalid. `step` is the
+	// spinner increment, not a rule: a ₹8,500 balance against step="1000" is a
+	// perfectly valid amount, and treating that mismatch as an error froze the
+	// whole calculator on any non-round input.
 	function validateFields( form ) {
 		var ok = true;
 		form.querySelectorAll( '.hti-fx-field input[type="number"]' ).forEach( function ( input ) {
 			var field = input.closest( '.hti-fx-field' );
 			var err = field ? field.querySelector( '[data-err]' ) : null;
-			var invalid = '' !== input.value && ! input.checkValidity();
+			var state = input.validity;
+			var invalid = '' !== input.value && !! state &&
+				( state.rangeUnderflow || state.rangeOverflow || state.badInput );
 			if ( field ) {
 				field.classList.toggle( 'is-invalid', invalid );
 			}

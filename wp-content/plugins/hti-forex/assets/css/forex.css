@@ -685,6 +685,32 @@
 	display: none;
 }
 
+/* Top slot (600×90): its own 620px breakpoint — a 600px banner needs more
+   room than the 468px one below the tool. Two-class selectors so these win
+   over the generic 560px rules further down. */
+.hti-fx-ad--top {
+	margin: 0.5rem 0 1.5rem;
+}
+
+.hti-fx-ad--top .hti-fx-ad__slot--desktop {
+	display: block;
+}
+
+@media (max-width: 620px) {
+	.hti-fx-ad--top .hti-fx-ad__slot--desktop {
+		display: none;
+	}
+	.hti-fx-ad--top .hti-fx-ad__slot--mobile {
+		display: block;
+	}
+}
+
+@media (min-width: 621px) {
+	.hti-fx-ad--top .hti-fx-ad__slot--mobile {
+		display: none;
+	}
+}
+
 /* Hub ---------------------------------------------------------------------- */
 .hti-fx-hub {
 	display: flex;
