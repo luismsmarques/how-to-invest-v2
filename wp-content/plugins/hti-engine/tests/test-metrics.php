@@ -114,6 +114,69 @@ check( 1 === (int) ( $data['bkr_arch'][3] ?? 0 ), 'partner-module archetype brea
 check( 1 === (int) ( $data['e']['broker_compare_view'] ?? 0 ), 'broker_compare_view counted' );
 check( ! isset( $data['e']['bogus_broker_event'] ), 'unknown event ignored' );
 
+// --- Campaign attribution (paid traffic the GA reports cannot see) ----------
+$norm = new ReflectionMethod( 'HTI\\Engine\\Metrics', 'norm_campaign' );
+$norm->setAccessible( true );
+
+check( 'propeller_fx' === $norm->invoke( null, 'Propeller_FX' ), 'campaign is lowercased' );
+check( 'promo-2026' === $norm->invoke( null, 'promo-2026' ), 'hyphens and digits survive' );
+check( 'abc' === $norm->invoke( null, 'a b/c' ), 'separators are stripped' );
+check( 32 === strlen( $norm->invoke( null, str_repeat( 'a', 80 ) ) ), 'campaign is capped at 32 characters' );
+check( 'script' === $norm->invoke( null, '<script>' ), 'markup characters are stripped' );
+check( 0 === preg_match( '/[^a-z0-9_\-]/', $norm->invoke( null, '"><img src=x>' ) ), 'a hostile value leaves only safe characters' );
+
+Metrics::bump( 'page_view', array( 'path' => '/forex/', 'campaign' => 'propeller_fx' ) );
+Metrics::bump( 'page_view', array( 'path' => '/forex/', 'campaign' => 'propeller_fx' ) );
+Metrics::bump( 'page_view', array( 'path' => '/learn/', 'campaign' => 'newsletter' ) );
+Metrics::bump( 'page_view', array( 'path' => '/learn/' ) ); // organic: no campaign.
+
+$day  = gmdate( 'Y-m-d' );
+$data = $GLOBALS['__hti_options']['hti_metrics'][ $day ] ?? array();
+
+check( 2 === (int) ( $data['camp']['propeller_fx'] ?? 0 ), 'campaign page views aggregate per campaign' );
+check( 1 === (int) ( $data['camp']['newsletter'] ?? 0 ), 'a second campaign is counted separately' );
+check( 3 === array_sum( $data['camp'] ?? array() ), 'page views without a campaign are not attributed' );
+
+$totals = Metrics::totals( 30 );
+check( 2 === (int) ( $totals['camp']['propeller_fx'] ?? 0 ), 'campaigns survive the totals aggregation' );
+
+// --- Custom date range ------------------------------------------------------
+// Seed three distinct days directly, so the range filter is tested against
+// known data rather than whatever "today" happens to hold.
+$d1 = gmdate( 'Y-m-d', time() - 5 * DAY_IN_SECONDS );
+$d2 = gmdate( 'Y-m-d', time() - 3 * DAY_IN_SECONDS );
+$d3 = gmdate( 'Y-m-d', time() - 1 * DAY_IN_SECONDS );
+
+$GLOBALS['__hti_options']['hti_metrics'] = array(
+	$d1 => array( 'e' => array( 'page_view' => 5 ), 'camp' => array( 'propeller_fx' => 5 ) ),
+	$d2 => array( 'e' => array( 'page_view' => 7 ), 'camp' => array( 'propeller_fx' => 7 ) ),
+	$d3 => array( 'e' => array( 'page_view' => 9 ), 'camp' => array( 'newsletter' => 9 ) ),
+);
+
+$r = Metrics::totals_between( $d1, $d3 );
+check( 21 === (int) ( $r['e']['page_view'] ?? 0 ), 'a full range sums every day in it' );
+
+$r = Metrics::totals_between( $d2, $d2 );
+check( 7 === (int) ( $r['e']['page_view'] ?? 0 ), 'a single day reports only that day' );
+
+$r = Metrics::totals_between( $d1, $d2 );
+check( 12 === (int) ( $r['e']['page_view'] ?? 0 ), 'both bounds are inclusive' );
+check( 12 === (int) ( $r['camp']['propeller_fx'] ?? 0 ), 'campaign breakdown respects the range' );
+check( ! isset( $r['camp']['newsletter'] ), 'a day outside the range is excluded' );
+
+$r = Metrics::totals_between( $d3, $d1 );
+check( 21 === (int) ( $r['e']['page_view'] ?? 0 ), 'a reversed range is swapped, not empty' );
+
+$fallback = Metrics::totals_between( 'not-a-date', $d3 );
+check( is_array( $fallback ) && isset( $fallback['e'] ), 'an invalid date falls back to the default window instead of failing' );
+
+$norm_date = new ReflectionMethod( 'HTI\\Engine\\Metrics', 'norm_date' );
+$norm_date->setAccessible( true );
+check( '2026-02-28' === $norm_date->invoke( null, '2026-02-28' ), 'a real date is accepted' );
+check( '' === $norm_date->invoke( null, '2026-02-31' ), 'an impossible calendar day is rejected' );
+check( '' === $norm_date->invoke( null, '2026-2-8' ), 'a malformed date is rejected' );
+check( '' === $norm_date->invoke( null, "2026-01-01' OR 1=1" ), 'an injection attempt is rejected' );
+
 echo "\n";
 if ( $failures ) {
 	echo "\033[31mFAILED\033[0m {$passes} passed, {$failures} failed\n";
