@@ -151,7 +151,7 @@ class Seeder {
 		);
 		foreach ( $groups as $type => $entries ) {
 			foreach ( $entries as $entry ) {
-				$en = get_page_by_path( self::entry_path( (string) $entry['slug'] ), OBJECT, $type );
+				$en = self::entry_post( (string) $entry['slug'], $type );
 				if ( ! $en instanceof \WP_Post ) {
 					continue;
 				}
@@ -284,11 +284,12 @@ class Seeder {
 		}
 
 		foreach ( Tools_Content::slugs() as $slug ) {
-			// Already a child → found by path. Not yet → still top-level.
-			$en = get_page_by_path( Tools_Content::path( $slug ), OBJECT, 'page' );
-			if ( ! $en instanceof \WP_Post ) {
-				$en = get_page_by_path( $slug, OBJECT, 'page' );
-			}
+			// A 0.14.0 seed run could create a second copy under the hub while
+			// the original was still at the top level. Fold the pair back into
+			// one before anything else touches either of them.
+			[ $en, $dupe_log ] = self::consolidate( $slug, $pt, $dry_run );
+			$log               = array_merge( $log, $dupe_log );
+
 			if ( ! $en instanceof \WP_Post ) {
 				$log[] = sprintf( 'skip %s — page not found.', $slug );
 				continue;
@@ -340,7 +341,19 @@ class Seeder {
 
 		preg_match_all( '/<!--\s+wp:([a-z0-9\/-]+)/i', $content, $matches );
 		$blocks   = array_unique( $matches[1] );
-		$foreign  = array_diff( $blocks, array( 'paragraph', 'list', 'pattern' ) );
+		/*
+		 * What the seeder produced here is a paragraph, a list and the
+		 * questionnaire CTA as a wp:pattern — but the moment anyone opens the
+		 * page in the editor and saves, WordPress flattens that pattern into
+		 * the group/heading/paragraph/buttons/button it is made of. Treating
+		 * those as "edited" made the guard fire on a page nobody had really
+		 * written in, which is how one language got converted in production and
+		 * the other did not. The list is still required, so a hub somebody
+		 * actually rewrote still refuses, and the previous body is stashed
+		 * either way.
+		 */
+		$allowed  = array( 'paragraph', 'list', 'list-item', 'pattern', 'group', 'heading', 'buttons', 'button' );
+		$foreign  = array_diff( $blocks, $allowed );
 		$has_list = in_array( 'list', $blocks, true );
 
 		if ( array() !== $foreign || ! $has_list ) {
@@ -368,6 +381,68 @@ class Seeder {
 		);
 
 		return array( sprintf( 'replaced the body of %s with [hti_tools_hub].', $label ) );
+	}
+
+	/**
+	 * Fold a duplicated calculator back into one page.
+	 *
+	 * Version 0.14.0 checked existence only under the hub, so on a site whose
+	 * calculators were still top-level a seed run read "missing" and created a
+	 * second copy as a child — leaving the original, with its history and its
+	 * inbound links, orphaned behind a 301 that now pointed at the copy.
+	 *
+	 * The older post wins: it is the one search engines know and the one whose
+	 * revisions and SEO meta are worth keeping. The copy is trashed rather than
+	 * deleted, both because trashing is reversible and because WordPress
+	 * appends "__trashed" to its slug, which frees the name for the original to
+	 * take when it moves.
+	 *
+	 * @param string $slug    Calculator slug.
+	 * @param string $pt      Portuguese language slug, or '' when unavailable.
+	 * @param bool   $dry_run Report only.
+	 * @return array{0:\WP_Post|null,1:array<int,string>} The surviving page and the log.
+	 */
+	private static function consolidate( string $slug, string $pt, bool $dry_run ): array {
+		$child = get_page_by_path( Tools_Content::path( $slug ), OBJECT, 'page' );
+		$top   = get_page_by_path( $slug, OBJECT, 'page' );
+
+		$child = $child instanceof \WP_Post ? $child : null;
+		$top   = $top instanceof \WP_Post ? $top : null;
+
+		// The ordinary cases: one of them, or neither.
+		if ( null === $child || null === $top || (int) $child->ID === (int) $top->ID ) {
+			return array( $child ?? $top, array() );
+		}
+
+		$keep = (int) $top->ID < (int) $child->ID ? $top : $child;
+		$drop = $keep === $top ? $child : $top;
+
+		if ( $dry_run ) {
+			return array(
+				$keep,
+				array( sprintf( 'would trash the duplicate %s (post %d) and keep post %d.', $slug, $drop->ID, $keep->ID ) ),
+			);
+		}
+
+		$log = array();
+
+		// The Portuguese twin of the copy holds the PT slug the original needs.
+		if ( '' !== $pt && self::polylang_active() ) {
+			$drop_pt = pll_get_post( (int) $drop->ID, $pt );
+			if ( $drop_pt && (int) $drop_pt !== (int) $drop->ID ) {
+				wp_trash_post( (int) $drop_pt );
+				$log[] = sprintf( 'trashed the duplicate %s (PT), post %d.', $slug, (int) $drop_pt );
+			}
+		}
+
+		wp_trash_post( (int) $drop->ID );
+		$log[] = sprintf( 'trashed the duplicate %s, post %d — kept post %d (the original).', $slug, (int) $drop->ID, (int) $keep->ID );
+
+		// Read the survivor back: trashing its twin may have freed a slug it is
+		// about to reclaim, and reparent() compares against the current name.
+		$fresh = get_post( (int) $keep->ID );
+
+		return array( $fresh instanceof \WP_Post ? $fresh : $keep, $log );
 	}
 
 	/**
@@ -502,7 +577,7 @@ class Seeder {
 
 		foreach ( $groups as $type => $entries ) {
 			foreach ( $entries as $entry ) {
-				$en_post = get_page_by_path( self::entry_path( (string) $entry['slug'] ), OBJECT, $type );
+				$en_post = self::entry_post( (string) $entry['slug'], $type );
 				if ( ! $en_post instanceof \WP_Post ) {
 					continue;
 				}
@@ -1073,14 +1148,31 @@ class Seeder {
 	}
 
 	/**
-	 * Hierarchical path used to look a seeded entry up with get_page_by_path().
+	 * The seeded post for an entry, wherever it currently lives.
 	 *
-	 * Nearly every seeded page is top-level, so the path is just the slug. The
-	 * calculators are children of the Tools hub, so theirs is "tools/{slug}" —
-	 * and looking a child up by its bare slug returns null. That distinction is
-	 * load-bearing: insert() reads "not found" as "not seeded yet", so without
-	 * this a seed run would create eight duplicate top-level calculators, which
-	 * would then shadow the 301s pointing at the real ones.
+	 * A calculator sits under the hub once the migration has run and at the top
+	 * level before it, and existence has to be true in both places. Checking
+	 * only one of them makes insert() read "missing" and create a second copy —
+	 * in one direction that shadows the 301s, in the other it orphans the
+	 * original. Both directions have now been observed.
+	 *
+	 * @param string $slug Entry slug.
+	 * @param string $type Post type.
+	 */
+	private static function entry_post( string $slug, string $type = 'page' ): ?\WP_Post {
+		$post = get_page_by_path( self::entry_path( $slug ), OBJECT, $type );
+		if ( ! $post instanceof \WP_Post && self::entry_path( $slug ) !== $slug ) {
+			// Not under the hub yet: a site that has not run the migration
+			// still has the calculator at the top level. Looking only under
+			// the hub reads "missing" and creates a duplicate — which is
+			// exactly what happened in production on 0.14.0.
+			$post = get_page_by_path( $slug, OBJECT, $type );
+		}
+		return $post instanceof \WP_Post ? $post : null;
+	}
+
+	/**
+	 * Hierarchical path used to look a seeded entry up with get_page_by_path().
 	 *
 	 * @param string $slug Entry slug.
 	 */
@@ -1135,7 +1227,7 @@ class Seeder {
 	 * @return int New post ID, or 0 if skipped/failed.
 	 */
 	private static function insert( string $type, array $entry ): int {
-		if ( get_page_by_path( self::entry_path( (string) $entry['slug'] ), OBJECT, $type ) instanceof \WP_Post ) {
+		if ( null !== self::entry_post( (string) $entry['slug'], $type ) ) {
 			return 0;
 		}
 
@@ -3229,7 +3321,7 @@ class Seeder {
 	private static function resolve_en_post( string $slug ): ?\WP_Post {
 		static $cache = array();
 		if ( ! array_key_exists( $slug, $cache ) ) {
-			$post = get_page_by_path( self::entry_path( $slug ), OBJECT, 'page' );
+			$post = self::entry_post( $slug, 'page' );
 			if ( ! $post instanceof \WP_Post ) {
 				$post = get_page_by_path( $slug, OBJECT, 'learn' );
 			}
