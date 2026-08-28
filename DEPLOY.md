@@ -136,8 +136,11 @@ wp hti tools-migrate --dry-run   # mostra o que ia mudar, sem escrever
 wp hti tools-migrate             # aplica
 ```
 
-Sem WP-CLI no servidor, o botão **Semear conteúdo** em *HowToInvest → Semear*
-faz o mesmo: corre o `Seeder::seed()` completo, que inclui esta migração.
+Sem WP-CLI no servidor, o mesmo se faz no wp-admin em
+**Ferramentas → Semear conteúdo** (`/wp-admin/tools.php?page=hti-seed`): o botão
+corre o `Seeder::seed()` completo, que inclui esta migração, e o aviso no fim
+lista o que foi movido — a amarelo se alguma página tiver sido saltada ou tiver
+mudado de slug.
 
 É idempotente — se correr duas vezes, a segunda não faz nada. **A ordem não
 importa:** os 301 dos URLs antigos só disparam quando a página de destino já

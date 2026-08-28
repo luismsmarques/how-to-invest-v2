@@ -118,7 +118,11 @@ class Seeder {
 		// Bring an existing Tools section onto the current structure (the
 		// calculators become children of the hub). Runs before the link pass
 		// below, because re-parenting changes their permalinks.
-		self::ensure_tools_section();
+		//
+		// The log is kept, not discarded: it is the only place a skipped page
+		// or a slug rewritten by wp_unique_post_slug() is reported, and that is
+		// the one outcome nobody can afford to miss.
+		$report['tools'] = self::ensure_tools_section();
 
 		// Final pass: re-localize internal links in every PT post now that all
 		// EN+PT posts exist (fixes cross-links whose target was seeded later).
@@ -201,6 +205,28 @@ class Seeder {
 			$new = rtrim( (string) $post->post_content ) . "\n\n" . '<!-- wp:shortcode -->[hti_contact]<!-- /wp:shortcode -->';
 			wp_update_post( array( 'ID' => $id, 'post_content' => wp_slash( $new ) ) );
 		}
+	}
+
+	/**
+	 * Whether a migration log describes a clean run or one that needs a look.
+	 *
+	 * "moved …" and "added …" lines are the happy path. A line that opens with
+	 * WARNING (a slug rewritten on re-parent — the page is now a 404 behind its
+	 * own 301) or SKIPPED (a hub somebody edited, left untouched on purpose)
+	 * means a human has something to do, and the admin notice has to look like
+	 * it rather than reporting success in green.
+	 *
+	 * @param array<int,string> $log Lines from ensure_tools_section().
+	 * @return string 'warning' or 'success'.
+	 */
+	public static function log_severity( array $log ): string {
+		foreach ( $log as $line ) {
+			$line = ltrim( (string) $line );
+			if ( str_starts_with( $line, 'WARNING' ) || str_starts_with( $line, 'SKIPPED' ) ) {
+				return 'warning';
+			}
+		}
+		return 'success';
 	}
 
 	/**
@@ -3614,6 +3640,7 @@ class Seeder {
 			<h1><?php echo esc_html__( 'HowToInvest — Seed content', 'hti-engine' ); ?></h1>
 			<p><?php echo esc_html__( 'Create the starter glossary terms and institutional pages. Existing entries (matched by slug) are skipped, so your edits are safe.', 'hti-engine' ); ?></p>
 			<p><?php echo esc_html__( 'If Polylang is active, the seeder also creates the Portuguese version of each entry and links it as a translation of the English one. Re-running only adds what is missing.', 'hti-engine' ); ?></p>
+			<p><?php echo esc_html__( 'It also brings the Tools section up to date: the calculators are moved under the /tools/ hub in both languages, and the hub page is converted to the current layout. Existing calculator content is not rewritten, and the whole action is idempotent — running it twice changes nothing the second time.', 'hti-engine' ); ?></p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="hti_run_seeder" />
 				<?php wp_nonce_field( 'hti_run_seeder' ); ?>
@@ -3664,6 +3691,22 @@ class Seeder {
 			(int) $report['skipped']
 		);
 
-		printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( $message ) );
+		$log      = isset( $report['tools'] ) ? (array) $report['tools'] : array();
+		$severity = self::log_severity( $log );
+
+		$lines = '';
+		foreach ( $log as $line ) {
+			$lines .= '<li>' . esc_html( (string) $line ) . '</li>';
+		}
+
+		printf(
+			'<div class="notice notice-%1$s is-dismissible"><p>%2$s</p>%3$s</div>',
+			esc_attr( $severity ),
+			esc_html( $message ),
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each line is escaped above.
+			'' !== $lines
+				? '<p><strong>' . esc_html__( 'Tools section', 'hti-engine' ) . '</strong></p><ul style="list-style:disc;margin-left:1.5em">' . $lines . '</ul>'
+				: ''
+		);
 	}
 }
