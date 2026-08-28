@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.57';
+const VERSION = '0.8.58';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -3524,13 +3524,16 @@ function render_tab_bar(): void {
 	$icons = array(
 		'home'     => '<path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V21h14V9.5"></path>',
 		'learn'    => '<path d="M4 4h9a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4z"></path><path d="M20 4h-4a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z"></path>',
-		'glossary' => '<path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h10"></path>',
+		'tools'    => '<path d="M4 20V10"></path><path d="M10 20V4"></path><path d="M16 20v-7"></path><path d="M22 20H2"></path>',
 		'news'     => '<path d="M4 5h13v14H5a1 1 0 0 1-1-1z"></path><path d="M17 8h3v9a2 2 0 0 1-2 2"></path><path d="M7 9h7M7 13h7M7 17h4"></path>',
 	);
+
+	// Tools takes the glossary's place on the bar. The glossary keeps its tile
+	// in the drawer, so it still has a way in on a phone.
 	$tabs = array(
 		array( $home, t( 'tab_home' ), is_front_page(), $icons['home'] ),
 		array( archive_url( 'learn', 'learn' ), t( 'nav_learn' ), ( is_post_type_archive( 'learn' ) || is_singular( 'learn' ) ), $icons['learn'] ),
-		array( archive_url( 'glossary', 'investing-glossary' ), t( 'nav_glossary' ), ( is_post_type_archive( 'glossary' ) || is_singular( 'glossary' ) ), $icons['glossary'] ),
+		array( page_url( 'tools' ), t( 'nav_tools' ), is_tools_section(), $icons['tools'] ),
 		array( archive_url( 'news', 'financial-news' ), t( 'nav_news' ), ( is_post_type_archive( 'news' ) || is_singular( 'news' ) ), $icons['news'] ),
 	);
 
@@ -4178,23 +4181,61 @@ add_filter( 'get_the_archive_title', __NAMESPACE__ . '\\archive_title' );
  * @param string $en_slug English page slug.
  */
 function page_url( string $en_slug ): string {
-	$page = get_page_by_path( $en_slug, OBJECT, 'page' );
-	if ( $page instanceof \WP_Post ) {
-		$id = (int) $page->ID;
-		// Use our current_lang() (URL-aware) rather than pll_current_language(),
-		// which can report the default language on the front page.
-		if ( function_exists( 'pll_get_post' ) ) {
-			$tr = pll_get_post( $id, current_lang() );
-			if ( $tr ) {
-				$id = (int) $tr;
-			}
-		}
+	$id = page_id( $en_slug );
+	if ( $id > 0 ) {
 		$url = get_permalink( $id );
 		if ( $url ) {
 			return $url;
 		}
 	}
 	return home_url( '/' . $en_slug . '/' );
+}
+
+/**
+ * ID of a page identified by its English slug, in the current language.
+ *
+ * Split out of page_url() so the navigation can highlight a page-based tab
+ * without resolving the same post twice, and so there is one Polylang
+ * resolution path rather than two that could drift.
+ *
+ * @param string $en_slug English page slug.
+ * @return int Post ID, or 0 when the page does not exist.
+ */
+function page_id( string $en_slug ): int {
+	$page = get_page_by_path( $en_slug, OBJECT, 'page' );
+	if ( ! $page instanceof \WP_Post ) {
+		return 0;
+	}
+	$id = (int) $page->ID;
+
+	// Use our current_lang() (URL-aware) rather than pll_current_language(),
+	// which can report the default language on the front page.
+	if ( function_exists( 'pll_get_post' ) ) {
+		$tr = pll_get_post( $id, current_lang() );
+		if ( $tr ) {
+			$id = (int) $tr;
+		}
+	}
+	return $id;
+}
+
+/**
+ * Whether the current view is the Tools hub or one of the calculators under it.
+ *
+ * The other tabs test a post type; Tools is a page with children, so the test
+ * walks the ancestors instead — which keeps working if the section is ever
+ * nested deeper.
+ */
+function is_tools_section(): bool {
+	if ( ! is_page() ) {
+		return false;
+	}
+	$hub = page_id( 'tools' );
+	if ( $hub <= 0 ) {
+		return false;
+	}
+	$current = (int) get_queried_object_id();
+	return $current === $hub || in_array( $hub, get_post_ancestors( $current ), true );
 }
 
 /**
