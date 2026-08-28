@@ -102,31 +102,14 @@ class Tools {
 	 * Permalink of a calculator page in the current language.
 	 *
 	 * Resolves the English child by its hierarchical path, then hands it to
-	 * Polylang. Deliberately not the theme's page_url(): the plugin has no
-	 * dependency on the theme and must keep none. Falls back to the canonical
-	 * path so the hub never prints a dead link.
+	 * Polylang, and falls back to the canonical path so the hub never prints a
+	 * dead link — all of which Links::page_url() does for every page in the
+	 * plugin.
 	 *
 	 * @param string $slug English page slug.
 	 */
 	private static function tool_url( string $slug ): string {
-		$path = Tools_Content::path( $slug );
-		$page = get_page_by_path( $path, OBJECT, 'page' );
-
-		if ( $page instanceof \WP_Post ) {
-			$id = (int) $page->ID;
-			if ( function_exists( 'pll_get_post' ) ) {
-				$translated = pll_get_post( $id, self::locale() );
-				if ( $translated ) {
-					$id = (int) $translated;
-				}
-			}
-			$url = get_permalink( $id );
-			if ( $url ) {
-				return (string) $url;
-			}
-		}
-
-		return home_url( '/' . $path . '/' );
+		return Links::page_url( Tools_Content::path( $slug ) );
 	}
 
 	/**

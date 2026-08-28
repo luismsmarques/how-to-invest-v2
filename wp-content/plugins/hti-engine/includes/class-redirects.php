@@ -83,6 +83,19 @@ class Redirects {
 			 * /how-to-start-investing/ splitting impressions three ways.
 			 */
 			'how-to-start'         => '/how-to-start-investing/',
+
+			/*
+			 * The term-deposit comparator's real slugs are
+			 * comparador-de-depositos-a-prazo and, for the methodology,
+			 * metodologia-do-comparador-de-depositos under /pt/. Three call
+			 * sites linked it by hand and each got it wrong, so these URLs were
+			 * served to crawlers from our own navigation for as long as the
+			 * literals were there. The links are fixed at the source; these
+			 * entries turn the 404s already in the index into 301s.
+			 */
+			'comparador-de-depositos'                => '/pt/comparador-de-depositos-a-prazo/',
+			'pt/comparador-de-depositos'             => '/pt/comparador-de-depositos-a-prazo/',
+			'metodologia-do-comparador-de-depositos' => '/pt/metodologia-do-comparador-de-depositos/',
 		);
 
 		$map = array_merge( $map, self::tool_moves() );

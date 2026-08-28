@@ -69,6 +69,7 @@ require_once HTI_ENGINE_PATH . 'includes/class-subscribe.php';
 require_once HTI_ENGINE_PATH . 'includes/class-campaigns.php';
 require_once HTI_ENGINE_PATH . 'includes/class-nps.php';
 require_once HTI_ENGINE_PATH . 'includes/class-feedback.php';
+require_once HTI_ENGINE_PATH . 'includes/class-links.php';
 require_once HTI_ENGINE_PATH . 'includes/class-tools-content.php';
 require_once HTI_ENGINE_PATH . 'includes/class-tools.php';
 require_once HTI_ENGINE_PATH . 'includes/class-deposits.php';

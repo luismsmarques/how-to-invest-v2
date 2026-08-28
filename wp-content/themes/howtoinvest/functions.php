@@ -3974,13 +3974,23 @@ function default_menu( string $location, string $extra ): string {
  * URL of the term-deposit comparator, but only in Portuguese — it's a PT-only
  * tool, so it has no place in the English nav. Returns '' when not applicable.
  *
+ * Resolved through page_url() rather than spelled out. The literal that used to
+ * live here, /pt/comparador-de-depositos/, was missing the "-a-prazo" the
+ * seeder gives the page, so every menu that carried this item — the desktop
+ * nav, the mobile drawer and the injected item in an editor-managed menu —
+ * pointed at a 404. Returning '' when the page is absent also means the item
+ * disappears instead of linking nowhere on a site that has not been seeded.
+ *
  * @return string Localized URL, or empty string.
  */
 function deposits_comparator_url(): string {
 	if ( 'pt' !== current_lang() ) {
 		return '';
 	}
-	return home_url( '/pt/comparador-de-depositos/' );
+	if ( page_id( 'term-deposit-comparison-portugal' ) <= 0 ) {
+		return '';
+	}
+	return page_url( 'term-deposit-comparison-portugal' );
 }
 
 /**
