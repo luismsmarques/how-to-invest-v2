@@ -115,6 +115,16 @@ class SEO {
 			$graph[] = self::web_application( $post );
 		}
 
+		// The tools hub's FAQ is visible on the page inside <details>, which is
+		// what Google requires of FAQPage — and it is the same array the
+		// accordion renders, so copy and structured data cannot drift.
+		if ( is_page() && $post instanceof \WP_Post && has_shortcode( (string) $post->post_content, 'hti_tools_hub' ) ) {
+			$faq = self::faq_page( $post, Tools_Content::faqs( 'hub' ) );
+			if ( array() !== $faq ) {
+				$graph[] = $faq;
+			}
+		}
+
 		/*
 		 * Nested pages (the calculators under /tools/) get a BreadcrumbList
 		 * built from their ancestors. Only nested ones: on a top-level page the
@@ -271,6 +281,52 @@ class SEO {
 			'@type'           => 'BreadcrumbList',
 			'@id'             => get_permalink( $post ) . '#breadcrumb',
 			'itemListElement' => $items,
+		);
+	}
+
+	/**
+	 * FAQPage node from a bilingual FAQ table.
+	 *
+	 * Pure apart from the permalink, so the shape can be asserted in tests.
+	 * Language comes from post_lang() (Polylang-aware) rather than
+	 * site_lang(), which reads get_locale() and would mislabel a PT page.
+	 *
+	 * @param \WP_Post                                          $post Page.
+	 * @param array<string,array<int,array<string,string>>>     $faqs Language => list of q/a pairs.
+	 * @return array<string,mixed> Empty when there is nothing to say.
+	 */
+	private static function faq_page( \WP_Post $post, array $faqs ): array {
+		$lang    = str_starts_with( self::post_lang( $post ), 'pt' ) ? 'pt' : 'en';
+		$entries = $faqs[ $lang ] ?? array();
+		if ( array() === $entries ) {
+			return array();
+		}
+
+		$items = array();
+		foreach ( $entries as $faq ) {
+			$question = trim( (string) ( $faq['q'] ?? '' ) );
+			$answer   = trim( (string) ( $faq['a'] ?? '' ) );
+			if ( '' === $question || '' === $answer ) {
+				continue;
+			}
+			$items[] = array(
+				'@type'          => 'Question',
+				'name'           => $question,
+				'acceptedAnswer' => array(
+					'@type' => 'Answer',
+					'text'  => $answer,
+				),
+			);
+		}
+
+		if ( array() === $items ) {
+			return array();
+		}
+
+		return array(
+			'@type'      => 'FAQPage',
+			'@id'        => get_permalink( $post ) . '#faq',
+			'mainEntity' => $items,
 		);
 	}
 

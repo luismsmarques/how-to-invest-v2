@@ -244,6 +244,19 @@ class Seeder {
 			}
 		}
 
+		// The hub is a card grid and the calculators are two-column cards; the
+		// default page template constrains content to 680px, where both
+		// collapse to a single column and the design never shows.
+		self::ensure_page_template( Tools_Content::HUB_SLUG, 'page-tools' );
+		foreach ( Tools_Content::slugs() as $tool_slug ) {
+			self::ensure_page_template( $tool_slug, 'page-tools' );
+		}
+
+		$log = array_merge( $log, self::swap_hub_body( $hub_en_id, 'hub (EN)', $dry_run ) );
+		if ( $hub_pt > 0 ) {
+			$log = array_merge( $log, self::swap_hub_body( $hub_pt, 'hub (PT)', $dry_run ) );
+		}
+
 		foreach ( Tools_Content::slugs() as $slug ) {
 			// Already a child → found by path. Not yet → still top-level.
 			$en = get_page_by_path( Tools_Content::path( $slug ), OBJECT, 'page' );
@@ -270,6 +283,65 @@ class Seeder {
 		}
 
 		return $log;
+	}
+
+	/**
+	 * Replace the hub's bullet-list body with the [hti_tools_hub] shortcode.
+	 *
+	 * The only destructive step in the migration, so it refuses to run on a
+	 * page somebody has edited. "Edited" is judged structurally rather than by
+	 * hashing the seeded body: that body has already changed shape twice (the
+	 * bullets now point at /tools/…), so a hash would reject every real site.
+	 * What the seeder has ever produced here is a paragraph, a list and the CTA
+	 * pattern — any other block type means a human has been in the editor, and
+	 * then the page is left alone and reported instead.
+	 *
+	 * @param int    $id      Hub page ID.
+	 * @param string $label   Label for the report.
+	 * @param bool   $dry_run Report only.
+	 * @return array<int,string>
+	 */
+	private static function swap_hub_body( int $id, string $label, bool $dry_run ): array {
+		$post = get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			return array();
+		}
+		$content = (string) $post->post_content;
+
+		if ( function_exists( 'has_shortcode' ) && has_shortcode( $content, 'hti_tools_hub' ) ) {
+			return array();
+		}
+
+		preg_match_all( '/<!--\s+wp:([a-z0-9\/-]+)/i', $content, $matches );
+		$blocks   = array_unique( $matches[1] );
+		$foreign  = array_diff( $blocks, array( 'paragraph', 'list', 'pattern' ) );
+		$has_list = in_array( 'list', $blocks, true );
+
+		if ( array() !== $foreign || ! $has_list ) {
+			return array(
+				sprintf(
+					'SKIPPED %s — the page looks edited (blocks: %s). Replace its body with [hti_tools_hub] by hand.',
+					$label,
+					implode( ', ', $blocks )
+				),
+			);
+		}
+
+		if ( $dry_run ) {
+			return array( sprintf( 'would replace the body of %s with [hti_tools_hub].', $label ) );
+		}
+
+		// Keep the previous body: the swap is the one step that throws content
+		// away, and a wrong call should be recoverable without a backup.
+		update_post_meta( $id, '_hti_tools_hub_prev', $content );
+		wp_update_post(
+			array(
+				'ID'           => $id,
+				'post_content' => wp_slash( self::tools_hub_body() ),
+			)
+		);
+
+		return array( sprintf( 'replaced the body of %s with [hti_tools_hub].', $label ) );
 	}
 
 	/**
@@ -349,7 +421,7 @@ class Seeder {
 	 * @param string $template Template file name, without the .html extension.
 	 */
 	private static function ensure_page_template( string $slug, string $template ): void {
-		$en = get_page_by_path( $slug, OBJECT, 'page' );
+		$en = get_page_by_path( self::entry_path( $slug ), OBJECT, 'page' );
 		if ( ! $en instanceof \WP_Post ) {
 			return;
 		}
@@ -2443,34 +2515,20 @@ class Seeder {
 	 */
 	private static function tool_pages(): array {
 		$tools = Tools_Content::tools();
-
-		$bullets = static function ( string $lang ) use ( $tools ): array {
-			$rows = array();
-			foreach ( $tools as $slug => $tool ) {
-				$rows[] = array(
-					self::internal_url( $slug ),
-					(string) $tool[ 'pt' === $lang ? 'title_pt' : 'title_en' ],
-					(string) $tool[ 'pt' === $lang ? 'card_pt' : 'card_en' ],
-				);
-			}
-			return $rows;
-		};
-
 		$pages = array();
 
-		// Hub first — the calculators hang off it.
+		// Hub first — the calculators hang off it. Its body is one shortcode:
+		// the card grid, the FAQ and the disclaimer live in class-tools.php,
+		// where they can still be changed after the page exists.
 		$pages[] = array(
 			'slug'    => Tools_Content::HUB_SLUG,
 			'title'   => 'Tools',
 			'excerpt' => 'Free, educational calculators about saving and investing — time, inflation, goals and the cost of waiting.',
-			'content' => self::paragraph( 'Free, educational calculators to build intuition about saving and investing — time, inflation, goals and the cost of waiting. Each is illustrative, with hypothetical rates, and never advice.' )
-				. self::bullets( $bullets( 'en' ) )
-				. self::cta(),
+			'content' => self::tools_hub_body(),
 			'pt'      => array(
 				'title'   => 'Ferramentas',
 				'excerpt' => 'Calculadoras gratuitas e educativas sobre poupar e investir — tempo, inflação, objetivos e o custo de esperar.',
-				'content' => self::paragraph( 'Calculadoras gratuitas e educativas para ganhares intuição sobre poupar e investir — tempo, inflação, objetivos e o custo de esperar. Cada uma é ilustrativa, com taxas hipotéticas, e nunca aconselhamento.' )
-					. self::bullets( $bullets( 'pt' ) ),
+				'content' => self::tools_hub_body(),
 			),
 		);
 
@@ -2496,6 +2554,15 @@ class Seeder {
 		}
 
 		return $pages;
+	}
+
+	/**
+	 * The Tools hub page body: the hub shortcode plus the questionnaire CTA.
+	 *
+	 * Identical in EN and PT — [hti_tools_hub] resolves the language itself.
+	 */
+	private static function tools_hub_body(): string {
+		return '<!-- wp:shortcode -->[hti_tools_hub]<!-- /wp:shortcode -->' . "\n\n" . self::cta();
 	}
 
 	/**

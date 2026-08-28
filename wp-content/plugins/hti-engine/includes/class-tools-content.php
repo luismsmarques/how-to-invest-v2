@@ -164,6 +164,114 @@ class Tools_Content {
 	}
 
 	/**
+	 * Hub chrome: the hero, the section headings and the "About" prose.
+	 *
+	 * Keyed by language so the whole hub can be rendered from one lookup, and
+	 * so the test suite can assert EN/PT parity key by key.
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	public static function hub(): array {
+		return array(
+			'en' => array(
+				'badge'       => 'Free tools · No sign-up',
+				'lede'        => 'Small calculators that make the arithmetic of saving and investing visible — what time does to a contribution, what inflation takes away, what a yearly fee quietly costs. Every one is illustrative, works on your phone, and asks nothing of you.',
+				'chips'       => array( 'Free, no account', 'Nothing leaves your browser', 'Educational only' ),
+				'more_title'  => 'More calculators',
+				'prose_title' => 'About these tools',
+				'prose_body'  => 'Each calculator here illustrates a piece of arithmetic — how compounding accumulates, how inflation erodes, how a percentage fee compounds against you — using a rate you choose. They are not forecasts: a hypothetical return typed into a box is an assumption, not a prediction, and real markets do not deliver a steady number every year. Nothing here is advice about what, when or whether to invest.',
+				'note'        => 'Illustrative examples with hypothetical rates. Not advice or a forecast — investing involves risk, including the loss of capital.',
+				'faq_title'   => 'Frequently asked',
+			),
+			'pt' => array(
+				'badge'       => 'Ferramentas gratuitas · Sem registo',
+				'lede'        => 'Pequenas calculadoras que tornam visível a aritmética de poupar e investir — o que o tempo faz a uma contribuição, o que a inflação leva, quanto uma comissão anual custa em silêncio. Todas são ilustrativas, funcionam no telemóvel e não te pedem nada.',
+				'chips'       => array( 'Gratuitas, sem conta', 'Nada sai do teu navegador', 'Apenas educativo' ),
+				'more_title'  => 'Mais calculadoras',
+				'prose_title' => 'Sobre estas ferramentas',
+				'prose_body'  => 'Cada calculadora aqui ilustra um pedaço de aritmética — como a capitalização acumula, como a inflação corrói, como uma comissão em percentagem compõe contra ti — usando uma taxa escolhida por ti. Não são previsões: um retorno hipotético escrito numa caixa é um pressuposto, não uma previsão, e os mercados reais não entregam um número certinho todos os anos. Nada aqui é aconselhamento sobre o quê, quando ou se investir.',
+				'note'        => 'Exemplos ilustrativos com taxas hipotéticas. Não é aconselhamento nem previsão — investir envolve risco, incluindo a perda de capital.',
+				'faq_title'   => 'Perguntas frequentes',
+			),
+		);
+	}
+
+	/**
+	 * FAQ entries for a tools page, per language.
+	 *
+	 * Same array feeds the visible <details> accordion and the FAQPage JSON-LD,
+	 * so the copy and the structured data can never drift — the pattern
+	 * HTI\Forex\Config::faqs() established. Google requires the answer to be
+	 * visible on the page, which the accordion satisfies.
+	 *
+	 * @param string $page Page key ('hub' today; per-tool keys reserved).
+	 * @return array<string,array<int,array<string,string>>>
+	 */
+	public static function faqs( string $page ): array {
+		$all = array(
+			'hub' => array(
+				'en' => array(
+					array(
+						'q' => 'Are these calculators really free?',
+						'a' => 'Yes, and there is nothing to sign up for. They run entirely in your browser: no numbers you type are sent to us, stored, or shared with anyone.',
+					),
+					array(
+						'q' => 'Where do the rates come from?',
+						'a' => 'From you. Every calculator starts with a plausible default you can change, and the return or inflation rate is a hypothetical you choose — not a rate we are forecasting or recommending.',
+					),
+					array(
+						'q' => 'Is any of this investment advice?',
+						'a' => 'No. These tools show how a formula behaves; they know nothing about your situation, your goals or your tax position. A result is an illustration of arithmetic, never a suggestion to do something.',
+					),
+					array(
+						'q' => 'Which one should I start with?',
+						'a' => 'The emergency fund calculator is the usual starting point, because a cash cushion generally comes before investing at all. After that, compound interest tends to be the one that changes how people think about time.',
+					),
+					array(
+						'q' => 'Why do the results change so much when I adjust the rate?',
+						'a' => 'Because compounding is exponential: a percentage point over thirty years moves the outcome far more than it seems it should. That sensitivity is the point of the exercise — it is also why a single projected number should never be taken literally.',
+					),
+					array(
+						'q' => 'Do they work on my phone?',
+						'a' => 'Yes. Every calculator is built to be used on a small screen, and the results update as you type.',
+					),
+				),
+				'pt' => array(
+					array(
+						'q' => 'Estas calculadoras são mesmo gratuitas?',
+						'a' => 'São, e não há nada para registar. Correm inteiramente no teu navegador: nenhum número que escreves nos é enviado, guardado ou partilhado com quem quer que seja.',
+					),
+					array(
+						'q' => 'De onde vêm as taxas?',
+						'a' => 'De ti. Cada calculadora começa com um valor plausível que podes mudar, e a taxa de retorno ou de inflação é uma hipótese tua — não uma taxa que estejamos a prever ou a recomendar.',
+					),
+					array(
+						'q' => 'Isto é aconselhamento financeiro?',
+						'a' => 'Não. Estas ferramentas mostram como uma fórmula se comporta; não sabem nada sobre a tua situação, os teus objetivos ou a tua fiscalidade. Um resultado é uma ilustração de aritmética, nunca uma sugestão para fazeres alguma coisa.',
+					),
+					array(
+						'q' => 'Por qual devo começar?',
+						'a' => 'A do fundo de emergência costuma ser o ponto de partida, porque uma almofada em liquidez costuma vir antes de investir seja o que for. Depois dessa, a do juro composto é a que mais muda a forma como se pensa no tempo.',
+					),
+					array(
+						'q' => 'Porque é que os resultados mudam tanto quando ajusto a taxa?',
+						'a' => 'Porque a capitalização é exponencial: um ponto percentual ao longo de trinta anos move o resultado muito mais do que parece razoável. Essa sensibilidade é o objetivo do exercício — e é também por isso que um número projetado nunca deve ser levado à letra.',
+					),
+					array(
+						'q' => 'Funcionam no telemóvel?',
+						'a' => 'Sim. Todas as calculadoras foram feitas para ecrãs pequenos, e os resultados atualizam à medida que escreves.',
+					),
+				),
+			),
+		);
+
+		return $all[ $page ] ?? array(
+			'en' => array(),
+			'pt' => array(),
+		);
+	}
+
+	/**
 	 * The English page slugs, in hub order.
 	 *
 	 * @return array<int,string>

@@ -1,97 +1,199 @@
-/* HowToInvest — educational calculators (Tools hub). Coral/cream design. */
+/**
+ * HowToInvest — educational calculators and the Tools hub.
+ *
+ * Structured to mirror hti-forex/assets/css/forex.css, because the two
+ * sections are meant to read as one product: the same card, the same gradient
+ * result panel, the same hero and card grid on the hub.
+ *
+ * Every colour is a theme.json preset with the theme's own value as fallback.
+ * This file used to redeclare the hexes by hand — the only stylesheet in the
+ * plugin that did — so a palette change in theme.json silently desynced the
+ * calculators from the rest of the site. Never hardcode a new colour here.
+ */
 
-.hti-tool {
-	--hti-coral: #ff6b5e;
-	--hti-accent: #7c5cfc;
-	--hti-ink: #2a2438;
-	--hti-muted: #6e6680;
-	--hti-surface: #fff6f1;
-	--hti-line: #f2e4dd;
+.hti-tool,
+.hti-tools-hub,
+.hti-alloc {
+	--t-bg: var(--wp--preset--color--background, #fff6f1);
+	--t-white: var(--wp--preset--color--white, #ffffff);
+	--t-ink: var(--wp--preset--color--contrast, #2a2438);
+	--t-body: var(--wp--preset--color--body-alt, #3a3450);
+	--t-muted: var(--wp--preset--color--muted, #6e6680);
+	--t-faint: #a89fb5;
+	--t-border: var(--wp--preset--color--border, #f2e4dd);
+	--t-coral: var(--wp--preset--color--primary, #ff6b5e);
+	--t-coral-hover: var(--wp--preset--color--primary-hover, #ff5544);
+	--t-coral-soft: var(--wp--preset--color--primary-soft, #ffede9);
+	--t-accent: var(--wp--preset--color--accent, #7c5cfc);
+	--t-accent-soft: var(--wp--preset--color--accent-soft, #efe9fe);
+	--t-accent-border: var(--wp--preset--color--accent-border, #e7dcfb);
+	--t-caution: #d69a1e;
+	--t-caution-surface: var(--wp--preset--color--caution-surface, #fff3d6);
+	--t-heading: var(--wp--preset--font-family--heading, 'Poppins', system-ui, sans-serif);
+	--t-body-font: var(--wp--preset--font-family--body, 'Plus Jakarta Sans', system-ui, sans-serif);
+	--t-shadow: 0 2px 14px rgba(20, 23, 58, 0.05);
+	--t-shadow-hover: 0 10px 28px rgba(42, 36, 56, 0.1);
+	font-family: var(--t-body-font);
+}
+
+/*
+ * The aligned shell. `alignwide` opens the tool up to the theme's wide size;
+ * this caps it at a width where the two columns still read as one component
+ * instead of stretching across the viewport.
+ */
+.hti-tool-shell.alignwide {
+	/* Two classes on purpose: WordPress sets the wide width through
+	   :where(.is-layout-constrained) > .alignwide, which has the specificity of
+	   a single class, so a one-class rule here would win or lose on load order
+	   alone. */
+	max-width: 1000px;
+	margin-inline: auto;
+}
+
+/* Card ---------------------------------------------------------------------- */
+
+.hti-tool__card {
 	display: grid;
-	gap: 1.5rem;
-	max-width: 720px;
-	margin: 1.5rem 0;
-	padding: 1.75rem;
-	background: #fff;
-	border: 1px solid var(--hti-line);
+	grid-template-columns: 1fr 380px;
+	background: var(--t-white);
+	border: 1px solid var(--t-border);
 	border-radius: 18px;
-	box-shadow: 0 2px 14px rgba(20, 23, 58, 0.06);
+	box-shadow: var(--t-shadow);
+	overflow: hidden;
+	margin: 1.5rem 0;
+}
+
+.hti-tool__kicker {
+	font: 700 13px var(--t-body-font);
+	letter-spacing: 0.06em;
+	color: var(--t-faint);
+}
+
+/* Inputs -------------------------------------------------------------------- */
+
+.hti-tool__inputs {
+	padding: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
 }
 
 .hti-tool__fields {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 1rem 1.25rem;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px 18px;
+	/* Labels wrap to two lines at narrow widths; without this the inputs in a
+	   row sit at different heights. */
+	align-items: end;
 }
 
 .hti-field {
 	display: flex;
 	flex-direction: column;
-	gap: 0.35rem;
-	font: 600 0.9rem/1.3 'Plus Jakarta Sans', system-ui, sans-serif;
-	color: var(--hti-ink);
+	gap: 6px;
 }
 
 .hti-field__label {
-	color: var(--hti-muted);
+	font: 600 13.5px var(--t-body-font);
+	color: var(--t-muted);
 }
 
 .hti-field input {
 	width: 100%;
-	padding: 0.7rem 0.85rem;
-	font: 600 1.05rem 'Plus Jakarta Sans', system-ui, sans-serif;
-	color: var(--hti-ink);
-	background: var(--hti-surface);
-	border: 1.5px solid var(--hti-line);
+	min-height: 44px;
+	padding: 11px 13px;
+	font: 600 17px var(--t-body-font);
+	font-variant-numeric: tabular-nums;
+	color: var(--t-ink);
+	background: var(--t-bg);
+	border: 1.5px solid var(--t-border);
 	border-radius: 10px;
 	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .hti-field input:focus-visible {
 	outline: none;
-	border-color: var(--hti-coral);
+	background: var(--t-white);
+	border-color: var(--t-coral);
 	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.18);
 }
 
-.hti-tool__results {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 0.75rem;
-}
+/* Result panel -------------------------------------------------------------- */
 
-.hti-out {
+.hti-tool__panel {
+	background: linear-gradient(160deg, #fff1ee, #f6efff);
+	border-left: 1px solid var(--t-border);
+	padding: 28px;
 	display: flex;
 	flex-direction: column;
-	gap: 0.25rem;
-	padding: 0.9rem 1rem;
-	background: var(--hti-surface);
+	gap: 16px;
+}
+
+.hti-tool__primary {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.hti-tool__primary-value {
+	font: 800 44px/1 var(--t-heading);
+	letter-spacing: -0.02em;
+	color: var(--t-coral);
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
+}
+
+.hti-tool__primary-label {
+	font: 500 14px var(--t-body-font);
+	color: var(--t-muted);
+}
+
+.hti-tool__tiles {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.hti-tool__tile {
+	background: rgba(255, 255, 255, 0.75);
 	border-radius: 12px;
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 }
 
-.hti-out--primary {
-	grid-column: 1 / -1;
-	background: linear-gradient(135deg, #fff1ee, #fbe9ff);
-	border: 1.5px solid rgba(255, 107, 94, 0.25);
-}
-
-.hti-out__label {
-	font: 600 0.78rem/1.3 'Plus Jakarta Sans', system-ui, sans-serif;
+.hti-tool__tile-label {
+	font: 600 11.5px var(--t-body-font);
 	letter-spacing: 0.02em;
-	color: var(--hti-muted);
+	color: var(--t-muted);
+	text-transform: uppercase;
 }
 
-.hti-out__value {
-	font: 800 1.5rem/1.1 'Poppins', system-ui, sans-serif;
-	color: var(--hti-ink);
+.hti-tool__tile-value {
+	font: 700 17px var(--t-heading);
+	color: var(--t-ink);
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
 }
 
-.hti-out--primary .hti-out__value {
-	font-size: 2.1rem;
-	color: var(--hti-coral);
-}
-
+/*
+ * The chart sits inside the gradient panel. It is decorative (the same numbers
+ * are in the tiles above it), hence aria-hidden in the markup; aspect-ratio
+ * rather than a fixed height keeps the 320×140 viewBox from distorting as the
+ * column narrows.
+ */
 .hti-tool__chart {
-	height: 150px;
+	aspect-ratio: 320 / 130;
+	min-height: 110px;
+	/* Stacked under 900px the panel is full width, and the ratio alone would
+	   make the chart taller than the numbers it illustrates. */
+	max-height: 200px;
+	box-sizing: border-box;
+	padding: 10px;
+	background: rgba(255, 255, 255, 0.75);
+	border-radius: 12px;
 }
 
 .hti-tool__chart svg {
@@ -103,16 +205,15 @@
 .hti-tool__legend {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 1.25rem;
-	margin-top: -0.5rem;
+	gap: 14px;
 }
 
 .hti-legend {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.45rem;
-	font: 600 0.82rem 'Plus Jakarta Sans', system-ui, sans-serif;
-	color: var(--hti-muted);
+	gap: 7px;
+	font: 600 12.5px var(--t-body-font);
+	color: var(--t-muted);
 }
 
 .hti-legend__dot {
@@ -121,68 +222,56 @@
 	border-radius: 3px;
 }
 
+/* Pinned to the bottom of the panel: every tool carries exactly one. */
+.hti-tool__panelnote {
+	margin-top: auto;
+	font: 400 12px/1.55 var(--t-body-font);
+	color: var(--t-muted);
+	border-top: 1px solid rgba(42, 36, 56, 0.08);
+	padding-top: 12px;
+}
+
 .hti-tool__note {
 	margin: 0;
-	font: 400 0.82rem/1.5 'Plus Jakarta Sans', system-ui, sans-serif;
-	color: var(--hti-muted);
+	font: 400 13px/1.5 var(--t-body-font);
+	color: var(--t-muted);
 }
 
-@media (max-width: 560px) {
-	.hti-tool {
-		padding: 1.25rem;
-	}
-	.hti-tool__fields,
-	.hti-tool__results {
-		grid-template-columns: 1fr 1fr;
-	}
-	.hti-out--primary .hti-out__value {
-		font-size: 1.8rem;
-	}
-}
-
-/* Allocation visualiser (archetype selector → donut). */
-.hti-alloc {
-	--hti-coral: #ff6b5e;
-	--hti-ink: #2a2438;
-	--hti-muted: #6e6680;
-	--hti-line: #f2e4dd;
-	--hti-surface: #fff6f1;
-	display: grid;
-	gap: 1.5rem;
-	max-width: 720px;
+.hti-tool__email {
 	margin: 1.5rem 0;
-	padding: 1.75rem;
-	background: #fff;
-	border: 1px solid var(--hti-line);
-	border-radius: 18px;
-	box-shadow: 0 2px 14px rgba(20, 23, 58, 0.06);
+}
+
+/* Allocation visualiser ----------------------------------------------------- */
+
+.hti-tool__card--alloc {
+	grid-template-columns: 300px 1fr;
 }
 
 .hti-alloc__tabs {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.5rem;
+	gap: 8px;
 }
 
 .hti-alloc__tab {
-	padding: 0.5rem 1rem;
-	font: 600 0.88rem 'Plus Jakarta Sans', system-ui, sans-serif;
-	color: var(--hti-muted);
-	background: var(--hti-surface);
-	border: 1.5px solid var(--hti-line);
+	padding: 8px 16px;
+	font: 600 14px var(--t-body-font);
+	color: var(--t-muted);
+	background: var(--t-bg);
+	border: 1.5px solid var(--t-border);
 	border-radius: 999px;
 	cursor: pointer;
 	transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 .hti-alloc__tab:hover {
-	color: var(--hti-ink);
+	color: var(--t-ink);
 }
 
 .hti-alloc__tab[aria-selected='true'] {
 	color: #fff;
-	background: var(--hti-coral);
-	border-color: var(--hti-coral);
+	background: var(--t-coral);
+	border-color: var(--t-coral);
 }
 
 .hti-alloc__tab:focus-visible {
@@ -193,7 +282,7 @@
 .hti-alloc__view {
 	display: flex;
 	align-items: center;
-	gap: 2rem;
+	gap: 28px;
 	flex-wrap: wrap;
 }
 
@@ -204,14 +293,14 @@
 	border-radius: 50%;
 	display: grid;
 	place-items: center;
-	background: var(--hti-surface);
+	background: rgba(255, 255, 255, 0.75);
 }
 
 .hti-alloc__hole {
 	width: 58%;
 	height: 58%;
 	border-radius: 50%;
-	background: #fff;
+	background: var(--t-white);
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -220,13 +309,13 @@
 }
 
 .hti-alloc__cap {
-	font: 700 0.8rem 'Poppins', system-ui, sans-serif;
-	color: var(--hti-ink);
+	font: 700 13px var(--t-heading);
+	color: var(--t-ink);
 }
 
 .hti-alloc__subcap {
-	font: 500 0.68rem 'Plus Jakarta Sans', system-ui, sans-serif;
-	color: var(--hti-muted);
+	font: 500 11px var(--t-body-font);
+	color: var(--t-muted);
 }
 
 .hti-alloc__list {
@@ -235,15 +324,15 @@
 	padding: 0;
 	list-style: none;
 	display: grid;
-	gap: 0.6rem;
+	gap: 10px;
 }
 
 .hti-alloc__row {
 	display: flex;
 	align-items: center;
-	gap: 0.6rem;
-	font: 600 0.92rem 'Plus Jakarta Sans', system-ui, sans-serif;
-	color: var(--hti-ink);
+	gap: 10px;
+	font: 600 14.5px var(--t-body-font);
+	color: var(--t-ink);
 }
 
 .hti-alloc__dot {
@@ -259,15 +348,311 @@
 
 .hti-alloc__pct {
 	font-weight: 800;
-	color: var(--hti-ink);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Hub ----------------------------------------------------------------------- */
+
+.hti-tools-hub {
+	display: flex;
+	flex-direction: column;
+	gap: 2.5rem;
+}
+
+.hti-tools-hero {
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+}
+
+.hti-tools-hero__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--t-coral-soft);
+	color: var(--t-coral);
+	font: 600 13px var(--t-body-font);
+	padding: 6px 14px;
+	border-radius: 999px;
+}
+
+.hti-tools-hero__lede {
+	margin: 0;
+	max-width: 620px;
+	font: 400 17px/1.6 var(--t-body-font);
+	color: var(--t-muted);
+}
+
+.hti-tools-hero__chips {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.hti-tools-hero__chips span {
+	font: 600 13px var(--t-body-font);
+	color: var(--t-ink);
+	background: var(--t-white);
+	border: 1px solid var(--t-border);
+	padding: 7px 14px;
+	border-radius: 999px;
+}
+
+.hti-tools-hub__core {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px;
+}
+
+.hti-toolcard {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	background: var(--t-white);
+	border: 1px solid var(--t-border);
+	border-radius: 18px;
+	padding: 26px;
+	box-shadow: var(--t-shadow);
+	color: inherit;
+	text-decoration: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.hti-toolcard:hover {
+	border-color: var(--t-accent-border);
+	box-shadow: var(--t-shadow-hover);
+	transform: translateY(-2px);
+}
+
+.hti-toolcard:focus-visible {
+	outline: 2.5px solid var(--t-coral);
+	outline-offset: 2px;
+}
+
+.hti-toolcard__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 46px;
+	height: 46px;
+	background: var(--t-accent-soft);
+	border-radius: 13px;
+	color: var(--t-accent);
+	font: 700 19px var(--t-heading);
+}
+
+.hti-toolcard__name {
+	font: 700 19px/1.25 var(--t-heading);
+	letter-spacing: -0.01em;
+	color: var(--t-ink);
+}
+
+.hti-toolcard__desc {
+	font: 400 14.5px/1.55 var(--t-body-font);
+	color: var(--t-muted);
+}
+
+.hti-toolcard__go {
+	margin-top: auto;
+	font: 600 14px var(--t-body-font);
+	color: var(--t-coral);
+}
+
+.hti-toolcard:hover .hti-toolcard__go {
+	color: var(--t-coral-hover);
+}
+
+/* Negative margin ties the label to the grid below it, against the 2.5rem gap. */
+.hti-tools-hub__moretitle {
+	font: 700 15px var(--t-heading);
+	color: var(--t-ink);
+	margin-bottom: -1.75rem;
+}
+
+.hti-tools-hub__more {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	gap: 14px;
+}
+
+.hti-minicard {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	background: var(--t-white);
+	border: 1px solid var(--t-border);
+	border-radius: 14px;
+	padding: 18px;
+	color: inherit;
+	text-decoration: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hti-minicard:hover {
+	border-color: var(--t-accent-border);
+	box-shadow: 0 6px 18px rgba(42, 36, 56, 0.08);
+}
+
+.hti-minicard:focus-visible {
+	outline: 2.5px solid var(--t-coral);
+	outline-offset: 2px;
+}
+
+.hti-minicard__name {
+	font: 600 15px/1.3 var(--t-body-font);
+	color: var(--t-ink);
+}
+
+.hti-minicard__desc {
+	font: 400 13px/1.5 var(--t-body-font);
+	color: var(--t-muted);
+}
+
+/*
+ * Prose stays at a readable measure even though the hub template is wide —
+ * the extra width is for the card grids, not for running text.
+ */
+.hti-tools-hub__prose {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	max-width: 720px;
+}
+
+.hti-tools-hub__prose h2 {
+	margin: 0;
+	font: 700 28px/1.15 var(--t-heading);
+	letter-spacing: -0.02em;
+	color: var(--t-ink);
+}
+
+.hti-tools-hub__prose > p {
+	margin: 0;
+	font: 400 16px/1.65 var(--t-body-font);
+	color: var(--t-body);
+}
+
+.hti-tools-note {
+	display: flex;
+	gap: 14px;
+	background: var(--t-caution-surface);
+	border: 1px solid #eed9a4;
+	border-radius: 14px;
+	padding: 18px 20px;
+	font: 400 14px/1.6 var(--t-body-font);
+	color: var(--t-body);
+}
+
+.hti-tools-bang {
+	flex: none;
+	display: inline-block;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--t-caution);
+	color: #fff;
+	font: 700 14px/22px var(--t-heading);
+	text-align: center;
+}
+
+/* FAQ (native <details>, no JS) */
+.hti-tools-faq__item {
+	border-bottom: 1px solid var(--t-border);
+	padding: 4px 0;
+}
+
+.hti-tools-faq__item summary {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 0;
+	font: 600 16px var(--t-body-font);
+	color: var(--t-ink);
+	cursor: pointer;
+	list-style: none;
+}
+
+.hti-tools-faq__item summary::-webkit-details-marker {
+	display: none;
+}
+
+.hti-tools-faq__marker::before {
+	content: '+';
+	font: 400 22px/1 var(--t-heading);
+	color: var(--t-faint);
+}
+
+.hti-tools-faq__item[open] .hti-tools-faq__marker::before {
+	content: '−';
+	color: var(--t-coral);
+}
+
+.hti-tools-faq__item > p {
+	margin: 0 0 16px;
+	font: 400 15px/1.6 var(--t-body-font);
+	color: var(--t-muted);
+}
+
+.hti-tools-faq__item summary:focus-visible {
+	outline: 2.5px solid var(--t-coral);
+	outline-offset: 2px;
+	border-radius: 6px;
+}
+
+.hti-tools-hub__email {
+	max-width: 720px;
+}
+
+/* Responsive ---------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+	.hti-tools-hub__more {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+/*
+ * The card stacks earlier than the hub grids: the shell tops out at 1000px, so
+ * between roughly 900 and 1000 the inputs column would be squeezed against the
+ * fixed 380px panel.
+ */
+@media (max-width: 1020px) {
+	.hti-tool__card,
+	.hti-tool__card--alloc {
+		grid-template-columns: 1fr;
+	}
+	.hti-tool__panel {
+		border-left: 0;
+		border-top: 1px solid var(--t-border);
+	}
+}
+
+@media (max-width: 900px) {
+	.hti-tools-hub__core {
+		grid-template-columns: 1fr;
+	}
+	.hti-tools-hub__more {
+		grid-template-columns: repeat(2, 1fr);
+	}
 }
 
 @media (max-width: 560px) {
-	.hti-alloc {
-		padding: 1.25rem;
+	.hti-tool__inputs,
+	.hti-tool__panel {
+		padding: 20px;
+	}
+	.hti-tool__primary-value {
+		font-size: 36px;
+	}
+	.hti-tools-hub__more {
+		grid-template-columns: 1fr;
 	}
 	.hti-alloc__view {
-		gap: 1.25rem;
+		gap: 18px;
 		justify-content: center;
 	}
 }

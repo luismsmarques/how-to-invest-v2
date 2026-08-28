@@ -114,6 +114,49 @@ foreach ( $names as $name ) {
 	check( (bool) preg_match( '/^[a-z0-9_]+$/', $name ), 'name utilizável em [hti_tool name="…"]: ' . $name );
 }
 
+echo "\n=== Chrome do hub ===\n";
+$hub = Tools_Content::hub();
+check( isset( $hub['en'], $hub['pt'] ), 'hub() tem EN e PT' );
+check( array_keys( $hub['en'] ) === array_keys( $hub['pt'] ), 'as duas línguas têm exatamente as mesmas chaves' );
+
+foreach ( array( 'en', 'pt' ) as $lang ) {
+	foreach ( $hub[ $lang ] as $key => $value ) {
+		if ( is_array( $value ) ) {
+			check( array() !== $value, "hub.{$lang}.{$key} não está vazio" );
+			continue;
+		}
+		check( '' !== trim( (string) $value ), "hub.{$lang}.{$key} não está vazio" );
+	}
+}
+check(
+	count( $hub['en']['chips'] ) === count( $hub['pt']['chips'] ),
+	'o mesmo número de chips nas duas línguas'
+);
+check( $hub['en']['lede'] !== $hub['pt']['lede'], 'o lede foi traduzido' );
+
+echo "\n=== FAQ do hub ===\n";
+$faqs = Tools_Content::faqs( 'hub' );
+check( isset( $faqs['en'], $faqs['pt'] ), 'faqs(hub) tem EN e PT' );
+check( count( $faqs['en'] ) === count( $faqs['pt'] ), 'o mesmo número de perguntas nas duas línguas (' . count( $faqs['en'] ) . ')' );
+check( count( $faqs['en'] ) >= 4, 'pelo menos quatro perguntas' );
+
+foreach ( array( 'en', 'pt' ) as $lang ) {
+	foreach ( $faqs[ $lang ] as $i => $faq ) {
+		check(
+			'' !== trim( (string) ( $faq['q'] ?? '' ) ) && '' !== trim( (string) ( $faq['a'] ?? '' ) ),
+			"faq.{$lang}[{$i}] tem pergunta e resposta"
+		);
+	}
+}
+for ( $i = 0; $i < count( $faqs['en'] ); $i++ ) {
+	check(
+		$faqs['en'][ $i ]['q'] !== $faqs['pt'][ $i ]['q'],
+		"faq[{$i}] foi traduzida, não copiada"
+	);
+}
+
+check( array( 'en' => array(), 'pt' => array() ) === Tools_Content::faqs( 'inexistente' ), 'uma chave desconhecida devolve listas vazias, não um erro' );
+
 echo "\n=== {$passes} passed, {$failures} failed ===\n";
 
 exit( $failures > 0 ? 1 : 0 );
