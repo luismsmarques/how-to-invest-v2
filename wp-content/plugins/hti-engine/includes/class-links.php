@@ -70,6 +70,34 @@ class Links {
 	}
 
 	/**
+	 * Whether the page exists in a given language.
+	 *
+	 * Asks Polylang for the translation of the English page rather than
+	 * looking a translated path up directly. That is the codebase's only
+	 * pattern for reaching a Portuguese post, and for good reason: a PT path
+	 * assumes both that the translated parent exists and that no slug was
+	 * rewritten by wp_unique_post_slug() when the page was re-parented.
+	 *
+	 * @param string $en_path English page slug or hierarchical path.
+	 * @param string $lang    Language slug ('en', 'pt').
+	 */
+	public static function translation_exists( string $en_path, string $lang ): bool {
+		$page = get_page_by_path( $en_path, OBJECT, 'page' );
+		if ( ! $page instanceof \WP_Post ) {
+			return false;
+		}
+		if ( 'pt' !== $lang ) {
+			return true;
+		}
+		if ( ! function_exists( 'pll_get_post' ) ) {
+			// No Polylang means no Portuguese pages at all, so a PT
+			// destination cannot exist.
+			return false;
+		}
+		return (bool) pll_get_post( (int) $page->ID, 'pt' );
+	}
+
+	/**
 	 * Current language as a Polylang slug ('pt' or 'en').
 	 */
 	private static function lang(): string {

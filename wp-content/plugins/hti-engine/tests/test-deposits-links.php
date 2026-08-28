@@ -231,6 +231,29 @@ foreach ( array_unique( array_values( $moves ) ) as $target ) {
 check( null === Redirects::resolve( '/term-deposit-comparison-portugal/' ), 'o comparador EN fica onde está' );
 check( null === Redirects::resolve( '/deposit-comparison-methodology/' ), 'a metodologia EN fica onde está' );
 
+echo "\n=== Links::translation_exists() ===\n";
+check( true === Links::translation_exists( 'term-deposit-comparison-portugal', 'en' ), 'a página EN existe' );
+check( true === Links::translation_exists( 'term-deposit-comparison-portugal', 'pt' ), 'a tradução PT existe' );
+check( false === Links::translation_exists( 'nao-existe', 'en' ), 'página inexistente, em EN' );
+check( false === Links::translation_exists( 'nao-existe', 'pt' ), 'página inexistente, em PT' );
+
+$GLOBALS['hti_translations'] = array();
+check( true === Links::translation_exists( 'term-deposit-comparison-portugal', 'en' ), 'sem tradução, a EN continua a existir' );
+check( false === Links::translation_exists( 'term-deposit-comparison-portugal', 'pt' ), 'sem tradução, a PT não existe' );
+$GLOBALS['hti_translations'] = array( 1 => 2, 3 => 4 );
+
+echo "\n=== Os 301 dos depósitos também esperam pelo destino ===\n";
+$absent = static fn( string $path, string $lang ): bool => false;
+foreach ( array_keys( $moves ) as $from ) {
+	check( null === Redirects::resolve( $from, null, $absent ), "{$from} não redireciona sem destino" );
+}
+foreach ( $moves as $from => $to ) {
+	check(
+		$to === Redirects::resolve( $from, null, array( Links::class, 'translation_exists' ) ),
+		"{$from} redireciona com o verificador real"
+	);
+}
+
 echo "\n=== {$passes} passed, {$failures} failed ===\n";
 
 exit( $failures > 0 ? 1 : 0 );

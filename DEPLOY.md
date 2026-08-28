@@ -136,8 +136,13 @@ wp hti tools-migrate --dry-run   # mostra o que ia mudar, sem escrever
 wp hti tools-migrate             # aplica
 ```
 
-É idempotente — se correr duas vezes, a segunda não faz nada. Os URLs planos
-antigos passam a devolver 301 para os novos automaticamente (`class-redirects`),
-e nenhum passo é necessário no wp-admin. Se o relatório imprimir uma linha
-`WARNING … slug changed on re-parent`, essa página ficou com outro slug e o 301
-aponta para o antigo: corrigir o slug à mão antes de seguir.
+Sem WP-CLI no servidor, o botão **Semear conteúdo** em *HowToInvest → Semear*
+faz o mesmo: corre o `Seeder::seed()` completo, que inclui esta migração.
+
+É idempotente — se correr duas vezes, a segunda não faz nada. **A ordem não
+importa:** os 301 dos URLs antigos só disparam quando a página de destino já
+existe, por isso entre o deploy e a migração as calculadoras continuam a ser
+servidas nos URLs antigos, e passam a redirecionar sozinhas assim que a migração
+correr. Se o relatório imprimir uma linha `WARNING … slug changed on re-parent`,
+essa página ficou com outro slug e o 301 aponta para o antigo: corrigir o slug à
+mão antes de seguir.
