@@ -119,7 +119,24 @@ cd "$WPCONTENT/plugins/hti-engine" && composer install --no-dev --no-interaction
 - `vendor/` (Dompdf) **não** está no repo; o `composer install` do deploy é que o
   cria. O rsync preserva-o entre deploys (`--exclude vendor/`).
 - Testa sempre em **staging** (`develop`) antes de promover para `main`.
-- Limpa a cache (LiteSpeed/WP) depois de cada deploy se usares cache de página.
+- **Limpa a cache depois de cada deploy, por esta ordem.** A stack é WP Fastest
+  Cache no servidor e Cloudflare à frente:
+  1. **WP Fastest Cache → Delete Cache**, e usa **"Delete Cache and Minified
+     CSS/JS"**, não o botão simples. O nosso CSS e JS são servidos com `?ver=`,
+     por isso um browser normal pega logo nos ficheiros novos — mas se o
+     minify/combine estiver ligado, o ficheiro combinado já não leva esse
+     `?ver=` e fica com o conteúdo antigo lá dentro. É a causa clássica de
+     "limpei a cache e continua com o aspeto velho".
+  2. **Cloudflare → Caching → Configuration → Purge Everything**, e só depois do
+     passo 1: ao contrário, o Cloudflare vai buscar as páginas ao servidor e
+     recebe as antigas, ficando com lixo novo na borda.
+
+  O passo 2 só é preciso se tiveres **APO** ou uma Cache Rule com *Cache
+  Everything* — por omissão o Cloudflare não guarda HTML, só estáticos. Para
+  saber, `curl -sI` a uma página e ver o `cf-cache-status`: se der `MISS` ou
+  `DYNAMIC` numa página normal, o HTML não está a ser cacheado na borda.
+  Para testar sem lutar contra a cache, liga o **Development Mode** do
+  Cloudflare (bypass de 3 horas).
 
 ### Migração única: as calculadoras passam a viver sob o hub
 

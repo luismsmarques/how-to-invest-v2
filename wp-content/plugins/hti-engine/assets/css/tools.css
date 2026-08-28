@@ -351,6 +351,20 @@
 	font-variant-numeric: tabular-nums;
 }
 
+/*
+ * The page title.
+ *
+ * page-tools.html keeps the title in the constrained flow (contentSize, 680px)
+ * while the tool and the hub sit in a wide one, so the title's text started
+ * some 300px right of the cards below it and read as misaligned. Centring it
+ * settles it against the hub's centred hero, and against the card on a
+ * calculator page. Scoped to the template's own class so no other page title
+ * moves.
+ */
+.hti-page--tools .wp-block-post-title {
+	text-align: center;
+}
+
 /* Hub ----------------------------------------------------------------------- */
 
 .hti-tools-hub {
