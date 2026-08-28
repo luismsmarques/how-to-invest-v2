@@ -217,6 +217,14 @@ class Settings {
 			}
 		}
 
+		// Contact form recipient. Invalid input is dropped rather than stored,
+		// so a typo falls back to the default instead of silently swallowing
+		// every message.
+		if ( isset( $input['contact_email'] ) ) {
+			$contact              = sanitize_email( (string) $input['contact_email'] );
+			$out['contact_email'] = is_email( $contact ) ? $contact : '';
+		}
+
 		// Analytics.
 		$out['ga_id']           = isset( $input['ga_id'] ) ? sanitize_text_field( $input['ga_id'] ) : ( $out['ga_id'] ?? '' );
 		$out['ga_consent_mode'] = ! empty( $input['ga_consent_mode'] );
@@ -468,6 +476,21 @@ class Settings {
 						<td><input name="htinvest_settings[brevo_list_id_pt]" id="hti-brevo-list-pt" type="number" min="0" step="1" class="small-text"
 							value="<?php echo esc_attr( (string) ( $settings['brevo_list_id_pt'] ?? '' ) ); ?>" />
 							<p class="description"><?php echo esc_html__( 'Brevo list for Portuguese subscribers. Leave both blank to use a single list (legacy).', 'hti-engine' ); ?></p></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-contact-email"><?php echo esc_html__( 'Contact form recipient', 'hti-engine' ); ?></label></th>
+						<td><input name="htinvest_settings[contact_email]" id="hti-contact-email" type="email" class="regular-text"
+							value="<?php echo esc_attr( (string) ( $settings['contact_email'] ?? '' ) ); ?>"
+							placeholder="<?php echo esc_attr( \HTI\Engine\Contact::recipient() ); ?>" />
+							<p class="description">
+								<?php echo esc_html__( 'Where messages from the contact page are delivered. Leave blank to use the default below.', 'hti-engine' ); ?><br>
+								<?php
+								$current = \HTI\Engine\Contact::recipient();
+								/* translators: %s: the address currently receiving contact messages. */
+								echo '<strong>' . esc_html( sprintf( __( 'Currently delivering to: %s', 'hti-engine' ), $current ) ) . '</strong> ';
+								echo esc_html__( '— make sure that mailbox exists and you actually read it; the message is emailed and never stored, so nothing is recoverable if it bounces.', 'hti-engine' );
+								?>
+							</p></td>
 					</tr>
 				</table>
 
