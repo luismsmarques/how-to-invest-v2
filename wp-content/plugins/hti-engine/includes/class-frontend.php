@@ -196,7 +196,11 @@ class Frontend {
 	private static function discover_links(): array {
 		$learn = get_post_type_archive_link( 'learn' );
 		return array(
-			'comparador' => esc_url( (string) apply_filters( 'hti_deposits_page_url', home_url( '/comparador-de-depositos/' ) ) ),
+			// Resolved, not spelled out: the hardcoded value here was
+			// /comparador-de-depositos/ — wrong slug and no /pt/ prefix, so the
+			// card 404'd in both languages. The filter stays, but it now wraps a
+			// URL that is right when nobody overrides it.
+			'comparador' => esc_url( (string) apply_filters( 'hti_deposits_page_url', Links::page_url( 'term-deposit-comparison-portugal' ) ) ),
 			'glossary'   => esc_url( (string) ( get_post_type_archive_link( 'glossary' ) ?: home_url( '/investing-glossary/' ) ) ),
 			'news'       => esc_url( (string) ( get_post_type_archive_link( 'news' ) ?: home_url( '/financial-news/' ) ) ),
 			'ebook'      => esc_url( (string) apply_filters( 'hti_ebook_page_url', home_url( '/ebook/' ) ) ),

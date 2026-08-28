@@ -120,3 +120,29 @@ cd "$WPCONTENT/plugins/hti-engine" && composer install --no-dev --no-interaction
   cria. O rsync preserva-o entre deploys (`--exclude vendor/`).
 - Testa sempre em **staging** (`develop`) antes de promover para `main`.
 - Limpa a cache (LiteSpeed/WP) depois de cada deploy se usares cache de página.
+
+### Migração única: as calculadoras passam a viver sob o hub
+
+A partir da versão 0.14.0 do `hti-engine` as oito calculadoras são páginas-filhas
+do hub (`/tools/{ferramenta}/` e `/pt/ferramentas/{ferramenta}/`), como no
+`/forex/`. Num site já publicado isso é uma alteração de dados, não de conteúdo,
+por isso **não** corre sozinha em nenhum deploy — nem pelo `Content_Sync`, para
+não haver um cron a re-parentar dezasseis páginas em silêncio.
+
+Depois do primeiro deploy desta versão, correr uma vez no servidor:
+
+```bash
+wp hti tools-migrate --dry-run   # mostra o que ia mudar, sem escrever
+wp hti tools-migrate             # aplica
+```
+
+Sem WP-CLI no servidor, o botão **Semear conteúdo** em *HowToInvest → Semear*
+faz o mesmo: corre o `Seeder::seed()` completo, que inclui esta migração.
+
+É idempotente — se correr duas vezes, a segunda não faz nada. **A ordem não
+importa:** os 301 dos URLs antigos só disparam quando a página de destino já
+existe, por isso entre o deploy e a migração as calculadoras continuam a ser
+servidas nos URLs antigos, e passam a redirecionar sozinhas assim que a migração
+correr. Se o relatório imprimir uma linha `WARNING … slug changed on re-parent`,
+essa página ficou com outro slug e o 301 aponta para o antigo: corrigir o slug à
+mão antes de seguir.
