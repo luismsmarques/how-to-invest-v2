@@ -15,9 +15,11 @@
 
 require_once __DIR__ . '/bootstrap.php';
 
+require_once __DIR__ . '/../includes/class-tools-content.php';
 require_once __DIR__ . '/../includes/class-redirects.php';
 
 use HTI\Engine\Redirects;
+use HTI\Engine\Tools_Content;
 
 $failures = 0;
 $passes   = 0;
@@ -147,6 +149,39 @@ resolves( '/', null, 'a raiz nunca redireciona' );
 resolves( '/learn/why-invest/', null, 'conteúdo real intocado' );
 resolves( '/investing-glossary/ipo/', null, 'glossário intocado' );
 resolves( '/financial-news/', null, 'o arquivo não se redireciona a si próprio' );
+
+echo "\n=== As calculadoras mudaram para baixo do hub ===\n";
+foreach ( Tools_Content::tools() as $tool_slug => $tool_def ) {
+	$pt_slug = (string) $tool_def['pt_slug'];
+
+	resolves(
+		'/' . $tool_slug . '/',
+		'/tools/' . $tool_slug . '/',
+		'EN ' . $tool_slug . ' → sob o hub'
+	);
+	resolves(
+		'/pt/' . $pt_slug . '/',
+		'/pt/ferramentas/' . $pt_slug . '/',
+		'PT ' . $pt_slug . ' → sob o hub'
+	);
+
+	// O destino não se pode redirecionar a si próprio, ou é um ciclo.
+	resolves( '/tools/' . $tool_slug . '/', null, 'o novo URL EN não redireciona' );
+	resolves( '/pt/ferramentas/' . $pt_slug . '/', null, 'o novo URL PT não redireciona' );
+}
+
+// Uma nona calculadora sem 301 tem de partir a suite, não o site.
+$missing = array();
+foreach ( Tools_Content::slugs() as $tool_slug ) {
+	if ( null === Redirects::resolve( '/' . $tool_slug . '/' ) ) {
+		$missing[] = $tool_slug;
+	}
+}
+check( array() === $missing, 'toda a ferramenta em Tools_Content tem 301 (em falta: ' . ( $missing ? implode( ', ', $missing ) : 'nenhuma' ) . ')' );
+
+// O hub em si nunca se move.
+resolves( '/tools/', null, 'o hub EN fica onde está' );
+resolves( '/pt/ferramentas/', null, 'o hub PT fica onde está' );
 
 echo "\n=== O mapa continua filtrável ===\n";
 add_filter(

@@ -115,6 +115,19 @@ class SEO {
 			$graph[] = self::web_application( $post );
 		}
 
+		/*
+		 * Nested pages (the calculators under /tools/) get a BreadcrumbList
+		 * built from their ancestors. Only nested ones: on a top-level page the
+		 * trail would be Home → Title, which says nothing and merely competes
+		 * with whatever the SEO plugin emits.
+		 */
+		if ( is_page() && $post instanceof \WP_Post && apply_filters( 'hti_emit_breadcrumbs', true ) ) {
+			$page_crumbs = self::page_breadcrumbs( $post );
+			if ( array() !== $page_crumbs ) {
+				$graph[] = $page_crumbs;
+			}
+		}
+
 		$graph = array_values( array_filter( $graph ) );
 		if ( empty( $graph ) ) {
 			return;
@@ -244,6 +257,59 @@ class SEO {
 				'position' => $position++,
 				'name'     => $sections[ $post->post_type ][ $pt ? 'pt' : 'en' ],
 				'item'     => $archive,
+			);
+		}
+
+		$items[] = array(
+			'@type'    => 'ListItem',
+			'position' => $position++,
+			'name'     => wp_strip_all_tags( get_the_title( $post ) ),
+			'item'     => get_permalink( $post ),
+		);
+
+		return array(
+			'@type'           => 'BreadcrumbList',
+			'@id'             => get_permalink( $post ) . '#breadcrumb',
+			'itemListElement' => $items,
+		);
+	}
+
+	/**
+	 * BreadcrumbList for a hierarchical page, walked from its ancestors.
+	 *
+	 * Ancestors resolve within the page's own language — a PT child of the PT
+	 * hub yields Início → Ferramentas → … with no extra Polylang work.
+	 *
+	 * @param \WP_Post $post Page.
+	 * @return array<string,mixed> Empty array for a top-level page.
+	 */
+	private static function page_breadcrumbs( \WP_Post $post ): array {
+		$ancestors = array_reverse( (array) get_post_ancestors( $post ) );
+		if ( array() === $ancestors ) {
+			return array();
+		}
+
+		$pt       = str_starts_with( self::post_lang( $post ), 'pt' );
+		$position = 1;
+		$items    = array(
+			array(
+				'@type'    => 'ListItem',
+				'position' => $position++,
+				'name'     => $pt ? 'Início' : 'Home',
+				'item'     => home_url( '/' ),
+			),
+		);
+
+		foreach ( $ancestors as $ancestor_id ) {
+			$ancestor = get_post( (int) $ancestor_id );
+			if ( ! $ancestor instanceof \WP_Post ) {
+				continue;
+			}
+			$items[] = array(
+				'@type'    => 'ListItem',
+				'position' => $position++,
+				'name'     => wp_strip_all_tags( get_the_title( $ancestor ) ),
+				'item'     => get_permalink( $ancestor ),
 			);
 		}
 

@@ -52,9 +52,13 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
       "explained") + hubs (Perfis / Classes de ativos / Tools).
     - **Malha de internal linking bidirecional** (conteúdo ↔ glossário ↔ Learn), com localização PT robusta
       (passo final `relocalize_pt` independente da ordem do seed).
-  - **Hub de Ferramentas** (`class-tools`, shortcode `[hti_tool name=…]`): 4 calculadoras educativas
-    (juro composto, inflação, meta de poupança, custo de esperar) — JS vanilla com motor partilhado
-    (`tools-core.js`, testado com Node), gráficos SVG leves, indexáveis; hub `/tools/` + 4 páginas no menu.
+  - **Hub de Ferramentas** (`class-tools`, shortcode `[hti_tool name=…]`): 8 calculadoras educativas
+    (juro composto, meta de poupança, inflação, custo de esperar, fundo de emergência, regra dos 72,
+    impacto das comissões, visualizador de alocação) — JS vanilla com motor partilhado
+    (`tools-core.js`, testado com Node), gráficos SVG leves, indexáveis. Slugs, títulos e copy vivem
+    numa tabela única (`class-tools-content.php`), consumida pelo seeder, pelos 301 e pelo schema.
+    Estrutura de URL igual à do forex: hub `/tools/` com as calculadoras como páginas-filhas
+    (`/tools/{ferramenta}/`, `/pt/ferramentas/{ferramenta}/`); os URLs planos antigos redirecionam 301.
   - **Hub Aprender** (`/learn/`): bloco dinâmico `howtoinvest/learn-hub` (artigos por categoria, por idioma)
     em `archive-learn.html`; menu **Aprender → /learn/**; homepage lista o CPT `learn`.
   - **Menu principal:** Aprender · Perfis · Classes de ativos · Ferramentas · Glossário · Notícias.

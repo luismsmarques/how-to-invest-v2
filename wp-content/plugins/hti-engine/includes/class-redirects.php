@@ -85,12 +85,40 @@ class Redirects {
 			'how-to-start'         => '/how-to-start-investing/',
 		);
 
+		$map = array_merge( $map, self::tool_moves() );
+
 		/**
 		 * Filter the legacy redirect map.
 		 *
 		 * @param array<string,string> $map Old path (lowercase, no slashes) => new relative path.
 		 */
 		return (array) apply_filters( 'hti_legacy_redirects', $map );
+	}
+
+	/**
+	 * The calculators' old flat URLs => their new place under the Tools hub.
+	 *
+	 * Not a Base44 legacy path, but the same problem and the same fix: eight
+	 * indexed EN URLs plus their eight PT twins moved from /{slug}/ to
+	 * /tools/{slug}/, and dropping them would burn the ranking each already
+	 * earned. Built from Tools_Content so a ninth calculator cannot ship
+	 * without its redirect (the test suite asserts the two lists match).
+	 *
+	 * The PT keys carry their own "pt/" prefix because resolve() only strips
+	 * language prefixes the site does NOT serve — Portuguese is live, so the
+	 * prefix reaches the map intact.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function tool_moves(): array {
+		$moves = array();
+		foreach ( Tools_Content::tools() as $slug => $tool ) {
+			$moves[ $slug ] = '/' . Tools_Content::path( $slug ) . '/';
+
+			$pt_slug = (string) $tool['pt_slug'];
+			$moves[ 'pt/' . $pt_slug ] = '/pt/' . Tools_Content::HUB_SLUG_PT . '/' . $pt_slug . '/';
+		}
+		return $moves;
 	}
 
 	/**

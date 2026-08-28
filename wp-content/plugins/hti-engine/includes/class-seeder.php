@@ -115,6 +115,11 @@ class Seeder {
 		// (the seeder is otherwise create-only).
 		self::ensure_contact_form();
 
+		// Bring an existing Tools section onto the current structure (the
+		// calculators become children of the hub). Runs before the link pass
+		// below, because re-parenting changes their permalinks.
+		self::ensure_tools_section();
+
 		// Final pass: re-localize internal links in every PT post now that all
 		// EN+PT posts exist (fixes cross-links whose target was seeded later).
 		self::relocalize_pt();
@@ -142,7 +147,7 @@ class Seeder {
 		);
 		foreach ( $groups as $type => $entries ) {
 			foreach ( $entries as $entry ) {
-				$en = get_page_by_path( $entry['slug'], OBJECT, $type );
+				$en = get_page_by_path( self::entry_path( (string) $entry['slug'] ), OBJECT, $type );
 				if ( ! $en instanceof \WP_Post ) {
 					continue;
 				}
@@ -196,6 +201,143 @@ class Seeder {
 			$new = rtrim( (string) $post->post_content ) . "\n\n" . '<!-- wp:shortcode -->[hti_contact]<!-- /wp:shortcode -->';
 			wp_update_post( array( 'ID' => $id, 'post_content' => wp_slash( $new ) ) );
 		}
+	}
+
+	/**
+	 * Bring an already-published Tools section up to the current structure.
+	 *
+	 * The seeder is create-only, so none of the structural work below can be
+	 * expressed as seed content: the eight calculators were published as
+	 * top-level pages and have to be re-parented onto the hub in place, per
+	 * language. Idempotent and safe to re-run — every step checks the current
+	 * state first and reports what it did rather than assuming.
+	 *
+	 * Not wired into Content_Sync deliberately: a background cron silently
+	 * re-parenting sixteen published pages is not a thing you want to discover
+	 * after the fact. Run it from `wp hti tools-migrate` (or a seed run).
+	 *
+	 * @param bool $dry_run When true, report what would change and write nothing.
+	 * @return array<int,string> Human-readable report lines.
+	 */
+	public static function ensure_tools_section( bool $dry_run = false ): array {
+		$log = array();
+
+		$hub_en = get_page_by_path( Tools_Content::HUB_SLUG, OBJECT, 'page' );
+		if ( ! $hub_en instanceof \WP_Post ) {
+			return array( 'Tools hub page not found — nothing to migrate.' );
+		}
+		$hub_en_id = (int) $hub_en->ID;
+
+		$pt     = '';
+		$hub_pt = 0;
+		if ( self::polylang_active() ) {
+			$default = (string) pll_default_language( 'slug' );
+			$pt      = self::portuguese_slug( '' !== $default ? $default : 'en' );
+			if ( '' !== $pt ) {
+				$translated = pll_get_post( $hub_en_id, $pt );
+				$hub_pt     = $translated ? (int) $translated : 0;
+				if ( 0 === $hub_pt ) {
+					// Never fall back to the EN hub: a PT child under it would
+					// land on /tools/{pt-slug}/ and collide with its EN sibling.
+					$log[] = 'No PT translation of the Tools hub — PT pages left untouched.';
+				}
+			}
+		}
+
+		foreach ( Tools_Content::slugs() as $slug ) {
+			// Already a child → found by path. Not yet → still top-level.
+			$en = get_page_by_path( Tools_Content::path( $slug ), OBJECT, 'page' );
+			if ( ! $en instanceof \WP_Post ) {
+				$en = get_page_by_path( $slug, OBJECT, 'page' );
+			}
+			if ( ! $en instanceof \WP_Post ) {
+				$log[] = sprintf( 'skip %s — page not found.', $slug );
+				continue;
+			}
+
+			$log = array_merge( $log, self::reparent( (int) $en->ID, $hub_en_id, $slug, $dry_run ) );
+
+			if ( '' === $pt || 0 === $hub_pt ) {
+				continue;
+			}
+			$pt_id = pll_get_post( (int) $en->ID, $pt );
+			if ( ! $pt_id ) {
+				$log[] = sprintf( 'skip %s (PT) — no translation.', $slug );
+				continue;
+			}
+			$log = array_merge( $log, self::reparent( (int) $pt_id, $hub_pt, $slug . ' (PT)', $dry_run ) );
+			$log = array_merge( $log, self::ensure_cta( (int) $pt_id, $slug . ' (PT)', $dry_run ) );
+		}
+
+		return $log;
+	}
+
+	/**
+	 * Move one page under a parent, verifying the slug survives.
+	 *
+	 * Changing post_parent re-runs wp_unique_post_slug(), which will silently
+	 * rename the page if the new parent already has a child with that slug —
+	 * and a renamed page is a 404 behind a 301 that points at the old name. So
+	 * the slug is read back and reported rather than trusted.
+	 *
+	 * @param int    $id       Page ID.
+	 * @param int    $parent   Desired parent ID.
+	 * @param string $label    Label for the report.
+	 * @param bool   $dry_run  Report only.
+	 * @return array<int,string>
+	 */
+	private static function reparent( int $id, int $parent, string $label, bool $dry_run ): array {
+		$post = get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			return array( sprintf( 'skip %s — post %d missing.', $label, $id ) );
+		}
+		if ( (int) $post->post_parent === $parent ) {
+			return array();
+		}
+		if ( $dry_run ) {
+			return array( sprintf( 'would move %s under %d.', $label, $parent ) );
+		}
+
+		$was = (string) $post->post_name;
+		wp_update_post( array( 'ID' => $id, 'post_parent' => $parent ) );
+
+		$now = (string) get_post_field( 'post_name', $id );
+		if ( $now !== $was ) {
+			return array( sprintf( 'WARNING %s — slug changed on re-parent: %s → %s.', $label, $was, $now ) );
+		}
+		return array( sprintf( 'moved %s under %d.', $label, $parent ) );
+	}
+
+	/**
+	 * Append the questionnaire CTA pattern to a page that lacks it.
+	 *
+	 * The PT calculator bodies were seeded without it while the EN ones had it,
+	 * so the Portuguese pages ended without any next step.
+	 *
+	 * @param int    $id      Page ID.
+	 * @param string $label   Label for the report.
+	 * @param bool   $dry_run Report only.
+	 * @return array<int,string>
+	 */
+	private static function ensure_cta( int $id, string $label, bool $dry_run ): array {
+		$post = get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			return array();
+		}
+		$content = (string) $post->post_content;
+		if ( false !== strpos( $content, 'howtoinvest/cta-questionnaire' ) ) {
+			return array();
+		}
+		if ( $dry_run ) {
+			return array( sprintf( 'would add the questionnaire CTA to %s.', $label ) );
+		}
+		wp_update_post(
+			array(
+				'ID'           => $id,
+				'post_content' => wp_slash( rtrim( $content ) . "\n\n" . trim( self::cta() ) ),
+			)
+		);
+		return array( sprintf( 'added the questionnaire CTA to %s.', $label ) );
 	}
 
 	/**
@@ -262,7 +404,7 @@ class Seeder {
 
 		foreach ( $groups as $type => $entries ) {
 			foreach ( $entries as $entry ) {
-				$en_post = get_page_by_path( $entry['slug'], OBJECT, $type );
+				$en_post = get_page_by_path( self::entry_path( (string) $entry['slug'] ), OBJECT, $type );
 				if ( ! $en_post instanceof \WP_Post ) {
 					continue;
 				}
@@ -364,17 +506,12 @@ class Seeder {
 			'cash-explained'                   => 'liquidez-explicada',
 			'reits-alternatives-explained'     => 'imobiliario-e-alternativos-explicados',
 			'crypto-explained'                 => 'cripto-explicada',
-			// Tools hub + calculators.
-			'tools'                            => 'ferramentas',
-			'compound-interest-calculator'     => 'calculadora-de-juro-composto',
-			'inflation-calculator'             => 'calculadora-de-inflacao',
-			'savings-goal-calculator'          => 'calculadora-de-meta-de-poupanca',
-			'cost-of-waiting-calculator'       => 'calculadora-do-custo-de-esperar',
-			'emergency-fund-calculator'        => 'calculadora-de-fundo-de-emergencia',
-			'rule-of-72-calculator'            => 'calculadora-da-regra-dos-72',
-			'fee-impact-calculator'            => 'calculadora-do-impacto-das-comissoes',
-			'allocation-visualizer'            => 'visualizador-de-alocacao',
+			// Tools hub. The calculators' own PT slugs come from
+			// Tools_Content::pt_slugs(), merged below — one table, so adding a
+			// ninth calculator can't leave its PT slug behind.
+			'tools'                            => Tools_Content::HUB_SLUG_PT,
 		);
+		$map = array_merge( $map, Tools_Content::pt_slugs() );
 		return $map[ $en_slug ] ?? sanitize_title( $pt_title );
 	}
 
@@ -441,6 +578,13 @@ class Seeder {
 			'post_content' => $content,
 			'post_excerpt' => $pt_data['excerpt'] ?? '',
 		);
+
+		if ( 'page' === $type ) {
+			$parent = self::entry_parent_id( (string) $entry['slug'], $pt );
+			if ( $parent > 0 ) {
+				$postarr['post_parent'] = $parent;
+			}
+		}
 
 		$pt_id = wp_insert_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $pt_id ) || 0 === $pt_id ) {
@@ -831,6 +975,61 @@ class Seeder {
 	}
 
 	/**
+	 * Hierarchical path used to look a seeded entry up with get_page_by_path().
+	 *
+	 * Nearly every seeded page is top-level, so the path is just the slug. The
+	 * calculators are children of the Tools hub, so theirs is "tools/{slug}" —
+	 * and looking a child up by its bare slug returns null. That distinction is
+	 * load-bearing: insert() reads "not found" as "not seeded yet", so without
+	 * this a seed run would create eight duplicate top-level calculators, which
+	 * would then shadow the 301s pointing at the real ones.
+	 *
+	 * @param string $slug Entry slug.
+	 */
+	private static function entry_path( string $slug ): string {
+		static $paths = null;
+		if ( null === $paths ) {
+			$paths = array();
+			foreach ( Tools_Content::slugs() as $tool ) {
+				$paths[ $tool ] = Tools_Content::path( $tool );
+			}
+		}
+		return $paths[ $slug ] ?? $slug;
+	}
+
+	/**
+	 * Post parent for a seeded page, in the given language. Only the
+	 * calculators have one (the Tools hub); everything else is top-level.
+	 *
+	 * @param string $slug Entry slug.
+	 * @param string $lang Language slug, or '' for the default language.
+	 * @return int Parent post ID, or 0 when the entry is top-level or the
+	 *             parent page does not exist yet.
+	 */
+	private static function entry_parent_id( string $slug, string $lang = '' ): int {
+		static $tools = null;
+		if ( null === $tools ) {
+			$tools = array_flip( Tools_Content::slugs() );
+		}
+		if ( ! isset( $tools[ $slug ] ) ) {
+			return 0;
+		}
+		$hub = get_page_by_path( Tools_Content::HUB_SLUG, OBJECT, 'page' );
+		if ( ! $hub instanceof \WP_Post ) {
+			return 0;
+		}
+		if ( '' === $lang || ! self::polylang_active() ) {
+			return (int) $hub->ID;
+		}
+		$translated = pll_get_post( (int) $hub->ID, $lang );
+
+		// No translated hub → 0, never the EN hub. Parenting a PT page to the
+		// English hub would put it at /tools/{pt-slug}/ and collide with the
+		// English child.
+		return $translated ? (int) $translated : 0;
+	}
+
+	/**
 	 * Insert one entry if a post with that slug+type doesn't already exist.
 	 *
 	 * @param string                                                                         $type  Post type.
@@ -838,7 +1037,7 @@ class Seeder {
 	 * @return int New post ID, or 0 if skipped/failed.
 	 */
 	private static function insert( string $type, array $entry ): int {
-		if ( get_page_by_path( $entry['slug'], OBJECT, $type ) instanceof \WP_Post ) {
+		if ( get_page_by_path( self::entry_path( (string) $entry['slug'] ), OBJECT, $type ) instanceof \WP_Post ) {
 			return 0;
 		}
 
@@ -850,6 +1049,13 @@ class Seeder {
 			'post_content' => $entry['content'],
 			'post_excerpt' => $entry['excerpt'] ?? '',
 		);
+
+		if ( 'page' === $type ) {
+			$parent = self::entry_parent_id( (string) $entry['slug'] );
+			if ( $parent > 0 ) {
+				$postarr['post_parent'] = $parent;
+			}
+		}
 
 		$id = wp_insert_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $id ) || 0 === $id ) {
@@ -2225,139 +2431,69 @@ class Seeder {
 	}
 
 	/**
-	 * The Tools hub + the four educational calculators (children first).
-	 * Each calculator embeds an [hti_tool] shortcode (see class-tools.php).
+	 * The Tools hub and the eight educational calculators.
+	 *
+	 * The hub comes first so that insert() can resolve it as the post_parent of
+	 * the calculators on a fresh install; the calculators then live at
+	 * /tools/{slug}/ (and /pt/ferramentas/{slug}/), mirroring the /forex/
+	 * section. Copy and slugs come from Tools_Content — this method only
+	 * assembles blocks.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
 	private static function tool_pages(): array {
-		$tools = array(
-			'compound-interest-calculator' => array(
-				'name'     => 'compound',
-				'title_en' => 'Compound interest calculator',
-				'title_pt' => 'Calculadora de juro composto',
-				'intro_en' => 'See how regular contributions can grow over time. Compound growth means your returns can earn returns too — so time in the market often matters more than the amount. Everything below is illustrative, with a hypothetical rate.',
-				'intro_pt' => 'Vê como contribuições regulares podem crescer ao longo do tempo. O juro composto significa que os teus retornos também podem gerar retornos — por isso o tempo no mercado costuma importar mais do que o valor. Tudo abaixo é ilustrativo, com uma taxa hipotética.',
-			),
-			'inflation-calculator'         => array(
-				'name'     => 'inflation',
-				'title_en' => 'Inflation calculator',
-				'title_pt' => 'Calculadora de inflação',
-				'intro_en' => 'Inflation slowly reduces what your money can buy. This shows how much purchasing power an amount may lose over time — and how much you would need later to keep the same buying power. Illustrative, with a hypothetical inflation rate.',
-				'intro_pt' => 'A inflação reduz lentamente o que o teu dinheiro consegue comprar. Isto mostra quanto poder de compra um valor pode perder ao longo do tempo — e quanto precisarias mais tarde para manter o mesmo poder de compra. Ilustrativo, com uma taxa de inflação hipotética.',
-			),
-			'savings-goal-calculator'      => array(
-				'name'     => 'savings_goal',
-				'title_en' => 'Savings goal calculator',
-				'title_pt' => 'Calculadora de meta de poupança',
-				'intro_en' => 'Have a target in mind? See roughly how much you might set aside each month to get there over a chosen number of years, assuming a hypothetical return. Illustrative only.',
-				'intro_pt' => 'Tens um objetivo em mente? Vê aproximadamente quanto poderias pôr de lado por mês para lá chegar num dado número de anos, assumindo um retorno hipotético. Apenas ilustrativo.',
-			),
-			'cost-of-waiting-calculator'   => array(
-				'name'     => 'cost_of_waiting',
-				'title_en' => 'The cost of waiting',
-				'title_pt' => 'O custo de esperar',
-				'intro_en' => 'Starting earlier gives your contributions more time to compound. This compares starting now with waiting a few years — same monthly amount — so you can see what the delay might cost. Illustrative, with a hypothetical rate.',
-				'intro_pt' => 'Começar mais cedo dá às tuas contribuições mais tempo para compor. Isto compara começar já com esperar alguns anos — o mesmo valor mensal — para veres o que o atraso pode custar. Ilustrativo, com uma taxa hipotética.',
-			),
-			'emergency-fund-calculator'    => array(
-				'name'     => 'emergency_fund',
-				'title_en' => 'Emergency fund calculator',
-				'title_pt' => 'Calculadora de fundo de emergência',
-				'intro_en' => 'An emergency fund usually comes before any investing — money kept somewhere safe so a surprise never forces you to sell at a bad time. See a target based on your essential expenses, and roughly how long it might take to get there. Illustrative only.',
-				'intro_pt' => 'Um fundo de emergência costuma vir antes de qualquer investimento — dinheiro guardado em segurança para que um imprevisto nunca te obrigue a vender num mau momento. Vê um objetivo com base nas tuas despesas essenciais e, aproximadamente, quanto tempo pode demorar a lá chegar. Apenas ilustrativo.',
-			),
-			'rule-of-72-calculator'        => array(
-				'name'     => 'rule_of_72',
-				'title_en' => 'Rule of 72 calculator',
-				'title_pt' => 'Calculadora da regra dos 72',
-				'intro_en' => 'The rule of 72 is a quick mental shortcut: divide 72 by an annual return to estimate how many years money might take to double. See the estimate, how many times it could double over a period, and the resulting multiple. Illustrative, with a hypothetical rate.',
-				'intro_pt' => 'A regra dos 72 é um atalho mental rápido: divide 72 por um retorno anual para estimar em quantos anos o dinheiro pode duplicar. Vê a estimativa, quantas vezes pode duplicar num período e o múltiplo resultante. Ilustrativo, com uma taxa hipotética.',
-			),
-			'fee-impact-calculator'        => array(
-				'name'     => 'fee_impact',
-				'title_en' => 'Fee impact calculator',
-				'title_pt' => 'Calculadora do impacto das comissões',
-				'intro_en' => 'Small annual fees can quietly add up over decades. This compares the same illustrative portfolio with and without a yearly fee, so you can see how much the fee might cost over time. Illustrative, with a hypothetical rate — not advice.',
-				'intro_pt' => 'Pequenas comissões anuais podem somar silenciosamente ao longo de décadas. Isto compara a mesma carteira ilustrativa com e sem uma comissão anual, para veres quanto a comissão pode custar ao longo do tempo. Ilustrativo, com uma taxa hipotética — não é aconselhamento.',
-			),
-			'allocation-visualizer'        => array(
-				'name'     => 'allocation',
-				'title_en' => 'Allocation visualizer',
-				'title_pt' => 'Visualizador de alocação',
-				'intro_en' => 'Pick one of the five educational investor profiles and see its illustrative allocation by asset class as a donut. The numbers come from our curated profiles — always by asset class, never named instruments, and never advice.',
-				'intro_pt' => 'Escolhe um dos cinco perfis educativos de investidor e vê a sua alocação ilustrativa por classes de ativos num gráfico. Os números vêm dos nossos perfis curados — sempre por classes de ativos, nunca instrumentos nomeados, e nunca aconselhamento.',
-			),
-		);
+		$tools = Tools_Content::tools();
+
+		$bullets = static function ( string $lang ) use ( $tools ): array {
+			$rows = array();
+			foreach ( $tools as $slug => $tool ) {
+				$rows[] = array(
+					self::internal_url( $slug ),
+					(string) $tool[ 'pt' === $lang ? 'title_pt' : 'title_en' ],
+					(string) $tool[ 'pt' === $lang ? 'card_pt' : 'card_en' ],
+				);
+			}
+			return $rows;
+		};
 
 		$pages = array();
-		$tool_terms = array(
-			'compound-interest-calculator' => array( 'compound-interest', 'yield' ),
-			'inflation-calculator'         => array( 'inflation', 'interest-rate' ),
-			'savings-goal-calculator'      => array( 'compound-interest' ),
-			'cost-of-waiting-calculator'   => array( 'compound-interest' ),
-			'emergency-fund-calculator'    => array( 'inflation', 'diversification' ),
-			'rule-of-72-calculator'        => array( 'compound-interest', 'yield' ),
-			'fee-impact-calculator'        => array( 'compound-interest', 'investment-fund' ),
-			'allocation-visualizer'        => array( 'diversification', 'portfolio' ),
-		);
-		foreach ( $tools as $slug => $t ) {
-			$terms = $tool_terms[ $slug ] ?? array();
-			$pages[] = array(
-				'slug'    => $slug,
-				'title'   => $t['title_en'],
-				'excerpt' => $t['intro_en'],
-				'content' => self::paragraph( $t['intro_en'] )
-					. self::tool_shortcode( $t['name'] )
-					. self::glossary_links_block( $terms, 'en' )
-					. self::cta(),
-				'pt'      => array(
-					'title'   => $t['title_pt'],
-					'excerpt' => $t['intro_pt'],
-					'content' => self::paragraph( $t['intro_pt'] )
-						. self::tool_shortcode( $t['name'] )
-						. self::glossary_links_block( $terms, 'pt' ),
-				),
-			);
-		}
 
-		// Hub.
+		// Hub first — the calculators hang off it.
 		$pages[] = array(
-			'slug'    => 'tools',
+			'slug'    => Tools_Content::HUB_SLUG,
 			'title'   => 'Tools',
 			'excerpt' => 'Free, educational calculators about saving and investing — time, inflation, goals and the cost of waiting.',
 			'content' => self::paragraph( 'Free, educational calculators to build intuition about saving and investing — time, inflation, goals and the cost of waiting. Each is illustrative, with hypothetical rates, and never advice.' )
-				. self::bullets(
-					array(
-						array( home_url( '/compound-interest-calculator/' ), 'Compound interest', 'see how regular contributions can grow over time.' ),
-						array( home_url( '/inflation-calculator/' ), 'Inflation', 'how much buying power your money may lose.' ),
-						array( home_url( '/savings-goal-calculator/' ), 'Savings goal', 'how much to set aside monthly to reach a goal.' ),
-						array( home_url( '/cost-of-waiting-calculator/' ), 'The cost of waiting', 'what delaying a few years might cost.' ),
-						array( home_url( '/emergency-fund-calculator/' ), 'Emergency fund', 'a safety cushion to build before investing.' ),
-						array( home_url( '/rule-of-72-calculator/' ), 'Rule of 72', 'a quick estimate of how long money takes to double.' ),
-						array( home_url( '/fee-impact-calculator/' ), 'Fee impact', 'how much yearly fees might cost over time.' ),
-						array( home_url( '/allocation-visualizer/' ), 'Allocation visualizer', 'see each investor profile by asset class.' ),
-					)
-				)
+				. self::bullets( $bullets( 'en' ) )
 				. self::cta(),
 			'pt'      => array(
 				'title'   => 'Ferramentas',
 				'excerpt' => 'Calculadoras gratuitas e educativas sobre poupar e investir — tempo, inflação, objetivos e o custo de esperar.',
 				'content' => self::paragraph( 'Calculadoras gratuitas e educativas para ganhares intuição sobre poupar e investir — tempo, inflação, objetivos e o custo de esperar. Cada uma é ilustrativa, com taxas hipotéticas, e nunca aconselhamento.' )
-					. self::bullets(
-						array(
-							array( home_url( '/compound-interest-calculator/' ), 'Juro composto', 'vê como contribuições regulares podem crescer ao longo do tempo.' ),
-							array( home_url( '/inflation-calculator/' ), 'Inflação', 'quanto poder de compra o teu dinheiro pode perder.' ),
-							array( home_url( '/savings-goal-calculator/' ), 'Meta de poupança', 'quanto pôr de lado por mês para atingir um objetivo.' ),
-							array( home_url( '/cost-of-waiting-calculator/' ), 'O custo de esperar', 'o que adiar alguns anos pode custar.' ),
-							array( home_url( '/emergency-fund-calculator/' ), 'Fundo de emergência', 'a almofada de segurança a construir antes de investir.' ),
-							array( home_url( '/rule-of-72-calculator/' ), 'Regra dos 72', 'uma estimativa rápida do tempo para o dinheiro duplicar.' ),
-							array( home_url( '/fee-impact-calculator/' ), 'Impacto das comissões', 'quanto as comissões anuais podem custar ao longo do tempo.' ),
-							array( home_url( '/allocation-visualizer/' ), 'Visualizador de alocação', 'vê cada perfil de investidor por classes de ativos.' ),
-						)
-					),
+					. self::bullets( $bullets( 'pt' ) ),
 			),
 		);
+
+		foreach ( $tools as $slug => $t ) {
+			$terms   = (array) ( $t['terms'] ?? array() );
+			$pages[] = array(
+				'slug'    => $slug,
+				'title'   => $t['title_en'],
+				'excerpt' => $t['intro_en'],
+				'content' => self::paragraph( (string) $t['intro_en'] )
+					. self::tool_shortcode( (string) $t['name'] )
+					. self::glossary_links_block( $terms, 'en' )
+					. self::cta(),
+				'pt'      => array(
+					'title'   => $t['title_pt'],
+					'excerpt' => $t['intro_pt'],
+					'content' => self::paragraph( (string) $t['intro_pt'] )
+						. self::tool_shortcode( (string) $t['name'] )
+						. self::glossary_links_block( $terms, 'pt' )
+						. self::cta(),
+				),
+			);
+		}
 
 		return $pages;
 	}
@@ -2974,10 +3110,21 @@ class Seeder {
 	 */
 	private static function internal_url( string $slug ): string {
 		static $articles = null;
+		static $tools    = null;
 		if ( null === $articles ) {
 			$articles = array_flip( self::article_slugs() );
+			$tools    = array_flip( Tools_Content::slugs() );
 		}
-		return isset( $articles[ $slug ] ) ? home_url( '/learn/' . $slug . '/' ) : home_url( '/' . $slug . '/' );
+		if ( isset( $articles[ $slug ] ) ) {
+			return home_url( '/learn/' . $slug . '/' );
+		}
+		// The calculators live under the hub. This one branch is what keeps the
+		// hub bullets, the glossary deep links and the localize_links() needles
+		// pointing at the real URLs — they all funnel through here.
+		if ( isset( $tools[ $slug ] ) ) {
+			return home_url( '/' . Tools_Content::path( $slug ) . '/' );
+		}
+		return home_url( '/' . $slug . '/' );
 	}
 
 	/**
@@ -2989,7 +3136,7 @@ class Seeder {
 	private static function resolve_en_post( string $slug ): ?\WP_Post {
 		static $cache = array();
 		if ( ! array_key_exists( $slug, $cache ) ) {
-			$post = get_page_by_path( $slug, OBJECT, 'page' );
+			$post = get_page_by_path( self::entry_path( $slug ), OBJECT, 'page' );
 			if ( ! $post instanceof \WP_Post ) {
 				$post = get_page_by_path( $slug, OBJECT, 'learn' );
 			}
