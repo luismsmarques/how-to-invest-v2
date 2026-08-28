@@ -115,6 +115,29 @@ class SEO {
 			$graph[] = self::web_application( $post );
 		}
 
+		// The tools hub's FAQ is visible on the page inside <details>, which is
+		// what Google requires of FAQPage — and it is the same array the
+		// accordion renders, so copy and structured data cannot drift.
+		if ( is_page() && $post instanceof \WP_Post && has_shortcode( (string) $post->post_content, 'hti_tools_hub' ) ) {
+			$faq = self::faq_page( $post, Tools_Content::faqs( 'hub' ) );
+			if ( array() !== $faq ) {
+				$graph[] = $faq;
+			}
+		}
+
+		/*
+		 * Nested pages (the calculators under /tools/) get a BreadcrumbList
+		 * built from their ancestors. Only nested ones: on a top-level page the
+		 * trail would be Home → Title, which says nothing and merely competes
+		 * with whatever the SEO plugin emits.
+		 */
+		if ( is_page() && $post instanceof \WP_Post && apply_filters( 'hti_emit_breadcrumbs', true ) ) {
+			$page_crumbs = self::page_breadcrumbs( $post );
+			if ( array() !== $page_crumbs ) {
+				$graph[] = $page_crumbs;
+			}
+		}
+
 		$graph = array_values( array_filter( $graph ) );
 		if ( empty( $graph ) ) {
 			return;
@@ -244,6 +267,105 @@ class SEO {
 				'position' => $position++,
 				'name'     => $sections[ $post->post_type ][ $pt ? 'pt' : 'en' ],
 				'item'     => $archive,
+			);
+		}
+
+		$items[] = array(
+			'@type'    => 'ListItem',
+			'position' => $position++,
+			'name'     => wp_strip_all_tags( get_the_title( $post ) ),
+			'item'     => get_permalink( $post ),
+		);
+
+		return array(
+			'@type'           => 'BreadcrumbList',
+			'@id'             => get_permalink( $post ) . '#breadcrumb',
+			'itemListElement' => $items,
+		);
+	}
+
+	/**
+	 * FAQPage node from a bilingual FAQ table.
+	 *
+	 * Pure apart from the permalink, so the shape can be asserted in tests.
+	 * Language comes from post_lang() (Polylang-aware) rather than
+	 * site_lang(), which reads get_locale() and would mislabel a PT page.
+	 *
+	 * @param \WP_Post                                          $post Page.
+	 * @param array<string,array<int,array<string,string>>>     $faqs Language => list of q/a pairs.
+	 * @return array<string,mixed> Empty when there is nothing to say.
+	 */
+	private static function faq_page( \WP_Post $post, array $faqs ): array {
+		$lang    = str_starts_with( self::post_lang( $post ), 'pt' ) ? 'pt' : 'en';
+		$entries = $faqs[ $lang ] ?? array();
+		if ( array() === $entries ) {
+			return array();
+		}
+
+		$items = array();
+		foreach ( $entries as $faq ) {
+			$question = trim( (string) ( $faq['q'] ?? '' ) );
+			$answer   = trim( (string) ( $faq['a'] ?? '' ) );
+			if ( '' === $question || '' === $answer ) {
+				continue;
+			}
+			$items[] = array(
+				'@type'          => 'Question',
+				'name'           => $question,
+				'acceptedAnswer' => array(
+					'@type' => 'Answer',
+					'text'  => $answer,
+				),
+			);
+		}
+
+		if ( array() === $items ) {
+			return array();
+		}
+
+		return array(
+			'@type'      => 'FAQPage',
+			'@id'        => get_permalink( $post ) . '#faq',
+			'mainEntity' => $items,
+		);
+	}
+
+	/**
+	 * BreadcrumbList for a hierarchical page, walked from its ancestors.
+	 *
+	 * Ancestors resolve within the page's own language — a PT child of the PT
+	 * hub yields Início → Ferramentas → … with no extra Polylang work.
+	 *
+	 * @param \WP_Post $post Page.
+	 * @return array<string,mixed> Empty array for a top-level page.
+	 */
+	private static function page_breadcrumbs( \WP_Post $post ): array {
+		$ancestors = array_reverse( (array) get_post_ancestors( $post ) );
+		if ( array() === $ancestors ) {
+			return array();
+		}
+
+		$pt       = str_starts_with( self::post_lang( $post ), 'pt' );
+		$position = 1;
+		$items    = array(
+			array(
+				'@type'    => 'ListItem',
+				'position' => $position++,
+				'name'     => $pt ? 'Início' : 'Home',
+				'item'     => home_url( '/' ),
+			),
+		);
+
+		foreach ( $ancestors as $ancestor_id ) {
+			$ancestor = get_post( (int) $ancestor_id );
+			if ( ! $ancestor instanceof \WP_Post ) {
+				continue;
+			}
+			$items[] = array(
+				'@type'    => 'ListItem',
+				'position' => $position++,
+				'name'     => wp_strip_all_tags( get_the_title( $ancestor ) ),
+				'item'     => get_permalink( $ancestor ),
 			);
 		}
 

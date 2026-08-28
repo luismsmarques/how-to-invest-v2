@@ -175,7 +175,19 @@ class Subscribe {
 		wp_enqueue_style( 'hti-subscribe' );
 		wp_enqueue_script( 'hti-subscribe' );
 
-		$atts   = shortcode_atts( array( 'title' => '', 'intro' => '', 'variant' => 'default' ), is_array( $atts ) ? $atts : array() );
+		$atts   = shortcode_atts(
+			array(
+				'title'   => '',
+				'intro'   => '',
+				'variant' => 'default',
+				// Where this opt-in came from. Reaches the REST endpoint, which
+				// already stores it for Brevo attribution and for the
+				// hti_lead_magnet filter — until now the form never sent one.
+				'source'  => '',
+			),
+			is_array( $atts ) ? $atts : array()
+		);
+		$source = sanitize_key( (string) $atts['source'] );
 		$pt     = 'pt' === self::locale();
 		$title  = '' !== $atts['title'] ? $atts['title'] : ( $pt ? 'Recebe o resumo na tua caixa de entrada' : 'Get the roundup in your inbox' );
 		$intro  = '' !== $atts['intro'] ? $atts['intro'] : ( $pt ? 'Notícias e aprendizagem financeira, sem jargão. Podes cancelar quando quiseres.' : 'Financial news and learning, jargon-free. Unsubscribe anytime.' );
@@ -190,26 +202,33 @@ class Subscribe {
 		}
 
 		if ( 'digest' === $atts['variant'] ) {
-			return self::render_digest( $pt, $cons );
+			return self::render_digest( $pt, $cons, $source );
 		}
+
+		// Unique per instance: two forms on one page would otherwise share
+		// id="hti-subscribe-email" and every <label for=…> would point at the
+		// first one.
+		$id_email   = wp_unique_id( 'hti-subscribe-email-' );
+		$id_hp      = wp_unique_id( 'hti-subscribe-hp-' );
+		$id_consent = wp_unique_id( 'hti-subscribe-consent-' );
 
 		ob_start();
 		?>
-		<form id="hti-subscribe-form" class="hti-subscribe" novalidate>
+		<form class="hti-subscribe" data-hti-subscribe data-source="<?php echo esc_attr( $source ); ?>" novalidate>
 			<h2 class="hti-subscribe__title"><?php echo esc_html( $title ); ?></h2>
 			<p class="hti-subscribe__intro"><?php echo esc_html( $intro ); ?></p>
 			<div class="hti-subscribe__row">
-				<label class="screen-reader-text" for="hti-subscribe-email"><?php echo esc_html( $email ); ?></label>
-				<input class="hti-subscribe__input" type="email" id="hti-subscribe-email" name="email" placeholder="<?php echo esc_attr( $email ); ?>" autocomplete="email" required>
+				<label class="screen-reader-text" for="<?php echo esc_attr( $id_email ); ?>"><?php echo esc_html( $email ); ?></label>
+				<input class="hti-subscribe__input" type="email" id="<?php echo esc_attr( $id_email ); ?>" name="email" placeholder="<?php echo esc_attr( $email ); ?>" autocomplete="email" required>
 				<button class="hti-subscribe__submit" type="submit"><?php echo esc_html( $send ); ?></button>
 			</div>
 			<p class="hti-subscribe__trap" aria-hidden="true">
-				<label for="hti-subscribe-hp"><?php esc_html_e( 'Leave this field blank', 'hti-engine' ); ?></label>
-				<input type="text" id="hti-subscribe-hp" name="hti_hp" tabindex="-1" autocomplete="off">
+				<label for="<?php echo esc_attr( $id_hp ); ?>"><?php esc_html_e( 'Leave this field blank', 'hti-engine' ); ?></label>
+				<input type="text" id="<?php echo esc_attr( $id_hp ); ?>" name="hti_hp" tabindex="-1" autocomplete="off">
 			</p>
 			<p class="hti-subscribe__consent">
-				<input type="checkbox" id="hti-subscribe-consent" name="consent" value="1" required>
-				<label for="hti-subscribe-consent"><?php echo wp_kses( $cons, array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) ) ); ?></label>
+				<input type="checkbox" id="<?php echo esc_attr( $id_consent ); ?>" name="consent" value="1" required>
+				<label for="<?php echo esc_attr( $id_consent ); ?>"><?php echo wp_kses( $cons, array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) ) ); ?></label>
 			</p>
 			<p class="hti-subscribe__status" role="status" aria-live="polite"></p>
 		</form>
@@ -220,10 +239,11 @@ class Subscribe {
 	/**
 	 * Coral "daily roundup" banner variant (matches the news-hub design).
 	 *
-	 * @param bool   $pt   Whether Portuguese.
-	 * @param string $cons Consent label HTML (with the privacy link).
+	 * @param bool   $pt     Whether Portuguese.
+	 * @param string $cons   Consent label HTML (with the privacy link).
+	 * @param string $source Opt-in source key ('' when unset).
 	 */
-	private static function render_digest( bool $pt, string $cons ): string {
+	private static function render_digest( bool $pt, string $cons, string $source = '' ): string {
 		$badge = $pt ? 'Diário · 7h' : 'Daily · 7am';
 		$title = $pt ? 'O resumo do dia, nas finanças.' : 'The day’s roundup, in finance.';
 		$intro = $pt
@@ -234,25 +254,29 @@ class Subscribe {
 		$fine = $pt ? 'Grátis. Cancelas quando quiseres, num clique.' : 'Free. Unsubscribe anytime, in one click.';
 		$lbl  = $pt ? 'O teu email para o resumo diário' : 'Your email for the daily roundup';
 
+		$id_email   = wp_unique_id( 'hti-subscribe-email-' );
+		$id_hp      = wp_unique_id( 'hti-subscribe-hp-' );
+		$id_consent = wp_unique_id( 'hti-subscribe-consent-' );
+
 		ob_start();
 		?>
-		<form id="hti-subscribe-form" class="hti-subscribe hti-subscribe--digest" novalidate>
+		<form class="hti-subscribe hti-subscribe--digest" data-hti-subscribe data-source="<?php echo esc_attr( '' !== $source ? $source : 'digest' ); ?>" novalidate>
 			<div class="hti-digest__text">
 				<span class="hti-digest__badge"><span class="hti-digest__dot"></span><?php echo esc_html( $badge ); ?></span>
 				<h2 class="hti-digest__title"><?php echo esc_html( $title ); ?></h2>
 				<p class="hti-digest__intro"><?php echo esc_html( $intro ); ?></p>
 			</div>
 			<div class="hti-digest__form">
-				<label class="screen-reader-text" for="hti-subscribe-email"><?php echo esc_html( $lbl ); ?></label>
-				<input class="hti-digest__input" type="email" id="hti-subscribe-email" name="email" placeholder="<?php echo esc_attr( $ph ); ?>" autocomplete="email" required>
-				<button class="hti-digest__submit" type="submit"><?php echo esc_html( $send ); ?></button>
+				<label class="screen-reader-text" for="<?php echo esc_attr( $id_email ); ?>"><?php echo esc_html( $lbl ); ?></label>
+				<input class="hti-digest__input" type="email" id="<?php echo esc_attr( $id_email ); ?>" name="email" placeholder="<?php echo esc_attr( $ph ); ?>" autocomplete="email" required>
+				<button class="hti-digest__submit hti-subscribe__submit" type="submit"><?php echo esc_html( $send ); ?></button>
 				<p class="hti-subscribe__trap" aria-hidden="true">
-					<label for="hti-subscribe-hp"><?php esc_html_e( 'Leave this field blank', 'hti-engine' ); ?></label>
-					<input type="text" id="hti-subscribe-hp" name="hti_hp" tabindex="-1" autocomplete="off">
+					<label for="<?php echo esc_attr( $id_hp ); ?>"><?php esc_html_e( 'Leave this field blank', 'hti-engine' ); ?></label>
+					<input type="text" id="<?php echo esc_attr( $id_hp ); ?>" name="hti_hp" tabindex="-1" autocomplete="off">
 				</p>
 				<p class="hti-digest__consent">
-					<input type="checkbox" id="hti-subscribe-consent" name="consent" value="1" required>
-					<label for="hti-subscribe-consent"><?php echo wp_kses( $cons, array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) ) ); ?></label>
+					<input type="checkbox" id="<?php echo esc_attr( $id_consent ); ?>" name="consent" value="1" required>
+					<label for="<?php echo esc_attr( $id_consent ); ?>"><?php echo wp_kses( $cons, array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) ) ); ?></label>
 				</p>
 				<p class="hti-digest__fine"><?php echo esc_html( $fine ); ?></p>
 				<p class="hti-subscribe__status" role="status" aria-live="polite"></p>

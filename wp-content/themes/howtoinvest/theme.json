@@ -479,6 +479,11 @@
 			"name": "page-confirmation",
 			"title": "Confirmation page",
 			"postTypes": [ "page" ]
+		},
+		{
+			"name": "page-tools",
+			"title": "Tools hub (wide)",
+			"postTypes": [ "page" ]
 		}
 	]
 }
