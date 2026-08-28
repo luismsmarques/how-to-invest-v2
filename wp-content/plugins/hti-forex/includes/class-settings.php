@@ -63,6 +63,8 @@ class Settings {
 			'cta_sessions'         => true,
 			'cta_profit_loss'      => true,
 			'email_enabled'        => true,
+			'telegram_url'         => '',
+			'conversion_block'     => 'telegram',
 			'ads_enabled'          => false,
 			'ad_code_desktop'      => '',
 			'ad_code_mobile'       => '',
@@ -157,6 +159,17 @@ class Settings {
 			$out['cta_logo_url'] = esc_url_raw( $logo );
 		}
 
+		// Telegram channel: our own public channel, so unlike the affiliate URL
+		// there is nothing to hide — but the host is checked as well as the
+		// scheme, because a mistyped setting here sends campaign traffic
+		// somewhere we did not intend.
+		$out['telegram_url'] = self::normalize_telegram_url( (string) ( $input['telegram_url'] ?? '' ) );
+		if ( '' === $out['telegram_url'] && '' !== trim( (string) ( $input['telegram_url'] ?? '' ) ) ) {
+			$errors[] = 'The Telegram URL must be an https:// link to t.me or telegram.me — it was cleared.';
+		}
+
+		$out['conversion_block'] = self::normalize_conversion_block( (string) ( $input['conversion_block'] ?? '' ) );
+
 		$param            = sanitize_key( (string) ( $input['sub_param'] ?? '' ) );
 		$out['sub_param'] = ( '' !== $param && strlen( $param ) <= 32 ) ? $param : $defaults['sub_param'];
 
@@ -210,6 +223,86 @@ class Settings {
 		return array(
 			'value'  => $out,
 			'errors' => $errors,
+		);
+	}
+
+	/**
+	 * A Telegram channel URL, or '' when the setting is unusable.
+	 *
+	 * Pure. Both the scheme and the host are checked: this URL is printed
+	 * straight into the page and is where campaign traffic is sent, so a typo
+	 * here quietly points paid clicks at somewhere we never chose.
+	 *
+	 * @param string $url Raw setting value.
+	 */
+	public static function normalize_telegram_url( string $url ): string {
+		$url = trim( $url );
+		if ( '' === $url ) {
+			return '';
+		}
+		if ( ! preg_match( '#^https://#i', $url ) ) {
+			return '';
+		}
+
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		if ( ! in_array( $host, array( 't.me', 'telegram.me' ), true ) ) {
+			return '';
+		}
+
+		// A bare host with no channel or invite hash is a half-filled setting.
+		$path = trim( (string) wp_parse_url( $url, PHP_URL_PATH ), '/' );
+		if ( '' === $path ) {
+			return '';
+		}
+
+		return esc_url_raw( $url );
+	}
+
+	/**
+	 * Which conversion block the /forex/ pages carry.
+	 *
+	 * Pure. 'telegram' is the default because that is the arm being tested;
+	 * anything unrecognised falls back to it rather than rendering nothing.
+	 *
+	 * @param string $value Raw setting value.
+	 * @return string 'telegram' | 'email' | 'both'
+	 */
+	public static function normalize_conversion_block( string $value ): string {
+		$value = strtolower( trim( $value ) );
+		return in_array( $value, array( 'telegram', 'email', 'both' ), true ) ? $value : 'telegram';
+	}
+
+	/**
+	 * Which conversion blocks actually render, given the settings.
+	 *
+	 * Pure, and the single place the decision is made — the renderer asks this
+	 * rather than re-deriving it, so the tool pages and the hub can never
+	 * disagree about which arm of the test a visitor is in.
+	 *
+	 * @param array<string,mixed> $settings Settings array.
+	 * @return array{telegram:bool,email:bool}
+	 */
+	public static function conversion_blocks( array $settings ): array {
+		// Merge over the defaults so a partial array behaves exactly like a
+		// full one. Without this a caller passing only the keys it cared about
+		// would read email_enabled as absent, i.e. off, and the page could end
+		// up with no conversion block at all.
+		$settings = array_merge( self::defaults(), $settings );
+
+		$mode = self::normalize_conversion_block( (string) ( $settings['conversion_block'] ?? '' ) );
+		$url  = self::normalize_telegram_url( (string) ( $settings['telegram_url'] ?? '' ) );
+
+		$telegram = '' !== $url && in_array( $mode, array( 'telegram', 'both' ), true );
+
+		// Without a usable Telegram URL the telegram-only setting would leave
+		// the page with no conversion block at all; fall back to email rather
+		// than silently dropping both.
+		$email = ! empty( $settings['email_enabled'] )
+			&& ( in_array( $mode, array( 'email', 'both' ), true ) || ! $telegram );
+
+		return array(
+			'telegram' => $telegram,
+			'email'    => $email,
 		);
 	}
 
@@ -416,14 +509,41 @@ class Settings {
 					</tr>
 				</table>
 
-				<h2><?php esc_html_e( 'Email capture & campaign tracking', 'hti-forex' ); ?></h2>
+				<h2><?php esc_html_e( 'Conversion, email capture & campaign tracking', 'hti-forex' ); ?></h2>
 				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="hti-fx-telegram"><?php esc_html_e( 'Telegram channel URL', 'hti-forex' ); ?></label></th>
+						<td>
+							<input type="url" id="hti-fx-telegram" class="large-text code" name="<?php echo esc_attr( self::OPTION ); ?>[telegram_url]" value="<?php echo esc_attr( (string) $s['telegram_url'] ); ?>" placeholder="https://t.me/…" />
+							<p class="description"><?php esc_html_e( 'https:// link to t.me or telegram.me. Prefer a named invite link created in the channel settings — Telegram counts joins per link, which is the only way to tell how many of these clicks became followers.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Conversion block', 'hti-forex' ); ?></th>
+						<td>
+							<?php
+							$modes = array(
+								'telegram' => __( 'Telegram only — the channel replaces the email form', 'hti-forex' ),
+								'email'    => __( 'Email only — the newsletter form, as before', 'hti-forex' ),
+								'both'     => __( 'Both — the channel and the email form', 'hti-forex' ),
+							);
+							$current = self::normalize_conversion_block( (string) $s['conversion_block'] );
+							foreach ( $modes as $value => $label ) :
+								?>
+								<label style="display:block;margin-bottom:4px">
+									<input type="radio" name="<?php echo esc_attr( self::OPTION ); ?>[conversion_block]" value="<?php echo esc_attr( $value ); ?>" <?php checked( $current, $value ); ?> />
+									<?php echo esc_html( $label ); ?>
+								</label>
+							<?php endforeach; ?>
+							<p class="description"><?php esc_html_e( 'What the /forex/ hub and tool pages carry in the slot after the calculator. Switching is instant and reversible — the cheat-sheet lead magnet stays wired either way, so going back to email loses nothing. Without a valid Telegram URL this falls back to the email form.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Email capture', 'hti-forex' ); ?></th>
 						<td>
 							<label>
 								<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[email_enabled]" value="1" <?php checked( ! empty( $s['email_enabled'] ) ); ?> />
-								<?php esc_html_e( 'Show the newsletter form on the tool pages (uses the existing double opt-in)', 'hti-forex' ); ?>
+								<?php esc_html_e( 'Allow the newsletter form (uses the existing double opt-in). Unticking it hides the form whatever the setting above says.', 'hti-forex' ); ?>
 							</label>
 						</td>
 					</tr>
