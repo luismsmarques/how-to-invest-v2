@@ -72,14 +72,27 @@ fresh page (the seeder never updates existing pages).
 2. **Rates** — activation schedules the twice-daily fetch and an immediate
    first fetch; check the "Exchange rates" panel shows `frankfurter` with a
    fresh date (use "Fetch now" if needed). Overrides are for emergencies.
-3. **Campaign tracking** — first-party `page_view`/`cta_click` work out of the
+3. **Conversion block** — the slot after the calculator carries either the
+   Telegram channel or the email form, chosen in the settings
+   (`conversion_block`: `telegram` | `email` | `both`, default `telegram`).
+   It is a live experiment: this audience reads Telegram daily and may join a
+   channel more readily than hand an email to a foreign site — or may not, and
+   the email list is an asset the channel is not. The offer is the same either
+   way: the **INR cheat sheet**, pinned in the channel instead of emailed.
+   Set a **named invite link** as the URL (channel settings → invite links);
+   Telegram counts joins per link, which is the only way to see how many of
+   these clicks became followers. Clicks are counted our side as `cta_click`
+   with `forex_telegram_hub` / `forex_telegram_{tool}`. Switching back to
+   `email` is one click and loses nothing — the `hti_lead_magnet` filter and
+   the PDF stay wired throughout.
+4. **Campaign tracking** — first-party `page_view`/`cta_click` work out of the
    box (HTI Funnel screen). For ad-platform pixels, configure them in GTM;
    the dataLayer push is consent-gated as everywhere else on the site.
-4. **Affiliate CTA** — paste the https partner URL, keep the conditional
+5. **Affiliate CTA** — paste the https partner URL, keep the conditional
    label, tick the tools it should show on, then enable the kill-switch
    checkbox. The `clickid`/`utm_campaign` landing parameter is appended to
    the CTA automatically for sub-id attribution.
-5. **Before enabling the CTA**: re-read the regulatory note below — the
+6. **Before enabling the CTA**: re-read the regulatory note below — the
    tools are safe; the conversion layer is where the exposure lives.
 
 ## Phase 2 backlog

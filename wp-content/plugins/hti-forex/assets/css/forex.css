@@ -5,6 +5,7 @@
 .hti-fx-tool,
 .hti-fx-hub,
 .hti-fx-email,
+.hti-fx-tg,
 .hti-fx-cta,
 .hti-fx-ad {
 	--fx-bg: var(--wp--preset--color--background, #fff6f1);
@@ -458,6 +459,87 @@
 }
 
 /* Email capture ----------------------------------------------------------- */
+/*
+ * Telegram channel block.
+ *
+ * Ours, not a partner's — so it wears the site's own card, not the dark
+ * advertising card the affiliate CTA uses. Same slot as the email form, and
+ * the two are interchangeable by a setting, so they share a shape.
+ */
+.hti-fx-tg {
+	background: var(--fx-white);
+	border: 1px solid var(--fx-accent-border);
+	border-radius: 16px;
+	padding: 20px 24px;
+	margin: 1.25rem 0;
+	display: grid;
+	gap: 10px 24px;
+}
+
+.hti-fx-tg--row {
+	grid-template-columns: 1fr auto;
+	align-items: center;
+}
+
+.hti-fx-tg--card {
+	border-radius: 18px;
+	padding: 28px;
+	box-shadow: var(--fx-shadow);
+}
+
+.hti-fx-tg__copy {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.hti-fx-tg__title {
+	font: 700 17px/1.3 var(--fx-heading);
+	color: var(--fx-ink);
+}
+
+.hti-fx-tg__sub {
+	font: 400 13.5px/1.55 var(--fx-body-font);
+	color: var(--fx-muted);
+}
+
+.hti-fx-tg__btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 0 20px;
+	max-width: 100%;
+	overflow-wrap: anywhere;
+	background: var(--fx-accent);
+	color: #fff;
+	font: 700 15px var(--fx-body-font);
+	text-decoration: none;
+	border-radius: 10px;
+	transition: filter 0.15s ease;
+}
+
+.hti-fx-tg__btn:hover {
+	filter: brightness(1.08);
+}
+
+.hti-fx-tg__btn:focus-visible {
+	outline: 2.5px solid var(--fx-coral);
+	outline-offset: 2px;
+}
+
+.hti-fx-tg__icon {
+	flex: none;
+}
+
+/* Spans both columns of the row variant, under the copy and the button. */
+.hti-fx-tg__note {
+	grid-column: 1 / -1;
+	font: 400 12px/1.5 var(--fx-body-font);
+	color: var(--fx-faint);
+}
+
 .hti-fx-email {
 	background: var(--fx-white);
 	border: 1px solid var(--fx-border);
@@ -1005,7 +1087,8 @@
 	.hti-fx-hub__more {
 		grid-template-columns: 1fr 1fr;
 	}
-	.hti-fx-email--row {
+	.hti-fx-email--row,
+	.hti-fx-tg--row {
 		grid-template-columns: 1fr;
 	}
 }
