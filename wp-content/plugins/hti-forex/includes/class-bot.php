@@ -263,7 +263,7 @@ class Bot {
 			$out .= "\n" . $ad_line . "\n";
 		}
 
-		$out .= "\n<i>Educational only, not advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money. In India, check any platform against the RBI Alert List.</i>";
+		$out .= "\n<i>Educational only, not advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money.</i>";
 
 		return $out;
 	}

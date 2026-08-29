@@ -58,7 +58,7 @@ check( str_contains( $text, '₹223' ), 'a margem aparece arredondada' );
 check( str_contains( $text, '<pre>' ) && str_contains( $text, '</pre>' ), 'a tabela vai em <pre> para alinhar no telemóvel' );
 check( str_contains( $text, 'Risking 1% (₹50)' ), 'espaço de manobra a 1%' );
 check( str_contains( $text, 'Risking 2% (₹100)' ), 'espaço de manobra a 2%' );
-check( str_contains( $text, 'RBI Alert List' ), 'o aviso legal indiano está sempre lá' );
+check( ! str_contains( $text, 'RBI Alert List' ), 'o rodapé não repete a Alert List — vive no conteúdo do canal e no PDF' );
 check( str_contains( $text, 'most retail accounts lose money' ), 'o aviso de risco está sempre lá' );
 
 echo "\n=== O aviso honesto para contas pequenas ===\n";
