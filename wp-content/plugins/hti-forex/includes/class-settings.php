@@ -66,6 +66,7 @@ class Settings {
 			'telegram_url'         => '',
 			'conversion_block'     => 'telegram',
 			'ads_enabled'          => false,
+			'bot_ad_enabled'       => false,
 			'ad_code_desktop'      => '',
 			'ad_code_mobile'       => '',
 			'ad_code_top'          => '',
@@ -103,7 +104,7 @@ class Settings {
 		$errors = array();
 		$out    = $defaults;
 
-		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'email_enabled', 'ads_enabled' ) as $flag ) {
+		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'email_enabled', 'ads_enabled', 'bot_ad_enabled' ) as $flag ) {
 			$out[ $flag ] = ! empty( $input[ $flag ] );
 		}
 

@@ -206,5 +206,30 @@ ok( ! w.overlap.active, 'Saturday: overlap not active' );
 ok( 330 === F.zoneOffsetMinutes( 'Asia/Kolkata', new Date( '2026-01-15T12:00:00Z' ) ), 'IST offset +5:30 in winter' );
 ok( 330 === F.zoneOffsetMinutes( 'Asia/Kolkata', new Date( '2026-07-15T12:00:00Z' ) ), 'IST offset +5:30 in summer' );
 
+// --- Parity fixture ---------------------------------------------------------
+// The committed fixture is the contract with the PHP port the Telegram bot
+// runs (Bot_Math). If the JS maths changes without regenerating it, this
+// fails here; if the PHP drifts, test-bot-math.php fails there.
+import { readFileSync } from 'fs';
+import { build } from './gen-parity.mjs';
+
+const fixture = JSON.parse(
+	readFileSync( new URL( './fixtures/parity.json', import.meta.url ), 'utf8' )
+);
+const fresh = build();
+
+ok(
+	JSON.stringify( fresh.pip_value ) === JSON.stringify( fixture.pip_value ),
+	'pip value still matches the committed parity fixture'
+);
+ok(
+	JSON.stringify( fresh.margin_required ) === JSON.stringify( fixture.margin_required ),
+	'margin still matches the committed parity fixture'
+);
+ok(
+	JSON.stringify( fresh.rates ) === JSON.stringify( fixture.rates ),
+	'fixture rates unchanged'
+);
+
 console.log( pass + ' passed, ' + fail + ' failed' );
 process.exit( fail > 0 ? 1 : 0 );
