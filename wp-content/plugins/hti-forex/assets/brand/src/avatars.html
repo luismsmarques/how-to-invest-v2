@@ -1,0 +1,45 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>HTI Forex — Telegram avatars</title>
+<style>
+  /* The site's own Poppins. It carries U+20B9, which is why the bot mark can
+     use the real glyph instead of a hand-drawn approximation. */
+  @font-face {
+    font-family: Poppins;
+    src: url('../../../../../themes/howtoinvest/assets/fonts/poppins-800.woff2') format('woff2');
+    font-weight: 800;
+  }
+  html, body { margin: 0; padding: 0; background: transparent; }
+  svg { display: block; }
+  body > svg { margin: 0 0 24px; }
+</style>
+
+<!--
+  Two avatars, one family. Both sit on the brand's navy disc with the same
+  hairline ring (ported from hti-social Brand::logo_svg), and differ where it
+  counts: the silhouette. In a Telegram chat list they are 40 pixels wide, so
+  a person tells them apart by shape alone, long before reading a name.
+
+    channel — the brand shield with a single rising line. One accent, no
+              detail to lose. Reads as "the publication".
+    bot     — the rupee sign, no shield. Reads as "the tool", and ₹ is the
+              fastest possible signal for this audience.
+
+  Regenerate with ./build.sh
+-->
+
+<svg id="channel" width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="256" cy="256" r="256" fill="#1E2147"/>
+  <circle cx="256" cy="256" r="234.4" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="6.4"/>
+  <path d="M256 96 L400 140 V256 c0 80 -60 132.8 -144 160 -84 -27.2 -144 -80 -144 -160 V140 z" fill="#fff"/>
+  <path d="M176 306 L228 236 L282 274 L344 178"
+        stroke="#FF6B5E" stroke-width="26" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+<svg id="bot" width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="256" cy="256" r="256" fill="#1E2147"/>
+  <circle cx="256" cy="256" r="234.4" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="6.4"/>
+  <text x="256" y="374" text-anchor="middle" font-family="Poppins" font-weight="800"
+        font-size="340" fill="#fff">&#8377;</text>
+</svg>

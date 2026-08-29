@@ -34,6 +34,7 @@ the section is "deactivate one plugin".
 | `includes/class-bot-admin.php` | The bot's panel in Settings → HTI Forex: webhook button, balance distribution, message composer. |
 | `assets/js/forex-core.js` | Pure math (UMD, DOM-free, Node-testable): pip value, position size, session windows. |
 | `assets/js/forex.js` | DOM layer: inputs → outputs, `en-IN` INR formatting, editable rate, live IST clock, affiliate subid passthrough, email form. |
+| `assets/brand/` | The Telegram avatars for the channel and the bot, plus the HTML/Chromium generator that produces them. Same navy disc and hairline ring as the site mark; different silhouettes, because in a chat list they are 40px wide and told apart by shape alone. |
 | `assets/css/forex.css` | Mobile-first styles (`hti-fx-` prefix). |
 | `tests/` | Pure-PHP harness (`php tests/run.php`) + Node math test — no WordPress needed. |
 
@@ -120,7 +121,8 @@ have no source for one. It stays on the website, where the price is typed in.
 
 **Setup.** Create a bot with @BotFather, put the token in `wp-config.php` as
 `HTI_TELEGRAM_BOT_TOKEN`, then press *Register webhook* in Settings → HTI
-Forex. Telegram allows one webhook per bot, so never point a live bot at
+Forex. The avatar, name and the About/Description texts live in
+`assets/brand/README.md`; regenerate the images with `assets/brand/src/build.sh`. Telegram allows one webhook per bot, so never point a live bot at
 staging — it would silently take over the real one. Use a second test bot.
 
 **It never speaks first.** There is no daily alert and no schedule. The only
