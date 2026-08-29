@@ -210,7 +210,17 @@ class Metrics {
 			}
 			if ( isset( $params['location'] ) && '' !== (string) $params['location'] ) {
 				$bl = (string) $params['location'];
-				$data[ $day ]['bkr_loc'][ $bl ] = ( $data[ $day ]['bkr_loc'][ $bl ] ?? 0 ) + 1;
+				if ( ! isset( $data[ $day ]['bkr_loc'] ) || ! is_array( $data[ $day ]['bkr_loc'] ) ) {
+					$data[ $day ]['bkr_loc'] = array();
+				}
+				// Bounded like the slug map: the caller passes an allowlisted
+				// location today, but the cap keeps that a property of this
+				// store rather than of one caller.
+				if ( isset( $data[ $day ]['bkr_loc'][ $bl ] ) || count( $data[ $day ]['bkr_loc'] ) < self::MAX_PATHS_PER_DAY ) {
+					$data[ $day ]['bkr_loc'][ $bl ] = ( $data[ $day ]['bkr_loc'][ $bl ] ?? 0 ) + 1;
+				} else {
+					$data[ $day ]['bkr_loc']['_other'] = ( $data[ $day ]['bkr_loc']['_other'] ?? 0 ) + 1;
+				}
 			}
 		}
 		if ( 'result_broker_view' === $event && isset( $params['archetype'] ) ) {
