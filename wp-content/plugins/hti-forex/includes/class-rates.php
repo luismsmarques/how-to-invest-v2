@@ -24,7 +24,7 @@ class Rates {
 	public const OPTION = 'hti_forex_rates';
 	public const HOOK   = 'hti_forex_fetch_rates';
 
-	private const API_URL = 'https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR,JPY';
+	private const API_URL = 'https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR,JPY,EUR,GBP';
 
 	/**
 	 * Plausibility bounds per symbol — a payload outside these is rejected so
@@ -33,6 +33,28 @@ class Rates {
 	private const BOUNDS = array(
 		'USDINR' => array( 30.0, 300.0 ),
 		'USDJPY' => array( 50.0, 400.0 ),
+		'EURUSD' => array( 0.5, 2.5 ),
+		'GBPUSD' => array( 0.5, 3.0 ),
+	);
+
+	/**
+	 * Symbols that must be present and in bounds for a payload to be accepted
+	 * at all. EUR/GBP are deliberately not here: they arrived later, only the
+	 * Telegram bot's margin line needs them, and a Frankfurter response that
+	 * omits them must not invalidate the rates the whole site depends on.
+	 */
+	private const REQUIRED = array( 'USDINR', 'USDJPY' );
+
+	/**
+	 * How each stored key is read out of the API payload. Frankfurter quotes
+	 * base=USD, so INR/JPY arrive already in pair notation while EUR/GBP
+	 * arrive inverted (EUR per USD) and have to be flipped into EUR/USD.
+	 */
+	private const SYMBOLS = array(
+		'USDINR' => array( 'INR', false ),
+		'USDJPY' => array( 'JPY', false ),
+		'EURUSD' => array( 'EUR', true ),
+		'GBPUSD' => array( 'GBP', true ),
 	);
 
 	/**
@@ -43,6 +65,8 @@ class Rates {
 	private const FALLBACK = array(
 		'USDINR' => 95.5,
 		'USDJPY' => 159.0,
+		'EURUSD' => 1.165,
+		'GBPUSD' => 1.34,
 	);
 
 	private const STALE_AFTER = 7 * DAY_IN_SECONDS;
@@ -111,21 +135,30 @@ class Rates {
 	 * @return array<string,mixed>
 	 */
 	public static function accept( array $api, array $current, ?int $now = null ): array {
-		$inr = $api['rates']['INR'] ?? null;
-		$jpy = $api['rates']['JPY'] ?? null;
+		$rates = array();
 
-		if ( ! is_numeric( $inr ) || ! is_numeric( $jpy ) ) {
-			return $current;
-		}
+		foreach ( self::SYMBOLS as $key => $spec ) {
+			list( $symbol, $invert ) = $spec;
+			$raw                     = $api['rates'][ $symbol ] ?? null;
+			$required                = in_array( $key, self::REQUIRED, true );
 
-		$inr = (float) $inr;
-		$jpy = (float) $jpy;
+			if ( ! is_numeric( $raw ) || (float) $raw <= 0 ) {
+				if ( $required ) {
+					return $current;
+				}
+				continue;
+			}
 
-		if ( $inr < self::BOUNDS['USDINR'][0] || $inr > self::BOUNDS['USDINR'][1] ) {
-			return $current;
-		}
-		if ( $jpy < self::BOUNDS['USDJPY'][0] || $jpy > self::BOUNDS['USDJPY'][1] ) {
-			return $current;
+			$value = $invert ? 1 / (float) $raw : (float) $raw;
+
+			if ( $value < self::BOUNDS[ $key ][0] || $value > self::BOUNDS[ $key ][1] ) {
+				if ( $required ) {
+					return $current;
+				}
+				continue;
+			}
+
+			$rates[ $key ] = round( $value, 4 );
 		}
 
 		$date = isset( $api['date'] ) && is_string( $api['date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $api['date'] )
@@ -133,10 +166,7 @@ class Rates {
 			: gmdate( 'Y-m-d', $now ?? time() );
 
 		return array(
-			'rates'      => array(
-				'USDINR' => round( $inr, 4 ),
-				'USDJPY' => round( $jpy, 4 ),
-			),
+			'rates'      => $rates,
 			'date'       => $date,
 			'fetched_at' => $now ?? time(),
 			'source'     => 'frankfurter',
@@ -155,11 +185,18 @@ class Rates {
 		$stored = is_array( $stored ) ? $stored : array();
 
 		if ( isset( $stored['rates']['USDINR'], $stored['rates']['USDJPY'], $stored['fetched_at'] ) ) {
+			// Any symbol the stored payload lacks (EUR/GBP on a site that last
+			// fetched before they were added) falls back to the shipped value,
+			// so callers can always read every key without guarding.
+			$rates = self::FALLBACK;
+			foreach ( self::FALLBACK as $key => $default ) {
+				if ( isset( $stored['rates'][ $key ] ) && (float) $stored['rates'][ $key ] > 0 ) {
+					$rates[ $key ] = (float) $stored['rates'][ $key ];
+				}
+			}
+
 			$out = array(
-				'rates'  => array(
-					'USDINR' => (float) $stored['rates']['USDINR'],
-					'USDJPY' => (float) $stored['rates']['USDJPY'],
-				),
+				'rates'  => $rates,
 				'date'   => (string) ( $stored['date'] ?? '' ),
 				'stale'  => ( $now - (int) $stored['fetched_at'] ) > self::STALE_AFTER,
 				'source' => 'frankfurter',

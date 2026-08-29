@@ -115,7 +115,11 @@ cd "$WPCONTENT/plugins/hti-engine" && composer install --no-dev --no-interaction
 ## 6. Notas
 
 - **Nunca** versionar `wp-config.php` nem chaves — usa `define()` no `wp-config.php`
-  do servidor (`HTI_GEMINI_API_KEY`, `HTI_BREVO_API_KEY`).
+  do servidor (`HTI_GEMINI_API_KEY`, `HTI_BREVO_API_KEY`, `HTI_TELEGRAM_BOT_TOKEN`).
+- **Bot de Telegram.** Depois do primeiro deploy que traz o bot: põe o token no
+  `wp-config.php` e carrega em **Registar webhook** em Definições → HTI Forex.
+  O Telegram só admite **um webhook por bot** — apontar o staging ao bot real
+  rouba-lhe as mensagens sem avisar. Usa um segundo bot de teste no staging.
 - `vendor/` (Dompdf) **não** está no repo; o `composer install` do deploy é que o
   cria. O rsync preserva-o entre deploys (`--exclude vendor/`).
 - Testa sempre em **staging** (`develop`) antes de promover para `main`.

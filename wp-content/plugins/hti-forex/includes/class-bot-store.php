@@ -1,0 +1,258 @@
+<?php
+/**
+ * Who has used the bot, and what the crowd looks like.
+ *
+ * Two stores with deliberately different privacy properties:
+ *
+ *  - A row per chat id, so a broadcast has somewhere to go. That is personal
+ *    data and it holds nothing beyond what a broadcast needs: the id, the two
+ *    display preferences, and two timestamps. No names, no message text, no
+ *    balances. /stop deletes the row outright.
+ *
+ *  - An aggregate counter of balance buckets, with no link to any chat id at
+ *    all. This is the audience research the project is missing — after a
+ *    fortnight it says whether these are ₹5,000 accounts or ₹5,00,000 ones —
+ *    and it costs nothing in privacy because a count of "twelve people are
+ *    under ₹2,000" identifies nobody.
+ *
+ * The deploy runs no activation hook (see DEPLOY.md), so the table is created
+ * from init, guarded by a stored schema version. Safe to run on every load.
+ *
+ * @package HTI_Forex
+ */
+
+namespace HTI\Forex;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Subscriber table and aggregate counters.
+ */
+class Bot_Store {
+
+	/**
+	 * Bump to trigger a dbDelta upgrade of the table.
+	 */
+	private const SCHEMA = 1;
+
+	private const OPTION_SCHEMA  = 'hti_forex_bot_schema';
+	private const OPTION_BUCKETS = 'hti_forex_bot_buckets';
+
+	/**
+	 * Hook the idempotent table check.
+	 */
+	public static function init(): void {
+		add_action( 'init', array( __CLASS__, 'maybe_install' ) );
+	}
+
+	/**
+	 * The table name.
+	 */
+	public static function table(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'hti_forex_bot_subs';
+	}
+
+	/**
+	 * Create or upgrade the table when the stored schema version is behind.
+	 */
+	public static function maybe_install(): void {
+		if ( (int) get_option( self::OPTION_SCHEMA, 0 ) === self::SCHEMA ) {
+			return;
+		}
+
+		global $wpdb;
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$table   = self::table();
+		$collate = $wpdb->get_charset_collate();
+
+		dbDelta(
+			"CREATE TABLE {$table} (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				chat_id bigint(20) NOT NULL,
+				pair varchar(8) NOT NULL DEFAULT 'EURUSD',
+				leverage smallint(5) unsigned NOT NULL DEFAULT 500,
+				created_at datetime NOT NULL,
+				last_seen datetime NOT NULL,
+				PRIMARY KEY (id),
+				UNIQUE KEY chat_id (chat_id)
+			) {$collate};"
+		);
+
+		update_option( self::OPTION_SCHEMA, self::SCHEMA, false );
+	}
+
+	/**
+	 * Record that a chat is using the bot, or refresh its last_seen.
+	 *
+	 * @param int $chat_id Telegram chat id.
+	 */
+	public static function remember( int $chat_id ): void {
+		global $wpdb;
+
+		$now = current_time( 'mysql', true );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, no WP API for it.
+		$wpdb->query(
+			$wpdb->prepare(
+				'INSERT INTO `' . self::table() . '` (chat_id, created_at, last_seen)
+				 VALUES (%d, %s, %s)
+				 ON DUPLICATE KEY UPDATE last_seen = VALUES(last_seen)',
+				$chat_id,
+				$now,
+				$now
+			)
+		);
+	}
+
+	/**
+	 * Delete a chat's row. This is what /stop does, and what a 403 from
+	 * Telegram does — in both cases the person is gone and keeping the row
+	 * would be storing personal data for no purpose.
+	 *
+	 * @param int $chat_id Telegram chat id.
+	 */
+	public static function forget( int $chat_id ): void {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$wpdb->delete( self::table(), array( 'chat_id' => $chat_id ), array( '%d' ) );
+	}
+
+	/**
+	 * A chat's display preferences, falling back to the defaults.
+	 *
+	 * @param int $chat_id Telegram chat id.
+	 * @return array{pair:string,leverage:int}
+	 */
+	public static function prefs( int $chat_id ): array {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$row = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT pair, leverage FROM `' . self::table() . '` WHERE chat_id = %d', $chat_id ),
+			ARRAY_A
+		);
+
+		$pair     = is_array( $row ) ? (string) $row['pair'] : '';
+		$leverage = is_array( $row ) ? (int) $row['leverage'] : 0;
+
+		return array(
+			'pair'     => in_array( $pair, Bot_Math::PAIRS, true ) ? $pair : Bot_Math::PAIRS[0],
+			'leverage' => in_array( $leverage, Bot_Math::LEVERAGES, true ) ? $leverage : 500,
+		);
+	}
+
+	/**
+	 * Store a chat's display preferences. Values outside the offered sets are
+	 * ignored rather than stored — the buttons are the only way in, so
+	 * anything else is someone poking at the webhook.
+	 *
+	 * @param int         $chat_id  Telegram chat id.
+	 * @param string|null $pair     Pair key, or null to leave alone.
+	 * @param int|null    $leverage Leverage, or null to leave alone.
+	 */
+	public static function set_prefs( int $chat_id, ?string $pair = null, ?int $leverage = null ): void {
+		global $wpdb;
+
+		$data = array();
+		if ( null !== $pair && in_array( $pair, Bot_Math::PAIRS, true ) ) {
+			$data['pair'] = $pair;
+		}
+		if ( null !== $leverage && in_array( $leverage, Bot_Math::LEVERAGES, true ) ) {
+			$data['leverage'] = $leverage;
+		}
+		if ( array() === $data ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$wpdb->update( self::table(), $data, array( 'chat_id' => $chat_id ) );
+	}
+
+	/**
+	 * How many people the bot can reach.
+	 */
+	public static function total(): int {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		return (int) $wpdb->get_var( 'SELECT COUNT(*) FROM `' . self::table() . '`' );
+	}
+
+	/**
+	 * One page of recipients, ordered by id so a broadcast can walk the table
+	 * with a cursor and never send twice or skip anyone.
+	 *
+	 * @param int $after_id Exclusive lower bound on id.
+	 * @param int $limit    How many rows.
+	 * @return array<int,array{id:int,chat_id:int}>
+	 */
+	public static function page( int $after_id, int $limit ): array {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT id, chat_id FROM `' . self::table() . '` WHERE id > %d ORDER BY id ASC LIMIT %d',
+				$after_id,
+				$limit
+			),
+			ARRAY_A
+		);
+
+		return array_map(
+			static fn( array $row ): array => array(
+				'id'      => (int) $row['id'],
+				'chat_id' => (int) $row['chat_id'],
+			),
+			is_array( $rows ) ? $rows : array()
+		);
+	}
+
+	/**
+	 * Count one balance into its bucket. No chat id is involved, by design.
+	 *
+	 * @param float $balance_inr Balance in rupees.
+	 */
+	public static function count_balance( float $balance_inr ): void {
+		$key     = Bot_Math::bucket( $balance_inr );
+		$buckets = get_option( self::OPTION_BUCKETS, array() );
+		$buckets = is_array( $buckets ) ? $buckets : array();
+
+		$buckets[ $key ] = (int) ( $buckets[ $key ] ?? 0 ) + 1;
+
+		update_option( self::OPTION_BUCKETS, $buckets, false );
+	}
+
+	/**
+	 * The balance distribution, in bucket order, for the settings screen.
+	 *
+	 * @return array<int,array{key:string,label:string,count:int,share:float}>
+	 */
+	public static function distribution(): array {
+		$buckets = get_option( self::OPTION_BUCKETS, array() );
+		$buckets = is_array( $buckets ) ? $buckets : array();
+		$total   = array_sum( array_map( 'intval', $buckets ) );
+
+		$out = array();
+		foreach ( Bot_Math::buckets() as $bucket ) {
+			$count = (int) ( $buckets[ $bucket['key'] ] ?? 0 );
+			$out[] = array(
+				'key'   => $bucket['key'],
+				'label' => $bucket['label'],
+				'count' => $count,
+				'share' => $total > 0 ? $count / $total * 100 : 0.0,
+			);
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Total answers counted, so the screen can say how much to trust the shape.
+	 */
+	public static function answered(): int {
+		$buckets = get_option( self::OPTION_BUCKETS, array() );
+		return is_array( $buckets ) ? (int) array_sum( array_map( 'intval', $buckets ) ) : 0;
+	}
+}

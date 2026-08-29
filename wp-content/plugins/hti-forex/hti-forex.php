@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Forex
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Free forex calculators for Indian traders (INR-native position size, pip value and an IST session clock). English-only landing section under /forex/, isolated from the main educational product.
- * Version:           0.8.0
+ * Version:           0.9.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.0';
+const VERSION = '0.9.0';
 
 define( 'HTI_FOREX_FILE', __FILE__ );
 define( 'HTI_FOREX_PATH', plugin_dir_path( __FILE__ ) );
@@ -35,6 +35,12 @@ require_once HTI_FOREX_PATH . 'includes/class-tools.php';
 require_once HTI_FOREX_PATH . 'includes/class-schema.php';
 require_once HTI_FOREX_PATH . 'includes/class-seeder.php';
 require_once HTI_FOREX_PATH . 'includes/class-go.php';
+require_once HTI_FOREX_PATH . 'includes/class-bot-math.php';
+require_once HTI_FOREX_PATH . 'includes/class-telegram.php';
+require_once HTI_FOREX_PATH . 'includes/class-bot-store.php';
+require_once HTI_FOREX_PATH . 'includes/class-bot.php';
+require_once HTI_FOREX_PATH . 'includes/class-bot-broadcast.php';
+require_once HTI_FOREX_PATH . 'includes/class-bot-admin.php';
 
 /**
  * Admin settings (Settings → HTI Forex): affiliate CTA kill-switch, email
@@ -67,6 +73,18 @@ Seeder::init();
  * cheat sheet PDF), so no affiliate URL is ever printed into a file.
  */
 Go::init();
+
+/**
+ * The Telegram bot: send it an account balance, get back what the smallest
+ * position available costs to hold and costs when it moves — in rupees. The
+ * webhook is a REST route (no rewrite flush), the subscriber table is created
+ * from init (the deploy runs no activation hook), and the only unprompted
+ * message anyone ever gets is one an admin writes and confirms.
+ */
+Bot_Store::init();
+Bot::init();
+Bot_Broadcast::init();
+Bot_Admin::init();
 
 /**
  * Lead magnet: subscribers who opt in from a forex tool page (source
