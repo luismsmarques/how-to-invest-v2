@@ -174,6 +174,41 @@ parses( '-5000', 5000.0 );               // O sinal cai; um saldo negativo não 
 parses( '999999999999', null );          // Acima do tecto de sanidade.
 parses( str_repeat( '9', 60 ), null );   // Comprimento absurdo.
 
+echo "\n=== O código de campanha do deep link ===\n";
+
+/**
+ * Campaign-code assertion.
+ *
+ * @param string $input Raw payload.
+ * @param string $want  Expected code.
+ */
+function code( string $input, string $want ): void {
+	$got = Bot_Math::source_code( $input );
+	check( $want === $got, sprintf( '"%s" → "%s"%s', $input, $got, $want === $got ? '' : ' (esperava "' . $want . '")' ) );
+}
+
+code( 'px_a1', 'px_a1' );
+code( 'PX_A1', 'px_a1' );                        // A capitalização não cria uma segunda linha.
+code( '  px_a1  ', 'px_a1' );
+code( 'tg-mini-b2', 'tg-mini-b2' );
+code( 'channel', 'channel' );
+code( str_repeat( 'a', 32 ), str_repeat( 'a', 32 ) );
+
+// Recusas: isto chega da web aberta e vira chave de um contador.
+code( '', '' );
+code( str_repeat( 'a', 33 ), '' );               // Acima dos 32.
+code( 'px a1', '' );                             // Espaço a meio.
+code( 'px.a1', '' );
+code( 'px/a1', '' );
+code( '<script>', '' );
+code( 'código', '' );                            // Fora de [a-z0-9_-].
+code( '../../etc', '' );
+
+check(
+	'' === Bot_Math::source_code( "px_a1\nmais" ),
+	'nada de várias linhas — uma quebra não passa a fronteira'
+);
+
 echo "\n=== Baldes de saldo (o estudo de audiência) ===\n";
 
 check( 'under_2k' === Bot_Math::bucket( 1500 ), '₹1.500 → under_2k' );

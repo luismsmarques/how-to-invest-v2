@@ -84,11 +84,16 @@ class Bot_Broadcast {
 	/**
 	 * Start a broadcast.
 	 *
-	 * @param string $text Message body, already sanitised by the caller.
+	 * @param string $text  Message body, already sanitised by the caller.
+	 * @param string $image Image slug to attach, or '' for a plain message.
 	 * @return bool Whether it was queued.
 	 */
-	public static function start( string $text ): bool {
+	public static function start( string $text, string $image = '' ): bool {
 		if ( '' === trim( $text ) || self::running() || ! Telegram::configured() ) {
+			return false;
+		}
+
+		if ( '' !== $image && ! self::fits_caption( $text, $image ) ) {
 			return false;
 		}
 
@@ -96,6 +101,7 @@ class Bot_Broadcast {
 			self::OPTION,
 			array(
 				'text'     => $text,
+				'image'    => Bot_Images::exists( $image ) ? $image : '',
 				'cursor'   => 0,
 				'sent'     => 0,
 				'dropped'  => 0,
@@ -108,6 +114,24 @@ class Bot_Broadcast {
 
 		self::schedule( 0 );
 		return true;
+	}
+
+	/**
+	 * Whether a message still fits once the image and the footer are on it.
+	 *
+	 * A caption is a quarter of a message, and going over does not truncate —
+	 * it fails the send, for every recipient. Better to refuse while someone
+	 * is composing than to discover it one bounced batch at a time.
+	 *
+	 * @param string $text  Message body.
+	 * @param string $image Image slug, or '' for none.
+	 * @return bool
+	 */
+	public static function fits_caption( string $text, string $image ): bool {
+		if ( '' === $image ) {
+			return true;
+		}
+		return mb_strlen( $text . self::FOOTER ) <= Telegram::CAPTION_MAX;
 	}
 
 	/**
@@ -156,7 +180,19 @@ class Bot_Broadcast {
 		$backoff = 0;
 
 		foreach ( $rows as $row ) {
-			$result = Telegram::send( $row['chat_id'], $state['text'] . self::FOOTER );
+			$body  = $state['text'] . self::FOOTER;
+			$photo = '' === $state['image'] ? '' : Bot_Images::photo( $state['image'] );
+
+			if ( '' !== $photo ) {
+				$result = Telegram::send_photo( $row['chat_id'], $photo, $body );
+				if ( 'sent' === $result['status'] && '' !== $result['file_id'] ) {
+					// The first recipient pays for the upload; everyone after them
+					// is sent the id Telegram handed back for it.
+					Bot_Images::remember( $state['image'], $result['file_id'] );
+				}
+			} else {
+				$result = Telegram::send( $row['chat_id'], $body );
+			}
 
 			if ( 'slow_down' === $result['status'] ) {
 				// Stop the batch where it is; the cursor is not advanced past

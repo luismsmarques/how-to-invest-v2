@@ -196,6 +196,28 @@ class Bot_Math {
 	}
 
 	/**
+	 * The campaign code out of a /start deep link, or '' for none.
+	 *
+	 * Telegram turns `t.me/TheBot?start=px_a1` into the message `/start px_a1`,
+	 * which is the only way to know which creative brought someone in — the
+	 * bot has no referrer. Without it a campaign test says how many people
+	 * arrived and nothing about which ad paid for them.
+	 *
+	 * Closed shape by design: this arrives from the open web, and it ends up
+	 * as a key in a counter map. Lowercase letters, digits, underscore and
+	 * hyphen, 32 characters, nothing else — anything outside that is dropped
+	 * rather than sanitised into something that looks plausible.
+	 *
+	 * @param string $raw The text after the command.
+	 * @return string
+	 */
+	public static function source_code( string $raw ): string {
+		$code = strtolower( trim( $raw ) );
+
+		return preg_match( '/^[a-z0-9_-]{1,32}$/', $code ) ? $code : '';
+	}
+
+	/**
 	 * Pip value for a position, in the quote currency, USD and INR.
 	 *
 	 * Port of pipValue() in assets/js/forex-core.js — keep them in step.

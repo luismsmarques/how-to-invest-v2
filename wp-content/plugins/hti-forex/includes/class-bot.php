@@ -24,13 +24,6 @@ defined( 'ABSPATH' ) || exit;
 class Bot {
 
 	/**
-	 * The /forex/go/ slot the bot's partner line points at, so its clicks are
-	 * told apart from the website's and the cheat sheet's — both in our funnel
-	 * and in the partner's own panel, via the existing sub-id passthrough.
-	 */
-	public const AD_SLOT = 'tg-bot';
-
-	/**
 	 * Register the webhook route.
 	 */
 	public static function init(): void {
@@ -120,7 +113,10 @@ class Bot {
 	 * @param string $text    Message text.
 	 */
 	private static function on_message( int $chat_id, string $text ): void {
+		// strtok's ' @' handles /start@TheBotName; the split keeps whatever
+		// followed the command, which for /start is the deep-link payload.
 		$command = strtolower( strtok( $text, ' @' ) );
+		$rest    = preg_split( '/\s+/', $text, 2 )[1] ?? '';
 
 		if ( '/stop' === $command ) {
 			Bot_Store::forget( $chat_id );
@@ -129,11 +125,17 @@ class Bot {
 			return;
 		}
 
-		Bot_Store::remember( $chat_id );
+		$is_new = Bot_Store::remember( $chat_id );
 
 		if ( '/start' === $command ) {
+			// Count the campaign only for someone we have never seen. Opening
+			// the same ad twice is one person, and a number that says otherwise
+			// would flatter whichever creative people tap at more than once.
+			if ( $is_new ) {
+				Bot_Store::count_source( Bot_Math::source_code( $rest ) );
+			}
 			self::track( 'forex_bot_start' );
-			Telegram::send( $chat_id, self::start_text() );
+			self::send_illustrated( $chat_id, 'start', self::start_text() );
 			return;
 		}
 
@@ -168,7 +170,7 @@ class Bot {
 		$kind  = $parts[0] ?? '';
 
 		if ( 'x' === $kind ) {
-			Telegram::send( $chat_id, self::pip_explainer() );
+			self::send_illustrated( $chat_id, 'pip', self::pip_explainer() );
 			return;
 		}
 
@@ -189,6 +191,38 @@ class Bot {
 	}
 
 	/**
+	 * Send a message with its illustration, falling back to plain text.
+	 *
+	 * Two things can go wrong and neither should silence the bot: the asset
+	 * may be missing after a partial deploy, and Telegram may refuse to fetch
+	 * it. In both cases the words are what matter, so they go out anyway.
+	 *
+	 * A successful send hands back a file_id, which is cached so the next
+	 * person's copy costs Telegram a lookup instead of costing us the file.
+	 *
+	 * @param int    $chat_id Chat.
+	 * @param string $slug    Image slug (Bot_Images).
+	 * @param string $caption Caption — must fit Telegram::CAPTION_MAX.
+	 */
+	private static function send_illustrated( int $chat_id, string $slug, string $caption ): void {
+		$photo = Bot_Images::photo( $slug );
+
+		if ( '' !== $photo && mb_strlen( $caption ) <= Telegram::CAPTION_MAX ) {
+			$result = Telegram::send_photo( $chat_id, $photo, $caption );
+
+			if ( 'sent' === $result['status'] ) {
+				Bot_Images::remember( $slug, $result['file_id'] );
+				return;
+			}
+			if ( 'blocked' === $result['status'] ) {
+				return;
+			}
+		}
+
+		Telegram::send( $chat_id, $caption );
+	}
+
+	/**
 	 * Compute and send the picture for a balance.
 	 *
 	 * @param int   $chat_id Chat.
@@ -206,7 +240,7 @@ class Bot {
 
 		Telegram::send(
 			$chat_id,
-			self::reply_text( $picture, self::ad_line() ),
+			self::reply_text( $picture, self::ad_line( (bool) $picture['tight'] ) ),
 			self::keyboard( $picture )
 		);
 	}
@@ -263,7 +297,7 @@ class Bot {
 			$out .= "\n" . $ad_line . "\n";
 		}
 
-		$out .= "\n<i>Educational only, not advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money. In India, check any platform against the RBI Alert List.</i>";
+		$out .= "\n<i>Educational only, not advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money.</i>";
 
 		return $out;
 	}
@@ -320,16 +354,35 @@ class Bot {
 	 * It sits at the foot of the answer, after the arithmetic, never inside
 	 * it. Someone who asked a question gets the answer first; anything else
 	 * is the thing that makes people block a bot.
+	 *
+	 * The offer follows the answer. On an account where the smallest position
+	 * available already risks more than 2% on an ordinary stop, the honest
+	 * thing to point at is a demo — and it is also the only offer that does
+	 * not argue with the warning printed directly above it. Larger accounts
+	 * get the live-account line. The two are counted separately, so which one
+	 * earns its place is a question the funnel answers rather than us.
+	 *
+	 * @param bool $tight Whether the smallest lot already risks more than 2%.
+	 * @return string
 	 */
-	private static function ad_line(): string {
+	private static function ad_line( bool $tight ): string {
 		$settings = Settings::settings();
 		if ( empty( $settings['cta_enabled'] ) || empty( $settings['bot_ad_enabled'] ) ) {
 			return '';
 		}
 
-		$url = Go::url( self::AD_SLOT );
+		$url  = (string) ( $settings[ $tight ? 'bot_ad_demo_url' : 'bot_ad_real_url' ] ?? '' );
+		$text = (string) ( $settings[ $tight ? 'bot_ad_demo_text' : 'bot_ad_real_text' ] ?? '' );
 
-		return '<i>Partner · Ad</i> — <a href="' . esc_url( $url ) . '">see these numbers on a demo account</a>. '
+		if ( '' === $url || '' === $text ) {
+			return '';
+		}
+
+		// Closed vocabulary, fixed in code: `loc` is echoed into a counter map
+		// and must never come from anything a visitor controls.
+		$url = add_query_arg( 'loc', $tight ? 'telegram_bot_demo' : 'telegram_bot_real', $url );
+
+		return '<i>Partner · Ad</i> — <a href="' . esc_url( $url ) . '">' . esc_html( $text ) . '</a>. '
 			. 'Advertising link; we may be paid if you open an account, at no cost to you.';
 	}
 
@@ -396,7 +449,7 @@ class Bot {
 	public static function pip_explainer(): string {
 		return "<b>A pip is the smallest standard price move in a pair.</b>\n\n"
 			. "On EUR/USD and GBP/USD that's 0.0001. On USD/JPY it's 0.01, because the yen is quoted with fewer decimals.\n\n"
-			. "What matters isn't the definition, it's the price: one pip on one micro lot (0.01) of EUR/USD is worth about ₹9.55. Multiply by your stop distance and you have what the trade costs when it goes wrong.\n\n"
+			. "What matters isn't the definition, it's the price: one pip on one micro lot (0.01) of EUR/USD is worth about ₹9.55. Multiply by your stop distance and you have what the trade costs when it goes wrong — twenty pips, as above, is about ₹191.\n\n"
 			. 'Send a balance and I\'ll do that multiplication for you.';
 	}
 }

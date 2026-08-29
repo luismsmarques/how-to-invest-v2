@@ -46,6 +46,8 @@ class Broker_Go {
 		'result',
 		'menu',
 		'telegram',
+		'telegram_bot_demo',
+		'telegram_bot_real',
 		'newsletter',
 		'youtube',
 		'instagram',
