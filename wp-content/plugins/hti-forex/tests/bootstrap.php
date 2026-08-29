@@ -120,6 +120,28 @@ if ( ! function_exists( 'esc_url_raw' ) ) {
 		}
 		return preg_match( '#^https?://#i', $url ) ? filter_var( $url, FILTER_SANITIZE_URL ) : '';
 	}
+
+	/**
+	 * @param string $text Text.
+	 * @return string
+	 */
+	function esc_html( $text ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+	/**
+	 * @param string $text Text.
+	 * @return string
+	 */
+	function esc_attr( $text ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+	/**
+	 * @param string $url URL.
+	 * @return string
+	 */
+	function esc_url( $url ) {
+		return htmlspecialchars( (string) $url, ENT_QUOTES, 'UTF-8' );
+	}
 }
 if ( ! function_exists( 'wp_parse_url' ) ) {
 	/**
@@ -151,3 +173,107 @@ if ( ! function_exists( 'wp_unslash' ) ) {
 }
 
 require_once __DIR__ . '/../includes/class-config.php';
+
+// Cron shims: the broadcast state machine schedules and clears events, and the
+// harness only needs them to be callable and observable.
+$GLOBALS['__hti_cron'] = array();
+if ( ! function_exists( 'wp_next_scheduled' ) ) {
+	/**
+	 * @param string $hook Hook.
+	 * @return int|false
+	 */
+	function wp_next_scheduled( $hook ) {
+		return $GLOBALS['__hti_cron'][ $hook ] ?? false;
+	}
+	/**
+	 * @param int    $timestamp When.
+	 * @param string $hook      Hook.
+	 * @return bool
+	 */
+	function wp_schedule_single_event( $timestamp, $hook ) {
+		$GLOBALS['__hti_cron'][ $hook ] = $timestamp;
+		return true;
+	}
+	/**
+	 * @param string $hook Hook.
+	 * @return int
+	 */
+	function wp_clear_scheduled_hook( $hook ) {
+		unset( $GLOBALS['__hti_cron'][ $hook ] );
+		return 1;
+	}
+}
+
+// Enough of the REST layer to exercise the bot webhook's authentication.
+if ( ! function_exists( 'wp_generate_password' ) ) {
+	/**
+	 * @param int $length Length.
+	 * @return string
+	 */
+	function wp_generate_password( $length = 12 ) {
+		return substr( str_repeat( 'abcdef0123456789', 8 ), 0, (int) $length );
+	}
+}
+if ( ! class_exists( 'WP_REST_Request' ) ) {
+	/** Minimal stand-in. */
+	class WP_REST_Request {
+		/** @var array<string,string> */
+		private $headers;
+		/** @var array<string,mixed>|null */
+		private $json;
+		/**
+		 * @param array<string,string>    $headers Headers.
+		 * @param array<string,mixed>|null $json   Body.
+		 */
+		public function __construct( array $headers = array(), $json = array() ) {
+			$this->headers = $headers;
+			$this->json    = $json;
+		}
+		/**
+		 * @param string $key Header key.
+		 * @return string
+		 */
+		public function get_header( $key ) {
+			return $this->headers[ $key ] ?? '';
+		}
+		/**
+		 * @return array<string,mixed>|null
+		 */
+		public function get_json_params() {
+			return $this->json;
+		}
+	}
+}
+if ( ! class_exists( 'WP_REST_Response' ) ) {
+	/** Minimal stand-in. */
+	class WP_REST_Response {
+		/** @var mixed */
+		public $data;
+		/** @var int */
+		public $status;
+		/**
+		 * @param mixed $data   Payload.
+		 * @param int   $status HTTP status.
+		 */
+		public function __construct( $data = null, $status = 200 ) {
+			$this->data   = $data;
+			$this->status = $status;
+		}
+		/**
+		 * @return int
+		 */
+		public function get_status() {
+			return $this->status;
+		}
+	}
+}
+
+if ( ! function_exists( 'rest_url' ) ) {
+	/**
+	 * @param string $path REST path.
+	 * @return string
+	 */
+	function rest_url( $path = '' ) {
+		return 'https://example.test/wp-json/' . ltrim( (string) $path, '/' );
+	}
+}

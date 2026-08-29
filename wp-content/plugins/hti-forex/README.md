@@ -26,8 +26,15 @@ the section is "deactivate one plugin".
 | `includes/class-tools.php` | `[hti_forex_tool name="position_size\|pip_value\|sessions"]`: form render, risk block, CTA block, email capture, IST baseline table, conditional enqueue. |
 | `includes/class-schema.php` | JSON-LD on `wp_head` for pages with the shortcode: WebApplication (INR) + FAQPage + BreadcrumbList. |
 | `includes/class-seeder.php` | Idempotent create-only seeder: `/forex/` hub + 3 child pages, Polylang EN, admin button + `wp hti-forex seed`. |
+| `includes/class-bot-math.php` | The bot's arithmetic, pure: the amount parser (₹, $, lakh, crore, Indian grouping), the PHP port of pip value and margin, Indian digit formatting, and the account picture. |
+| `includes/class-telegram.php` | Bot API transport. Token from `HTI_TELEGRAM_BOT_TOKEN` in `wp-config.php`, never the database. Turns 403 into "drop them" and 429 into "wait this long". |
+| `includes/class-bot-store.php` | Subscriber table (`dbDelta` from `init` — the deploy runs no activation hook) plus the aggregate balance counters, which are never linked to a chat id. |
+| `includes/class-bot.php` | Webhook route `htinvest/v1/forex/telegram`, secret-header check, command router, and the reply text. |
+| `includes/class-bot-broadcast.php` | The admin broadcast: cursor-walked batches on single cron events, dropping anyone who blocked the bot. |
+| `includes/class-bot-admin.php` | The bot's panel in Settings → HTI Forex: webhook button, balance distribution, message composer. |
 | `assets/js/forex-core.js` | Pure math (UMD, DOM-free, Node-testable): pip value, position size, session windows. |
 | `assets/js/forex.js` | DOM layer: inputs → outputs, `en-IN` INR formatting, editable rate, live IST clock, affiliate subid passthrough, email form. |
+| `assets/brand/` | The Telegram avatars for the channel and the bot, plus the HTML/Chromium generator that produces them. Same navy disc and hairline ring as the site mark; different silhouettes, because in a chat list they are 40px wide and told apart by shape alone. |
 | `assets/css/forex.css` | Mobile-first styles (`hti-fx-` prefix). |
 | `tests/` | Pure-PHP harness (`php tests/run.php`) + Node math test — no WordPress needed. |
 
@@ -95,6 +102,54 @@ fresh page (the seeder never updates existing pages).
 6. **Before enabling the CTA**: re-read the regulatory note below — the
    tools are safe; the conversion layer is where the exposure lives.
 
+## The Telegram bot
+
+Send it an account balance and it answers with what the smallest position you
+can open actually costs — margin locked, what a pip is worth, what a 20- and a
+50-pip stop would cost, and what fraction of the account that is. One number
+in, the whole risk picture out, in rupees.
+
+It asks for a balance and nothing else on purpose. The people arriving from
+`/forex/` mostly do not yet know their risk percentage or their stop in pips,
+so a command syntax that demands both would be asking them for the answer. It
+accepts `5000`, `₹1,00,000`, `50k`, `2 lakh` and `$100` — the dollar forms
+matter, because the page that converts best on the site is literally *lot size
+for a $100 account*.
+
+Gold is deliberately out of scope: its margin needs a live metal price and we
+have no source for one. It stays on the website, where the price is typed in.
+
+**Setup.** Create a bot with @BotFather, put the token in `wp-config.php` as
+`HTI_TELEGRAM_BOT_TOKEN`, then press *Register webhook* in Settings → HTI
+Forex. The avatar, name and the About/Description texts live in
+`assets/brand/README.md`; regenerate the images with `assets/brand/src/build.sh`. Telegram allows one webhook per bot, so never point a live bot at
+staging — it would silently take over the real one. Use a second test bot.
+
+**It never speaks first.** There is no daily alert and no schedule. The only
+unprompted message anyone receives is one an admin writes in wp-admin and
+confirms. Frequency is what makes people block a bot, and a blocked user is
+gone permanently — there is no re-subscribing.
+
+**What it stores.** A row per chat id with two display preferences and two
+timestamps: no names, no message text, no balances. `/stop` deletes the row,
+and so does a 403 from Telegram. Separately, every balance is counted into a
+band — counts only, never against a chat id — which is what turns the bot into
+the audience research the project is missing: after a fortnight the panel says
+whether these are ₹5,000 accounts or ₹5,00,000 ones.
+
+**The partner line** sits at the foot of an answer, after the arithmetic, never
+inside it, and only when both `cta_enabled` and `bot_ad_enabled` are on. It
+goes through `/forex/go/tg-bot/`, so its clicks are already counted as
+`forex_go_tg-bot` and the partner's sub-id tells the placement apart from the
+website's and the cheat sheet's.
+
+> Recorded risk, since this was a deliberate decision: XM appears on the RBI's
+> Alert List, and trading offshore OTC forex breaches FEMA for Indian
+> residents. A private message is a more forward posture than a labelled slot
+> on a page, and the recipients are Indian residents. The label, the CFD risk
+> warning, the Alert List line and answering before advertising are as far as
+> the code can go; the rest is a business call.
+
 ## Phase 2 backlog
 
 Shipped since the MVP: profit/loss calculator, XAUUSD / "$100 account" /
@@ -148,3 +203,16 @@ php wp-content/plugins/hti-forex/tests/run.php
 
 Runs every `tests/test-*.php` plus `tests/test-forex-core.mjs` under Node when
 available. Wired into `.github/workflows/ci.yml`.
+
+**The parity fixture.** `tests/fixtures/parity.json` is the contract between
+the two implementations of the same arithmetic — the JavaScript the website
+runs and the PHP the bot runs. Both suites assert against it, so changing the
+maths on either side without regenerating turns one of them red. Regenerate
+deliberately, and read the diff:
+
+```
+node wp-content/plugins/hti-forex/tests/gen-parity.mjs
+```
+
+The website and the bot disagreeing about what a pip costs would cost us the
+one thing that makes this project worth trusting.
