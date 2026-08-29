@@ -126,7 +126,7 @@ class Bot {
 
 		if ( '/start' === $command ) {
 			self::track( 'forex_bot_start' );
-			Telegram::send( $chat_id, self::start_text() );
+			self::send_illustrated( $chat_id, 'start', self::start_text() );
 			return;
 		}
 
@@ -161,7 +161,7 @@ class Bot {
 		$kind  = $parts[0] ?? '';
 
 		if ( 'x' === $kind ) {
-			Telegram::send( $chat_id, self::pip_explainer() );
+			self::send_illustrated( $chat_id, 'pip', self::pip_explainer() );
 			return;
 		}
 
@@ -179,6 +179,38 @@ class Bot {
 		if ( $balance > 0 ) {
 			self::answer( $chat_id, $balance );
 		}
+	}
+
+	/**
+	 * Send a message with its illustration, falling back to plain text.
+	 *
+	 * Two things can go wrong and neither should silence the bot: the asset
+	 * may be missing after a partial deploy, and Telegram may refuse to fetch
+	 * it. In both cases the words are what matter, so they go out anyway.
+	 *
+	 * A successful send hands back a file_id, which is cached so the next
+	 * person's copy costs Telegram a lookup instead of costing us the file.
+	 *
+	 * @param int    $chat_id Chat.
+	 * @param string $slug    Image slug (Bot_Images).
+	 * @param string $caption Caption — must fit Telegram::CAPTION_MAX.
+	 */
+	private static function send_illustrated( int $chat_id, string $slug, string $caption ): void {
+		$photo = Bot_Images::photo( $slug );
+
+		if ( '' !== $photo && mb_strlen( $caption ) <= Telegram::CAPTION_MAX ) {
+			$result = Telegram::send_photo( $chat_id, $photo, $caption );
+
+			if ( 'sent' === $result['status'] ) {
+				Bot_Images::remember( $slug, $result['file_id'] );
+				return;
+			}
+			if ( 'blocked' === $result['status'] ) {
+				return;
+			}
+		}
+
+		Telegram::send( $chat_id, $caption );
 	}
 
 	/**
@@ -408,7 +440,7 @@ class Bot {
 	public static function pip_explainer(): string {
 		return "<b>A pip is the smallest standard price move in a pair.</b>\n\n"
 			. "On EUR/USD and GBP/USD that's 0.0001. On USD/JPY it's 0.01, because the yen is quoted with fewer decimals.\n\n"
-			. "What matters isn't the definition, it's the price: one pip on one micro lot (0.01) of EUR/USD is worth about ₹9.55. Multiply by your stop distance and you have what the trade costs when it goes wrong.\n\n"
+			. "What matters isn't the definition, it's the price: one pip on one micro lot (0.01) of EUR/USD is worth about ₹9.55. Multiply by your stop distance and you have what the trade costs when it goes wrong — twenty pips, as above, is about ₹191.\n\n"
 			. 'Send a balance and I\'ll do that multiplication for you.';
 	}
 }

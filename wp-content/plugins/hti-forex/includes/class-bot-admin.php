@@ -91,7 +91,16 @@ class Bot_Admin {
 			)
 		);
 
-		$queued = Bot_Broadcast::start( trim( $text ) );
+		$image = isset( $_POST['image'] ) ? sanitize_key( wp_unslash( $_POST['image'] ) ) : '';
+		$image = isset( Bot_Images::files()[ $image ] ) ? $image : '';
+		$text  = trim( $text );
+
+		if ( '' !== $image && ! Bot_Broadcast::fits_caption( $text, $image ) ) {
+			wp_safe_redirect( add_query_arg( 'hti_forex_bot', 'too-long', admin_url( 'options-general.php?page=hti-forex' ) ) );
+			exit;
+		}
+
+		$queued = Bot_Broadcast::start( $text, $image );
 
 		wp_safe_redirect(
 			add_query_arg(
@@ -125,6 +134,7 @@ class Bot_Admin {
 					'queued'       => __( 'Broadcast queued. It sends in batches and continues even if you close this page.', 'hti-forex' ),
 					'queue-fail'   => __( 'Nothing queued — the message was empty, a broadcast is already running, or there is no bot token.', 'hti-forex' ),
 					'cancelled'    => __( 'Broadcast stopped where it was.', 'hti-forex' ),
+					'too-long'     => __( 'Too long to send with an image attached. A caption is capped at 1,024 characters including the /stop footer — shorten it, or send it without the image.', 'hti-forex' ),
 				);
 				echo esc_html( $messages[ $notice ] ?? '' );
 				?>
@@ -270,6 +280,18 @@ class Bot_Admin {
 			<?php wp_nonce_field( 'hti_forex_bot_broadcast' ); ?>
 			<input type="hidden" name="action" value="hti_forex_bot_broadcast" />
 			<textarea name="message" rows="6" class="large-text code" placeholder="<?php esc_attr_e( 'Plain text. &lt;b&gt;, &lt;i&gt;, &lt;code&gt; and links are allowed; everything else is stripped.', 'hti-forex' ); ?>"></textarea>
+			<p>
+				<label for="hti-bot-image"><strong><?php esc_html_e( 'Attach an image', 'hti-forex' ); ?></strong></label>
+				<select name="image" id="hti-bot-image">
+					<option value=""><?php esc_html_e( 'None — text only', 'hti-forex' ); ?></option>
+					<?php foreach ( array_keys( Bot_Images::files() ) as $slug ) : ?>
+						<?php if ( Bot_Images::exists( $slug ) ) : ?>
+							<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $slug ); ?></option>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				</select>
+				<span class="description"><?php printf( /* translators: %d: caption character limit. */ esc_html__( 'With an image the whole message becomes a caption, capped at %d characters including the /stop footer.', 'hti-forex' ), (int) Telegram::CAPTION_MAX ); ?></span>
+			</p>
 			<p>
 				<button type="submit" class="button button-primary">
 					<?php

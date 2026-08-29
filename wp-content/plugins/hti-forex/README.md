@@ -30,6 +30,7 @@ the section is "deactivate one plugin".
 | `includes/class-telegram.php` | Bot API transport. Token from `HTI_TELEGRAM_BOT_TOKEN` in `wp-config.php`, never the database. Turns 403 into "drop them" and 429 into "wait this long". |
 | `includes/class-bot-store.php` | Subscriber table (`dbDelta` from `init` — the deploy runs no activation hook) plus the aggregate balance counters, which are never linked to a chat id. |
 | `includes/class-bot.php` | Webhook route `htinvest/v1/forex/telegram`, secret-header check, command router, and the reply text. |
+| `includes/class-bot-images.php` | The bot's three images and the file_id cache. Telegram fetches a photo from our URL once and hands back an id; sending the id afterwards means the file is never pulled off the host again. Fingerprinted by mtime+size, so replacing an image invalidates its id by itself. |
 | `includes/class-bot-broadcast.php` | The admin broadcast: cursor-walked batches on single cron events, dropping anyone who blocked the bot. |
 | `includes/class-bot-admin.php` | The bot's panel in Settings → HTI Forex: webhook button, balance distribution, message composer. |
 | `assets/js/forex-core.js` | Pure math (UMD, DOM-free, Node-testable): pip value, position size, session windows. |
@@ -124,6 +125,13 @@ have no source for one. It stays on the website, where the price is typed in.
 Forex. The avatar, name and the About/Description texts live in
 `assets/brand/README.md`; regenerate the images with `assets/brand/src/build.sh`. Telegram allows one webhook per bot, so never point a live bot at
 staging — it would silently take over the real one. Use a second test bot.
+
+**Illustrated where a picture earns it.** `/start` and the "what's a pip"
+button carry an image; the answer itself does not. The answer *is* the
+product, an image above it delays the number, and it would be the same picture
+dozens of times to the same person. If an asset is missing or Telegram refuses
+to fetch it, the words go out anyway — a broken image must never silence the
+bot. Broadcasts can attach one from a picker.
 
 **It never speaks first.** There is no daily alert and no schedule. The only
 unprompted message anyone receives is one an admin writes in wp-admin and

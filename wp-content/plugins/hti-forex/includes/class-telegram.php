@@ -38,6 +38,13 @@ class Telegram {
 	public const RATE_PER_SECOND = 30;
 
 	/**
+	 * Telegram's caption limit. A message is 4096 characters; a photo caption
+	 * is a quarter of that, and going over fails the send for every recipient
+	 * rather than truncating.
+	 */
+	public const CAPTION_MAX = 1024;
+
+	/**
 	 * The bot token, or '' when the site has not been given one.
 	 */
 	public static function token(): string {
@@ -150,6 +157,18 @@ class Telegram {
 			);
 		}
 
+		return self::outcome( $result );
+	}
+
+	/**
+	 * Turn an API failure into the two outcomes a caller can act on: the user
+	 * is gone, or we are going too fast. Shared by send() and send_photo() so
+	 * a photo that fails is handled exactly like a message that fails.
+	 *
+	 * @param array<string,mixed> $result Result from call().
+	 * @return array{status:string,retry_after:int}
+	 */
+	private static function outcome( array $result ): array {
 		// 403 is "bot was blocked by the user" or "chat not found" — either
 		// way that chat id is dead and keeping it only wastes future sends.
 		if ( 403 === $result['error_code'] || 400 === $result['error_code'] ) {
@@ -162,7 +181,7 @@ class Telegram {
 		if ( 429 === $result['error_code'] ) {
 			return array(
 				'status'      => 'slow_down',
-				'retry_after' => max( 1, $result['retry_after'] ),
+				'retry_after' => max( 1, (int) $result['retry_after'] ),
 			);
 		}
 
@@ -170,6 +189,49 @@ class Telegram {
 			'status'      => 'failed',
 			'retry_after' => 0,
 		);
+	}
+
+	/**
+	 * Send a photo with a caption.
+	 *
+	 * `$photo` is either a public URL (Telegram fetches it once) or a file_id
+	 * it gave us earlier — see Bot_Images. On success the caller gets the
+	 * file_id back so it can stop sending the URL.
+	 *
+	 * @param int                      $chat_id  Recipient.
+	 * @param string                   $photo    URL or file_id.
+	 * @param string                   $caption  Caption (HTML parse mode).
+	 * @param array<int,array<int,array<string,string>>>|null $keyboard Inline keyboard rows.
+	 * @return array{status:string,retry_after:int,file_id:string} status: sent|blocked|slow_down|failed.
+	 */
+	public static function send_photo( int $chat_id, string $photo, string $caption = '', ?array $keyboard = null ): array {
+		$args = array(
+			'chat_id'    => $chat_id,
+			'photo'      => $photo,
+			'parse_mode' => 'HTML',
+		);
+
+		if ( '' !== $caption ) {
+			$args['caption'] = $caption;
+		}
+		if ( null !== $keyboard ) {
+			$args['reply_markup'] = array( 'inline_keyboard' => $keyboard );
+		}
+
+		$result = self::call( 'sendPhoto', $args );
+
+		if ( $result['ok'] ) {
+			return array(
+				'status'      => 'sent',
+				'retry_after' => 0,
+				'file_id'     => Bot_Images::file_id_from( $result['result'] ),
+			);
+		}
+
+		$out = self::outcome( $result );
+		$out['file_id'] = '';
+
+		return $out;
 	}
 
 	/**
