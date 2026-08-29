@@ -113,7 +113,10 @@ class Bot {
 	 * @param string $text    Message text.
 	 */
 	private static function on_message( int $chat_id, string $text ): void {
+		// strtok's ' @' handles /start@TheBotName; the split keeps whatever
+		// followed the command, which for /start is the deep-link payload.
 		$command = strtolower( strtok( $text, ' @' ) );
+		$rest    = preg_split( '/\s+/', $text, 2 )[1] ?? '';
 
 		if ( '/stop' === $command ) {
 			Bot_Store::forget( $chat_id );
@@ -122,9 +125,15 @@ class Bot {
 			return;
 		}
 
-		Bot_Store::remember( $chat_id );
+		$is_new = Bot_Store::remember( $chat_id );
 
 		if ( '/start' === $command ) {
+			// Count the campaign only for someone we have never seen. Opening
+			// the same ad twice is one person, and a number that says otherwise
+			// would flatter whichever creative people tap at more than once.
+			if ( $is_new ) {
+				Bot_Store::count_source( Bot_Math::source_code( $rest ) );
+			}
 			self::track( 'forex_bot_start' );
 			self::send_illustrated( $chat_id, 'start', self::start_text() );
 			return;

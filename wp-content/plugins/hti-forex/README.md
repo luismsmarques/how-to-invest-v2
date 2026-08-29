@@ -138,6 +138,14 @@ unprompted message anyone receives is one an admin writes in wp-admin and
 confirms. Frequency is what makes people block a bot, and a blocked user is
 gone permanently — there is no re-subscribing.
 
+**Where people came from.** `t.me/TheBot?start=px_a1` reaches the bot as
+`/start px_a1`, which is the only referrer a Telegram bot gets. The code is
+counted once per person who is new — opening the same ad twice is one user —
+against a closed shape (`[a-z0-9_-]{1,32}`) with a ceiling of 50 distinct
+codes, because it arrives from the open web and ends up as a key in a counter
+map. Without it a paid campaign says how many people arrived and nothing about
+which creative paid for them.
+
 **What it stores.** A row per chat id with two display preferences and two
 timestamps: no names, no message text, no balances. `/stop` deletes the row,
 and so does a 403 from Telegram. Separately, every balance is counted into a

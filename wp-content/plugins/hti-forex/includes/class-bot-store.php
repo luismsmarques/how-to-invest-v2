@@ -37,6 +37,14 @@ class Bot_Store {
 
 	private const OPTION_SCHEMA  = 'hti_forex_bot_schema';
 	private const OPTION_BUCKETS = 'hti_forex_bot_buckets';
+	private const OPTION_SOURCES = 'hti_forex_bot_sources';
+
+	/**
+	 * How many distinct campaign codes to keep. Codes arrive from the open
+	 * web inside a deep link, so the map needs a ceiling; past it everything
+	 * lands in one 'other' row, which is still an honest answer.
+	 */
+	private const MAX_SOURCES = 50;
 
 	/**
 	 * Hook the idempotent table check.
@@ -87,8 +95,9 @@ class Bot_Store {
 	 * Record that a chat is using the bot, or refresh its last_seen.
 	 *
 	 * @param int $chat_id Telegram chat id.
+	 * @return bool Whether this is the first time we have seen this chat.
 	 */
-	public static function remember( int $chat_id ): void {
+	public static function remember( int $chat_id ): bool {
 		global $wpdb;
 
 		$now = current_time( 'mysql', true );
@@ -104,6 +113,12 @@ class Bot_Store {
 				$now
 			)
 		);
+
+		// MySQL reports 1 affected row for an insert and 2 for an update, so
+		// this distinguishes a person we have never seen from one coming back.
+		// A repeat inside the same second reports 0 (nothing changed), which
+		// also correctly reads as "not new".
+		return 1 === (int) $wpdb->rows_affected;
 	}
 
 	/**
@@ -222,6 +237,49 @@ class Bot_Store {
 		$buckets[ $key ] = (int) ( $buckets[ $key ] ?? 0 ) + 1;
 
 		update_option( self::OPTION_BUCKETS, $buckets, false );
+	}
+
+	/**
+	 * Count one acquisition against the campaign code that brought it.
+	 *
+	 * Called only for chats we have never seen, so this counts people the
+	 * campaign actually delivered rather than taps on the link — someone
+	 * opening the same ad twice is one user, and should read as one.
+	 *
+	 * No chat id is involved: a count of "eleven people came from px_a1"
+	 * identifies nobody.
+	 *
+	 * @param string $code Campaign code, already normalized.
+	 */
+	public static function count_source( string $code ): void {
+		if ( '' === $code ) {
+			return;
+		}
+
+		$sources = get_option( self::OPTION_SOURCES, array() );
+		$sources = is_array( $sources ) ? $sources : array();
+
+		if ( ! isset( $sources[ $code ] ) && count( $sources ) >= self::MAX_SOURCES ) {
+			$code = 'other';
+		}
+
+		$sources[ $code ] = (int) ( $sources[ $code ] ?? 0 ) + 1;
+
+		update_option( self::OPTION_SOURCES, $sources, false );
+	}
+
+	/**
+	 * Acquisitions per campaign code, biggest first.
+	 *
+	 * @return array<string,int>
+	 */
+	public static function sources(): array {
+		$sources = get_option( self::OPTION_SOURCES, array() );
+		$sources = is_array( $sources ) ? array_map( 'intval', $sources ) : array();
+
+		arsort( $sources );
+
+		return $sources;
 	}
 
 	/**

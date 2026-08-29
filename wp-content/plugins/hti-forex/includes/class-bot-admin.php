@@ -177,6 +177,32 @@ class Bot_Admin {
 			<p class="description"><?php esc_html_e( 'Register once, and again whenever the site URL changes. Never point a live bot at staging — Telegram allows one webhook per bot, so staging would silently take over the real one. Use a second test bot instead.', 'hti-forex' ); ?></p>
 		</form>
 
+		<h3><?php esc_html_e( 'Where they came from', 'hti-forex' ); ?></h3>
+		<?php $sources = Bot_Store::sources(); ?>
+		<?php if ( array() === $sources ) : ?>
+			<p class="description">
+				<?php
+				printf(
+					/* translators: %s: an example deep link. */
+					esc_html__( 'Nothing yet. Put a code on the link an ad or a post uses — %s — and Telegram hands it to the bot on /start. Each new person is counted once against the code that brought them, so a campaign test says which creative paid rather than just how many arrived.', 'hti-forex' ),
+					'<code>t.me/YourBot?start=px_a1</code>'
+				);
+				?>
+			</p>
+		<?php else : ?>
+			<table class="widefat striped" style="max-width:640px;">
+				<tbody>
+					<?php foreach ( $sources as $code => $count ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( $code ); ?></code></td>
+							<td style="width:90px;text-align:right;"><?php echo esc_html( number_format_i18n( $count ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p class="description"><?php esc_html_e( 'New people only — someone opening the same link twice counts once. People who arrive without a code are not listed.', 'hti-forex' ); ?></p>
+		<?php endif; ?>
+
 		<h3><?php esc_html_e( 'The partner line', 'hti-forex' ); ?></h3>
 		<?php
 		$s     = Settings::settings();
