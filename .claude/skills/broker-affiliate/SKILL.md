@@ -68,7 +68,17 @@ are what keeps the section legal. When in doubt, be more conservative.
 - `includes/class-brokers.php` — records, strings (EN/PT), `go_link()`,
   `disclosure_html()`, `cfd_warning_html()`, `[hti_brokers]`, `[hti_broker_cta]`,
   `partner_module()`, ItemList schema.
-- `includes/class-broker-go.php` — the `/go/{slug}` virtual route.
+- `includes/class-broker-go.php` — the `/go/{slug}` virtual route. Resolution
+  order: a published `broker` post first, then the owner-managed links — a
+  managed link can never shadow a broker (the admin refuses that slug), so the
+  editorial section's disclosure/CFD guarantees stay unbypassable.
+- `includes/class-go-links.php` — owner-managed `/go/` slugs (Tools → Outbound
+  links) for links used **off** the site: Telegram, social bios, newsletters,
+  campaigns. HTTPS-only destinations, parkable, bounded store, clicks counted
+  per slug and per `loc` channel. These carry no on-site disclosure, so the
+  disclosure duty lives in the post/bio that publishes the link — the admin
+  screen says so. A broker that deserves editorial coverage still gets a
+  review, not just a managed link.
 - `includes/class-broker-match.php` — pure deterministic matching (tested in
   `tests/test-broker-match.php`).
 - `includes/class-broker-admin.php` — the "Broker data" metabox (all meta).

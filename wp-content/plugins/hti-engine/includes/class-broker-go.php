@@ -35,8 +35,27 @@ class Broker_Go {
 
 	/**
 	 * Allowed `loc` values (where the click came from), for the breakdown.
+	 * On-site surfaces first, then the off-site channels used by the managed
+	 * links (Go_Links). Deliberately an allowlist: `loc` reaches us from the
+	 * open web, and the per-location counter map is keyed by it.
 	 */
-	public const LOCATIONS = array( 'compare', 'review', 'guide', 'result', 'menu' );
+	public const LOCATIONS = array(
+		'compare',
+		'review',
+		'guide',
+		'result',
+		'menu',
+		'telegram',
+		'newsletter',
+		'youtube',
+		'instagram',
+		'facebook',
+		'x',
+		'tiktok',
+		'whatsapp',
+		'bio',
+		'ads',
+	);
 
 	/**
 	 * Wire up the rewrite rule, query var, renderer and robots exclusion.
@@ -175,20 +194,25 @@ class Broker_Go {
 	}
 
 	/**
-	 * Resolve a broker slug to its outbound destination ('' → 404).
+	 * Resolve a slug to its outbound destination ('' → 404).
 	 *
-	 * @param string $slug Broker slug (default-language post name).
+	 * Brokers win: a published broker post owns its slug, so a managed link
+	 * can never shadow the editorial section (whose disclosure and CFD rules
+	 * are what make those links compliant). Anything else falls through to the
+	 * owner-managed links (Tools → Outbound links).
+	 *
+	 * @param string $slug Requested slug.
 	 */
 	private static function destination( string $slug ): string {
 		$post = get_page_by_path( $slug, OBJECT, 'broker' );
-		if ( ! $post instanceof \WP_Post || 'publish' !== $post->post_status ) {
-			return '';
+		if ( $post instanceof \WP_Post && 'publish' === $post->post_status ) {
+			return self::choose(
+				(string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'affiliate_url', true ),
+				(string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'official_url', true ),
+				'1' === (string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'affiliate_active', true )
+			);
 		}
 
-		return self::choose(
-			(string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'affiliate_url', true ),
-			(string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'official_url', true ),
-			'1' === (string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'affiliate_active', true )
-		);
+		return Go_Links::destination( $slug );
 	}
 }
