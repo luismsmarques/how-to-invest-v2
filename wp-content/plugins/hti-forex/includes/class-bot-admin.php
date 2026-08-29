@@ -205,30 +205,77 @@ class Bot_Admin {
 
 		<h3><?php esc_html_e( 'The partner line', 'hti-forex' ); ?></h3>
 		<?php
+		// Four conditions have to hold, and when the line does not appear the
+		// useful question is which one is missing — so the screen answers it
+		// rather than leaving someone to guess across two settings pages.
 		$s     = Settings::settings();
-		$on    = ! empty( $s['cta_enabled'] ) && ! empty( $s['bot_ad_enabled'] );
 		$demo  = (string) ( $s['bot_ad_demo_url'] ?? '' );
 		$real  = (string) ( $s['bot_ad_real_url'] ?? '' );
+		$host  = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+
+		$checks = array(
+			array(
+				'label' => __( 'Global CTA switch is on', 'hti-forex' ),
+				'ok'    => ! empty( $s['cta_enabled'] ),
+				'hint'  => __( 'Settings above: "Affiliate CTA".', 'hti-forex' ),
+			),
+			array(
+				'label' => __( 'Bot partner line is on', 'hti-forex' ),
+				'ok'    => ! empty( $s['bot_ad_enabled'] ),
+				'hint'  => __( 'Settings above: "Telegram bot: partner line".', 'hti-forex' ),
+			),
+			array(
+				'label' => __( 'Small-account destination is valid', 'hti-forex' ),
+				'ok'    => '' !== Settings::normalize_go_url( $demo ),
+				'hint'  => '' === $demo
+					? __( 'Empty.', 'hti-forex' )
+					/* translators: 1: the URL, 2: this site's host. */
+					: sprintf( __( '%1$s — must be https on %2$s.', 'hti-forex' ), $demo, $host ),
+			),
+			array(
+				'label' => __( 'Larger-account destination is valid', 'hti-forex' ),
+				'ok'    => '' !== Settings::normalize_go_url( $real ),
+				'hint'  => '' === $real
+					? __( 'Empty.', 'hti-forex' )
+					/* translators: 1: the URL, 2: this site's host. */
+					: sprintf( __( '%1$s — must be https on %2$s.', 'hti-forex' ), $real, $host ),
+			),
+		);
+
+		$blocked = array_filter( $checks, static fn( array $c ): bool => ! $c['ok'] );
 		?>
 		<p class="description">
-			<?php esc_html_e( 'One line at the foot of an answer, after the arithmetic. Which offer appears follows the answer itself: an account where the smallest position already risks more than 2% on an ordinary stop gets the demo line — the only offer that does not argue with the warning printed above it — and larger accounts get the live-account line. The two are counted separately in the funnel as telegram_bot_demo and telegram_bot_real, so you can see which one earns its place. Edit the wording and the destinations in the main settings above; both must be links on this site (the /go/ redirector).', 'hti-forex' ); ?>
+			<?php esc_html_e( 'One line at the foot of a calculator answer, after the arithmetic — not on /start, /help or the pip explainer. Which offer appears follows the answer: an account where the smallest position already risks more than 2% on an ordinary stop gets the demo line, and larger accounts get the live-account one. Counted separately in the funnel as telegram_bot_demo and telegram_bot_real.', 'hti-forex' ); ?>
 		</p>
-		<table class="widefat striped" style="max-width:640px;">
+
+		<?php if ( array() === $blocked ) : ?>
+			<div class="notice notice-success inline"><p><strong><?php esc_html_e( 'Showing on answers.', 'hti-forex' ); ?></strong></p></div>
+		<?php else : ?>
+			<div class="notice notice-warning inline"><p>
+				<?php esc_html_e( 'Not showing. Everything below has to be true:', 'hti-forex' ); ?>
+			</p></div>
+		<?php endif; ?>
+
+		<table class="widefat striped" style="max-width:720px;">
 			<tbody>
-				<tr>
-					<td><?php esc_html_e( 'Showing', 'hti-forex' ); ?></td>
-					<td><strong><?php echo $on ? esc_html__( 'yes', 'hti-forex' ) : esc_html__( 'no — switched off', 'hti-forex' ); ?></strong></td>
-				</tr>
-				<tr>
-					<td><?php esc_html_e( 'Small accounts →', 'hti-forex' ); ?></td>
-					<td><?php echo '' === $demo ? '<em>' . esc_html__( 'not set', 'hti-forex' ) . '</em>' : '<code>' . esc_html( $demo ) . '</code>'; ?></td>
-				</tr>
-				<tr>
-					<td><?php esc_html_e( 'Larger accounts →', 'hti-forex' ); ?></td>
-					<td><?php echo '' === $real ? '<em>' . esc_html__( 'not set', 'hti-forex' ) . '</em>' : '<code>' . esc_html( $real ) . '</code>'; ?></td>
-				</tr>
+				<?php foreach ( $checks as $check ) : ?>
+					<tr>
+						<td style="width:26px;"><?php echo $check['ok'] ? '✅' : '⚠️'; ?></td>
+						<td><?php echo esc_html( $check['label'] ); ?></td>
+						<td><span class="description"><?php echo esc_html( $check['ok'] ? '' : $check['hint'] ); ?></span></td>
+					</tr>
+				<?php endforeach; ?>
 			</tbody>
 		</table>
+		<p class="description">
+			<?php
+			printf(
+				/* translators: %s: the two /go/ slugs. */
+				esc_html__( 'The destinations point at our own /go/ redirector, so the slugs have to exist under Settings → outbound /go/ links — for the defaults that is %s. A slug with no destination sends the click to /forex/ instead.', 'hti-forex' ),
+				'<code>xm-demo</code>, <code>open-account-xm</code>'
+			);
+			?>
+		</p>
 
 		<h3><?php esc_html_e( 'What the audience looks like', 'hti-forex' ); ?></h3>
 		<?php if ( 0 === $answered ) : ?>
