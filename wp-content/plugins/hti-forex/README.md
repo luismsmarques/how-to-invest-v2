@@ -30,6 +30,7 @@ the section is "deactivate one plugin".
 | `includes/class-telegram.php` | Bot API transport. Token from `HTI_TELEGRAM_BOT_TOKEN` in `wp-config.php`, never the database. Turns 403 into "drop them" and 429 into "wait this long". |
 | `includes/class-bot-store.php` | Subscriber table (`dbDelta` from `init` — the deploy runs no activation hook) plus the aggregate balance counters, which are never linked to a chat id. |
 | `includes/class-bot.php` | Webhook route `htinvest/v1/forex/telegram`, secret-header check, command router, and the reply text. |
+| `includes/class-bot-images.php` | The bot's three images and the file_id cache. Telegram fetches a photo from our URL once and hands back an id; sending the id afterwards means the file is never pulled off the host again. Fingerprinted by mtime+size, so replacing an image invalidates its id by itself. |
 | `includes/class-bot-broadcast.php` | The admin broadcast: cursor-walked batches on single cron events, dropping anyone who blocked the bot. |
 | `includes/class-bot-admin.php` | The bot's panel in Settings → HTI Forex: webhook button, balance distribution, message composer. |
 | `assets/js/forex-core.js` | Pure math (UMD, DOM-free, Node-testable): pip value, position size, session windows. |
@@ -125,10 +126,25 @@ Forex. The avatar, name and the About/Description texts live in
 `assets/brand/README.md`; regenerate the images with `assets/brand/src/build.sh`. Telegram allows one webhook per bot, so never point a live bot at
 staging — it would silently take over the real one. Use a second test bot.
 
+**Illustrated where a picture earns it.** `/start` and the "what's a pip"
+button carry an image; the answer itself does not. The answer *is* the
+product, an image above it delays the number, and it would be the same picture
+dozens of times to the same person. If an asset is missing or Telegram refuses
+to fetch it, the words go out anyway — a broken image must never silence the
+bot. Broadcasts can attach one from a picker.
+
 **It never speaks first.** There is no daily alert and no schedule. The only
 unprompted message anyone receives is one an admin writes in wp-admin and
 confirms. Frequency is what makes people block a bot, and a blocked user is
 gone permanently — there is no re-subscribing.
+
+**Where people came from.** `t.me/TheBot?start=px_a1` reaches the bot as
+`/start px_a1`, which is the only referrer a Telegram bot gets. The code is
+counted once per person who is new — opening the same ad twice is one user —
+against a closed shape (`[a-z0-9_-]{1,32}`) with a ceiling of 50 distinct
+codes, because it arrives from the open web and ends up as a key in a counter
+map. Without it a paid campaign says how many people arrived and nothing about
+which creative paid for them.
 
 **What it stores.** A row per chat id with two display preferences and two
 timestamps: no names, no message text, no balances. `/stop` deletes the row,
@@ -138,10 +154,20 @@ the audience research the project is missing: after a fortnight the panel says
 whether these are ₹5,000 accounts or ₹5,00,000 ones.
 
 **The partner line** sits at the foot of an answer, after the arithmetic, never
-inside it, and only when both `cta_enabled` and `bot_ad_enabled` are on. It
-goes through `/forex/go/tg-bot/`, so its clicks are already counted as
-`forex_go_tg-bot` and the partner's sub-id tells the placement apart from the
-website's and the cheat sheet's.
+inside it, and only when both `cta_enabled` and `bot_ad_enabled` are on.
+
+Which offer appears follows the answer. On an account where the smallest
+position available already risks more than 2% on an ordinary stop, the line
+points at a demo — the only offer that does not argue with the warning printed
+directly above it — and larger accounts get the live-account line. The two are
+counted separately (`telegram_bot_demo`, `telegram_bot_real`), so which one
+earns its place is a question the funnel answers.
+
+Both destinations are settings, and both must be **https links on this site** —
+the `/go/` redirector, never the affiliate URL. Everything the bot sends lands
+in a private chat, where a raw affiliate link would carry no disclosure and
+could not be changed once sent; requiring our own host makes that structural
+rather than a rule someone has to remember.
 
 > Recorded risk, since this was a deliberate decision: XM appears on the RBI's
 > Alert List, and trading offshore OTC forex breaches FEMA for Indian

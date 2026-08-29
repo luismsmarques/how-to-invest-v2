@@ -29,6 +29,28 @@ The ₹ is the site's own Poppins 800, which carries U+20B9. No hand-drawn
 approximation, and no dependency on a font the render machine may not have —
 `src/build.sh` loads the woff2 straight out of the theme.
 
+## The bot's message images
+
+`bot-start.png` · `bot-pip.png` · `bot-promo.png` — 2560×1440 (16:9), the
+creatives from the designer.
+
+| File | Where it appears |
+|---|---|
+| `bot-start.png` | the `/start` reply — shows the transaction, `5000` in, the table out |
+| `bot-pip.png` | the "What's a pip?" button — 20 pips priced at ₹191 |
+| `bot-promo.png` | offered in the broadcast composer |
+
+They are sent as photos with the message as the caption, which caps at **1,024
+characters** rather than a message's 4,096 — `test-bot-images.php` asserts both
+captions fit, because going over does not truncate, it fails the send for
+every recipient at once.
+
+Telegram fetches each one from our URL the first time and returns a `file_id`;
+everything after that sends the id, so a 250 KB PNG is never pulled off the
+shared host again. The cache is fingerprinted by the file's mtime and size, so
+replacing an image on the server invalidates its id without anyone having to
+remember a cache exists.
+
 ## The channel
 
 **Name** (25) — `HowToInvest · Forex India`

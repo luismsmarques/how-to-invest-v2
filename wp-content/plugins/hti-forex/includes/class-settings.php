@@ -67,6 +67,10 @@ class Settings {
 			'conversion_block'     => 'telegram',
 			'ads_enabled'          => false,
 			'bot_ad_enabled'       => false,
+			'bot_ad_demo_url'      => 'https://howtoinvest.pro/go/xm-demo/',
+			'bot_ad_real_url'      => 'https://howtoinvest.pro/go/open-account-xm/',
+			'bot_ad_demo_text'     => 'a demo account places this exact trade with no money at risk',
+			'bot_ad_real_text'     => 'see how these numbers behave on a live account',
 			'ad_code_desktop'      => '',
 			'ad_code_mobile'       => '',
 			'ad_code_top'          => '',
@@ -119,6 +123,22 @@ class Settings {
 				$errors[] = sprintf( '%s is longer than 10,000 characters — cleared (paste one banner tag, not a page).', $slot );
 			}
 			$out[ $slot ] = $code;
+		}
+
+		// The bot's two partner destinations. Unlike cta_url these must be our
+		// OWN /go/ redirector, not the affiliate URL: the bot posts them into
+		// private inboxes, where a raw affiliate URL is neither disclosed nor
+		// swappable. Requiring the site's own host makes that structural
+		// rather than a rule someone has to remember.
+		foreach ( array( 'bot_ad_demo_url', 'bot_ad_real_url' ) as $field ) {
+			$out[ $field ] = self::normalize_go_url( (string) ( $input[ $field ] ?? '' ) );
+			if ( '' === $out[ $field ] && '' !== trim( (string) ( $input[ $field ] ?? '' ) ) ) {
+				$errors[] = sprintf( '%s must be an https link on this site (the /go/ redirector) — cleared.', $field );
+			}
+		}
+
+		foreach ( array( 'bot_ad_demo_text', 'bot_ad_real_text' ) as $field ) {
+			$out[ $field ] = sanitize_text_field( (string) ( $input[ $field ] ?? '' ) );
 		}
 
 		// Affiliate URL: https only. Anything else is dropped (and reported),
@@ -225,6 +245,37 @@ class Settings {
 			'value'  => $out,
 			'errors' => $errors,
 		);
+	}
+
+	/**
+	 * A partner URL the bot may emit: https, and on this site.
+	 *
+	 * The host check is the point. Everything the bot sends lands in a private
+	 * chat, where an affiliate URL would carry no disclosure and could not be
+	 * changed once sent. Forcing it through our own /go/ redirector keeps the
+	 * destination swappable, the click counted, and the affiliate URL off the
+	 * wire — and does it structurally, so a paste into the wrong box fails
+	 * loudly instead of shipping.
+	 *
+	 * @param string $url Raw input.
+	 * @return string The URL, or '' when it is not one we would send.
+	 */
+	public static function normalize_go_url( string $url ): string {
+		$url = trim( $url );
+		if ( '' === $url ) {
+			return '';
+		}
+		if ( ! preg_match( '#^https://#i', $url ) ) {
+			return '';
+		}
+
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		$ours = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		if ( '' === $host || $host !== $ours ) {
+			return '';
+		}
+
+		return esc_url_raw( $url );
 	}
 
 	/**
@@ -537,6 +588,34 @@ class Settings {
 								</label>
 							<?php endforeach; ?>
 							<p class="description"><?php esc_html_e( 'What the /forex/ hub and tool pages carry in the slot after the calculator. Switching is instant and reversible — the cheat-sheet lead magnet stays wired either way, so going back to email loses nothing. Without a valid Telegram URL this falls back to the email form.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Telegram bot: partner line', 'hti-forex' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[bot_ad_enabled]" value="1" <?php checked( ! empty( $s['bot_ad_enabled'] ) ); ?> />
+								<?php esc_html_e( 'Show a labelled partner line at the foot of the bot\'s answers', 'hti-forex' ); ?>
+							</label>
+							<p class="description"><?php esc_html_e( 'It sits after the arithmetic, never inside it, and needs the global CTA switch on as well. Which of the two offers appears follows the answer: an account where the smallest position already risks more than 2% on an ordinary stop gets the demo line, larger accounts get the live-account one. Counted separately as telegram_bot_demo and telegram_bot_real.', 'hti-forex' ); ?></p>
+
+							<p style="margin-top:1em">
+								<label for="hti-bot-demo-text"><strong><?php esc_html_e( 'Small accounts — wording', 'hti-forex' ); ?></strong></label><br />
+								<input type="text" id="hti-bot-demo-text" class="large-text" name="<?php echo esc_attr( self::OPTION ); ?>[bot_ad_demo_text]" value="<?php echo esc_attr( (string) ( $s['bot_ad_demo_text'] ?? '' ) ); ?>" />
+							</p>
+							<p>
+								<label for="hti-bot-demo-url"><strong><?php esc_html_e( 'Small accounts — destination', 'hti-forex' ); ?></strong></label><br />
+								<input type="url" id="hti-bot-demo-url" class="large-text code" name="<?php echo esc_attr( self::OPTION ); ?>[bot_ad_demo_url]" value="<?php echo esc_attr( (string) ( $s['bot_ad_demo_url'] ?? '' ) ); ?>" />
+							</p>
+							<p>
+								<label for="hti-bot-real-text"><strong><?php esc_html_e( 'Larger accounts — wording', 'hti-forex' ); ?></strong></label><br />
+								<input type="text" id="hti-bot-real-text" class="large-text" name="<?php echo esc_attr( self::OPTION ); ?>[bot_ad_real_text]" value="<?php echo esc_attr( (string) ( $s['bot_ad_real_text'] ?? '' ) ); ?>" />
+							</p>
+							<p>
+								<label for="hti-bot-real-url"><strong><?php esc_html_e( 'Larger accounts — destination', 'hti-forex' ); ?></strong></label><br />
+								<input type="url" id="hti-bot-real-url" class="large-text code" name="<?php echo esc_attr( self::OPTION ); ?>[bot_ad_real_url]" value="<?php echo esc_attr( (string) ( $s['bot_ad_real_url'] ?? '' ) ); ?>" />
+							</p>
+							<p class="description"><?php esc_html_e( 'Both destinations must be https links on this site — the /go/ redirector, never the affiliate URL itself. Everything the bot sends lands in a private chat, where a raw affiliate link would carry no disclosure and could not be changed once sent. Anything else is refused and the field cleared.', 'hti-forex' ); ?></p>
 						</td>
 					</tr>
 					<tr>

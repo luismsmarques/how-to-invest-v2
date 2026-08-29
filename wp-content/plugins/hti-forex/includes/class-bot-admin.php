@@ -91,7 +91,16 @@ class Bot_Admin {
 			)
 		);
 
-		$queued = Bot_Broadcast::start( trim( $text ) );
+		$image = isset( $_POST['image'] ) ? sanitize_key( wp_unslash( $_POST['image'] ) ) : '';
+		$image = isset( Bot_Images::files()[ $image ] ) ? $image : '';
+		$text  = trim( $text );
+
+		if ( '' !== $image && ! Bot_Broadcast::fits_caption( $text, $image ) ) {
+			wp_safe_redirect( add_query_arg( 'hti_forex_bot', 'too-long', admin_url( 'options-general.php?page=hti-forex' ) ) );
+			exit;
+		}
+
+		$queued = Bot_Broadcast::start( $text, $image );
 
 		wp_safe_redirect(
 			add_query_arg(
@@ -125,6 +134,7 @@ class Bot_Admin {
 					'queued'       => __( 'Broadcast queued. It sends in batches and continues even if you close this page.', 'hti-forex' ),
 					'queue-fail'   => __( 'Nothing queued — the message was empty, a broadcast is already running, or there is no bot token.', 'hti-forex' ),
 					'cancelled'    => __( 'Broadcast stopped where it was.', 'hti-forex' ),
+					'too-long'     => __( 'Too long to send with an image attached. A caption is capped at 1,024 characters including the /stop footer — shorten it, or send it without the image.', 'hti-forex' ),
 				);
 				echo esc_html( $messages[ $notice ] ?? '' );
 				?>
@@ -166,6 +176,59 @@ class Bot_Admin {
 			<button type="submit" name="remove" value="1" class="button-link-delete button-link"><?php esc_html_e( 'Remove', 'hti-forex' ); ?></button>
 			<p class="description"><?php esc_html_e( 'Register once, and again whenever the site URL changes. Never point a live bot at staging — Telegram allows one webhook per bot, so staging would silently take over the real one. Use a second test bot instead.', 'hti-forex' ); ?></p>
 		</form>
+
+		<h3><?php esc_html_e( 'Where they came from', 'hti-forex' ); ?></h3>
+		<?php $sources = Bot_Store::sources(); ?>
+		<?php if ( array() === $sources ) : ?>
+			<p class="description">
+				<?php
+				printf(
+					/* translators: %s: an example deep link. */
+					esc_html__( 'Nothing yet. Put a code on the link an ad or a post uses — %s — and Telegram hands it to the bot on /start. Each new person is counted once against the code that brought them, so a campaign test says which creative paid rather than just how many arrived.', 'hti-forex' ),
+					'<code>t.me/YourBot?start=px_a1</code>'
+				);
+				?>
+			</p>
+		<?php else : ?>
+			<table class="widefat striped" style="max-width:640px;">
+				<tbody>
+					<?php foreach ( $sources as $code => $count ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( $code ); ?></code></td>
+							<td style="width:90px;text-align:right;"><?php echo esc_html( number_format_i18n( $count ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p class="description"><?php esc_html_e( 'New people only — someone opening the same link twice counts once. People who arrive without a code are not listed.', 'hti-forex' ); ?></p>
+		<?php endif; ?>
+
+		<h3><?php esc_html_e( 'The partner line', 'hti-forex' ); ?></h3>
+		<?php
+		$s     = Settings::settings();
+		$on    = ! empty( $s['cta_enabled'] ) && ! empty( $s['bot_ad_enabled'] );
+		$demo  = (string) ( $s['bot_ad_demo_url'] ?? '' );
+		$real  = (string) ( $s['bot_ad_real_url'] ?? '' );
+		?>
+		<p class="description">
+			<?php esc_html_e( 'One line at the foot of an answer, after the arithmetic. Which offer appears follows the answer itself: an account where the smallest position already risks more than 2% on an ordinary stop gets the demo line — the only offer that does not argue with the warning printed above it — and larger accounts get the live-account line. The two are counted separately in the funnel as telegram_bot_demo and telegram_bot_real, so you can see which one earns its place. Edit the wording and the destinations in the main settings above; both must be links on this site (the /go/ redirector).', 'hti-forex' ); ?>
+		</p>
+		<table class="widefat striped" style="max-width:640px;">
+			<tbody>
+				<tr>
+					<td><?php esc_html_e( 'Showing', 'hti-forex' ); ?></td>
+					<td><strong><?php echo $on ? esc_html__( 'yes', 'hti-forex' ) : esc_html__( 'no — switched off', 'hti-forex' ); ?></strong></td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'Small accounts →', 'hti-forex' ); ?></td>
+					<td><?php echo '' === $demo ? '<em>' . esc_html__( 'not set', 'hti-forex' ) . '</em>' : '<code>' . esc_html( $demo ) . '</code>'; ?></td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'Larger accounts →', 'hti-forex' ); ?></td>
+					<td><?php echo '' === $real ? '<em>' . esc_html__( 'not set', 'hti-forex' ) . '</em>' : '<code>' . esc_html( $real ) . '</code>'; ?></td>
+				</tr>
+			</tbody>
+		</table>
 
 		<h3><?php esc_html_e( 'What the audience looks like', 'hti-forex' ); ?></h3>
 		<?php if ( 0 === $answered ) : ?>
@@ -243,6 +306,18 @@ class Bot_Admin {
 			<?php wp_nonce_field( 'hti_forex_bot_broadcast' ); ?>
 			<input type="hidden" name="action" value="hti_forex_bot_broadcast" />
 			<textarea name="message" rows="6" class="large-text code" placeholder="<?php esc_attr_e( 'Plain text. &lt;b&gt;, &lt;i&gt;, &lt;code&gt; and links are allowed; everything else is stripped.', 'hti-forex' ); ?>"></textarea>
+			<p>
+				<label for="hti-bot-image"><strong><?php esc_html_e( 'Attach an image', 'hti-forex' ); ?></strong></label>
+				<select name="image" id="hti-bot-image">
+					<option value=""><?php esc_html_e( 'None — text only', 'hti-forex' ); ?></option>
+					<?php foreach ( array_keys( Bot_Images::files() ) as $slug ) : ?>
+						<?php if ( Bot_Images::exists( $slug ) ) : ?>
+							<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $slug ); ?></option>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				</select>
+				<span class="description"><?php printf( /* translators: %d: caption character limit. */ esc_html__( 'With an image the whole message becomes a caption, capped at %d characters including the /stop footer.', 'hti-forex' ), (int) Telegram::CAPTION_MAX ); ?></span>
+			</p>
 			<p>
 				<button type="submit" class="button button-primary">
 					<?php
