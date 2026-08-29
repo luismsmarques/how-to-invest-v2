@@ -163,6 +163,13 @@ directly above it — and larger accounts get the live-account line. The two are
 counted separately (`telegram_bot_demo`, `telegram_bot_real`), so which one
 earns its place is a question the funnel answers.
 
+The line itself is just the offer and the link — no badge, no label inside the
+sentence, which is what makes it read as a suggestion rather than a banner.
+The disclosure is not dropped, it is moved: the footer every answer already
+carries gains "Links to partners are paid." whenever a link is present, and
+loses it when there isn't. A reader can still tell it is paid; they just are
+not told twice in the middle of a sentence.
+
 Both destinations are settings, and both must be **https links on this site** —
 the `/go/` redirector, never the affiliate URL. Everything the bot sends lands
 in a private chat, where a raw affiliate link would carry no disclosure and

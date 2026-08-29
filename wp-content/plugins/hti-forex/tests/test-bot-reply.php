@@ -111,12 +111,12 @@ check( $opens === $closes && 1 === $opens, '<pre> abre e fecha uma vez' );
 
 echo "\n=== A linha do parceiro ===\n";
 
-$with_ad = Bot::reply_text( $small, '<i>Partner · Ad</i> — <a href="https://example.test/">demo</a>' );
+$with_ad = Bot::reply_text( $small, '<a href="https://example.test/">Partner offer</a>' );
 
-check( str_contains( $with_ad, 'Partner · Ad' ), 'a linha do parceiro entra quando existe' );
-check( ! str_contains( $text, 'Partner · Ad' ), 'e não entra quando está desligada' );
+check( str_contains( $with_ad, 'Partner offer' ), 'a linha do parceiro entra quando existe' );
+check( ! str_contains( $text, 'demo account' ), 'e não entra quando está desligada' );
 
-$ad_pos     = strpos( $with_ad, 'Partner · Ad' );
+$ad_pos     = strpos( $with_ad, 'Partner offer' );
 $table_pos  = strpos( $with_ad, '</pre>' );
 $room_pos   = strpos( $with_ad, 'Risking 2%' );
 check( $ad_pos > $table_pos, 'a publicidade vem depois da tabela, nunca no meio dela' );
@@ -196,15 +196,24 @@ check(
 	'a conta pequena recebe a oferta que não contradiz o aviso por cima dela'
 );
 
-$disclosed = static fn( string $t ): bool => str_contains( $t, 'Partner · Ad' )
-	&& str_contains( $t, 'we may be paid' );
-check( $disclosed( $ad_small ) && $disclosed( $ad_big ), 'ambas rotuladas e com divulgação' );
+// A linha em si é uma sugestão simples — é isso que a torna clicável. A
+// divulgação existe na mesma, no rodapé que a resposta já traz.
+$disclosed = static fn( string $t ): bool => str_contains( $t, 'Links to partners are paid.' );
+check( $disclosed( $ad_small ) && $disclosed( $ad_big ), 'com link, a divulgação está no rodapé' );
+check(
+	! str_contains( answer_with( 5000, array() ), 'Links to partners are paid.' ),
+	'sem link, não há divulgação a mais na mensagem'
+);
+check(
+	strpos( $ad_big, 'Links to partners are paid.' ) > strpos( $ad_big, 'live account' ),
+	'a divulgação vem depois do link, no rodapé, e não a meio da frase'
+);
 
 // A ordem que já era regra continua a valer, agora em ambos os segmentos.
 foreach ( array( 'demo' => $ad_small, 'real' => $ad_big ) as $seg => $t ) {
 	check(
-		strpos( $t, 'Partner · Ad' ) > strpos( $t, 'Risking 2%' ),
-		sprintf( '%s: a publicidade vem depois de toda a resposta pedida', $seg )
+		strpos( $t, 'live account' ) > strpos( $t, 'Risking 2%' ) || strpos( $t, 'no money at risk' ) > strpos( $t, 'Risking 2%' ),
+		sprintf( '%s: o link vem depois de toda a resposta pedida', $seg )
 	);
 }
 

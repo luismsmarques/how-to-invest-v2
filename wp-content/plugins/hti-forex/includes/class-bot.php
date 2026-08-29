@@ -293,11 +293,19 @@ class Bot {
 			$out .= "\n⚠️ At this balance the smallest position most platforms allow already risks more than 2% on an ordinary stop. That is the arithmetic describing the account, not a reason to trade larger.\n";
 		}
 
+		$disclosure = '';
 		if ( '' !== $ad_line ) {
 			$out .= "\n" . $ad_line . "\n";
+
+			// The link above reads as a plain suggestion, which is what makes
+			// it worth clicking. It is still a paid link, and a reader is
+			// entitled to know that — so the disclosure rides in the footer
+			// that every answer already carries, instead of interrupting the
+			// sentence. Present whenever the link is, absent when it isn't.
+			$disclosure = ' Links to partners are paid.';
 		}
 
-		$out .= "\n<i>Educational only, not advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money.</i>";
+		$out .= "\n<i>Educational only, not advice. Forex and CFDs are leveraged, high-risk products; most retail accounts lose money." . $disclosure . '</i>';
 
 		return $out;
 	}
@@ -382,8 +390,7 @@ class Bot {
 		// and must never come from anything a visitor controls.
 		$url = add_query_arg( 'loc', $tight ? 'telegram_bot_demo' : 'telegram_bot_real', $url );
 
-		return '<i>Partner · Ad</i> — <a href="' . esc_url( $url ) . '">' . esc_html( $text ) . '</a>. '
-			. 'Advertising link; we may be paid if you open an account, at no cost to you.';
+		return '<a href="' . esc_url( $url ) . '">' . esc_html( $text ) . '</a>';
 	}
 
 	/**
