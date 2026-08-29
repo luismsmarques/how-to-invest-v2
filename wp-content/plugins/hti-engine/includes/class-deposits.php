@@ -535,7 +535,7 @@ class Deposits {
 						<p><strong><?php echo esc_html( $L['disclaimer_t'] ); ?></strong> <?php echo esc_html( $L['disclaimer_d'] ); ?></p>
 					</div>
 
-					<p class="hti-dep__method"><a href="<?php echo esc_url( home_url( '/' . ( $is_en ? 'deposit-comparison-methodology' : 'metodologia-do-comparador-de-depositos' ) . '/' ) ); ?>"><?php echo esc_html( $L['method_link'] ); ?></a></p>
+					<p class="hti-dep__method"><a href="<?php echo esc_url( Links::page_url( 'deposit-comparison-methodology' ) ); ?>"><?php echo esc_html( $L['method_link'] ); ?></a></p>
 				</div>
 			</div>
 		</section>

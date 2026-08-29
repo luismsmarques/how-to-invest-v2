@@ -119,4 +119,50 @@ cd "$WPCONTENT/plugins/hti-engine" && composer install --no-dev --no-interaction
 - `vendor/` (Dompdf) **não** está no repo; o `composer install` do deploy é que o
   cria. O rsync preserva-o entre deploys (`--exclude vendor/`).
 - Testa sempre em **staging** (`develop`) antes de promover para `main`.
-- Limpa a cache (LiteSpeed/WP) depois de cada deploy se usares cache de página.
+- **Limpa a cache depois de cada deploy, por esta ordem.** A stack é WP Fastest
+  Cache no servidor e Cloudflare à frente:
+  1. **WP Fastest Cache → Delete Cache**, e usa **"Delete Cache and Minified
+     CSS/JS"**, não o botão simples. O nosso CSS e JS são servidos com `?ver=`,
+     por isso um browser normal pega logo nos ficheiros novos — mas se o
+     minify/combine estiver ligado, o ficheiro combinado já não leva esse
+     `?ver=` e fica com o conteúdo antigo lá dentro. É a causa clássica de
+     "limpei a cache e continua com o aspeto velho".
+  2. **Cloudflare → Caching → Configuration → Purge Everything**, e só depois do
+     passo 1: ao contrário, o Cloudflare vai buscar as páginas ao servidor e
+     recebe as antigas, ficando com lixo novo na borda.
+
+  O passo 2 só é preciso se tiveres **APO** ou uma Cache Rule com *Cache
+  Everything* — por omissão o Cloudflare não guarda HTML, só estáticos. Para
+  saber, `curl -sI` a uma página e ver o `cf-cache-status`: se der `MISS` ou
+  `DYNAMIC` numa página normal, o HTML não está a ser cacheado na borda.
+  Para testar sem lutar contra a cache, liga o **Development Mode** do
+  Cloudflare (bypass de 3 horas).
+
+### Migração única: as calculadoras passam a viver sob o hub
+
+A partir da versão 0.14.0 do `hti-engine` as oito calculadoras são páginas-filhas
+do hub (`/tools/{ferramenta}/` e `/pt/ferramentas/{ferramenta}/`), como no
+`/forex/`. Num site já publicado isso é uma alteração de dados, não de conteúdo,
+por isso **não** corre sozinha em nenhum deploy — nem pelo `Content_Sync`, para
+não haver um cron a re-parentar dezasseis páginas em silêncio.
+
+Depois do primeiro deploy desta versão, correr uma vez no servidor:
+
+```bash
+wp hti tools-migrate --dry-run   # mostra o que ia mudar, sem escrever
+wp hti tools-migrate             # aplica
+```
+
+Sem WP-CLI no servidor, o mesmo se faz no wp-admin em
+**Ferramentas → Semear conteúdo** (`/wp-admin/tools.php?page=hti-seed`): o botão
+corre o `Seeder::seed()` completo, que inclui esta migração, e o aviso no fim
+lista o que foi movido — a amarelo se alguma página tiver sido saltada ou tiver
+mudado de slug.
+
+É idempotente — se correr duas vezes, a segunda não faz nada. **A ordem não
+importa:** os 301 dos URLs antigos só disparam quando a página de destino já
+existe, por isso entre o deploy e a migração as calculadoras continuam a ser
+servidas nos URLs antigos, e passam a redirecionar sozinhas assim que a migração
+correr. Se o relatório imprimir uma linha `WARNING … slug changed on re-parent`,
+essa página ficou com outro slug e o 301 aponta para o antigo: corrigir o slug à
+mão antes de seguir.

@@ -49,6 +49,26 @@ class Analytics {
 	}
 
 	/**
+	 * Whether GA loads under Consent Mode v2 (every storage signal denied until
+	 * consent) instead of the default hard block (no gtag at all until consent).
+	 *
+	 * Off by default on purpose: the hard block is what the launch QA gate and
+	 * the RGPD checklist describe, so switching costs one deliberate click in
+	 * Settings rather than a silent code change.
+	 */
+	public static function consent_mode(): bool {
+		$settings = function_exists( 'get_option' ) ? get_option( 'htinvest_settings' ) : array();
+		$on       = is_array( $settings ) && ! empty( $settings['ga_consent_mode'] );
+
+		/**
+		 * Filter whether Google Consent Mode v2 is used.
+		 *
+		 * @param bool $on Enabled.
+		 */
+		return (bool) apply_filters( 'hti_ga_consent_mode', $on );
+	}
+
+	/**
 	 * Enqueue the loader on the front-end (when an ID is set).
 	 */
 	public static function enqueue(): void {
@@ -95,7 +115,14 @@ class Analytics {
 				'strategy'  => 'defer',
 			)
 		);
-		wp_localize_script( 'hti-analytics', 'HTI_GA', array( 'id' => $id ) );
+		wp_localize_script(
+			'hti-analytics',
+			'HTI_GA',
+			array(
+				'id'          => $id,
+				'consentMode' => self::consent_mode(),
+			)
+		);
 		wp_enqueue_script( 'hti-analytics' );
 	}
 }

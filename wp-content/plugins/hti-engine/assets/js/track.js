@@ -46,6 +46,9 @@
 			if ( params.lang != null ) {
 				body.lang = params.lang;
 			}
+			if ( params.campaign != null ) {
+				body.campaign = params.campaign;
+			}
 			if ( params.ref != null ) {
 				body.ref = params.ref;
 			}
@@ -171,6 +174,51 @@
 		event( name, params );
 	}, true );
 
+	// Campaign attribution for paid traffic, without cookies or identifiers.
+	//
+	// Ad networks land visitors with a campaign parameter on the URL; GA4 will
+	// not show that traffic at all while consent is denied, so the first-party
+	// counter is the only place it can be measured. We keep the campaign NAME
+	// only — a label shared by everyone in the same campaign, never a per-click
+	// id — and hold it in sessionStorage so pages after the landing one stay
+	// attributed. sessionStorage is per tab and dies with it: it identifies a
+	// campaign, not a person, which is why this needs no consent.
+	// Campaign-NAME parameters only. A per-click id (clickid, gclid, msclkid…)
+	// is deliberately NOT read here: it is unique per visitor, and this counter
+	// promises to hold no identifiers. Tag paid landing URLs with
+	// utm_campaign=<name> to get them attributed.
+	var CAMPAIGN_PARAMS = [ 'utm_campaign', 'campaign', 'utm_source' ];
+	var CAMPAIGN_KEY = 'hti_campaign';
+
+	function cleanCampaign( value ) {
+		return String( value || '' ).toLowerCase().replace( /[^a-z0-9_-]/g, '' ).slice( 0, 32 );
+	}
+
+	function campaign() {
+		var found = '';
+		try {
+			if ( 'undefined' !== typeof URLSearchParams ) {
+				var qs = new URLSearchParams( window.location.search );
+				for ( var i = 0; i < CAMPAIGN_PARAMS.length && ! found; i++ ) {
+					found = cleanCampaign( qs.get( CAMPAIGN_PARAMS[ i ] ) );
+				}
+			}
+		} catch ( e ) {}
+
+		try {
+			if ( found ) {
+				window.sessionStorage.setItem( CAMPAIGN_KEY, found );
+			} else {
+				found = cleanCampaign( window.sessionStorage.getItem( CAMPAIGN_KEY ) );
+			}
+		} catch ( e ) {
+			// Private mode or storage disabled: the landing page is still
+			// attributed, the rest of the visit is not. Never fatal.
+		}
+
+		return found;
+	}
+
 	// Anonymous first-party page view — fired on every load, always, cookieless.
 	// Routed straight to the beacon (not through event()): GA already records its
 	// own page_view via `gtag('config', …)`, so sending it there too would
@@ -197,6 +245,11 @@
 			}
 		} catch ( e ) {}
 
-		beacon( 'page_view', { path: path, lang: lang, ref: ref } );
+		var camp = campaign();
+		var payload = { path: path, lang: lang, ref: ref };
+		if ( camp ) {
+			payload.campaign = camp;
+		}
+		beacon( 'page_view', payload );
 	}() );
 }() );

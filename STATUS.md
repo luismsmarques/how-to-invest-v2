@@ -52,9 +52,13 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
       "explained") + hubs (Perfis / Classes de ativos / Tools).
     - **Malha de internal linking bidirecional** (conteúdo ↔ glossário ↔ Learn), com localização PT robusta
       (passo final `relocalize_pt` independente da ordem do seed).
-  - **Hub de Ferramentas** (`class-tools`, shortcode `[hti_tool name=…]`): 4 calculadoras educativas
-    (juro composto, inflação, meta de poupança, custo de esperar) — JS vanilla com motor partilhado
-    (`tools-core.js`, testado com Node), gráficos SVG leves, indexáveis; hub `/tools/` + 4 páginas no menu.
+  - **Hub de Ferramentas** (`class-tools`, shortcode `[hti_tool name=…]`): 8 calculadoras educativas
+    (juro composto, meta de poupança, inflação, custo de esperar, fundo de emergência, regra dos 72,
+    impacto das comissões, visualizador de alocação) — JS vanilla com motor partilhado
+    (`tools-core.js`, testado com Node), gráficos SVG leves, indexáveis. Slugs, títulos e copy vivem
+    numa tabela única (`class-tools-content.php`), consumida pelo seeder, pelos 301 e pelo schema.
+    Estrutura de URL igual à do forex: hub `/tools/` com as calculadoras como páginas-filhas
+    (`/tools/{ferramenta}/`, `/pt/ferramentas/{ferramenta}/`); os URLs planos antigos redirecionam 301.
   - **Hub Aprender** (`/learn/`): bloco dinâmico `howtoinvest/learn-hub` (artigos por categoria, por idioma)
     em `archive-learn.html`; menu **Aprender → /learn/**; homepage lista o CPT `learn`.
   - **Menu principal:** Aprender · Perfis · Classes de ativos · Ferramentas · Glossário · Notícias.
@@ -183,6 +187,7 @@ dirigidas ao mercado indiano, usadas como landing pages de campanhas pagas
 na pesquisa de mercado). É a **única exceção documentada** aos invariantes
 "sem CTA de corretora / bilingue" — contida no plugin; nada do hti-engine foi
 alterado.
+  - **Bloco de conversão comutável (0.8.0):** o slot a seguir à calculadora leva o canal de Telegram **ou** o formulário de email, escolhido em Definições → HTI Forex (`telegram` por omissão). É uma experiência: este público lê Telegram todos os dias e pode aderir a um canal mais facilmente do que dar o email a um site estrangeiro. A oferta é a mesma nos dois casos — o cheat sheet INR, fixado no canal em vez de enviado. Cliques contados como `cta_click` em `forex_telegram_*`; adesões pelo link de convite com nome do próprio Telegram. Reverter é um clique: o `hti_lead_magnet` e o PDF ficam ligados nos dois modos.
 
 - **Ferramentas** (`[hti_forex_tool name=…]`): position size com conta em ₹
   (floor a micro-lote, estado "below one micro lot"), pip value em ₹ (EURUSD,

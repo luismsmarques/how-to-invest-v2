@@ -217,8 +217,17 @@ class Settings {
 			}
 		}
 
+		// Contact form recipient. Invalid input is dropped rather than stored,
+		// so a typo falls back to the default instead of silently swallowing
+		// every message.
+		if ( isset( $input['contact_email'] ) ) {
+			$contact              = sanitize_email( (string) $input['contact_email'] );
+			$out['contact_email'] = is_email( $contact ) ? $contact : '';
+		}
+
 		// Analytics.
-		$out['ga_id'] = isset( $input['ga_id'] ) ? sanitize_text_field( $input['ga_id'] ) : ( $out['ga_id'] ?? '' );
+		$out['ga_id']           = isset( $input['ga_id'] ) ? sanitize_text_field( $input['ga_id'] ) : ( $out['ga_id'] ?? '' );
+		$out['ga_consent_mode'] = ! empty( $input['ga_consent_mode'] );
 
 		// Google OAuth.
 		$out['google_client_id'] = isset( $input['google_client_id'] ) ? sanitize_text_field( $input['google_client_id'] ) : ( $out['google_client_id'] ?? '' );
@@ -468,6 +477,21 @@ class Settings {
 							value="<?php echo esc_attr( (string) ( $settings['brevo_list_id_pt'] ?? '' ) ); ?>" />
 							<p class="description"><?php echo esc_html__( 'Brevo list for Portuguese subscribers. Leave both blank to use a single list (legacy).', 'hti-engine' ); ?></p></td>
 					</tr>
+					<tr>
+						<th scope="row"><label for="hti-contact-email"><?php echo esc_html__( 'Contact form recipient', 'hti-engine' ); ?></label></th>
+						<td><input name="htinvest_settings[contact_email]" id="hti-contact-email" type="email" class="regular-text"
+							value="<?php echo esc_attr( (string) ( $settings['contact_email'] ?? '' ) ); ?>"
+							placeholder="<?php echo esc_attr( \HTI\Engine\Contact::recipient() ); ?>" />
+							<p class="description">
+								<?php echo esc_html__( 'Where messages from the contact page are delivered. Leave blank to use the default below.', 'hti-engine' ); ?><br>
+								<?php
+								$current = \HTI\Engine\Contact::recipient();
+								/* translators: %s: the address currently receiving contact messages. */
+								echo '<strong>' . esc_html( sprintf( __( 'Currently delivering to: %s', 'hti-engine' ), $current ) ) . '</strong> ';
+								echo esc_html__( '— make sure that mailbox exists and you actually read it; the message is emailed and never stored, so nothing is recoverable if it bounces.', 'hti-engine' );
+								?>
+							</p></td>
+					</tr>
 				</table>
 
 				<h2><?php echo esc_html__( 'Analytics (Google Analytics)', 'hti-engine' ); ?></h2>
@@ -491,6 +515,21 @@ class Settings {
 								}
 								?>
 							</p></td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Consent Mode v2', 'hti-engine' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="htinvest_settings[ga_consent_mode]" value="1"
+									<?php checked( ! empty( $settings['ga_consent_mode'] ) ); ?> />
+								<?php echo esc_html__( 'Load GA4 for everyone with storage denied until consent', 'hti-engine' ); ?>
+							</label>
+							<p class="description">
+								<?php echo esc_html__( 'Off (default): gtag.js is never injected until the visitor accepts — nothing reaches Google before that.', 'hti-engine' ); ?><br>
+								<?php echo esc_html__( 'On: gtag.js loads for everyone but sets no cookies and sends no identifiers until consent, so GA4 can model audiences from traffic that never answers the banner (the /forex/ campaigns). Advertising signals stay denied in both modes.', 'hti-engine' ); ?><br>
+								<strong><?php echo esc_html__( 'Before switching this on, make sure the privacy policy names Google Analytics.', 'hti-engine' ); ?></strong>
+							</p>
+						</td>
 					</tr>
 				</table>
 

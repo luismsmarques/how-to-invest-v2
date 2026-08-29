@@ -83,7 +83,22 @@ class Redirects {
 			 * /how-to-start-investing/ splitting impressions three ways.
 			 */
 			'how-to-start'         => '/how-to-start-investing/',
+
+			/*
+			 * The term-deposit comparator's real slugs are
+			 * comparador-de-depositos-a-prazo and, for the methodology,
+			 * metodologia-do-comparador-de-depositos under /pt/. Three call
+			 * sites linked it by hand and each got it wrong, so these URLs were
+			 * served to crawlers from our own navigation for as long as the
+			 * literals were there. The links are fixed at the source; these
+			 * entries turn the 404s already in the index into 301s.
+			 */
+			'comparador-de-depositos'                => '/pt/comparador-de-depositos-a-prazo/',
+			'pt/comparador-de-depositos'             => '/pt/comparador-de-depositos-a-prazo/',
+			'metodologia-do-comparador-de-depositos' => '/pt/metodologia-do-comparador-de-depositos/',
 		);
+
+		$map = array_merge( $map, self::tool_moves() );
 
 		/**
 		 * Filter the legacy redirect map.
@@ -91,6 +106,32 @@ class Redirects {
 		 * @param array<string,string> $map Old path (lowercase, no slashes) => new relative path.
 		 */
 		return (array) apply_filters( 'hti_legacy_redirects', $map );
+	}
+
+	/**
+	 * The calculators' old flat URLs => their new place under the Tools hub.
+	 *
+	 * Not a Base44 legacy path, but the same problem and the same fix: eight
+	 * indexed EN URLs plus their eight PT twins moved from /{slug}/ to
+	 * /tools/{slug}/, and dropping them would burn the ranking each already
+	 * earned. Built from Tools_Content so a ninth calculator cannot ship
+	 * without its redirect (the test suite asserts the two lists match).
+	 *
+	 * The PT keys carry their own "pt/" prefix because resolve() only strips
+	 * language prefixes the site does NOT serve — Portuguese is live, so the
+	 * prefix reaches the map intact.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function tool_moves(): array {
+		$moves = array();
+		foreach ( Tools_Content::tools() as $slug => $tool ) {
+			$moves[ $slug ] = '/' . Tools_Content::path( $slug ) . '/';
+
+			$pt_slug = (string) $tool['pt_slug'];
+			$moves[ 'pt/' . $pt_slug ] = '/pt/' . Tools_Content::HUB_SLUG_PT . '/' . $pt_slug . '/';
+		}
+		return $moves;
 	}
 
 	/**
@@ -151,16 +192,20 @@ class Redirects {
 	/**
 	 * Resolve a request URI to a legacy redirect target, or null to leave it alone.
 	 *
-	 * Pure: it takes the raw request URI and an optional resolver for news
-	 * slugs, and returns a path relative to the site root. Keeping the lookup
-	 * injectable is what makes the whole mapping testable without WordPress.
+	 * Pure: it takes the raw request URI and optional resolvers, and returns a
+	 * path relative to the site root. Keeping the lookups injectable is what
+	 * makes the whole mapping testable without WordPress.
 	 *
 	 * @param string        $request_uri Raw request URI (path plus optional query).
 	 * @param callable|null $news_lookup Receives a sanitized slug, returns a
 	 *                                   relative path or null when unknown.
+	 * @param callable|null $exists      Receives ( English page path, language )
+	 *                                   and returns whether that page exists.
+	 *                                   Only consulted for the page moves in
+	 *                                   page_moves(); null skips the check.
 	 * @return string|null Relative target path, or null when nothing matches.
 	 */
-	public static function resolve( string $request_uri, ?callable $news_lookup = null ): ?string {
+	public static function resolve( string $request_uri, ?callable $news_lookup = null, ?callable $exists = null ): ?string {
 		$path  = (string) wp_parse_url( $request_uri, PHP_URL_PATH );
 		$query = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
 		$key   = strtolower( trim( $path, '/' ) );
@@ -179,10 +224,10 @@ class Redirects {
 			// A bare /es or /fr goes home; anything under it tries the map first.
 			return '' === $rest
 				? '/'
-				: ( self::match( $rest, $query, $news_lookup ) ?? '/' );
+				: ( self::match( $rest, $query, $news_lookup, $exists ) ?? '/' );
 		}
 
-		return self::match( $key, $query, $news_lookup );
+		return self::match( $key, $query, $news_lookup, $exists );
 	}
 
 	/**
@@ -191,9 +236,10 @@ class Redirects {
 	 * @param string        $key         Lowercased path without surrounding slashes.
 	 * @param string        $query       Raw query string.
 	 * @param callable|null $news_lookup Slug resolver.
+	 * @param callable|null $exists      Destination existence check.
 	 * @return string|null Relative target path, or null when nothing matches.
 	 */
-	private static function match( string $key, string $query, ?callable $news_lookup ): ?string {
+	private static function match( string $key, string $query, ?callable $news_lookup, ?callable $exists = null ): ?string {
 		if ( in_array( $key, self::NEWS_PATHS, true ) ) {
 			$slug = self::slug_from_query( $query );
 
@@ -208,8 +254,56 @@ class Redirects {
 		}
 
 		$map = self::map();
+		if ( ! isset( $map[ $key ] ) ) {
+			return null;
+		}
 
-		return isset( $map[ $key ] ) ? (string) $map[ $key ] : null;
+		/*
+		 * A page move only redirects once the page has actually moved. The
+		 * deploy is a plain file copy — it runs no WP-CLI and fires no
+		 * activation hook — so the redirects go live the moment the code
+		 * lands, while the pages are re-parented later, by hand. Without this
+		 * check every calculator would 301 to a URL that does not exist yet.
+		 * With it the old URL keeps serving the old page until the migration
+		 * runs, and starts redirecting by itself afterwards.
+		 */
+		$moves = self::page_moves();
+		if ( null !== $exists && isset( $moves[ $key ] ) ) {
+			[ $en_path, $lang ] = $moves[ $key ];
+			if ( ! $exists( $en_path, $lang ) ) {
+				return null;
+			}
+		}
+
+		return (string) $map[ $key ];
+	}
+
+	/**
+	 * Redirect keys whose destination is a page we seed, and how to check it.
+	 *
+	 * Maps the old path to [ English page path, language ]. The check is always
+	 * expressed against the English path plus a language, never against a
+	 * Portuguese path: nothing in this codebase resolves a PT page by a PT
+	 * path — every PT lookup goes through pll_get_post() from the English id —
+	 * and a PT path silently assumes both that the PT hub exists and that no
+	 * slug was renamed on re-parent, neither of which is guaranteed.
+	 *
+	 * @return array<string,array{0:string,1:string}>
+	 */
+	private static function page_moves(): array {
+		$moves = array();
+
+		foreach ( Tools_Content::tools() as $slug => $tool ) {
+			$path                                = Tools_Content::path( $slug );
+			$moves[ $slug ]                      = array( $path, 'en' );
+			$moves[ 'pt/' . $tool['pt_slug'] ]   = array( $path, 'pt' );
+		}
+
+		$moves['comparador-de-depositos']                = array( 'term-deposit-comparison-portugal', 'pt' );
+		$moves['pt/comparador-de-depositos']             = array( 'term-deposit-comparison-portugal', 'pt' );
+		$moves['metodologia-do-comparador-de-depositos'] = array( 'deposit-comparison-methodology', 'pt' );
+
+		return $moves;
 	}
 
 	/**
@@ -313,7 +407,11 @@ class Redirects {
 		}
 
 		$request = wp_unslash( $_SERVER['REQUEST_URI'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- parsed and normalized in resolve().
-		$target  = self::resolve( (string) $request, array( __CLASS__, 'lookup_news' ) );
+		$target  = self::resolve(
+			(string) $request,
+			array( __CLASS__, 'lookup_news' ),
+			array( Links::class, 'translation_exists' )
+		);
 
 		if ( null === $target ) {
 			return;

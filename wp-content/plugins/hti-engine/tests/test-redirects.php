@@ -15,9 +15,11 @@
 
 require_once __DIR__ . '/bootstrap.php';
 
+require_once __DIR__ . '/../includes/class-tools-content.php';
 require_once __DIR__ . '/../includes/class-redirects.php';
 
 use HTI\Engine\Redirects;
+use HTI\Engine\Tools_Content;
 
 $failures = 0;
 $passes   = 0;
@@ -147,6 +149,91 @@ resolves( '/', null, 'a raiz nunca redireciona' );
 resolves( '/learn/why-invest/', null, 'conteúdo real intocado' );
 resolves( '/investing-glossary/ipo/', null, 'glossário intocado' );
 resolves( '/financial-news/', null, 'o arquivo não se redireciona a si próprio' );
+
+echo "\n=== As calculadoras mudaram para baixo do hub ===\n";
+foreach ( Tools_Content::tools() as $tool_slug => $tool_def ) {
+	$pt_slug = (string) $tool_def['pt_slug'];
+
+	resolves(
+		'/' . $tool_slug . '/',
+		'/tools/' . $tool_slug . '/',
+		'EN ' . $tool_slug . ' → sob o hub'
+	);
+	resolves(
+		'/pt/' . $pt_slug . '/',
+		'/pt/ferramentas/' . $pt_slug . '/',
+		'PT ' . $pt_slug . ' → sob o hub'
+	);
+
+	// O destino não se pode redirecionar a si próprio, ou é um ciclo.
+	resolves( '/tools/' . $tool_slug . '/', null, 'o novo URL EN não redireciona' );
+	resolves( '/pt/ferramentas/' . $pt_slug . '/', null, 'o novo URL PT não redireciona' );
+}
+
+// Uma nona calculadora sem 301 tem de partir a suite, não o site.
+$missing = array();
+foreach ( Tools_Content::slugs() as $tool_slug ) {
+	if ( null === Redirects::resolve( '/' . $tool_slug . '/' ) ) {
+		$missing[] = $tool_slug;
+	}
+}
+check( array() === $missing, 'toda a ferramenta em Tools_Content tem 301 (em falta: ' . ( $missing ? implode( ', ', $missing ) : 'nenhuma' ) . ')' );
+
+// O hub em si nunca se move.
+resolves( '/tools/', null, 'o hub EN fica onde está' );
+resolves( '/pt/ferramentas/', null, 'o hub PT fica onde está' );
+
+echo "\n=== A mudança de página só redireciona depois de a página se mover ===\n";
+
+// O deploy é uma cópia de ficheiros: não corre WP-CLI nem dispara ativação, por
+// isso os 301 ficam vivos antes de o re-parent acontecer. Sem esta guarda, as
+// dezasseis páginas indexadas redirecionavam para URLs ainda inexistentes.
+$absent  = static fn( string $path, string $lang ): bool => false;
+$present = static fn( string $path, string $lang ): bool => true;
+
+$sample_en = 'compound-interest-calculator';
+$sample_pt = 'pt/' . Tools_Content::tools()[ $sample_en ]['pt_slug'];
+
+check(
+	null === Redirects::resolve( '/' . $sample_en . '/', null, $absent ),
+	'destino ausente: o URL EN antigo não redireciona'
+);
+check(
+	'/tools/' . $sample_en . '/' === Redirects::resolve( '/' . $sample_en . '/', null, $present ),
+	'destino presente: o URL EN antigo redireciona'
+);
+check(
+	null === Redirects::resolve( '/' . $sample_pt . '/', null, $absent ),
+	'destino ausente: o URL PT antigo não redireciona'
+);
+check(
+	'/pt/ferramentas/' . Tools_Content::tools()[ $sample_en ]['pt_slug'] . '/' === Redirects::resolve( '/' . $sample_pt . '/', null, $present ),
+	'destino presente: o URL PT antigo redireciona'
+);
+
+// Todas as dezasseis, para nenhuma escapar à guarda.
+$unguarded = array();
+foreach ( Tools_Content::tools() as $tool_slug => $tool_def ) {
+	if ( null !== Redirects::resolve( '/' . $tool_slug . '/', null, $absent ) ) {
+		$unguarded[] = $tool_slug;
+	}
+	if ( null !== Redirects::resolve( '/pt/' . $tool_def['pt_slug'] . '/', null, $absent ) ) {
+		$unguarded[] = 'pt/' . $tool_def['pt_slug'];
+	}
+}
+check( array() === $unguarded, 'as 16 mudanças estão guardadas (sem guarda: ' . ( $unguarded ? implode( ', ', $unguarded ) : 'nenhuma' ) . ')' );
+
+// A guarda não pode alastrar ao mapa legado: /About nunca foi uma página nossa
+// que se movesse, e tem de redirecionar sempre.
+check( '/about/' === Redirects::resolve( '/About', null, $absent ), 'os redirects legados não são afetados pela guarda' );
+check( '/about/' === Redirects::resolve( '/About', null, $present ), 'idem com o destino presente' );
+check( '/financial-news/' === Redirects::resolve( '/FinancialNews', null, $absent ), 'as notícias não são afetadas' );
+
+// Sem verificador (o comportamento antigo) nada muda.
+check(
+	'/tools/' . $sample_en . '/' === Redirects::resolve( '/' . $sample_en . '/' ),
+	'sem verificador, resolve como antes'
+);
 
 echo "\n=== O mapa continua filtrável ===\n";
 add_filter(

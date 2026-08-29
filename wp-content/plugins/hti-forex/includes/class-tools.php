@@ -95,10 +95,21 @@ class Tools {
 
 		wp_enqueue_style( 'hti-forex', HTI_FOREX_URL . 'assets/css/forex.css', array(), VERSION );
 		wp_register_script( 'hti-forex-core', HTI_FOREX_URL . 'assets/js/forex-core.js', array(), VERSION, array( 'in_footer' => true ) );
+
+		// forex.js calls HTITrack.event() for forex_tool_use, so it must load
+		// after hti-track or the call is a silent no-op. Declared only when the
+		// handle exists: hti-engine provides it, and a missing dependency would
+		// make WordPress drop our script entirely, taking the calculators with
+		// it.
+		$deps = array( 'hti-forex-core' );
+		if ( wp_script_is( 'hti-track', 'registered' ) ) {
+			$deps[] = 'hti-track';
+		}
+
 		wp_enqueue_script(
 			'hti-forex',
 			HTI_FOREX_URL . 'assets/js/forex.js',
-			array( 'hti-forex-core' ),
+			$deps,
 			VERSION,
 			array(
 				'in_footer' => true,
@@ -161,7 +172,7 @@ class Tools {
 		// zone right after the CTA. The top banner sits above the tool, right
 		// after the page's intro paragraph — a banner, not a CTA, so the
 		// "CTA never above the result" rule is untouched.
-		return self::ad_block_top() . $body . self::email_block( $name, 'row' ) . self::cta_block( $name ) . self::ad_block();
+		return self::ad_block_top() . $body . self::conversion_block( $name, 'row' ) . self::cta_block( $name ) . self::ad_block();
 	}
 
 	/* ---------------------------------------------------------------------
@@ -659,7 +670,7 @@ class Tools {
 			$out .= '</div>';
 		}
 
-		$out .= self::email_block( 'hub', 'card' );
+		$out .= self::conversion_block( 'hub', 'card' );
 		$out .= '</section>';
 
 		return $out;
@@ -684,13 +695,96 @@ class Tools {
 			return '';
 		}
 
-		return '<div class="hti-fx-cta">'
-			. '<span class="hti-fx-cta__badge">' . esc_html( 'PARTNER LINK' ) . '</span>'
-			. '<span class="hti-fx-cta__risk">' . esc_html( 'Forex and CFDs are high-risk leveraged products; most retail accounts lose money. Educational content — not investment advice.' ) . '</span>'
-			. '<a class="hti-fx-cta__btn" href="' . esc_url( $cta['url'] ) . '" target="_blank" rel="sponsored nofollow noopener"'
+		$brand = '' !== $cta['brand'] ? $cta['brand'] : 'Partner';
+		$mark  = '' !== $cta['logo']
+			? '<img class="hti-fx-cta__logo" src="' . esc_url( $cta['logo'] ) . '" alt="' . esc_attr( $brand ) . '" height="26" loading="lazy" decoding="async" />'
+			: '<span class="hti-fx-cta__wordmark">' . esc_html( $brand ) . '</span>';
+
+		$out = '<div class="hti-fx-cta">'
+			. '<div class="hti-fx-cta__head">' . $mark
+			. '<span class="hti-fx-cta__badge">' . esc_html( 'PARTNER · AD' ) . '</span>'
+			. '</div>';
+
+		if ( '' !== $cta['headline'] ) {
+			$out .= '<p class="hti-fx-cta__headline">' . esc_html( $cta['headline'] ) . '</p>';
+		}
+
+		$out .= '<a class="hti-fx-cta__btn" href="' . esc_url( $cta['url'] ) . '" target="_blank" rel="sponsored nofollow noopener"'
 			. ' data-hti-track="cta_click" data-htip-location="forex_' . esc_attr( $tool ) . '" data-hti-fx-cta>'
 			. esc_html( $cta['label'] )
+			. '</a>';
+
+		return $out
+			. '<span class="hti-fx-cta__risk">' . esc_html( 'Forex and CFDs are high-risk leveraged products; most retail accounts lose money. Educational content — not investment advice. We may be paid if you open an account, at no cost to you.' ) . '</span>'
+			. '</div>';
+	}
+
+	/**
+	 * The conversion slot that follows the calculator.
+	 *
+	 * Which block lands here is a setting, because it is a live experiment:
+	 * the /forex/ audience is Indian and reads Telegram daily, so the channel
+	 * may convert better than asking a foreign site for an email — or it may
+	 * not, and the email list is an asset the channel is not (it is ours, and
+	 * it reaches an inbox). Settings::conversion_blocks() is the single place
+	 * the choice is made, so the hub and the tool pages can never disagree
+	 * about which arm a visitor is in.
+	 *
+	 * @param string $tool    Tool name, or 'hub'.
+	 * @param string $variant 'row' on tool pages, 'card' on the hub.
+	 */
+	private static function conversion_block( string $tool, string $variant ): string {
+		$blocks = Settings::conversion_blocks( Settings::settings() );
+
+		$out = '';
+		if ( $blocks['telegram'] ) {
+			$out .= self::telegram_block( $tool, $variant );
+		}
+		if ( $blocks['email'] ) {
+			$out .= self::email_block( $tool, $variant );
+		}
+		return $out;
+	}
+
+	/**
+	 * The Telegram channel block.
+	 *
+	 * The offer is the cheat sheet, not the channel: "join us" converts far
+	 * below "the PDF you came for is pinned in there". It is the same lead
+	 * magnet the email form promises, moved to where this audience already
+	 * lives — which is why swapping the two blocks is a fair comparison rather
+	 * than trading a real offer for a vague one.
+	 *
+	 * Styled as one of ours, deliberately not as the dark partner card: that
+	 * one exists to read as advertising at a glance, and this is our own
+	 * educational channel. No rel="sponsored" either, for the same reason.
+	 *
+	 * @param string $tool    Tool name, or 'hub'.
+	 * @param string $variant 'row' | 'card'.
+	 */
+	private static function telegram_block( string $tool, string $variant ): string {
+		$url = Settings::normalize_telegram_url( (string) ( Settings::settings()['telegram_url'] ?? '' ) );
+		if ( '' === $url ) {
+			return '';
+		}
+
+		// Closed vocabulary: the funnel's CTA map is the one breakdown with no
+		// cardinality cap, so these keys are derived from the tool list and
+		// never from anything a visitor controls.
+		$location = 'forex_telegram_' . ( in_array( $tool, Settings::TOOLS, true ) ? $tool : 'hub' );
+
+		$plane = '<svg class="hti-fx-tg__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>';
+
+		return '<div class="hti-fx-tg hti-fx-tg--' . esc_attr( $variant ) . '">'
+			. '<div class="hti-fx-tg__copy">'
+			. '<span class="hti-fx-tg__title">' . esc_html( 'The INR cheat sheet is pinned in our Telegram channel' ) . '</span>'
+			. '<span class="hti-fx-tg__sub">' . esc_html( 'Pip values in ₹, the position-size formula and market hours in IST, on one printable sheet — pinned to the top of the channel. Free, and no sign-up.' ) . '</span>'
+			. '</div>'
+			. '<a class="hti-fx-tg__btn" href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer"'
+			. ' data-hti-track="cta_click" data-htip-location="' . esc_attr( $location ) . '">'
+			. $plane . esc_html( 'Open the channel' )
 			. '</a>'
+			. '<span class="hti-fx-tg__note">' . esc_html( 'Educational notes on the arithmetic and the market calendar — no signals, no trade calls, no tips.' ) . '</span>'
 			. '</div>';
 	}
 

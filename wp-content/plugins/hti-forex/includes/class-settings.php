@@ -32,6 +32,12 @@ class Settings {
 	public const TOOLS = array( 'position_size', 'pip_value', 'sessions', 'profit_loss' );
 
 	/**
+	 * Longest label that still reads as a button. Above this it is treated as
+	 * an offer sentence and moved to the headline (see cta_for()).
+	 */
+	public const LABEL_MAX = 48;
+
+	/**
 	 * Hook the admin page and setting registration.
 	 */
 	public static function init(): void {
@@ -50,11 +56,15 @@ class Settings {
 			'cta_enabled'          => false,
 			'cta_url'              => '',
 			'cta_label'            => 'See how these numbers behave on a demo account',
+			'cta_brand'            => '',
+			'cta_logo_url'         => '',
 			'cta_position_size'    => true,
 			'cta_pip_value'        => true,
 			'cta_sessions'         => true,
 			'cta_profit_loss'      => true,
 			'email_enabled'        => true,
+			'telegram_url'         => '',
+			'conversion_block'     => 'telegram',
 			'ads_enabled'          => false,
 			'ad_code_desktop'      => '',
 			'ad_code_mobile'       => '',
@@ -128,8 +138,37 @@ class Settings {
 
 		$label = sanitize_text_field( (string) ( $input['cta_label'] ?? '' ) );
 		if ( '' !== $label ) {
-			$out['cta_label'] = mb_substr( $label, 0, 120 );
+			$out['cta_label'] = mb_substr( $label, 0, 160 );
 		}
+
+		// Partner name: the logo's alt text, and the wordmark shown when no
+		// logo image is configured.
+		$brand             = sanitize_text_field( (string) ( $input['cta_brand'] ?? '' ) );
+		$out['cta_brand']  = mb_substr( $brand, 0, 24 );
+
+		// Partner logo: https image URL, taken from the affiliate panel. Same
+		// posture as the affiliate URL — anything that is not https is dropped
+		// and reported, and the CTA simply falls back to the wordmark.
+		$logo = trim( (string) ( $input['cta_logo_url'] ?? '' ) );
+		if ( '' === $logo ) {
+			$out['cta_logo_url'] = '';
+		} elseif ( ! preg_match( '#^https://#i', $logo ) ) {
+			$out['cta_logo_url'] = '';
+			$errors[]            = 'The partner logo URL must start with https:// — it was cleared.';
+		} else {
+			$out['cta_logo_url'] = esc_url_raw( $logo );
+		}
+
+		// Telegram channel: our own public channel, so unlike the affiliate URL
+		// there is nothing to hide — but the host is checked as well as the
+		// scheme, because a mistyped setting here sends campaign traffic
+		// somewhere we did not intend.
+		$out['telegram_url'] = self::normalize_telegram_url( (string) ( $input['telegram_url'] ?? '' ) );
+		if ( '' === $out['telegram_url'] && '' !== trim( (string) ( $input['telegram_url'] ?? '' ) ) ) {
+			$errors[] = 'The Telegram URL must be an https:// link to t.me or telegram.me — it was cleared.';
+		}
+
+		$out['conversion_block'] = self::normalize_conversion_block( (string) ( $input['conversion_block'] ?? '' ) );
 
 		$param            = sanitize_key( (string) ( $input['sub_param'] ?? '' ) );
 		$out['sub_param'] = ( '' !== $param && strlen( $param ) <= 32 ) ? $param : $defaults['sub_param'];
@@ -188,12 +227,97 @@ class Settings {
 	}
 
 	/**
+	 * A Telegram channel URL, or '' when the setting is unusable.
+	 *
+	 * Pure. Both the scheme and the host are checked: this URL is printed
+	 * straight into the page and is where campaign traffic is sent, so a typo
+	 * here quietly points paid clicks at somewhere we never chose.
+	 *
+	 * @param string $url Raw setting value.
+	 */
+	public static function normalize_telegram_url( string $url ): string {
+		$url = trim( $url );
+		if ( '' === $url ) {
+			return '';
+		}
+		if ( ! preg_match( '#^https://#i', $url ) ) {
+			return '';
+		}
+
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		if ( ! in_array( $host, array( 't.me', 'telegram.me' ), true ) ) {
+			return '';
+		}
+
+		// A bare host with no channel or invite hash is a half-filled setting.
+		$path = trim( (string) wp_parse_url( $url, PHP_URL_PATH ), '/' );
+		if ( '' === $path ) {
+			return '';
+		}
+
+		return esc_url_raw( $url );
+	}
+
+	/**
+	 * Which conversion block the /forex/ pages carry.
+	 *
+	 * Pure. 'telegram' is the default because that is the arm being tested;
+	 * anything unrecognised falls back to it rather than rendering nothing.
+	 *
+	 * @param string $value Raw setting value.
+	 * @return string 'telegram' | 'email' | 'both'
+	 */
+	public static function normalize_conversion_block( string $value ): string {
+		$value = strtolower( trim( $value ) );
+		return in_array( $value, array( 'telegram', 'email', 'both' ), true ) ? $value : 'telegram';
+	}
+
+	/**
+	 * Which conversion blocks actually render, given the settings.
+	 *
+	 * Pure, and the single place the decision is made — the renderer asks this
+	 * rather than re-deriving it, so the tool pages and the hub can never
+	 * disagree about which arm of the test a visitor is in.
+	 *
+	 * @param array<string,mixed> $settings Settings array.
+	 * @return array{telegram:bool,email:bool}
+	 */
+	public static function conversion_blocks( array $settings ): array {
+		// Merge over the defaults so a partial array behaves exactly like a
+		// full one. Without this a caller passing only the keys it cared about
+		// would read email_enabled as absent, i.e. off, and the page could end
+		// up with no conversion block at all.
+		$settings = array_merge( self::defaults(), $settings );
+
+		$mode = self::normalize_conversion_block( (string) ( $settings['conversion_block'] ?? '' ) );
+		$url  = self::normalize_telegram_url( (string) ( $settings['telegram_url'] ?? '' ) );
+
+		$telegram = '' !== $url && in_array( $mode, array( 'telegram', 'both' ), true );
+
+		// Without a usable Telegram URL the telegram-only setting would leave
+		// the page with no conversion block at all; fall back to email rather
+		// than silently dropping both.
+		$email = ! empty( $settings['email_enabled'] )
+			&& ( in_array( $mode, array( 'email', 'both' ), true ) || ! $telegram );
+
+		return array(
+			'telegram' => $telegram,
+			'email'    => $email,
+		);
+	}
+
+	/**
 	 * CTA config for one tool, or null when the CTA must not render.
 	 * Null when: global kill-switch off, the tool's toggle off, or no URL.
 	 *
+	 * Short labels stay on the button. A long one is an offer sentence, not a
+	 * button: it becomes the headline and the button falls back to a plain
+	 * action, which is what stops a 90-character label from stretching the
+	 * button past the edge of its card.
+	 *
 	 * @param string                   $tool     Tool name (position_size|pip_value|sessions).
 	 * @param array<string,mixed>|null $settings Optional settings (defaults to stored).
-	 * @return array{url:string,label:string}|null
+	 * @return array{url:string,label:string,headline:string,brand:string,logo:string}|null
 	 */
 	public static function cta_for( string $tool, ?array $settings = null ): ?array {
 		$s = $settings ?? self::settings();
@@ -205,9 +329,19 @@ class Settings {
 			return null;
 		}
 
+		$label    = (string) $s['cta_label'];
+		$headline = '';
+		if ( mb_strlen( $label ) > self::LABEL_MAX ) {
+			$headline = $label;
+			$label    = 'Open a free account';
+		}
+
 		return array(
-			'url'   => (string) $s['cta_url'],
-			'label' => (string) $s['cta_label'],
+			'url'      => (string) $s['cta_url'],
+			'label'    => $label,
+			'headline' => $headline,
+			'brand'    => (string) ( $s['cta_brand'] ?? '' ),
+			'logo'     => (string) ( $s['cta_logo_url'] ?? '' ),
 		);
 	}
 
@@ -287,8 +421,30 @@ class Settings {
 					<tr>
 						<th scope="row"><label for="hti-fx-cta-label"><?php esc_html_e( 'CTA label', 'hti-forex' ); ?></label></th>
 						<td>
-							<input type="text" id="hti-fx-cta-label" class="regular-text" name="<?php echo esc_attr( self::OPTION ); ?>[cta_label]" value="<?php echo esc_attr( $s['cta_label'] ); ?>" />
-							<p class="description"><?php esc_html_e( 'Keep it conditional and demo-first — never imperative "trade/invest now" copy.', 'hti-forex' ); ?></p>
+							<input type="text" id="hti-fx-cta-label" class="large-text" name="<?php echo esc_attr( self::OPTION ); ?>[cta_label]" value="<?php echo esc_attr( $s['cta_label'] ); ?>" />
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %d: maximum characters that still fit on a button. */
+									esc_html__( 'Up to %d characters stays on the button. Anything longer is an offer sentence, so it moves to the headline above the button and the button reads "Open a free account" — that is what keeps a long offer from stretching the button past the card.', 'hti-forex' ),
+									(int) self::LABEL_MAX
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-cta-brand"><?php esc_html_e( 'Partner name', 'hti-forex' ); ?></label></th>
+						<td>
+							<input type="text" id="hti-fx-cta-brand" class="regular-text" name="<?php echo esc_attr( self::OPTION ); ?>[cta_brand]" value="<?php echo esc_attr( (string) $s['cta_brand'] ); ?>" placeholder="XM" />
+							<p class="description"><?php esc_html_e( 'Shown as the wordmark when no logo image is set, and used as the logo\'s alt text.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="hti-fx-cta-logo"><?php esc_html_e( 'Partner logo URL (https)', 'hti-forex' ); ?></label></th>
+						<td>
+							<input type="url" id="hti-fx-cta-logo" class="large-text code" name="<?php echo esc_attr( self::OPTION ); ?>[cta_logo_url]" value="<?php echo esc_attr( (string) $s['cta_logo_url'] ); ?>" placeholder="https://…/logo.svg" />
+							<p class="description"><?php esc_html_e( 'The partner logo from their affiliate panel (SVG or PNG, transparent or dark background). Displayed at 26px tall inside the CTA card. Leave empty to show the partner name as text.', 'hti-forex' ); ?></p>
 						</td>
 					</tr>
 					<tr>
@@ -353,14 +509,41 @@ class Settings {
 					</tr>
 				</table>
 
-				<h2><?php esc_html_e( 'Email capture & campaign tracking', 'hti-forex' ); ?></h2>
+				<h2><?php esc_html_e( 'Conversion, email capture & campaign tracking', 'hti-forex' ); ?></h2>
 				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="hti-fx-telegram"><?php esc_html_e( 'Telegram channel URL', 'hti-forex' ); ?></label></th>
+						<td>
+							<input type="url" id="hti-fx-telegram" class="large-text code" name="<?php echo esc_attr( self::OPTION ); ?>[telegram_url]" value="<?php echo esc_attr( (string) $s['telegram_url'] ); ?>" placeholder="https://t.me/…" />
+							<p class="description"><?php esc_html_e( 'https:// link to t.me or telegram.me. Prefer a named invite link created in the channel settings — Telegram counts joins per link, which is the only way to tell how many of these clicks became followers.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Conversion block', 'hti-forex' ); ?></th>
+						<td>
+							<?php
+							$modes = array(
+								'telegram' => __( 'Telegram only — the channel replaces the email form', 'hti-forex' ),
+								'email'    => __( 'Email only — the newsletter form, as before', 'hti-forex' ),
+								'both'     => __( 'Both — the channel and the email form', 'hti-forex' ),
+							);
+							$current = self::normalize_conversion_block( (string) $s['conversion_block'] );
+							foreach ( $modes as $value => $label ) :
+								?>
+								<label style="display:block;margin-bottom:4px">
+									<input type="radio" name="<?php echo esc_attr( self::OPTION ); ?>[conversion_block]" value="<?php echo esc_attr( $value ); ?>" <?php checked( $current, $value ); ?> />
+									<?php echo esc_html( $label ); ?>
+								</label>
+							<?php endforeach; ?>
+							<p class="description"><?php esc_html_e( 'What the /forex/ hub and tool pages carry in the slot after the calculator. Switching is instant and reversible — the cheat-sheet lead magnet stays wired either way, so going back to email loses nothing. Without a valid Telegram URL this falls back to the email form.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Email capture', 'hti-forex' ); ?></th>
 						<td>
 							<label>
 								<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[email_enabled]" value="1" <?php checked( ! empty( $s['email_enabled'] ) ); ?> />
-								<?php esc_html_e( 'Show the newsletter form on the tool pages (uses the existing double opt-in)', 'hti-forex' ); ?>
+								<?php esc_html_e( 'Allow the newsletter form (uses the existing double opt-in). Unticking it hides the form whatever the setting above says.', 'hti-forex' ); ?>
 							</label>
 						</td>
 					</tr>

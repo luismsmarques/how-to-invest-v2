@@ -71,6 +71,7 @@ class Metrics {
 			'contact_submit',
 			'account_delete_request',
 			'cta_click',
+			'forex_tool_use',
 			'feedback_widget_open',
 			'feedback_submitted',
 			'feedback_invite_click',
@@ -145,6 +146,13 @@ class Metrics {
 		$ref = $request->get_param( 'ref' );
 		if ( is_string( $ref ) && '' !== $ref ) {
 			$params['ref'] = self::norm_ref( $ref );
+		}
+		$campaign = $request->get_param( 'campaign' );
+		if ( is_string( $campaign ) && '' !== $campaign ) {
+			$campaign = self::norm_campaign( $campaign );
+			if ( '' !== $campaign ) {
+				$params['campaign'] = $campaign;
+			}
 		}
 
 		self::bump( $name, $params );
@@ -246,6 +254,20 @@ class Metrics {
 				$data[ $day ]['ref'][ $rf ] = ( $data[ $day ]['ref'][ $rf ] ?? 0 ) + 1;
 			} else {
 				$data[ $day ]['ref']['_other'] = ( $data[ $day ]['ref']['_other'] ?? 0 ) + 1;
+			}
+		}
+
+		if ( 'page_view' === $event && isset( $params['campaign'] ) ) {
+			$cp = (string) $params['campaign'];
+			if ( ! isset( $data[ $day ]['camp'] ) || ! is_array( $data[ $day ]['camp'] ) ) {
+				$data[ $day ]['camp'] = array();
+			}
+			// Bounded like the path map (overflow → "_other"): the value comes
+			// from a URL, so an abuser could otherwise grow the option freely.
+			if ( isset( $data[ $day ]['camp'][ $cp ] ) || count( $data[ $day ]['camp'] ) < self::MAX_PATHS_PER_DAY ) {
+				$data[ $day ]['camp'][ $cp ] = ( $data[ $day ]['camp'][ $cp ] ?? 0 ) + 1;
+			} else {
+				$data[ $day ]['camp']['_other'] = ( $data[ $day ]['camp']['_other'] ?? 0 ) + 1;
 			}
 		}
 
@@ -402,17 +424,80 @@ class Metrics {
 	}
 
 	/**
+	 * Normalize a campaign name: lowercase, [a-z0-9_-] only, 32 characters.
+	 *
+	 * A campaign NAME is shared by everyone who arrives through the same ad, so
+	 * it is not personal data. The client never sends a per-click id, and the
+	 * character class here would strip most of one anyway.
+	 *
+	 * @param string $campaign Raw campaign name from the landing URL.
+	 */
+	private static function norm_campaign( string $campaign ): string {
+		$campaign = strtolower( $campaign );
+		$campaign = (string) preg_replace( '/[^a-z0-9_\-]/', '', $campaign );
+		return substr( $campaign, 0, 32 );
+	}
+
+	/**
+	 * Validate a 'Y-m-d' date, returning '' when it is not a real calendar day
+	 * (so '2026-02-31' is rejected, not silently rolled over).
+	 *
+	 * @param string $date Raw date string.
+	 */
+	private static function norm_date( string $date ): string {
+		$date = trim( $date );
+		if ( 1 !== preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+			return '';
+		}
+		$parts = explode( '-', $date );
+		if ( ! checkdate( (int) $parts[1], (int) $parts[2], (int) $parts[0] ) ) {
+			return '';
+		}
+		return $date;
+	}
+
+	/**
 	 * Aggregate the counters over the last $days days.
 	 *
 	 * @param int $days Window size in days.
-	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>,page:array<string,int>,lang:array<string,int>,ref:array<string,int>,rec:array<string,int>,lat:array<string,int>,bkr:array<string,int>,bkr_loc:array<string,int>,bkr_arch:array<int,int>}
+	 * @return array{e:array<string,int>,step:array<int,int>,arch:array<int,int>,cta:array<string,int>,page:array<string,int>,lang:array<string,int>,ref:array<string,int>,camp:array<string,int>,rec:array<string,int>,lat:array<string,int>,bkr:array<string,int>,bkr_loc:array<string,int>,bkr_arch:array<int,int>}
 	 */
 	public static function totals( int $days ): array {
+		$days = max( 1, $days );
+		return self::totals_between(
+			gmdate( 'Y-m-d', time() - ( $days - 1 ) * DAY_IN_SECONDS ),
+			gmdate( 'Y-m-d' )
+		);
+	}
+
+	/**
+	 * Aggregate the counters over an inclusive date range.
+	 *
+	 * Days are stored keyed by 'Y-m-d', so a plain string comparison is the
+	 * whole filter — no date parsing per bucket. Both bounds are inclusive, and
+	 * a reversed range is swapped rather than returning nothing.
+	 *
+	 * @param string $from Start date, 'Y-m-d'.
+	 * @param string $to   End date, 'Y-m-d'.
+	 * @return array<string,array<string|int,int>>
+	 */
+	public static function totals_between( string $from, string $to ): array {
+		$from = self::norm_date( $from );
+		$to   = self::norm_date( $to );
+		if ( '' === $from || '' === $to ) {
+			$from = gmdate( 'Y-m-d', time() - 29 * DAY_IN_SECONDS );
+			$to   = gmdate( 'Y-m-d' );
+		}
+		if ( $from > $to ) {
+			$swap = $from;
+			$from = $to;
+			$to   = $swap;
+		}
+
 		$data = get_option( self::OPTION, array() );
 		if ( ! is_array( $data ) ) {
 			$data = array();
 		}
-		$cutoff = gmdate( 'Y-m-d', time() - ( max( 1, $days ) - 1 ) * DAY_IN_SECONDS );
 
 		$out = array(
 			'e'        => array(),
@@ -422,6 +507,7 @@ class Metrics {
 			'page'     => array(),
 			'lang'     => array(),
 			'ref'      => array(),
+			'camp'     => array(),
 			'rec'      => array(),
 			'lat'      => array(),
 			'bkr'      => array(),
@@ -429,10 +515,11 @@ class Metrics {
 			'bkr_arch' => array(),
 		);
 		foreach ( $data as $day => $buckets ) {
-			if ( (string) $day < $cutoff ) {
+			$day = (string) $day;
+			if ( $day < $from || $day > $to ) {
 				continue;
 			}
-			foreach ( array( 'e', 'step', 'arch', 'cta', 'page', 'lang', 'ref', 'rec', 'lat', 'bkr', 'bkr_loc', 'bkr_arch' ) as $group ) {
+			foreach ( array( 'e', 'step', 'arch', 'cta', 'page', 'lang', 'ref', 'camp', 'rec', 'lat', 'bkr', 'bkr_loc', 'bkr_arch' ) as $group ) {
 				if ( empty( $buckets[ $group ] ) || ! is_array( $buckets[ $group ] ) ) {
 					continue;
 				}
@@ -471,9 +558,36 @@ class Metrics {
 			$days = 30;
 		}
 
-		$t    = self::totals( $days );
+		// A custom range wins over the preset window. Both bounds are optional
+		// on their own: one date alone reports that single day.
+		$from = isset( $_GET['from'] ) ? self::norm_date( sanitize_text_field( wp_unslash( (string) $_GET['from'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only report filter.
+		$to   = isset( $_GET['to'] ) ? self::norm_date( sanitize_text_field( wp_unslash( (string) $_GET['to'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only report filter.
+		if ( '' !== $from || '' !== $to ) {
+			if ( '' === $from ) {
+				$from = $to;
+			}
+			if ( '' === $to ) {
+				$to = $from;
+			}
+			if ( $from > $to ) {
+				$swap = $from;
+				$from = $to;
+				$to   = $swap;
+			}
+			$custom = true;
+			$t      = self::totals_between( $from, $to );
+		} else {
+			$custom = false;
+			$from   = gmdate( 'Y-m-d', time() - ( $days - 1 ) * DAY_IN_SECONDS );
+			$to     = gmdate( 'Y-m-d' );
+			$t      = self::totals( $days );
+		}
+
 		$e    = $t['e'];
 		$base = admin_url( 'options-general.php?page=hti-funnel' );
+
+		// Counts are kept for KEEP_DAYS; anything older simply has no data.
+		$oldest = gmdate( 'Y-m-d', time() - ( self::KEEP_DAYS - 1 ) * DAY_IN_SECONDS );
 
 		// Map archetype ids → labels for readability.
 		$archetypes = Config::archetypes();
@@ -488,12 +602,40 @@ class Metrics {
 			<p>
 				<?php esc_html_e( 'Window:', 'hti-engine' ); ?>
 				<?php foreach ( $allowed as $d ) : ?>
-					<?php if ( $d === $days ) : ?>
+					<?php if ( ! $custom && $d === $days ) : ?>
 						<strong style="margin:0 .4em;"><?php echo esc_html( sprintf( '%d days', $d ) ); ?></strong>
 					<?php else : ?>
 						<a style="margin:0 .4em;" href="<?php echo esc_url( add_query_arg( 'days', $d, $base ) ); ?>"><?php echo esc_html( sprintf( '%d days', $d ) ); ?></a>
 					<?php endif; ?>
 				<?php endforeach; ?>
+			</p>
+
+			<form method="get" action="<?php echo esc_url( admin_url( 'options-general.php' ) ); ?>" style="margin:0 0 1em;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+				<input type="hidden" name="page" value="hti-funnel" />
+				<label for="hti-from"><?php esc_html_e( 'From', 'hti-engine' ); ?></label>
+				<input type="date" id="hti-from" name="from" value="<?php echo esc_attr( $custom ? $from : '' ); ?>"
+					min="<?php echo esc_attr( $oldest ); ?>" max="<?php echo esc_attr( gmdate( 'Y-m-d' ) ); ?>" />
+				<label for="hti-to"><?php esc_html_e( 'to', 'hti-engine' ); ?></label>
+				<input type="date" id="hti-to" name="to" value="<?php echo esc_attr( $custom ? $to : '' ); ?>"
+					min="<?php echo esc_attr( $oldest ); ?>" max="<?php echo esc_attr( gmdate( 'Y-m-d' ) ); ?>" />
+				<button type="submit" class="button"><?php esc_html_e( 'Apply', 'hti-engine' ); ?></button>
+				<?php if ( $custom ) : ?>
+					<a class="button-link" href="<?php echo esc_url( $base ); ?>"><?php esc_html_e( 'Clear', 'hti-engine' ); ?></a>
+				<?php endif; ?>
+				<span style="color:#646970;font-size:12px;">
+					<?php esc_html_e( 'Leave one side empty for a single day. Counts are kept for 120 days.', 'hti-engine' ); ?>
+				</span>
+			</form>
+
+			<p style="margin:.2em 0 1em;color:#646970;">
+				<?php
+				printf(
+					/* translators: 1: start date, 2: end date. */
+					esc_html__( 'Showing %1$s to %2$s (inclusive, UTC days).', 'hti-engine' ),
+					esc_html( $from ),
+					esc_html( $to )
+				);
+				?>
 			</p>
 
 			<h2><?php esc_html_e( 'Traffic (page views)', 'hti-engine' ); ?></h2>
@@ -548,6 +690,31 @@ class Metrics {
 				self::bar_table( $ref_rows, $ref_total );
 			} else {
 				echo '<p>' . esc_html__( 'No data yet.', 'hti-engine' ) . '</p>';
+			}
+			?>
+
+			<h2><?php esc_html_e( 'Campaigns (paid traffic)', 'hti-engine' ); ?></h2>
+			<p style="margin:.2em 0 1em;color:#646970;font-size:12px;">
+				<?php esc_html_e( 'Page views whose landing URL carried utm_campaign (or campaign / utm_source). Counted for every visitor, with or without consent — which is why paid traffic shows here even when Google Analytics reports nothing. Tag your ad landing URLs with ?utm_campaign=name to see them.', 'hti-engine' ); ?>
+			</p>
+			<?php
+			$camps = $t['camp'];
+			arsort( $camps );
+			$camp_total = array_sum( $camps );
+			$camp_rows  = array();
+			$shown      = 0;
+			foreach ( $camps as $camp => $n ) {
+				if ( $shown >= 20 ) {
+					break;
+				}
+				++$shown;
+				$label       = '_other' === $camp ? __( '(other campaigns)', 'hti-engine' ) : (string) $camp;
+				$camp_rows[] = array( $label, (int) $n );
+			}
+			if ( $camp_rows ) {
+				self::bar_table( $camp_rows, $camp_total );
+			} else {
+				echo '<p>' . esc_html__( 'No campaign traffic recorded yet.', 'hti-engine' ) . '</p>';
 			}
 			?>
 

@@ -72,14 +72,27 @@ fresh page (the seeder never updates existing pages).
 2. **Rates** — activation schedules the twice-daily fetch and an immediate
    first fetch; check the "Exchange rates" panel shows `frankfurter` with a
    fresh date (use "Fetch now" if needed). Overrides are for emergencies.
-3. **Campaign tracking** — first-party `page_view`/`cta_click` work out of the
+3. **Conversion block** — the slot after the calculator carries either the
+   Telegram channel or the email form, chosen in the settings
+   (`conversion_block`: `telegram` | `email` | `both`, default `telegram`).
+   It is a live experiment: this audience reads Telegram daily and may join a
+   channel more readily than hand an email to a foreign site — or may not, and
+   the email list is an asset the channel is not. The offer is the same either
+   way: the **INR cheat sheet**, pinned in the channel instead of emailed.
+   Set a **named invite link** as the URL (channel settings → invite links);
+   Telegram counts joins per link, which is the only way to see how many of
+   these clicks became followers. Clicks are counted our side as `cta_click`
+   with `forex_telegram_hub` / `forex_telegram_{tool}`. Switching back to
+   `email` is one click and loses nothing — the `hti_lead_magnet` filter and
+   the PDF stay wired throughout.
+4. **Campaign tracking** — first-party `page_view`/`cta_click` work out of the
    box (HTI Funnel screen). For ad-platform pixels, configure them in GTM;
    the dataLayer push is consent-gated as everywhere else on the site.
-4. **Affiliate CTA** — paste the https partner URL, keep the conditional
+5. **Affiliate CTA** — paste the https partner URL, keep the conditional
    label, tick the tools it should show on, then enable the kill-switch
    checkbox. The `clickid`/`utm_campaign` landing parameter is appended to
    the CTA automatically for sub-id attribution.
-5. **Before enabling the CTA**: re-read the regulatory note below — the
+6. **Before enabling the CTA**: re-read the regulatory note below — the
    tools are safe; the conversion layer is where the exposure lives.
 
 ## Phase 2 backlog
@@ -101,8 +114,31 @@ Still open:
   withdrawal costs) — research gap #4, defensible because it needs upkeep.
 
 The cheat sheet's reference rates are baked into the PDF (dated August
-2026). To refresh: edit `assets/pdf/src/cheat-sheet.html`, regenerate with
-the Chromium command in its header comment, and commit both files.
+2026). To refresh: edit `assets/pdf/src/cheat-sheet.html`, run
+`assets/pdf/src/build.sh` (headless Chromium; `CHROMIUM=/path/to/chrome` if it
+is not on the PATH), and commit both files. Chromium keeps `<a href>` as real
+PDF link annotations, which is what makes the sheet's links clickable — check
+the page count after editing, the layout is built to fill exactly two A4 pages.
+
+To put the partner's banner on page 1, drop the creative from the affiliate
+panel at `assets/pdf/src/xm-600x90.png` (600×90) and rebuild: `build.sh`
+injects it at the `<!--XM_BANNER-->` marker, and injects nothing when the file
+is absent, so the sheet is never published with a broken image. The banner
+links through `/forex/go/cheatsheet-banner/` — a different placement from the
+text block's `/forex/go/cheatsheet/`, so the two are told apart both in the
+affiliate panel and in our click counts. Page 1 has room for it; page 2 does
+not, which is why the slot lives there.
+
+The sheet's partner link points at `/forex/go/cheatsheet/`, never at the
+affiliate URL. `includes/class-go.php` resolves that route at click time from
+the CTA settings, appends the configured sub-id (`clickid` by default) so the
+placement is attributable, counts a `cta_click` under `forex_go_{slot}`, and
+falls back to the `/forex/` hub whenever the CTA kill-switch is off — a
+printed link must never dead-end. The route is `noindex` and robots-disallowed.
+Adding a placement is just a new slot in the URL: `/forex/go/{slot}/`.
+
+Rewrite rules are flushed once per plugin VERSION (the cPanel deploy never
+reactivates plugins), so bump `VERSION` when touching the route.
 
 ## Tests
 

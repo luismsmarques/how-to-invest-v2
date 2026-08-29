@@ -115,6 +115,15 @@ class Seeder {
 		// (the seeder is otherwise create-only).
 		self::ensure_contact_form();
 
+		// Bring an existing Tools section onto the current structure (the
+		// calculators become children of the hub). Runs before the link pass
+		// below, because re-parenting changes their permalinks.
+		//
+		// The log is kept, not discarded: it is the only place a skipped page
+		// or a slug rewritten by wp_unique_post_slug() is reported, and that is
+		// the one outcome nobody can afford to miss.
+		$report['tools'] = self::ensure_tools_section();
+
 		// Final pass: re-localize internal links in every PT post now that all
 		// EN+PT posts exist (fixes cross-links whose target was seeded later).
 		self::relocalize_pt();
@@ -142,7 +151,7 @@ class Seeder {
 		);
 		foreach ( $groups as $type => $entries ) {
 			foreach ( $entries as $entry ) {
-				$en = get_page_by_path( $entry['slug'], OBJECT, $type );
+				$en = self::entry_post( (string) $entry['slug'], $type );
 				if ( ! $en instanceof \WP_Post ) {
 					continue;
 				}
@@ -199,6 +208,312 @@ class Seeder {
 	}
 
 	/**
+	 * Whether a migration log describes a clean run or one that needs a look.
+	 *
+	 * "moved …" and "added …" lines are the happy path. A line that opens with
+	 * WARNING (a slug rewritten on re-parent — the page is now a 404 behind its
+	 * own 301) or SKIPPED (a hub somebody edited, left untouched on purpose)
+	 * means a human has something to do, and the admin notice has to look like
+	 * it rather than reporting success in green.
+	 *
+	 * @param array<int,string> $log Lines from ensure_tools_section().
+	 * @return string 'warning' or 'success'.
+	 */
+	public static function log_severity( array $log ): string {
+		foreach ( $log as $line ) {
+			$line = ltrim( (string) $line );
+			if ( str_starts_with( $line, 'WARNING' ) || str_starts_with( $line, 'SKIPPED' ) ) {
+				return 'warning';
+			}
+		}
+		return 'success';
+	}
+
+	/**
+	 * Bring an already-published Tools section up to the current structure.
+	 *
+	 * The seeder is create-only, so none of the structural work below can be
+	 * expressed as seed content: the eight calculators were published as
+	 * top-level pages and have to be re-parented onto the hub in place, per
+	 * language. Idempotent and safe to re-run — every step checks the current
+	 * state first and reports what it did rather than assuming.
+	 *
+	 * Not wired into Content_Sync deliberately: a background cron silently
+	 * re-parenting sixteen published pages is not a thing you want to discover
+	 * after the fact. Run it from `wp hti tools-migrate` (or a seed run).
+	 *
+	 * @param bool $dry_run When true, report what would change and write nothing.
+	 * @return array<int,string> Human-readable report lines.
+	 */
+	public static function ensure_tools_section( bool $dry_run = false ): array {
+		$log = array();
+
+		$hub_en = get_page_by_path( Tools_Content::HUB_SLUG, OBJECT, 'page' );
+		if ( ! $hub_en instanceof \WP_Post ) {
+			return array( 'Tools hub page not found — nothing to migrate.' );
+		}
+		$hub_en_id = (int) $hub_en->ID;
+
+		$pt     = '';
+		$hub_pt = 0;
+		if ( self::polylang_active() ) {
+			$default = (string) pll_default_language( 'slug' );
+			$pt      = self::portuguese_slug( '' !== $default ? $default : 'en' );
+			if ( '' !== $pt ) {
+				$translated = pll_get_post( $hub_en_id, $pt );
+				$hub_pt     = $translated ? (int) $translated : 0;
+				if ( 0 === $hub_pt ) {
+					// Never fall back to the EN hub: a PT child under it would
+					// land on /tools/{pt-slug}/ and collide with its EN sibling.
+					$log[] = 'No PT translation of the Tools hub — PT pages left untouched.';
+				}
+			}
+		}
+
+		// The hub is a card grid and the calculators are two-column cards; the
+		// default page template constrains content to 680px, where both
+		// collapse to a single column and the design never shows.
+		self::ensure_page_template( Tools_Content::HUB_SLUG, 'page-tools' );
+		foreach ( Tools_Content::slugs() as $tool_slug ) {
+			self::ensure_page_template( $tool_slug, 'page-tools' );
+		}
+
+		$log = array_merge( $log, self::swap_hub_body( $hub_en_id, 'hub (EN)', $dry_run ) );
+		if ( $hub_pt > 0 ) {
+			$log = array_merge( $log, self::swap_hub_body( $hub_pt, 'hub (PT)', $dry_run ) );
+		}
+
+		foreach ( Tools_Content::slugs() as $slug ) {
+			// A 0.14.0 seed run could create a second copy under the hub while
+			// the original was still at the top level. Fold the pair back into
+			// one before anything else touches either of them.
+			[ $en, $dupe_log ] = self::consolidate( $slug, $pt, $dry_run );
+			$log               = array_merge( $log, $dupe_log );
+
+			if ( ! $en instanceof \WP_Post ) {
+				$log[] = sprintf( 'skip %s — page not found.', $slug );
+				continue;
+			}
+
+			$log = array_merge( $log, self::reparent( (int) $en->ID, $hub_en_id, $slug, $dry_run ) );
+
+			if ( '' === $pt || 0 === $hub_pt ) {
+				continue;
+			}
+			$pt_id = pll_get_post( (int) $en->ID, $pt );
+			if ( ! $pt_id ) {
+				$log[] = sprintf( 'skip %s (PT) — no translation.', $slug );
+				continue;
+			}
+			$log = array_merge( $log, self::reparent( (int) $pt_id, $hub_pt, $slug . ' (PT)', $dry_run ) );
+			$log = array_merge( $log, self::ensure_cta( (int) $pt_id, $slug . ' (PT)', $dry_run ) );
+		}
+
+		return $log;
+	}
+
+	/**
+	 * Replace the hub's bullet-list body with the [hti_tools_hub] shortcode.
+	 *
+	 * The only destructive step in the migration, so it refuses to run on a
+	 * page somebody has edited. "Edited" is judged structurally rather than by
+	 * hashing the seeded body: that body has already changed shape twice (the
+	 * bullets now point at /tools/…), so a hash would reject every real site.
+	 * What the seeder has ever produced here is a paragraph, a list and the CTA
+	 * pattern — any other block type means a human has been in the editor, and
+	 * then the page is left alone and reported instead.
+	 *
+	 * @param int    $id      Hub page ID.
+	 * @param string $label   Label for the report.
+	 * @param bool   $dry_run Report only.
+	 * @return array<int,string>
+	 */
+	private static function swap_hub_body( int $id, string $label, bool $dry_run ): array {
+		$post = get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			return array();
+		}
+		$content = (string) $post->post_content;
+
+		if ( function_exists( 'has_shortcode' ) && has_shortcode( $content, 'hti_tools_hub' ) ) {
+			return array();
+		}
+
+		preg_match_all( '/<!--\s+wp:([a-z0-9\/-]+)/i', $content, $matches );
+		$blocks   = array_unique( $matches[1] );
+		/*
+		 * What the seeder produced here is a paragraph, a list and the
+		 * questionnaire CTA as a wp:pattern — but the moment anyone opens the
+		 * page in the editor and saves, WordPress flattens that pattern into
+		 * the group/heading/paragraph/buttons/button it is made of. Treating
+		 * those as "edited" made the guard fire on a page nobody had really
+		 * written in, which is how one language got converted in production and
+		 * the other did not. The list is still required, so a hub somebody
+		 * actually rewrote still refuses, and the previous body is stashed
+		 * either way.
+		 */
+		$allowed  = array( 'paragraph', 'list', 'list-item', 'pattern', 'group', 'heading', 'buttons', 'button' );
+		$foreign  = array_diff( $blocks, $allowed );
+		$has_list = in_array( 'list', $blocks, true );
+
+		if ( array() !== $foreign || ! $has_list ) {
+			return array(
+				sprintf(
+					'SKIPPED %s — the page looks edited (blocks: %s). Replace its body with [hti_tools_hub] by hand.',
+					$label,
+					implode( ', ', $blocks )
+				),
+			);
+		}
+
+		if ( $dry_run ) {
+			return array( sprintf( 'would replace the body of %s with [hti_tools_hub].', $label ) );
+		}
+
+		// Keep the previous body: the swap is the one step that throws content
+		// away, and a wrong call should be recoverable without a backup.
+		update_post_meta( $id, '_hti_tools_hub_prev', $content );
+		wp_update_post(
+			array(
+				'ID'           => $id,
+				'post_content' => wp_slash( self::tools_hub_body() ),
+			)
+		);
+
+		return array( sprintf( 'replaced the body of %s with [hti_tools_hub].', $label ) );
+	}
+
+	/**
+	 * Fold a duplicated calculator back into one page.
+	 *
+	 * Version 0.14.0 checked existence only under the hub, so on a site whose
+	 * calculators were still top-level a seed run read "missing" and created a
+	 * second copy as a child — leaving the original, with its history and its
+	 * inbound links, orphaned behind a 301 that now pointed at the copy.
+	 *
+	 * The older post wins: it is the one search engines know and the one whose
+	 * revisions and SEO meta are worth keeping. The copy is trashed rather than
+	 * deleted, both because trashing is reversible and because WordPress
+	 * appends "__trashed" to its slug, which frees the name for the original to
+	 * take when it moves.
+	 *
+	 * @param string $slug    Calculator slug.
+	 * @param string $pt      Portuguese language slug, or '' when unavailable.
+	 * @param bool   $dry_run Report only.
+	 * @return array{0:\WP_Post|null,1:array<int,string>} The surviving page and the log.
+	 */
+	private static function consolidate( string $slug, string $pt, bool $dry_run ): array {
+		$child = get_page_by_path( Tools_Content::path( $slug ), OBJECT, 'page' );
+		$top   = get_page_by_path( $slug, OBJECT, 'page' );
+
+		$child = $child instanceof \WP_Post ? $child : null;
+		$top   = $top instanceof \WP_Post ? $top : null;
+
+		// The ordinary cases: one of them, or neither.
+		if ( null === $child || null === $top || (int) $child->ID === (int) $top->ID ) {
+			return array( $child ?? $top, array() );
+		}
+
+		$keep = (int) $top->ID < (int) $child->ID ? $top : $child;
+		$drop = $keep === $top ? $child : $top;
+
+		if ( $dry_run ) {
+			return array(
+				$keep,
+				array( sprintf( 'would trash the duplicate %s (post %d) and keep post %d.', $slug, $drop->ID, $keep->ID ) ),
+			);
+		}
+
+		$log = array();
+
+		// The Portuguese twin of the copy holds the PT slug the original needs.
+		if ( '' !== $pt && self::polylang_active() ) {
+			$drop_pt = pll_get_post( (int) $drop->ID, $pt );
+			if ( $drop_pt && (int) $drop_pt !== (int) $drop->ID ) {
+				wp_trash_post( (int) $drop_pt );
+				$log[] = sprintf( 'trashed the duplicate %s (PT), post %d.', $slug, (int) $drop_pt );
+			}
+		}
+
+		wp_trash_post( (int) $drop->ID );
+		$log[] = sprintf( 'trashed the duplicate %s, post %d — kept post %d (the original).', $slug, (int) $drop->ID, (int) $keep->ID );
+
+		// Read the survivor back: trashing its twin may have freed a slug it is
+		// about to reclaim, and reparent() compares against the current name.
+		$fresh = get_post( (int) $keep->ID );
+
+		return array( $fresh instanceof \WP_Post ? $fresh : $keep, $log );
+	}
+
+	/**
+	 * Move one page under a parent, verifying the slug survives.
+	 *
+	 * Changing post_parent re-runs wp_unique_post_slug(), which will silently
+	 * rename the page if the new parent already has a child with that slug —
+	 * and a renamed page is a 404 behind a 301 that points at the old name. So
+	 * the slug is read back and reported rather than trusted.
+	 *
+	 * @param int    $id       Page ID.
+	 * @param int    $parent   Desired parent ID.
+	 * @param string $label    Label for the report.
+	 * @param bool   $dry_run  Report only.
+	 * @return array<int,string>
+	 */
+	private static function reparent( int $id, int $parent, string $label, bool $dry_run ): array {
+		$post = get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			return array( sprintf( 'skip %s — post %d missing.', $label, $id ) );
+		}
+		if ( (int) $post->post_parent === $parent ) {
+			return array();
+		}
+		if ( $dry_run ) {
+			return array( sprintf( 'would move %s under %d.', $label, $parent ) );
+		}
+
+		$was = (string) $post->post_name;
+		wp_update_post( array( 'ID' => $id, 'post_parent' => $parent ) );
+
+		$now = (string) get_post_field( 'post_name', $id );
+		if ( $now !== $was ) {
+			return array( sprintf( 'WARNING %s — slug changed on re-parent: %s → %s.', $label, $was, $now ) );
+		}
+		return array( sprintf( 'moved %s under %d.', $label, $parent ) );
+	}
+
+	/**
+	 * Append the questionnaire CTA pattern to a page that lacks it.
+	 *
+	 * The PT calculator bodies were seeded without it while the EN ones had it,
+	 * so the Portuguese pages ended without any next step.
+	 *
+	 * @param int    $id      Page ID.
+	 * @param string $label   Label for the report.
+	 * @param bool   $dry_run Report only.
+	 * @return array<int,string>
+	 */
+	private static function ensure_cta( int $id, string $label, bool $dry_run ): array {
+		$post = get_post( $id );
+		if ( ! $post instanceof \WP_Post ) {
+			return array();
+		}
+		$content = (string) $post->post_content;
+		if ( false !== strpos( $content, 'howtoinvest/cta-questionnaire' ) ) {
+			return array();
+		}
+		if ( $dry_run ) {
+			return array( sprintf( 'would add the questionnaire CTA to %s.', $label ) );
+		}
+		wp_update_post(
+			array(
+				'ID'           => $id,
+				'post_content' => wp_slash( rtrim( $content ) . "\n\n" . trim( self::cta() ) ),
+			)
+		);
+		return array( sprintf( 'added the questionnaire CTA to %s.', $label ) );
+	}
+
+	/**
 	 * Point a seeded page (and its PT translation) at one of the theme's
 	 * custom templates. Idempotent, and applied on every run — pages created
 	 * before the template existed pick it up on the next seed.
@@ -207,7 +522,7 @@ class Seeder {
 	 * @param string $template Template file name, without the .html extension.
 	 */
 	private static function ensure_page_template( string $slug, string $template ): void {
-		$en = get_page_by_path( $slug, OBJECT, 'page' );
+		$en = get_page_by_path( self::entry_path( $slug ), OBJECT, 'page' );
 		if ( ! $en instanceof \WP_Post ) {
 			return;
 		}
@@ -262,7 +577,7 @@ class Seeder {
 
 		foreach ( $groups as $type => $entries ) {
 			foreach ( $entries as $entry ) {
-				$en_post = get_page_by_path( $entry['slug'], OBJECT, $type );
+				$en_post = self::entry_post( (string) $entry['slug'], $type );
 				if ( ! $en_post instanceof \WP_Post ) {
 					continue;
 				}
@@ -364,17 +679,12 @@ class Seeder {
 			'cash-explained'                   => 'liquidez-explicada',
 			'reits-alternatives-explained'     => 'imobiliario-e-alternativos-explicados',
 			'crypto-explained'                 => 'cripto-explicada',
-			// Tools hub + calculators.
-			'tools'                            => 'ferramentas',
-			'compound-interest-calculator'     => 'calculadora-de-juro-composto',
-			'inflation-calculator'             => 'calculadora-de-inflacao',
-			'savings-goal-calculator'          => 'calculadora-de-meta-de-poupanca',
-			'cost-of-waiting-calculator'       => 'calculadora-do-custo-de-esperar',
-			'emergency-fund-calculator'        => 'calculadora-de-fundo-de-emergencia',
-			'rule-of-72-calculator'            => 'calculadora-da-regra-dos-72',
-			'fee-impact-calculator'            => 'calculadora-do-impacto-das-comissoes',
-			'allocation-visualizer'            => 'visualizador-de-alocacao',
+			// Tools hub. The calculators' own PT slugs come from
+			// Tools_Content::pt_slugs(), merged below — one table, so adding a
+			// ninth calculator can't leave its PT slug behind.
+			'tools'                            => Tools_Content::HUB_SLUG_PT,
 		);
+		$map = array_merge( $map, Tools_Content::pt_slugs() );
 		return $map[ $en_slug ] ?? sanitize_title( $pt_title );
 	}
 
@@ -441,6 +751,13 @@ class Seeder {
 			'post_content' => $content,
 			'post_excerpt' => $pt_data['excerpt'] ?? '',
 		);
+
+		if ( 'page' === $type ) {
+			$parent = self::entry_parent_id( (string) $entry['slug'], $pt );
+			if ( $parent > 0 ) {
+				$postarr['post_parent'] = $parent;
+			}
+		}
 
 		$pt_id = wp_insert_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $pt_id ) || 0 === $pt_id ) {
@@ -831,6 +1148,78 @@ class Seeder {
 	}
 
 	/**
+	 * The seeded post for an entry, wherever it currently lives.
+	 *
+	 * A calculator sits under the hub once the migration has run and at the top
+	 * level before it, and existence has to be true in both places. Checking
+	 * only one of them makes insert() read "missing" and create a second copy —
+	 * in one direction that shadows the 301s, in the other it orphans the
+	 * original. Both directions have now been observed.
+	 *
+	 * @param string $slug Entry slug.
+	 * @param string $type Post type.
+	 */
+	private static function entry_post( string $slug, string $type = 'page' ): ?\WP_Post {
+		$post = get_page_by_path( self::entry_path( $slug ), OBJECT, $type );
+		if ( ! $post instanceof \WP_Post && self::entry_path( $slug ) !== $slug ) {
+			// Not under the hub yet: a site that has not run the migration
+			// still has the calculator at the top level. Looking only under
+			// the hub reads "missing" and creates a duplicate — which is
+			// exactly what happened in production on 0.14.0.
+			$post = get_page_by_path( $slug, OBJECT, $type );
+		}
+		return $post instanceof \WP_Post ? $post : null;
+	}
+
+	/**
+	 * Hierarchical path used to look a seeded entry up with get_page_by_path().
+	 *
+	 * @param string $slug Entry slug.
+	 */
+	private static function entry_path( string $slug ): string {
+		static $paths = null;
+		if ( null === $paths ) {
+			$paths = array();
+			foreach ( Tools_Content::slugs() as $tool ) {
+				$paths[ $tool ] = Tools_Content::path( $tool );
+			}
+		}
+		return $paths[ $slug ] ?? $slug;
+	}
+
+	/**
+	 * Post parent for a seeded page, in the given language. Only the
+	 * calculators have one (the Tools hub); everything else is top-level.
+	 *
+	 * @param string $slug Entry slug.
+	 * @param string $lang Language slug, or '' for the default language.
+	 * @return int Parent post ID, or 0 when the entry is top-level or the
+	 *             parent page does not exist yet.
+	 */
+	private static function entry_parent_id( string $slug, string $lang = '' ): int {
+		static $tools = null;
+		if ( null === $tools ) {
+			$tools = array_flip( Tools_Content::slugs() );
+		}
+		if ( ! isset( $tools[ $slug ] ) ) {
+			return 0;
+		}
+		$hub = get_page_by_path( Tools_Content::HUB_SLUG, OBJECT, 'page' );
+		if ( ! $hub instanceof \WP_Post ) {
+			return 0;
+		}
+		if ( '' === $lang || ! self::polylang_active() ) {
+			return (int) $hub->ID;
+		}
+		$translated = pll_get_post( (int) $hub->ID, $lang );
+
+		// No translated hub → 0, never the EN hub. Parenting a PT page to the
+		// English hub would put it at /tools/{pt-slug}/ and collide with the
+		// English child.
+		return $translated ? (int) $translated : 0;
+	}
+
+	/**
 	 * Insert one entry if a post with that slug+type doesn't already exist.
 	 *
 	 * @param string                                                                         $type  Post type.
@@ -838,7 +1227,7 @@ class Seeder {
 	 * @return int New post ID, or 0 if skipped/failed.
 	 */
 	private static function insert( string $type, array $entry ): int {
-		if ( get_page_by_path( $entry['slug'], OBJECT, $type ) instanceof \WP_Post ) {
+		if ( null !== self::entry_post( (string) $entry['slug'], $type ) ) {
 			return 0;
 		}
 
@@ -850,6 +1239,13 @@ class Seeder {
 			'post_content' => $entry['content'],
 			'post_excerpt' => $entry['excerpt'] ?? '',
 		);
+
+		if ( 'page' === $type ) {
+			$parent = self::entry_parent_id( (string) $entry['slug'] );
+			if ( $parent > 0 ) {
+				$postarr['post_parent'] = $parent;
+			}
+		}
 
 		$id = wp_insert_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $id ) || 0 === $id ) {
@@ -1923,10 +2319,13 @@ class Seeder {
 	}
 
 	/**
-	 * Privacy Policy draft. A working template grounded in how the platform
-	 * actually handles data (anonymous sessions, optional account, consent-gated
-	 * analytics, GDPR export/delete). NOT final legal text — a professional must
-	 * review and complete the [●] items before launch.
+	 * Privacy Policy, grounded in how the platform actually handles data
+	 * (anonymous sessions, optional account, consent-gated analytics with
+	 * Consent Mode, GDPR export/delete, the /forex/ advertising).
+	 *
+	 * Controller, processors and retention periods are the real ones; only the
+	 * registered address is still marked. It is accurate about the system, but
+	 * a lawyer should read it before it is relied upon.
 	 *
 	 * @param bool $pt European Portuguese when true, English otherwise.
 	 */
@@ -1934,10 +2333,9 @@ class Seeder {
 		$updated = gmdate( 'Y-m-d' );
 
 		if ( $pt ) {
-			return self::notice( 'Rascunho para revisão jurídica — modelo de trabalho baseado no funcionamento real da plataforma, não um texto legal final. Um profissional deve rever e completar os pontos marcados [●] antes do lançamento.' )
-				. self::paragraph( 'Esta Política de Privacidade explica que dados pessoais a HowToInvest recolhe, porquê, com quem os partilha e que direitos tens. Aplica-se ao site e ao questionário de perfil de investidor.' )
+			return self::paragraph( 'Esta Política de Privacidade explica que dados pessoais a HowToInvest recolhe, porquê, com quem os partilha e que direitos tens. Aplica-se ao site e ao questionário de perfil de investidor.' )
 				. self::heading( 'Quem somos' )
-				. self::paragraph( 'A HowToInvest ("nós") é uma plataforma educativa de literacia financeira, operada por [● entidade legal / nome], com sede em [● morada], contactável em [● email de contacto]. Somos o responsável pelo tratamento dos dados descritos nesta política.' )
+				. self::paragraph( 'A HowToInvest ("nós") é uma plataforma educativa de literacia financeira, operada pela Atlas Invencível, com sede em [● morada], contactável em lm@atlasinvencivel.pt. Somos o responsável pelo tratamento dos dados descritos nesta política.' )
 				. self::heading( 'Que dados recolhemos' )
 				. self::legal_list(
 					array(
@@ -1964,20 +2362,32 @@ class Seeder {
 				. self::heading( 'Com quem partilhamos' )
 				. self::legal_list(
 					array(
-						'Fornecedor de alojamento [●], para operar o site.',
+						'PTServidor — alojamento web, para operar o site.',
 						'Google — geração de conteúdo por IA (Gemini) e, se consentires, Google Analytics.',
-						'[● fornecedor de email, por exemplo Brevo] — envio da newsletter.',
+						'Brevo — envio da newsletter e dos emails transacionais.',
 					)
 				)
 				. self::paragraph( 'Não vendemos os teus dados.' )
 				. self::heading( 'Cookies e consentimento' )
 				. self::paragraph( 'Usamos cookies/armazenamento essenciais para fazer funcionar o questionário e recordar as tuas escolhas. A analítica não-essencial só carrega depois de a aceitares no banner de consentimento; podes mudar a tua escolha a qualquer momento.' )
+				. self::heading( 'Como contamos as visitas' )
+				. self::paragraph( 'Contamos as visitas de duas formas diferentes, e só uma delas envolve a Google.' )
+				. self::legal_list(
+					array(
+						'O nosso contador anónimo (sempre ativo): um contador alojado por nós regista que uma página foi vista e até onde as pessoas chegam no questionário. Não cria cookies, não guarda endereço IP nem identificador nenhum, e retém apenas totais diários — não há ali nada que possa ser ligado a uma pessoa, e é por isso que não precisa de consentimento.',
+						'Google Analytics 4 (só com o teu consentimento): se aceitares a analítica no banner, carregamos o Google Analytics, que cria cookies próprios e partilha dados de utilização com a Google; os endereços IP são anonimizados. Se recusares, ou simplesmente ignorares o banner, o Google Analytics ou não carrega de todo ou — quando o usamos no modo de consentimento da Google — carrega num estado em que não guarda nada no teu dispositivo e não envia identificadores, apenas contagens anónimas que a Google usa para modelação estatística. Em qualquer dos casos, nada é guardado no teu dispositivo para fins de analítica antes de aceitares.',
+						'O armazenamento para publicidade está sempre negado: nunca damos autorização para usar os teus dados para publicidade ou personalização, aceites tu a analítica ou não.',
+					)
+				)
+				. self::paragraph( 'A tua escolha fica registada num cookie chamado hti_consent durante 180 dias. Podes alterá-la ou retirá-la a qualquer momento no banner de consentimento.' )
+				. self::heading( 'Publicidade nas ferramentas de forex' )
+				. self::paragraph( 'As calculadoras de forex gratuitas em /forex/ são financiadas por publicidade. Mostram banners claramente identificados e um link de parceiro para uma corretora, e enquanto houver campanha a decorrer essas páginas podem também carregar um pixel de medição de audiência do nosso parceiro publicitário. Seguir um link de parceiro leva-te ao site dessa empresa, onde se aplica a política de privacidade dela; podemos ser pagos se lá abrires conta, sem custo para ti. O que escreves nas calculadoras fica no teu navegador — as contas são feitas no teu dispositivo e esses números nunca nos são enviados.' )
 				. self::heading( 'Durante quanto tempo guardamos' )
 				. self::legal_list(
 					array(
-						'Sessões/perfis anónimos: guardados apenas por um período limitado e depois eliminados automaticamente.',
+						'Sessões/perfis anónimos: eliminados automaticamente ao fim de 90 dias.',
 						'Dados de conta: até eliminares a conta. Na eliminação, aplicamos um período de tolerância de 30 dias e depois apagamos os teus perfis, registos de respostas e dados relacionados, e removemos-te do fornecedor de newsletter.',
-						'Analítica: contagens agregadas guardadas até [● por exemplo, 120] dias.',
+						'Analítica: contagens agregadas guardadas até 120 dias.',
 					)
 				)
 				. self::heading( 'Os teus direitos (RGPD)' )
@@ -1987,24 +2397,23 @@ class Seeder {
 						'Acesso e exportação: no painel da tua conta ("Exportar"), podes descarregar a conta, os perfis e as preferências.',
 						'Eliminação: "Apagar conta" elimina os teus dados após um período de tolerância de 30 dias (com link para cancelar).',
 						'Consentimento: podes retirar o consentimento da analítica a qualquer momento no banner.',
-						'Reclamação: podes apresentar reclamação à autoridade de controlo ([● por exemplo, CNPD em Portugal]).',
+						'Reclamação: podes apresentar reclamação à autoridade de controlo — em Portugal, a CNPD (Comissão Nacional de Proteção de Dados).',
 					)
 				)
 				. self::heading( 'Transferências internacionais' )
-				. self::paragraph( 'Alguns fornecedores (por exemplo, a Google) podem tratar dados fora do EEE, ao abrigo de salvaguardas adequadas ([● por exemplo, cláusulas contratuais-tipo]).' )
+				. self::paragraph( 'Alguns fornecedores (por exemplo, a Google) podem tratar dados fora do EEE, ao abrigo das cláusulas contratuais-tipo aprovadas pela Comissão Europeia.' )
 				. self::heading( 'Menores' )
-				. self::paragraph( 'O serviço destina-se a adultos ([● por exemplo, 18+]); não recolhemos intencionalmente dados de menores.' )
+				. self::paragraph( 'O serviço destina-se a maiores de 18 anos; não recolhemos intencionalmente dados de menores.' )
 				. self::heading( 'Alterações' )
 				. self::paragraph( 'Podemos atualizar esta política; a data abaixo indica a última alteração.' )
 				. self::heading( 'Contacto' )
-				. self::paragraph( 'Questões sobre privacidade? Contacta-nos em [● email de contacto].' )
+				. self::paragraph( 'Questões sobre privacidade? Contacta-nos em lm@atlasinvencivel.pt.' )
 				. self::paragraph( 'Última atualização: ' . $updated . '.' );
 		}
 
-		return self::notice( 'Draft for legal review — a working template based on how the platform actually handles data, not final legal text. A qualified professional should review and complete the items marked [●] before launch.' )
-			. self::paragraph( 'This Privacy Policy explains what personal data HowToInvest collects, why, who we share it with, and your rights. It covers this website and the investor-profile questionnaire.' )
+		return self::paragraph( 'This Privacy Policy explains what personal data HowToInvest collects, why, who we share it with, and your rights. It covers this website and the investor-profile questionnaire.' )
 			. self::heading( 'Who we are' )
-			. self::paragraph( 'HowToInvest ("we") is an educational financial-literacy platform operated by [● legal entity / name], based at [● address], contactable at [● contact email]. We are the controller of the personal data described in this policy.' )
+			. self::paragraph( 'HowToInvest ("we") is an educational financial-literacy platform operated by Atlas Invencível, based at [● address], contactable at lm@atlasinvencivel.pt. We are the controller of the personal data described in this policy.' )
 			. self::heading( 'The data we collect' )
 			. self::legal_list(
 				array(
@@ -2031,20 +2440,32 @@ class Seeder {
 			. self::heading( 'Who we share it with' )
 			. self::legal_list(
 				array(
-					'Hosting provider [●], to run the site.',
+					'PTServidor — web hosting, to run the site.',
 					'Google — AI content generation (Gemini) and, if you consent, Google Analytics.',
-					'[● email provider, for example Brevo] — newsletter delivery.',
+					'Brevo — newsletter and transactional email delivery.',
 				)
 			)
 			. self::paragraph( 'We do not sell your data.' )
 			. self::heading( 'Cookies and consent' )
 			. self::paragraph( 'We use essential cookies/storage to run the questionnaire and remember your choices. Non-essential analytics load only after you accept them in the consent banner; you can change your choice at any time.' )
+			. self::heading( 'How we measure visits' )
+			. self::paragraph( 'We count visits in two different ways, and only one of them involves Google.' )
+			. self::legal_list(
+				array(
+					'Our own anonymous counter (always on): a counter we host ourselves records that a page was viewed and how far through the questionnaire people get. It sets no cookies, stores no IP address and no identifier of any kind, and keeps daily totals only — there is nothing in it that could be traced back to a person, which is why it needs no consent.',
+					'Google Analytics 4 (only with your consent): if you accept analytics in the banner, we load Google Analytics, which sets its own cookies and shares usage data with Google; IP addresses are anonymised. If you decline or simply ignore the banner, Google Analytics either does not load at all or — where we run it in Google’s consent mode — loads in a state where it stores nothing on your device and sends no identifiers, only anonymous counts Google uses for statistical modelling. Either way, nothing is stored on your device for analytics until you accept.',
+					'Advertising storage is always denied: we never grant permission to use your data for advertising or personalisation, whether or not you accept analytics.',
+				)
+			)
+			. self::paragraph( 'Your choice is remembered in a cookie named hti_consent for 180 days. You can change or withdraw it at any time in the consent banner.' )
+			. self::heading( 'Advertising on the forex tools' )
+			. self::paragraph( 'The free forex calculators at /forex/ are funded by advertising. They show clearly labelled banners and a partner link to a broker, and while an advertising campaign is running those pages may also load an audience-measurement pixel from our advertising partner. Following a partner link takes you to that company’s own site, where their privacy policy applies; we may be paid if you open an account there, at no cost to you. Whatever you type into the calculators stays in your browser — the arithmetic runs on your device and those numbers are never sent to us.' )
 			. self::heading( 'How long we keep it' )
 			. self::legal_list(
 				array(
-					'Anonymous sessions/profiles: kept only for a limited period, then deleted automatically.',
+					'Anonymous sessions/profiles: automatically deleted after 90 days.',
 					'Account data: until you delete your account. On deletion we apply a 30-day grace period, then erase your profiles, question logs and related data, and remove you from the newsletter provider.',
-					'Analytics: aggregated counts kept for up to [● e.g., 120] days.',
+					'Analytics: aggregated counts kept for up to 120 days.',
 				)
 			)
 			. self::heading( 'Your rights (GDPR)' )
@@ -2054,17 +2475,17 @@ class Seeder {
 					'Access and export: from your account dashboard ("Export"), you can download your account, profiles and preferences.',
 					'Deletion: "Delete account" erases your data after a 30-day grace period (with a cancel link).',
 					'Consent: you can withdraw analytics consent at any time in the banner.',
-					'Complaint: you may lodge a complaint with your supervisory authority ([● e.g., CNPD in Portugal]).',
+					'Complaint: you may lodge a complaint with your supervisory authority — in Portugal, the CNPD (Comissão Nacional de Proteção de Dados).',
 				)
 			)
 			. self::heading( 'International transfers' )
-			. self::paragraph( 'Some providers (for example, Google) may process data outside the EEA under appropriate safeguards ([● e.g., standard contractual clauses]).' )
+			. self::paragraph( 'Some providers (for example, Google) may process data outside the EEA under the standard contractual clauses approved by the European Commission.' )
 			. self::heading( 'Children' )
-			. self::paragraph( 'The service is intended for adults ([● e.g., 18+]); we do not knowingly collect data from children.' )
+			. self::paragraph( 'The service is intended for people aged 18 or over; we do not knowingly collect data from children.' )
 			. self::heading( 'Changes' )
 			. self::paragraph( 'We may update this policy; the date below shows the last change.' )
 			. self::heading( 'Contact' )
-			. self::paragraph( 'Questions about privacy? Contact us at [● contact email].' )
+			. self::paragraph( 'Questions about privacy? Contact us at lm@atlasinvencivel.pt.' )
 			. self::paragraph( 'Last updated: ' . $updated . '.' );
 	}
 
@@ -2200,141 +2621,66 @@ class Seeder {
 	}
 
 	/**
-	 * The Tools hub + the four educational calculators (children first).
-	 * Each calculator embeds an [hti_tool] shortcode (see class-tools.php).
+	 * The Tools hub and the eight educational calculators.
+	 *
+	 * The hub comes first so that insert() can resolve it as the post_parent of
+	 * the calculators on a fresh install; the calculators then live at
+	 * /tools/{slug}/ (and /pt/ferramentas/{slug}/), mirroring the /forex/
+	 * section. Copy and slugs come from Tools_Content — this method only
+	 * assembles blocks.
 	 *
 	 * @return array<int,array<string,mixed>>
 	 */
 	private static function tool_pages(): array {
-		$tools = array(
-			'compound-interest-calculator' => array(
-				'name'     => 'compound',
-				'title_en' => 'Compound interest calculator',
-				'title_pt' => 'Calculadora de juro composto',
-				'intro_en' => 'See how regular contributions can grow over time. Compound growth means your returns can earn returns too — so time in the market often matters more than the amount. Everything below is illustrative, with a hypothetical rate.',
-				'intro_pt' => 'Vê como contribuições regulares podem crescer ao longo do tempo. O juro composto significa que os teus retornos também podem gerar retornos — por isso o tempo no mercado costuma importar mais do que o valor. Tudo abaixo é ilustrativo, com uma taxa hipotética.',
-			),
-			'inflation-calculator'         => array(
-				'name'     => 'inflation',
-				'title_en' => 'Inflation calculator',
-				'title_pt' => 'Calculadora de inflação',
-				'intro_en' => 'Inflation slowly reduces what your money can buy. This shows how much purchasing power an amount may lose over time — and how much you would need later to keep the same buying power. Illustrative, with a hypothetical inflation rate.',
-				'intro_pt' => 'A inflação reduz lentamente o que o teu dinheiro consegue comprar. Isto mostra quanto poder de compra um valor pode perder ao longo do tempo — e quanto precisarias mais tarde para manter o mesmo poder de compra. Ilustrativo, com uma taxa de inflação hipotética.',
-			),
-			'savings-goal-calculator'      => array(
-				'name'     => 'savings_goal',
-				'title_en' => 'Savings goal calculator',
-				'title_pt' => 'Calculadora de meta de poupança',
-				'intro_en' => 'Have a target in mind? See roughly how much you might set aside each month to get there over a chosen number of years, assuming a hypothetical return. Illustrative only.',
-				'intro_pt' => 'Tens um objetivo em mente? Vê aproximadamente quanto poderias pôr de lado por mês para lá chegar num dado número de anos, assumindo um retorno hipotético. Apenas ilustrativo.',
-			),
-			'cost-of-waiting-calculator'   => array(
-				'name'     => 'cost_of_waiting',
-				'title_en' => 'The cost of waiting',
-				'title_pt' => 'O custo de esperar',
-				'intro_en' => 'Starting earlier gives your contributions more time to compound. This compares starting now with waiting a few years — same monthly amount — so you can see what the delay might cost. Illustrative, with a hypothetical rate.',
-				'intro_pt' => 'Começar mais cedo dá às tuas contribuições mais tempo para compor. Isto compara começar já com esperar alguns anos — o mesmo valor mensal — para veres o que o atraso pode custar. Ilustrativo, com uma taxa hipotética.',
-			),
-			'emergency-fund-calculator'    => array(
-				'name'     => 'emergency_fund',
-				'title_en' => 'Emergency fund calculator',
-				'title_pt' => 'Calculadora de fundo de emergência',
-				'intro_en' => 'An emergency fund usually comes before any investing — money kept somewhere safe so a surprise never forces you to sell at a bad time. See a target based on your essential expenses, and roughly how long it might take to get there. Illustrative only.',
-				'intro_pt' => 'Um fundo de emergência costuma vir antes de qualquer investimento — dinheiro guardado em segurança para que um imprevisto nunca te obrigue a vender num mau momento. Vê um objetivo com base nas tuas despesas essenciais e, aproximadamente, quanto tempo pode demorar a lá chegar. Apenas ilustrativo.',
-			),
-			'rule-of-72-calculator'        => array(
-				'name'     => 'rule_of_72',
-				'title_en' => 'Rule of 72 calculator',
-				'title_pt' => 'Calculadora da regra dos 72',
-				'intro_en' => 'The rule of 72 is a quick mental shortcut: divide 72 by an annual return to estimate how many years money might take to double. See the estimate, how many times it could double over a period, and the resulting multiple. Illustrative, with a hypothetical rate.',
-				'intro_pt' => 'A regra dos 72 é um atalho mental rápido: divide 72 por um retorno anual para estimar em quantos anos o dinheiro pode duplicar. Vê a estimativa, quantas vezes pode duplicar num período e o múltiplo resultante. Ilustrativo, com uma taxa hipotética.',
-			),
-			'fee-impact-calculator'        => array(
-				'name'     => 'fee_impact',
-				'title_en' => 'Fee impact calculator',
-				'title_pt' => 'Calculadora do impacto das comissões',
-				'intro_en' => 'Small annual fees can quietly add up over decades. This compares the same illustrative portfolio with and without a yearly fee, so you can see how much the fee might cost over time. Illustrative, with a hypothetical rate — not advice.',
-				'intro_pt' => 'Pequenas comissões anuais podem somar silenciosamente ao longo de décadas. Isto compara a mesma carteira ilustrativa com e sem uma comissão anual, para veres quanto a comissão pode custar ao longo do tempo. Ilustrativo, com uma taxa hipotética — não é aconselhamento.',
-			),
-			'allocation-visualizer'        => array(
-				'name'     => 'allocation',
-				'title_en' => 'Allocation visualizer',
-				'title_pt' => 'Visualizador de alocação',
-				'intro_en' => 'Pick one of the five educational investor profiles and see its illustrative allocation by asset class as a donut. The numbers come from our curated profiles — always by asset class, never named instruments, and never advice.',
-				'intro_pt' => 'Escolhe um dos cinco perfis educativos de investidor e vê a sua alocação ilustrativa por classes de ativos num gráfico. Os números vêm dos nossos perfis curados — sempre por classes de ativos, nunca instrumentos nomeados, e nunca aconselhamento.',
+		$tools = Tools_Content::tools();
+		$pages = array();
+
+		// Hub first — the calculators hang off it. Its body is one shortcode:
+		// the card grid, the FAQ and the disclaimer live in class-tools.php,
+		// where they can still be changed after the page exists.
+		$pages[] = array(
+			'slug'    => Tools_Content::HUB_SLUG,
+			'title'   => 'Tools',
+			'excerpt' => 'Free, educational calculators about saving and investing — time, inflation, goals and the cost of waiting.',
+			'content' => self::tools_hub_body(),
+			'pt'      => array(
+				'title'   => 'Ferramentas',
+				'excerpt' => 'Calculadoras gratuitas e educativas sobre poupar e investir — tempo, inflação, objetivos e o custo de esperar.',
+				'content' => self::tools_hub_body(),
 			),
 		);
 
-		$pages = array();
-		$tool_terms = array(
-			'compound-interest-calculator' => array( 'compound-interest', 'yield' ),
-			'inflation-calculator'         => array( 'inflation', 'interest-rate' ),
-			'savings-goal-calculator'      => array( 'compound-interest' ),
-			'cost-of-waiting-calculator'   => array( 'compound-interest' ),
-			'emergency-fund-calculator'    => array( 'inflation', 'diversification' ),
-			'rule-of-72-calculator'        => array( 'compound-interest', 'yield' ),
-			'fee-impact-calculator'        => array( 'compound-interest', 'investment-fund' ),
-			'allocation-visualizer'        => array( 'diversification', 'portfolio' ),
-		);
 		foreach ( $tools as $slug => $t ) {
-			$terms = $tool_terms[ $slug ] ?? array();
+			$terms   = (array) ( $t['terms'] ?? array() );
 			$pages[] = array(
 				'slug'    => $slug,
 				'title'   => $t['title_en'],
 				'excerpt' => $t['intro_en'],
-				'content' => self::paragraph( $t['intro_en'] )
-					. self::tool_shortcode( $t['name'] )
+				'content' => self::paragraph( (string) $t['intro_en'] )
+					. self::tool_shortcode( (string) $t['name'] )
 					. self::glossary_links_block( $terms, 'en' )
 					. self::cta(),
 				'pt'      => array(
 					'title'   => $t['title_pt'],
 					'excerpt' => $t['intro_pt'],
-					'content' => self::paragraph( $t['intro_pt'] )
-						. self::tool_shortcode( $t['name'] )
-						. self::glossary_links_block( $terms, 'pt' ),
+					'content' => self::paragraph( (string) $t['intro_pt'] )
+						. self::tool_shortcode( (string) $t['name'] )
+						. self::glossary_links_block( $terms, 'pt' )
+						. self::cta(),
 				),
 			);
 		}
 
-		// Hub.
-		$pages[] = array(
-			'slug'    => 'tools',
-			'title'   => 'Tools',
-			'excerpt' => 'Free, educational calculators about saving and investing — time, inflation, goals and the cost of waiting.',
-			'content' => self::paragraph( 'Free, educational calculators to build intuition about saving and investing — time, inflation, goals and the cost of waiting. Each is illustrative, with hypothetical rates, and never advice.' )
-				. self::bullets(
-					array(
-						array( home_url( '/compound-interest-calculator/' ), 'Compound interest', 'see how regular contributions can grow over time.' ),
-						array( home_url( '/inflation-calculator/' ), 'Inflation', 'how much buying power your money may lose.' ),
-						array( home_url( '/savings-goal-calculator/' ), 'Savings goal', 'how much to set aside monthly to reach a goal.' ),
-						array( home_url( '/cost-of-waiting-calculator/' ), 'The cost of waiting', 'what delaying a few years might cost.' ),
-						array( home_url( '/emergency-fund-calculator/' ), 'Emergency fund', 'a safety cushion to build before investing.' ),
-						array( home_url( '/rule-of-72-calculator/' ), 'Rule of 72', 'a quick estimate of how long money takes to double.' ),
-						array( home_url( '/fee-impact-calculator/' ), 'Fee impact', 'how much yearly fees might cost over time.' ),
-						array( home_url( '/allocation-visualizer/' ), 'Allocation visualizer', 'see each investor profile by asset class.' ),
-					)
-				)
-				. self::cta(),
-			'pt'      => array(
-				'title'   => 'Ferramentas',
-				'excerpt' => 'Calculadoras gratuitas e educativas sobre poupar e investir — tempo, inflação, objetivos e o custo de esperar.',
-				'content' => self::paragraph( 'Calculadoras gratuitas e educativas para ganhares intuição sobre poupar e investir — tempo, inflação, objetivos e o custo de esperar. Cada uma é ilustrativa, com taxas hipotéticas, e nunca aconselhamento.' )
-					. self::bullets(
-						array(
-							array( home_url( '/compound-interest-calculator/' ), 'Juro composto', 'vê como contribuições regulares podem crescer ao longo do tempo.' ),
-							array( home_url( '/inflation-calculator/' ), 'Inflação', 'quanto poder de compra o teu dinheiro pode perder.' ),
-							array( home_url( '/savings-goal-calculator/' ), 'Meta de poupança', 'quanto pôr de lado por mês para atingir um objetivo.' ),
-							array( home_url( '/cost-of-waiting-calculator/' ), 'O custo de esperar', 'o que adiar alguns anos pode custar.' ),
-							array( home_url( '/emergency-fund-calculator/' ), 'Fundo de emergência', 'a almofada de segurança a construir antes de investir.' ),
-							array( home_url( '/rule-of-72-calculator/' ), 'Regra dos 72', 'uma estimativa rápida do tempo para o dinheiro duplicar.' ),
-							array( home_url( '/fee-impact-calculator/' ), 'Impacto das comissões', 'quanto as comissões anuais podem custar ao longo do tempo.' ),
-							array( home_url( '/allocation-visualizer/' ), 'Visualizador de alocação', 'vê cada perfil de investidor por classes de ativos.' ),
-						)
-					),
-			),
-		);
-
 		return $pages;
+	}
+
+	/**
+	 * The Tools hub page body: the hub shortcode plus the questionnaire CTA.
+	 *
+	 * Identical in EN and PT — [hti_tools_hub] resolves the language itself.
+	 */
+	private static function tools_hub_body(): string {
+		return '<!-- wp:shortcode -->[hti_tools_hub]<!-- /wp:shortcode -->' . "\n\n" . self::cta();
 	}
 
 	/**
@@ -2949,10 +3295,21 @@ class Seeder {
 	 */
 	private static function internal_url( string $slug ): string {
 		static $articles = null;
+		static $tools    = null;
 		if ( null === $articles ) {
 			$articles = array_flip( self::article_slugs() );
+			$tools    = array_flip( Tools_Content::slugs() );
 		}
-		return isset( $articles[ $slug ] ) ? home_url( '/learn/' . $slug . '/' ) : home_url( '/' . $slug . '/' );
+		if ( isset( $articles[ $slug ] ) ) {
+			return home_url( '/learn/' . $slug . '/' );
+		}
+		// The calculators live under the hub. This one branch is what keeps the
+		// hub bullets, the glossary deep links and the localize_links() needles
+		// pointing at the real URLs — they all funnel through here.
+		if ( isset( $tools[ $slug ] ) ) {
+			return home_url( '/' . Tools_Content::path( $slug ) . '/' );
+		}
+		return home_url( '/' . $slug . '/' );
 	}
 
 	/**
@@ -2964,7 +3321,7 @@ class Seeder {
 	private static function resolve_en_post( string $slug ): ?\WP_Post {
 		static $cache = array();
 		if ( ! array_key_exists( $slug, $cache ) ) {
-			$post = get_page_by_path( $slug, OBJECT, 'page' );
+			$post = self::entry_post( $slug, 'page' );
 			if ( ! $post instanceof \WP_Post ) {
 				$post = get_page_by_path( $slug, OBJECT, 'learn' );
 			}
@@ -3375,6 +3732,7 @@ class Seeder {
 			<h1><?php echo esc_html__( 'HowToInvest — Seed content', 'hti-engine' ); ?></h1>
 			<p><?php echo esc_html__( 'Create the starter glossary terms and institutional pages. Existing entries (matched by slug) are skipped, so your edits are safe.', 'hti-engine' ); ?></p>
 			<p><?php echo esc_html__( 'If Polylang is active, the seeder also creates the Portuguese version of each entry and links it as a translation of the English one. Re-running only adds what is missing.', 'hti-engine' ); ?></p>
+			<p><?php echo esc_html__( 'It also brings the Tools section up to date: the calculators are moved under the /tools/ hub in both languages, and the hub page is converted to the current layout. Existing calculator content is not rewritten, and the whole action is idempotent — running it twice changes nothing the second time.', 'hti-engine' ); ?></p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="hti_run_seeder" />
 				<?php wp_nonce_field( 'hti_run_seeder' ); ?>
@@ -3425,6 +3783,22 @@ class Seeder {
 			(int) $report['skipped']
 		);
 
-		printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( $message ) );
+		$log      = isset( $report['tools'] ) ? (array) $report['tools'] : array();
+		$severity = self::log_severity( $log );
+
+		$lines = '';
+		foreach ( $log as $line ) {
+			$lines .= '<li>' . esc_html( (string) $line ) . '</li>';
+		}
+
+		printf(
+			'<div class="notice notice-%1$s is-dismissible"><p>%2$s</p>%3$s</div>',
+			esc_attr( $severity ),
+			esc_html( $message ),
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each line is escaped above.
+			'' !== $lines
+				? '<p><strong>' . esc_html__( 'Tools section', 'hti-engine' ) . '</strong></p><ul style="list-style:disc;margin-left:1.5em">' . $lines . '</ul>'
+				: ''
+		);
 	}
 }
