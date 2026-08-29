@@ -122,6 +122,126 @@ $room_pos   = strpos( $with_ad, 'Risking 2%' );
 check( $ad_pos > $table_pos, 'a publicidade vem depois da tabela, nunca no meio dela' );
 check( $ad_pos > $room_pos, 'e depois de toda a resposta que a pessoa pediu' );
 
+echo "\n=== O anúncio segmentado pela resposta ===\n";
+
+// Um `home_url` e definições em memória chegam para exercitar a escolha.
+if ( ! function_exists( 'home_url' ) ) {
+	/**
+	 * @param string $path Path.
+	 * @return string
+	 */
+	function home_url( $path = '' ) {
+		return 'https://howtoinvest.pro' . $path;
+	}
+}
+if ( ! function_exists( 'add_query_arg' ) ) {
+	/**
+	 * @param string $key   Key.
+	 * @param string $value Value.
+	 * @param string $url   URL.
+	 * @return string
+	 */
+	function add_query_arg( $key, $value, $url ) {
+		return $url . ( str_contains( (string) $url, '?' ) ? '&' : '?' ) . rawurlencode( $key ) . '=' . rawurlencode( $value );
+	}
+}
+
+require_once __DIR__ . '/../includes/class-settings.php';
+
+/**
+ * Render an answer with the settings in place, and return the text.
+ *
+ * @param float                $balance  Balance.
+ * @param array<string,mixed>  $settings Settings overrides.
+ * @return string
+ */
+function answer_with( float $balance, array $settings ): string {
+	$GLOBALS['__hti_options'][ HTI\Forex\Settings::OPTION ] = array_merge(
+		HTI\Forex\Settings::defaults(),
+		$settings
+	);
+	$rates = array(
+		'USDINR' => 95.5,
+		'USDJPY' => 159.0,
+		'EURUSD' => 1.165,
+	);
+	$p     = Bot_Math::picture( $balance, 'EURUSD', 500, $rates );
+
+	// ad_line() is private by design; the public surface is the composed
+	// answer, which is also what a person actually receives.
+	$ref = new ReflectionMethod( Bot::class, 'ad_line' );
+	$ref->setAccessible( true );
+
+	return Bot::reply_text( $p, $ref->invoke( null, (bool) $p['tight'] ) );
+}
+
+$on = array(
+	'cta_enabled'    => true,
+	'bot_ad_enabled' => true,
+);
+
+$ad_small = answer_with( 5000, $on );
+$ad_big   = answer_with( 500000, $on );
+
+check( str_contains( $ad_small, 'loc=telegram_bot_demo' ), '₹5.000 (apertada) → oferta de demo' );
+check( str_contains( $ad_small, 'xm-demo' ), 'e o destino de demo' );
+check( ! str_contains( $ad_small, 'telegram_bot_real' ), 'sem a linha de conta real' );
+
+check( str_contains( $ad_big, 'loc=telegram_bot_real' ), '₹5 lakh (com folga) → oferta de conta real' );
+check( str_contains( $ad_big, 'open-account-xm' ), 'e o destino de conta real' );
+check( ! str_contains( $ad_big, 'telegram_bot_demo' ), 'sem a linha de demo' );
+
+check(
+	str_contains( $ad_small, 'no money at risk' ),
+	'a conta pequena recebe a oferta que não contradiz o aviso por cima dela'
+);
+
+$disclosed = static fn( string $t ): bool => str_contains( $t, 'Partner · Ad' )
+	&& str_contains( $t, 'we may be paid' );
+check( $disclosed( $ad_small ) && $disclosed( $ad_big ), 'ambas rotuladas e com divulgação' );
+
+// A ordem que já era regra continua a valer, agora em ambos os segmentos.
+foreach ( array( 'demo' => $ad_small, 'real' => $ad_big ) as $seg => $t ) {
+	check(
+		strpos( $t, 'Partner · Ad' ) > strpos( $t, 'Risking 2%' ),
+		sprintf( '%s: a publicidade vem depois de toda a resposta pedida', $seg )
+	);
+}
+
+echo "\n=== Os interruptores ===\n";
+
+check( ! str_contains( answer_with( 5000, array() ), 'Partner · Ad' ), 'por omissão não há linha nenhuma' );
+check(
+	! str_contains( answer_with( 5000, array( 'cta_enabled' => true ) ), 'Partner · Ad' ),
+	'só com o CTA global não chega' );
+check(
+	! str_contains( answer_with( 5000, array( 'bot_ad_enabled' => true ) ), 'Partner · Ad' ),
+	'só com o do bot não chega' );
+check(
+	! str_contains( answer_with( 5000, $on + array( 'bot_ad_demo_url' => '' ) ), 'Partner · Ad' ),
+	'sem destino não se inventa uma linha' );
+check(
+	! str_contains( answer_with( 5000, $on + array( 'bot_ad_demo_text' => '' ) ), 'Partner · Ad' ),
+	'sem texto também não' );
+
+echo "\n=== O que pode ser um destino ===\n";
+
+$refuses = array(
+	'http://howtoinvest.pro/go/xm-demo/'   => 'http simples',
+	'https://xm.com/?affiliate=123'        => 'outro host — o URL de afiliado em cru',
+	'https://evil.test/go/xm-demo/'        => 'host desconhecido',
+	'javascript:alert(1)'                  => 'esquema perigoso',
+	'howtoinvest.pro/go/xm-demo/'          => 'sem esquema',
+	'   '                                  => 'vazio',
+);
+foreach ( $refuses as $url => $why ) {
+	check( '' === HTI\Forex\Settings::normalize_go_url( $url ), sprintf( 'recusa %s', $why ) );
+}
+check(
+	'https://howtoinvest.pro/go/xm-demo/' === HTI\Forex\Settings::normalize_go_url( 'https://howtoinvest.pro/go/xm-demo/' ),
+	'aceita o nosso redirector'
+);
+
 echo "\n=== Os botões ===\n";
 
 $keyboard = Bot::keyboard( $small );

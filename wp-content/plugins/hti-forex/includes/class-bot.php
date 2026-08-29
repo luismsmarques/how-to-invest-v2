@@ -24,13 +24,6 @@ defined( 'ABSPATH' ) || exit;
 class Bot {
 
 	/**
-	 * The /forex/go/ slot the bot's partner line points at, so its clicks are
-	 * told apart from the website's and the cheat sheet's — both in our funnel
-	 * and in the partner's own panel, via the existing sub-id passthrough.
-	 */
-	public const AD_SLOT = 'tg-bot';
-
-	/**
 	 * Register the webhook route.
 	 */
 	public static function init(): void {
@@ -206,7 +199,7 @@ class Bot {
 
 		Telegram::send(
 			$chat_id,
-			self::reply_text( $picture, self::ad_line() ),
+			self::reply_text( $picture, self::ad_line( (bool) $picture['tight'] ) ),
 			self::keyboard( $picture )
 		);
 	}
@@ -320,16 +313,35 @@ class Bot {
 	 * It sits at the foot of the answer, after the arithmetic, never inside
 	 * it. Someone who asked a question gets the answer first; anything else
 	 * is the thing that makes people block a bot.
+	 *
+	 * The offer follows the answer. On an account where the smallest position
+	 * available already risks more than 2% on an ordinary stop, the honest
+	 * thing to point at is a demo — and it is also the only offer that does
+	 * not argue with the warning printed directly above it. Larger accounts
+	 * get the live-account line. The two are counted separately, so which one
+	 * earns its place is a question the funnel answers rather than us.
+	 *
+	 * @param bool $tight Whether the smallest lot already risks more than 2%.
+	 * @return string
 	 */
-	private static function ad_line(): string {
+	private static function ad_line( bool $tight ): string {
 		$settings = Settings::settings();
 		if ( empty( $settings['cta_enabled'] ) || empty( $settings['bot_ad_enabled'] ) ) {
 			return '';
 		}
 
-		$url = Go::url( self::AD_SLOT );
+		$url  = (string) ( $settings[ $tight ? 'bot_ad_demo_url' : 'bot_ad_real_url' ] ?? '' );
+		$text = (string) ( $settings[ $tight ? 'bot_ad_demo_text' : 'bot_ad_real_text' ] ?? '' );
 
-		return '<i>Partner · Ad</i> — <a href="' . esc_url( $url ) . '">see these numbers on a demo account</a>. '
+		if ( '' === $url || '' === $text ) {
+			return '';
+		}
+
+		// Closed vocabulary, fixed in code: `loc` is echoed into a counter map
+		// and must never come from anything a visitor controls.
+		$url = add_query_arg( 'loc', $tight ? 'telegram_bot_demo' : 'telegram_bot_real', $url );
+
+		return '<i>Partner · Ad</i> — <a href="' . esc_url( $url ) . '">' . esc_html( $text ) . '</a>. '
 			. 'Advertising link; we may be paid if you open an account, at no cost to you.';
 	}
 

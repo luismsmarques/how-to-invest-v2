@@ -138,10 +138,20 @@ the audience research the project is missing: after a fortnight the panel says
 whether these are ₹5,000 accounts or ₹5,00,000 ones.
 
 **The partner line** sits at the foot of an answer, after the arithmetic, never
-inside it, and only when both `cta_enabled` and `bot_ad_enabled` are on. It
-goes through `/forex/go/tg-bot/`, so its clicks are already counted as
-`forex_go_tg-bot` and the partner's sub-id tells the placement apart from the
-website's and the cheat sheet's.
+inside it, and only when both `cta_enabled` and `bot_ad_enabled` are on.
+
+Which offer appears follows the answer. On an account where the smallest
+position available already risks more than 2% on an ordinary stop, the line
+points at a demo — the only offer that does not argue with the warning printed
+directly above it — and larger accounts get the live-account line. The two are
+counted separately (`telegram_bot_demo`, `telegram_bot_real`), so which one
+earns its place is a question the funnel answers.
+
+Both destinations are settings, and both must be **https links on this site** —
+the `/go/` redirector, never the affiliate URL. Everything the bot sends lands
+in a private chat, where a raw affiliate link would carry no disclosure and
+could not be changed once sent; requiring our own host makes that structural
+rather than a rule someone has to remember.
 
 > Recorded risk, since this was a deliberate decision: XM appears on the RBI's
 > Alert List, and trading offshore OTC forex breaches FEMA for Indian

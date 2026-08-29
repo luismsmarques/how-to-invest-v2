@@ -167,6 +167,33 @@ class Bot_Admin {
 			<p class="description"><?php esc_html_e( 'Register once, and again whenever the site URL changes. Never point a live bot at staging — Telegram allows one webhook per bot, so staging would silently take over the real one. Use a second test bot instead.', 'hti-forex' ); ?></p>
 		</form>
 
+		<h3><?php esc_html_e( 'The partner line', 'hti-forex' ); ?></h3>
+		<?php
+		$s     = Settings::settings();
+		$on    = ! empty( $s['cta_enabled'] ) && ! empty( $s['bot_ad_enabled'] );
+		$demo  = (string) ( $s['bot_ad_demo_url'] ?? '' );
+		$real  = (string) ( $s['bot_ad_real_url'] ?? '' );
+		?>
+		<p class="description">
+			<?php esc_html_e( 'One line at the foot of an answer, after the arithmetic. Which offer appears follows the answer itself: an account where the smallest position already risks more than 2% on an ordinary stop gets the demo line — the only offer that does not argue with the warning printed above it — and larger accounts get the live-account line. The two are counted separately in the funnel as telegram_bot_demo and telegram_bot_real, so you can see which one earns its place. Edit the wording and the destinations in the main settings above; both must be links on this site (the /go/ redirector).', 'hti-forex' ); ?>
+		</p>
+		<table class="widefat striped" style="max-width:640px;">
+			<tbody>
+				<tr>
+					<td><?php esc_html_e( 'Showing', 'hti-forex' ); ?></td>
+					<td><strong><?php echo $on ? esc_html__( 'yes', 'hti-forex' ) : esc_html__( 'no — switched off', 'hti-forex' ); ?></strong></td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'Small accounts →', 'hti-forex' ); ?></td>
+					<td><?php echo '' === $demo ? '<em>' . esc_html__( 'not set', 'hti-forex' ) . '</em>' : '<code>' . esc_html( $demo ) . '</code>'; ?></td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'Larger accounts →', 'hti-forex' ); ?></td>
+					<td><?php echo '' === $real ? '<em>' . esc_html__( 'not set', 'hti-forex' ) . '</em>' : '<code>' . esc_html( $real ) . '</code>'; ?></td>
+				</tr>
+			</tbody>
+		</table>
+
 		<h3><?php esc_html_e( 'What the audience looks like', 'hti-forex' ); ?></h3>
 		<?php if ( 0 === $answered ) : ?>
 			<p class="description"><?php esc_html_e( 'Nothing yet. Every balance someone sends is counted into a band here — counts only, never linked to a person — so after a couple of weeks this says whether these are small accounts or large ones.', 'hti-forex' ); ?></p>
