@@ -3,7 +3,7 @@
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Turns RSS feeds and YouTube channels into AI-drafted articles for review (Gemini). Works with any post type, taxonomy and theme — configure the target in Settings.
- * Version:           1.11.1
+ * Version:           1.12.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '1.11.1';
+const VERSION = '1.12.0';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );
@@ -38,6 +38,22 @@ const CRON_HOOK = 'rssai_fetch_cron';
  * Cron hook for the daily cleanup of old drafts + logs.
  */
 const CLEANUP_HOOK = 'rssai_cleanup_cron';
+
+/**
+ * Clustering runs on its own tick rather than tacked onto the end of a fetch.
+ * The fetch is network-bound and the grouping is CPU-bound; doing both in one
+ * request is how a single scheduled job holds a PHP process long enough for a
+ * shared host to start refusing everyone else's.
+ */
+const GROUP_HOOK = 'rssai_group_cron';
+
+/**
+ * A fetch that hit its per-run cap queues one of these to carry on shortly,
+ * so capping the work per process costs throughput rather than freshness:
+ * fifteen feeds still get visited within the hour, just never all inside one
+ * request.
+ */
+const FETCH_MORE_HOOK = 'rssai_fetch_more';
 
 require_once RSSAI_PATH . 'includes/class-activator.php';
 require_once RSSAI_PATH . 'includes/class-logger.php';

@@ -16,11 +16,47 @@ defined( 'ABSPATH' ) || exit;
 class Fetcher {
 
 	/**
+	 * How many feeds one tick may visit.
+	 *
+	 * Each feed is a blocking network call, and every one of them holds a PHP
+	 * process that the site needs for its visitors. On a shared host with a
+	 * ceiling of twenty concurrent processes, one job that runs for a minute is
+	 * enough to start refusing everybody — WordPress spawns another wp-cron.php
+	 * per visit while the first is still going, and its lock lets go after
+	 * sixty seconds.
+	 */
+	private const FEEDS_PER_RUN = 3;
+
+	/**
+	 * How long a run may take before it stops and leaves the rest for the next
+	 * tick. Comfortably under WP-Cron's sixty-second lock, so a slow feed can
+	 * never let a second run in on top of this one.
+	 */
+	private const BUDGET_SECONDS = 25;
+
+	/**
 	 * Hook the cron event + scheduler.
 	 */
 	public static function init(): void {
 		add_action( CRON_HOOK, array( __CLASS__, 'run' ) );
+		add_action( GROUP_HOOK, array( __CLASS__, 'group' ) );
+		add_action( FETCH_MORE_HOOK, array( __CLASS__, 'run' ) );
 		add_action( 'init', array( __CLASS__, 'ensure_schedule' ) );
+	}
+
+	/**
+	 * Cluster what the fetches brought in.
+	 *
+	 * Its own tick: fetching is network-bound and grouping is CPU-bound, and
+	 * running both in one request is what made a single scheduled job pin the
+	 * processor while it also held the process open on the network.
+	 */
+	public static function group(): void {
+		$grouped = Grouping::run();
+		Logger::log(
+			'fetch',
+			sprintf( 'group: groups=%d joined=%d items=%d', $grouped['groups'], $grouped['joined'], $grouped['items'] )
+		);
 	}
 
 	/**
@@ -40,7 +76,7 @@ class Fetcher {
 	}
 
 	/**
-	 * Fetch every active feed.
+	 * Fetch the feeds most overdue a visit, a few at a time.
 	 *
 	 * @return array{feeds:int,items:int,dupes:int,errors:int}
 	 */
@@ -50,10 +86,23 @@ class Fetcher {
 			'items'     => 0,
 			'dupes'     => 0,
 			'neardupes' => 0,
-			'errors'    => 0,
-			'skipped'   => 0,
+			'errors'      => 0,
+			'skipped'     => 0,
+			'over_budget' => 0,
 		);
-		foreach ( Feeds::all() as $feed ) {
+		$started = time();
+
+		// Ask for more than we will do: a feed in back-off costs nothing to
+		// skip, and asking for exactly the budget would let a handful of
+		// failing feeds starve the healthy ones behind them.
+		foreach ( Feeds::due( self::FEEDS_PER_RUN * 3 ) as $feed ) {
+			if ( $report['feeds'] >= self::FEEDS_PER_RUN ) {
+				break;
+			}
+			if ( ( time() - $started ) >= self::BUDGET_SECONDS ) {
+				++$report['over_budget'];
+				break;
+			}
 			if ( empty( $feed->status ) ) {
 				continue;
 			}
@@ -75,14 +124,33 @@ class Fetcher {
 
 		Logger::log(
 			'fetch',
-			sprintf( 'feeds=%d new=%d dupes=%d neardupes=%d errors=%d skipped=%d', $report['feeds'], $report['items'], $report['dupes'], $report['neardupes'], $report['errors'], $report['skipped'] )
+			sprintf(
+				'feeds=%d new=%d dupes=%d neardupes=%d errors=%d skipped=%d over_budget=%d',
+				$report['feeds'],
+				$report['items'],
+				$report['dupes'],
+				$report['neardupes'],
+				$report['errors'],
+				$report['skipped'],
+				$report['over_budget']
+			)
 		);
 
-		// Auto-group freshly ingested items so nothing waits for a manual click.
-		if ( $report['items'] > 0 ) {
-			$grouped = Grouping::run();
-			Logger::log( 'fetch', sprintf( 'auto-group: groups=%d joined=%d items=%d', $grouped['groups'], $grouped['joined'], $grouped['items'] ) );
+		// Hit the cap, so there are probably more feeds waiting. Carry on in a
+		// couple of minutes rather than in this process. Only when the run
+		// actually did its full share: a run that stopped early because every
+		// candidate was in back-off must not spin.
+		if ( $report['feeds'] >= self::FEEDS_PER_RUN && ! wp_next_scheduled( FETCH_MORE_HOOK ) ) {
+			wp_schedule_single_event( time() + 120, FETCH_MORE_HOOK );
 		}
+
+		// Group freshly ingested items so nothing waits for a manual click —
+		// but on a tick of its own, so the clustering never runs inside the
+		// same process that just spent its time on the network.
+		if ( $report['items'] > 0 && ! wp_next_scheduled( GROUP_HOOK ) ) {
+			wp_schedule_single_event( time() + 30, GROUP_HOOK );
+		}
+
 		return $report;
 	}
 
