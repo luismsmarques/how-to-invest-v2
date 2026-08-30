@@ -388,6 +388,12 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
 		public function get_status() {
 			return $this->status;
 		}
+		/**
+		 * @return mixed
+		 */
+		public function get_data() {
+			return $this->data;
+		}
 	}
 }
 

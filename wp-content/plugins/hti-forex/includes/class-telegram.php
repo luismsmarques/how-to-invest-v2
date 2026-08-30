@@ -95,7 +95,7 @@ class Telegram {
 	 * @param array<string,mixed> $args   Arguments.
 	 * @return array{ok:bool,result:mixed,error_code:int,description:string,retry_after:int}
 	 */
-	public static function call( string $method, array $args = array() ): array {
+	public static function call( string $method, array $args = array(), bool $blocking = true ): array {
 		$fail = array(
 			'ok'          => false,
 			'result'      => null,
@@ -112,11 +112,25 @@ class Telegram {
 		$response = wp_remote_post(
 			'https://api.telegram.org/bot' . self::token() . '/' . $method,
 			array(
-				'timeout' => 10,
-				'headers' => array( 'Content-Type' => 'application/json' ),
-				'body'    => wp_json_encode( $args ),
+				'timeout'  => $blocking ? 10 : 1,
+				'blocking' => $blocking,
+				'headers'  => array( 'Content-Type' => 'application/json' ),
+				'body'     => wp_json_encode( $args ),
 			)
 		);
+
+		if ( ! $blocking ) {
+			// Nothing to read and nothing to wait for. Used where the answer
+			// carries no information we act on — the point is to not hold a
+			// PHP process open for a round trip nobody reads.
+			return array(
+				'ok'          => true,
+				'result'      => null,
+				'error_code'  => 0,
+				'description' => '',
+				'retry_after' => 0,
+			);
+		}
 
 		if ( is_wp_error( $response ) ) {
 			$fail['description'] = $response->get_error_message();
@@ -310,6 +324,75 @@ class Telegram {
 		return $me['ok'] && isset( $me['result']['username'] )
 			? (string) $me['result']['username']
 			: '';
+	}
+
+	/**
+	 * An answer carried back in the reply to the webhook itself.
+	 *
+	 * Telegram lets the response to a webhook delivery *be* a method call:
+	 * instead of returning `{"ok":true}` and then opening a connection to send
+	 * the answer, the answer is the body. That removes a blocking round trip —
+	 * up to ten seconds — from inside a PHP process the site needs for its
+	 * visitors, which on a host with twenty of them is the difference between
+	 * answering people and refusing them.
+	 *
+	 * The trade is that only one method fits per update and its result cannot
+	 * be read, so anything whose answer we need — a file_id, say — still goes
+	 * out as a real call.
+	 *
+	 * @param string              $method Bot API method.
+	 * @param array<string,mixed> $args   Its arguments.
+	 * @return array<string,mixed> Body for the webhook response.
+	 */
+	public static function webhook_reply( string $method, array $args = array() ): array {
+		return array_merge( array( 'method' => $method ), $args );
+	}
+
+	/**
+	 * A text answer, shaped like send() but carried in the webhook response.
+	 *
+	 * @param int                            $chat_id  Chat.
+	 * @param string                         $text     HTML body.
+	 * @param array<int,array<int,array>>|null $keyboard Inline keyboard.
+	 * @return array<string,mixed>
+	 */
+	public static function reply_message( int $chat_id, string $text, ?array $keyboard = null ): array {
+		$args = array(
+			'chat_id'                  => $chat_id,
+			'text'                     => $text,
+			'parse_mode'               => 'HTML',
+			'disable_web_page_preview' => true,
+		);
+
+		if ( null !== $keyboard ) {
+			$args['reply_markup'] = array( 'inline_keyboard' => $keyboard );
+		}
+
+		return self::webhook_reply( 'sendMessage', $args );
+	}
+
+	/**
+	 * A photo answer carried in the webhook response.
+	 *
+	 * Only worth using once the file_id is cached: sending by URL would make
+	 * Telegram come back to this server for the file, and the response gives
+	 * no file_id to remember, so the fetch would repeat for every recipient.
+	 *
+	 * @param int    $chat_id Chat.
+	 * @param string $file_id Cached Telegram file id.
+	 * @param string $caption Caption.
+	 * @return array<string,mixed>
+	 */
+	public static function reply_photo( int $chat_id, string $file_id, string $caption = '' ): array {
+		return self::webhook_reply(
+			'sendPhoto',
+			array(
+				'chat_id'    => $chat_id,
+				'photo'      => $file_id,
+				'caption'    => $caption,
+				'parse_mode' => 'HTML',
+			)
+		);
 	}
 
 	/**

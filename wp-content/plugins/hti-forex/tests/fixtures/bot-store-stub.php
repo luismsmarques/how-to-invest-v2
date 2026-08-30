@@ -51,6 +51,72 @@ class Bot_Store {
 	}
 
 	/**
+	 * Remember a chat; true when it is one we had never seen.
+	 *
+	 * @param int $chat_id Chat id.
+	 */
+	public static function remember( int $chat_id ): bool {
+		$subs = $GLOBALS['__hti_subs'] ?? array();
+		if ( in_array( $chat_id, $subs, true ) ) {
+			return false;
+		}
+		$subs[]                = $chat_id;
+		$GLOBALS['__hti_subs'] = $subs;
+		return true;
+	}
+
+	/**
+	 * Stored pair and leverage for a chat.
+	 *
+	 * @param int $chat_id Chat id.
+	 * @return array{pair:string,leverage:int}
+	 */
+	public static function prefs( int $chat_id ): array {
+		return $GLOBALS['__hti_prefs'][ $chat_id ] ?? array(
+			'pair'     => 'EURUSD',
+			'leverage' => 500,
+		);
+	}
+
+	/**
+	 * Change one or both preferences.
+	 *
+	 * @param int         $chat_id  Chat id.
+	 * @param string|null $pair     Pair, or null to leave it.
+	 * @param int|null    $leverage Leverage, or null to leave it.
+	 */
+	public static function set_prefs( int $chat_id, ?string $pair, ?int $leverage ): void {
+		$current = self::prefs( $chat_id );
+		if ( null !== $pair ) {
+			$current['pair'] = $pair;
+		}
+		if ( null !== $leverage ) {
+			$current['leverage'] = $leverage;
+		}
+		$GLOBALS['__hti_prefs'][ $chat_id ] = $current;
+	}
+
+	/**
+	 * Aggregate counters — nothing here is stored against anyone.
+	 *
+	 * @param float $inr Balance in rupees.
+	 */
+	public static function count_balance( float $inr ): void {
+		$GLOBALS['__hti_balances'][] = $inr;
+	}
+
+	/**
+	 * Count a campaign code once per new person.
+	 *
+	 * @param string $code Campaign code.
+	 */
+	public static function count_source( string $code ): void {
+		if ( '' !== $code ) {
+			$GLOBALS['__hti_sources'][] = $code;
+		}
+	}
+
+	/**
 	 * Drop a chat that can never receive anything again.
 	 *
 	 * @param int $chat_id Chat id.
