@@ -54,6 +54,18 @@ class CPT {
 	public const TINTS = array( 'good', 'warn', 'bad' );
 
 	/**
+	 * What a case's figures ARE, as the reveal screen has to describe them.
+	 *
+	 * 'verified' means every number beside the company's name was read out of
+	 * a document somebody can open, and the case cannot be published without
+	 * that document and a tick. 'illustrative' means the company, the period
+	 * and the direction of what happened are real and the figures are a
+	 * reconstruction of the pattern — publishable, but only with the whole
+	 * dossier filled and with the reveal screen saying so in as many words.
+	 */
+	public const PROVENANCE = array( 'illustrative', 'verified' );
+
+	/**
 	 * Hook registration on `init`.
 	 */
 	public static function init(): void {
@@ -236,6 +248,11 @@ class CPT {
 			'hti_rev_context_pt'         => array( 'string', 'san_block' ),
 			'hti_rev_lesson_en'          => array( 'string', 'san_block' ),
 			'hti_rev_lesson_pt'          => array( 'string', 'san_block' ),
+			// What the figures above are: a reconstruction of the pattern, or
+			// numbers read out of a document. It decides WHICH publish gate a
+			// case has to pass and which sentence the reveal screen shows, so
+			// it is registered beside the sourcing fields it governs.
+			'hti_rev_provenance'         => array( 'string', 'san_provenance' ),
 			// The four fields the publish gate is built on.
 			'hti_rev_source_url'         => array( 'string', 'san_url' ),
 			'hti_rev_source_label'       => array( 'string', 'san_text' ),
@@ -379,6 +396,24 @@ class CPT {
 	public static function san_class( $value ): string {
 		$value = sanitize_key( (string) $value );
 		return in_array( $value, self::SCENARIO_CLASSES, true ) ? $value : '';
+	}
+
+	/**
+	 * The provenance of a case's figures: 'illustrative' or 'verified'.
+	 *
+	 * ANYTHING that is not the literal 'illustrative' comes back as
+	 * 'verified' — an unset key, an empty string, a typo, a row written before
+	 * this key existed. That is deliberate and it is the whole point of the
+	 * field: 'verified' is the STRICT path, the one that needs a source URL
+	 * and a checked tick before Case_Admin will let the case be published. A
+	 * default that fails open is how a gate stops being a gate — a case
+	 * created by hand in the admin, or any pre-existing row, would otherwise
+	 * escape the source requirement by saying nothing at all.
+	 *
+	 * @param mixed $value Raw value.
+	 */
+	public static function san_provenance( $value ): string {
+		return 'illustrative' === (string) $value ? 'illustrative' : 'verified';
 	}
 
 	/**

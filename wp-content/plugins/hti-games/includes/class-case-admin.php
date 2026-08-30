@@ -80,6 +80,18 @@ class Case_Admin {
 	public const VERIFIED_FIELDS = array( 'hti_rev_return_5y_bp', 'hti_rev_index_return_5y_bp', 'hti_rev_year' );
 
 	/**
+	 * The two halves of "the dossier is complete", as meta keys.
+	 *
+	 * Split in two because the checklist shows them as two rows and the gate
+	 * has to agree with the checklist row by row: DOSSIER_FIELDS is the top of
+	 * the file the player reads before deciding, AFTERMATH_FIELDS is what they
+	 * read once the name is on the screen. Both are required of an
+	 * illustrative case and of neither a verified one — see missing().
+	 */
+	public const DOSSIER_FIELDS   = array( 'hti_rev_sector_en', 'hti_rev_sector_pt', 'hti_rev_revenue_band_en', 'hti_rev_revenue_band_pt' );
+	public const AFTERMATH_FIELDS = array( 'hti_rev_context_en', 'hti_rev_context_pt', 'hti_rev_lesson_en', 'hti_rev_lesson_pt' );
+
+	/**
 	 * How many fundamentals rows and headlines a finished dossier carries.
 	 *
 	 * The same ceilings CPT::san_fundamentals() and CPT::san_headlines() store
@@ -161,6 +173,24 @@ class Case_Admin {
 	}
 
 	/**
+	 * What this case's figures are: 'illustrative' or 'verified'.
+	 *
+	 * Delegated to CPT::san_provenance so there is exactly one definition of
+	 * the default in the plugin, and it is the one on the registry of record.
+	 * An unset key, an empty string or anything unrecognised reads as
+	 * 'verified' — the strict path, the one that wants a document and a tick.
+	 * That direction is load-bearing: a case somebody typed into the admin
+	 * before this field existed must fall INTO the source requirement, never
+	 * out of it, because a default that fails open is how a gate stops being
+	 * a gate.
+	 *
+	 * @param array<string,mixed> $meta Case meta.
+	 */
+	public static function provenance( array $meta ): string {
+		return CPT::san_provenance( $meta['hti_rev_provenance'] ?? '' );
+	}
+
+	/**
 	 * Everything that stops a case from being published, as field keys.
 	 *
 	 * Returns keys rather than sentences so the rule stays testable and the
@@ -171,14 +201,19 @@ class Case_Admin {
 	 * @return array<int,string>
 	 */
 	public static function missing( array $meta, ?int $now = null ): array {
-		$out = array();
+		$out          = array();
+		$illustrative = 'illustrative' === self::provenance( $meta );
 
-		if ( ! self::is_url( (string) ( $meta['hti_rev_source_url'] ?? '' ) ) ) {
-			$out[] = 'hti_rev_source_url';
-		}
+		if ( ! $illustrative ) {
+			// The verified path, unchanged: a document somebody can open, and
+			// a tick from the person who read the figures out of it.
+			if ( ! self::is_url( (string) ( $meta['hti_rev_source_url'] ?? '' ) ) ) {
+				$out[] = 'hti_rev_source_url';
+			}
 
-		if ( '1' !== (string) ( $meta['hti_rev_verified'] ?? '' ) ) {
-			$out[] = 'hti_rev_verified';
+			if ( '1' !== (string) ( $meta['hti_rev_verified'] ?? '' ) ) {
+				$out[] = 'hti_rev_verified';
+			}
 		}
 
 		foreach ( array( 'hti_rev_return_5y_bp', 'hti_rev_index_return_5y_bp' ) as $key ) {
@@ -194,6 +229,29 @@ class Case_Admin {
 		$current = (int) gmdate( 'Y', $now ?? time() );
 		if ( $year <= 0 || $year > $current - Config::REVEAL_MIN_AGE_YEARS ) {
 			$out[] = 'hti_rev_year';
+		}
+
+		if ( $illustrative ) {
+			// An illustrative case has no document to fall back on, so what
+			// holds it up is the dossier itself being whole. A hole in a
+			// verified case is an editorial untidiness; a hole in this one is
+			// the thing the player is looking at while being told the figures
+			// were reconstructed to show a pattern — and half a pattern shows
+			// nothing. Hence the completeness of the dossier is a publish
+			// condition here and only here.
+			foreach ( array_merge( self::DOSSIER_FIELDS, self::AFTERMATH_FIELDS ) as $key ) {
+				if ( '' === trim( (string) ( $meta[ $key ] ?? '' ) ) ) {
+					$out[] = $key;
+				}
+			}
+
+			if ( self::FUNDAMENTALS > self::fundamentals_complete( (string) ( $meta['hti_rev_fundamentals'] ?? '' ) ) ) {
+				$out[] = 'hti_rev_fundamentals';
+			}
+
+			if ( self::HEADLINES > self::headlines_complete( (string) ( $meta['hti_rev_headlines'] ?? '' ) ) ) {
+				$out[] = 'hti_rev_headlines';
+			}
 		}
 
 		return $out;
