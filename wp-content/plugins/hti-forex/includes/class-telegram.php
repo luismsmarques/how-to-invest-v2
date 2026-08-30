@@ -271,7 +271,11 @@ class Telegram {
 				'url'             => self::webhook_url(),
 				'secret_token'    => self::secret(),
 				'allowed_updates' => array( 'message', 'callback_query' ),
-				'max_connections' => 10,
+				// Shared hosting caps how many PHP processes may run at once,
+				// and each update holds one for as long as the answer takes.
+				// Ten of those at a time is how a bot takes a site down with
+				// it; Telegram queues the rest rather than dropping them.
+				'max_connections' => 3,
 			)
 		);
 
