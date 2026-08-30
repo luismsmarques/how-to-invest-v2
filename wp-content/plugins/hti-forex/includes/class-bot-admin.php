@@ -91,6 +91,14 @@ class Bot_Admin {
 			)
 		);
 
+		// The browser's `required` stops an unticked form, but only in the
+		// browser. A broadcast is irreversible and goes to everyone, so the
+		// intent is checked where it cannot be skipped.
+		if ( empty( $_POST['confirm'] ) ) {
+			wp_safe_redirect( add_query_arg( 'hti_forex_bot', 'unconfirmed', admin_url( 'options-general.php?page=hti-forex' ) ) );
+			exit;
+		}
+
 		$image = isset( $_POST['image'] ) ? sanitize_key( wp_unslash( $_POST['image'] ) ) : '';
 		$image = isset( Bot_Images::files()[ $image ] ) ? $image : '';
 		$text  = trim( $text );
@@ -160,6 +168,7 @@ class Bot_Admin {
 					'queue-fail'   => __( 'Nothing queued — the message was empty, a broadcast is already running, or there is no bot token.', 'hti-forex' ),
 					'cancelled'    => __( 'Broadcast stopped where it was.', 'hti-forex' ),
 					'too-long'     => __( 'Too long to send with an image attached. A caption is capped at 1,024 characters including the /stop footer — shorten it, or send it without the image.', 'hti-forex' ),
+					'unconfirmed'  => __( 'Nothing was sent — the confirmation box under the message was not ticked.', 'hti-forex' ),
 				);
 				echo esc_html( $messages[ $notice ] ?? '' );
 				?>
@@ -469,7 +478,7 @@ class Bot_Admin {
 		}
 		?>
 
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm( <?php echo esc_attr( wp_json_encode( __( 'Send this to every person who has used the bot? This cannot be undone.', 'hti-forex' ) ) ); ?> );">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<?php wp_nonce_field( 'hti_forex_bot_broadcast' ); ?>
 			<input type="hidden" name="action" value="hti_forex_bot_broadcast" />
 			<textarea name="message" rows="6" class="large-text code" placeholder="<?php esc_attr_e( 'Plain text. &lt;b&gt;, &lt;i&gt;, &lt;code&gt; and links are allowed; everything else is stripped.', 'hti-forex' ); ?>"></textarea>
@@ -484,6 +493,18 @@ class Bot_Admin {
 					<?php endforeach; ?>
 				</select>
 				<span class="description"><?php printf( /* translators: %d: caption character limit. */ esc_html__( 'With an image the whole message becomes a caption, capped at %d characters including the /stop footer.', 'hti-forex' ), (int) Telegram::CAPTION_MAX ); ?></span>
+			</p>
+			<p>
+				<label>
+					<input type="checkbox" name="confirm" value="1" required />
+					<?php
+					printf(
+						/* translators: %s: recipient count. */
+						esc_html__( 'Yes — send this to all %s of them. This cannot be undone.', 'hti-forex' ),
+						esc_html( number_format_i18n( $total ) )
+					);
+					?>
+				</label>
 			</p>
 			<p>
 				<button type="submit" class="button button-primary">
@@ -503,8 +524,8 @@ class Bot_Admin {
 			</p>
 		</form>
 
-		self::render_log( $log );
 		<?php
+		self::render_log( $log );
 	}
 
 	/**
