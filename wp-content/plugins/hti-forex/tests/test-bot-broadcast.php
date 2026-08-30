@@ -278,6 +278,47 @@ check( true === Bot_Broadcast::start( 'esta passa' ), 'uma gravação que result
 check( Bot_Broadcast::just_started(), 'e só então fica registada como começada' );
 check( Bot_Broadcast::status()['started'] > 0, 'com o estado gravado' );
 
+echo "\n=== A opção do estado tem nome próprio ===\n";
+
+// The old name became unwritable on the live site: the row was gone from the
+// database while WordPress still believed the option existed, so every write
+// took the UPDATE path, matched no row, and failed — permanently, and looking
+// exactly like a message that had gone out. Going back to that name would walk
+// into the same wall.
+check( 'hti_forex_bot_broadcast' !== Bot_Broadcast::OPTION, 'não voltámos ao nome que ficou inutilizável' );
+check( Bot_Broadcast::OPTION !== Bot_Broadcast::OPTION_LOG, 'o estado e o registo são opções distintas' );
+check( Bot_Broadcast::HOOK !== Bot_Broadcast::OPTION, 'e o hook do cron não se confunde com a opção' );
+
+echo "\n=== Uma cache velha não pode travar isto para sempre ===\n";
+
+// add_option() asks whether the option exists; a stale object cache answers yes
+// with a value the database no longer holds, and it refuses — not once, but
+// every time. One retry with the entry dropped is what tells that apart from a
+// database that genuinely will not take the write.
+$GLOBALS['__hti_options']       = array();
+$GLOBALS['__hti_cron']          = array();
+$GLOBALS['__hti_subs']          = array( 9001 );
+$GLOBALS['__hti_cache_deleted'] = array();
+
+$GLOBALS['__hti_refuse_until_flush'] = Bot_Broadcast::OPTION;
+$ok = Bot_Broadcast::start( 'esta passa à segunda' );
+
+check( true === $ok, 'uma escrita recusada é tentada outra vez e passa' );
+check( in_array( Bot_Broadcast::OPTION, $GLOBALS['__hti_cache_deleted'], true ), 'depois de a entrada em cache ser largada' );
+check( Bot_Broadcast::status()['started'] > 0, 'e o estado fica mesmo gravado' );
+check( Bot_Broadcast::running(), 'logo a difusão conta como a correr' );
+check( array() === Bot_Broadcast::log()['refused'], 'e não fica registada recusa nenhuma' );
+
+// A database that refuses regardless is still reported, not retried for ever.
+$GLOBALS['__hti_options']      = array();
+$GLOBALS['__hti_cron']         = array();
+$GLOBALS['__hti_refuse_write'] = Bot_Broadcast::OPTION;
+$ok = Bot_Broadcast::start( 'esta não passa de todo' );
+unset( $GLOBALS['__hti_refuse_write'] );
+
+check( false === $ok, 'uma recusa que persiste continua a falhar' );
+check( 'write-failed' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'e é reportada, não escondida pela repetição' );
+
 echo "\n=== O histórico ===\n";
 
 $GLOBALS['__hti_options'] = array();

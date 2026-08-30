@@ -47,7 +47,12 @@ if ( ! function_exists( 'get_option' ) ) {
 	function update_option( $key, $value ) {
 		// Let a test stand in for a database that refuses a write, which is the
 		// one failure the caller has to notice and could not be reproduced.
+		// `__hti_refuse_until_flush` refuses only while the option's cache
+		// entry is still there, which is the stale-object-cache case.
 		if ( isset( $GLOBALS['__hti_refuse_write'] ) && $GLOBALS['__hti_refuse_write'] === $key ) {
+			return false;
+		}
+		if ( isset( $GLOBALS['__hti_refuse_until_flush'] ) && $GLOBALS['__hti_refuse_until_flush'] === $key ) {
 			return false;
 		}
 		$GLOBALS['__hti_options'][ $key ] = $value;
@@ -272,6 +277,23 @@ if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 	 */
 	function wp_strip_all_tags( $text ) {
 		return trim( (string) preg_replace( '/<[^>]*>/', '', (string) $text ) );
+	}
+}
+
+if ( ! function_exists( 'wp_cache_delete' ) ) {
+	/**
+	 * @param string $key   Key.
+	 * @param string $group Group.
+	 * @return bool
+	 */
+	function wp_cache_delete( $key, $group = '' ) {
+		// Dropping the entry is what lets a refused write through, exactly as
+		// clearing a stale object cache does on a real site.
+		if ( isset( $GLOBALS['__hti_refuse_until_flush'] ) && $GLOBALS['__hti_refuse_until_flush'] === $key ) {
+			unset( $GLOBALS['__hti_refuse_until_flush'] );
+		}
+		$GLOBALS['__hti_cache_deleted'][] = $key;
+		return true;
 	}
 }
 
