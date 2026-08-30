@@ -64,46 +64,56 @@ class Bot {
 		}
 
 		$update = $request->get_json_params();
-		if ( is_array( $update ) ) {
-			self::dispatch( $update );
-		}
+		$reply  = is_array( $update ) ? self::dispatch( $update ) : null;
 
-		return new \WP_REST_Response( array( 'ok' => true ), 200 );
+		// Telegram accepts a method call as the body of this very response, so
+		// the answer travels back on the connection it already has. What used
+		// to be "reply 200, then open a socket and wait up to ten seconds" is
+		// now one request that ends here — which is the difference between
+		// holding a PHP process the site needs and not holding it.
+		return new \WP_REST_Response( $reply ?? array( 'ok' => true ), 200 );
 	}
 
 	/**
 	 * Route one update to the thing that answers it.
 	 *
 	 * @param array<string,mixed> $update Decoded update.
+	 * @return array<string,mixed>|null Answer to carry back, or null.
 	 */
-	private static function dispatch( array $update ): void {
+	private static function dispatch( array $update ): ?array {
 		// A tapped button.
 		if ( isset( $update['callback_query'] ) ) {
 			$query   = $update['callback_query'];
 			$chat_id = (int) ( $query['message']['chat']['id'] ?? 0 );
 			$data    = (string) ( $query['data'] ?? '' );
 
-			if ( $chat_id > 0 ) {
-				self::on_button( $chat_id, $data );
-			}
+			$reply = $chat_id > 0 ? self::on_button( $chat_id, $data ) : null;
 
-			Telegram::call( 'answerCallbackQuery', array( 'callback_query_id' => $query['id'] ?? '' ) );
-			return;
+			// The spinner on the button has to be cleared, but nothing here
+			// reads the answer — so it goes out without waiting for one, and
+			// the reply itself travels back in the response.
+			Telegram::call(
+				'answerCallbackQuery',
+				array( 'callback_query_id' => $query['id'] ?? '' ),
+				false
+			);
+
+			return $reply;
 		}
 
 		$message = $update['message'] ?? null;
 		if ( ! is_array( $message ) ) {
-			return;
+			return null;
 		}
 
 		$chat_id = (int) ( $message['chat']['id'] ?? 0 );
 		$text    = trim( (string) ( $message['text'] ?? '' ) );
 
 		if ( $chat_id <= 0 || '' === $text ) {
-			return;
+			return null;
 		}
 
-		self::on_message( $chat_id, $text );
+		return self::on_message( $chat_id, $text );
 	}
 
 	/**
@@ -111,8 +121,9 @@ class Bot {
 	 *
 	 * @param int    $chat_id Chat.
 	 * @param string $text    Message text.
+	 * @return array<string,mixed>|null Answer to carry back in the response.
 	 */
-	private static function on_message( int $chat_id, string $text ): void {
+	private static function on_message( int $chat_id, string $text ): ?array {
 		// strtok's ' @' handles /start@TheBotName; the split keeps whatever
 		// followed the command, which for /start is the deep-link payload.
 		$command = strtolower( strtok( $text, ' @' ) );
@@ -121,8 +132,7 @@ class Bot {
 		if ( '/stop' === $command ) {
 			Bot_Store::forget( $chat_id );
 			self::track( 'forex_bot_stop' );
-			Telegram::send( $chat_id, self::stop_text() );
-			return;
+			return Telegram::reply_message( $chat_id, self::stop_text() );
 		}
 
 		$is_new = Bot_Store::remember( $chat_id );
@@ -135,26 +145,24 @@ class Bot {
 				Bot_Store::count_source( Bot_Math::source_code( $rest ) );
 			}
 			self::track( 'forex_bot_start' );
-			self::send_illustrated( $chat_id, 'start', self::start_text() );
-			return;
+			return self::send_illustrated( $chat_id, 'start', self::start_text() );
 		}
 
 		if ( '/help' === $command ) {
-			Telegram::send( $chat_id, self::help_text() );
-			return;
+			return Telegram::reply_message( $chat_id, self::help_text() );
 		}
 
 		$rates  = Rates::effective()['rates'];
 		$parsed = Bot_Math::parse_amount( $text, (float) ( $rates['USDINR'] ?? 0 ) );
 
 		if ( null === $parsed ) {
-			Telegram::send( $chat_id, self::confused_text() );
-			return;
+			return Telegram::reply_message( $chat_id, self::confused_text() );
 		}
 
 		Bot_Store::count_balance( $parsed['inr'] );
 		self::track( 'forex_bot_calc' );
-		self::answer( $chat_id, $parsed['inr'] );
+
+		return self::answer( $chat_id, $parsed['inr'] );
 	}
 
 	/**
@@ -164,14 +172,14 @@ class Bot {
 	 *
 	 * @param int    $chat_id Chat.
 	 * @param string $data    Callback data, "p:PAIR:BALANCE" | "l:LEV:BALANCE" | "x:pip".
+	 * @return array<string,mixed>|null Answer to carry back in the response.
 	 */
-	private static function on_button( int $chat_id, string $data ): void {
+	private static function on_button( int $chat_id, string $data ): ?array {
 		$parts = explode( ':', $data );
 		$kind  = $parts[0] ?? '';
 
 		if ( 'x' === $kind ) {
-			self::send_illustrated( $chat_id, 'pip', self::pip_explainer() );
-			return;
+			return self::send_illustrated( $chat_id, 'pip', self::pip_explainer() );
 		}
 
 		$value   = $parts[1] ?? '';
@@ -182,12 +190,10 @@ class Bot {
 		} elseif ( 'l' === $kind ) {
 			Bot_Store::set_prefs( $chat_id, null, (int) $value );
 		} else {
-			return;
+			return null;
 		}
 
-		if ( $balance > 0 ) {
-			self::answer( $chat_id, $balance );
-		}
+		return $balance > 0 ? self::answer( $chat_id, $balance ) : null;
 	}
 
 	/**
@@ -203,23 +209,35 @@ class Bot {
 	 * @param int    $chat_id Chat.
 	 * @param string $slug    Image slug (Bot_Images).
 	 * @param string $caption Caption — must fit Telegram::CAPTION_MAX.
+	 * @return array<string,mixed>|null Answer to carry back in the response.
 	 */
-	private static function send_illustrated( int $chat_id, string $slug, string $caption ): void {
+	private static function send_illustrated( int $chat_id, string $slug, string $caption ): ?array {
 		$photo = Bot_Images::photo( $slug );
 
-		if ( '' !== $photo && mb_strlen( $caption ) <= Telegram::CAPTION_MAX ) {
-			$result = Telegram::send_photo( $chat_id, $photo, $caption );
-
-			if ( 'sent' === $result['status'] ) {
-				Bot_Images::remember( $slug, $result['file_id'] );
-				return;
-			}
-			if ( 'blocked' === $result['status'] ) {
-				return;
-			}
+		if ( '' === $photo || mb_strlen( $caption ) > Telegram::CAPTION_MAX ) {
+			return Telegram::reply_message( $chat_id, $caption );
 		}
 
-		Telegram::send( $chat_id, $caption );
+		// Once Telegram has told us the file_id, the picture costs nothing to
+		// send again and can ride back in the webhook response like any text.
+		if ( Bot_Images::is_file_id( $slug, $photo ) ) {
+			return Telegram::reply_photo( $chat_id, $photo, $caption );
+		}
+
+		// First time out: the file has to be uploaded, and the file_id only
+		// comes back in the API's answer — which a webhook reply never sees.
+		// So this one send stays a real call, and pays for every one after it.
+		$result = Telegram::send_photo( $chat_id, $photo, $caption );
+
+		if ( 'sent' === $result['status'] ) {
+			Bot_Images::remember( $slug, $result['file_id'] );
+			return null;
+		}
+		if ( 'blocked' === $result['status'] ) {
+			return null;
+		}
+
+		return Telegram::reply_message( $chat_id, $caption );
 	}
 
 	/**
@@ -228,17 +246,16 @@ class Bot {
 	 * @param int   $chat_id Chat.
 	 * @param float $balance Balance in rupees.
 	 */
-	private static function answer( int $chat_id, float $balance ): void {
+	private static function answer( int $chat_id, float $balance ): ?array {
 		$prefs   = Bot_Store::prefs( $chat_id );
 		$rates   = Rates::effective()['rates'];
 		$picture = Bot_Math::picture( $balance, $prefs['pair'], (float) $prefs['leverage'], $rates );
 
 		if ( null === $picture ) {
-			Telegram::send( $chat_id, self::confused_text() );
-			return;
+			return Telegram::reply_message( $chat_id, self::confused_text() );
 		}
 
-		Telegram::send(
+		return Telegram::reply_message(
 			$chat_id,
 			self::reply_text( $picture, self::ad_line( (bool) $picture['tight'] ) ),
 			self::keyboard( $picture )

@@ -122,6 +122,24 @@ class Bot_Images {
 	}
 
 	/**
+	 * Whether what photo() handed back is a cached id rather than a URL.
+	 *
+	 * The distinction decides how the picture can be sent. A file_id costs
+	 * Telegram a lookup and can ride back inside the webhook response; a URL
+	 * makes Telegram come to this server for the file, and the response to a
+	 * webhook carries no answer to read — so the id would never be learned and
+	 * every recipient would cost another fetch.
+	 *
+	 * A Telegram file_id is opaque but never a URL, which is the whole test.
+	 *
+	 * @param string $slug  Image slug.
+	 * @param string $value What photo() returned for it.
+	 */
+	public static function is_file_id( string $slug, string $value ): bool {
+		return '' !== $value && ! str_starts_with( strtolower( $value ), 'http' );
+	}
+
+	/**
 	 * Store the file_id Telegram returned for a slug.
 	 *
 	 * @param string $slug    Image slug.

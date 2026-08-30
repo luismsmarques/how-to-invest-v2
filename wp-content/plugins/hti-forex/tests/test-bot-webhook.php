@@ -19,6 +19,10 @@ define( 'HTI_TELEGRAM_BOT_TOKEN', '123456:test-token' );
 require_once __DIR__ . '/../includes/class-config.php';
 require_once __DIR__ . '/../includes/class-bot-math.php';
 require_once __DIR__ . '/../includes/class-telegram.php';
+require_once __DIR__ . '/../includes/class-rates.php';
+require_once __DIR__ . '/../includes/class-settings.php';
+require_once __DIR__ . '/../includes/class-bot-images.php';
+require_once __DIR__ . '/fixtures/bot-store-stub.php';
 require_once __DIR__ . '/../includes/class-bot.php';
 
 use HTI\Forex\Bot;
@@ -56,6 +60,21 @@ function post( ?string $secret, $body = array() ): int {
 	return Bot::receive( new WP_REST_Request( $headers, $body ) )->get_status();
 }
 
+/**
+ * Post a text message from a chat and hand back the response body.
+ *
+ * @param int    $chat_id Chat.
+ * @param string $text    Message text.
+ * @return array<string,mixed>
+ */
+function say( int $chat_id, string $text ): array {
+	$request = new WP_REST_Request(
+		array( 'x_telegram_bot_api_secret_token' => Telegram::secret() ),
+		array( 'message' => array( 'chat' => array( 'id' => $chat_id ), 'text' => $text ) )
+	);
+	return (array) Bot::receive( $request )->get_data();
+}
+
 echo "\n=== O segredo do webhook ===\n";
 
 $secret = Telegram::secret();
@@ -90,6 +109,62 @@ echo "\n=== O URL do webhook ===\n";
 
 check( str_contains( Telegram::webhook_url(), 'htinvest/v1/forex/telegram' ), 'o URL aponta para a rota REST registada' );
 check( 30 === Telegram::RATE_PER_SECOND, 'o tecto gratuito do Telegram está registado no código' );
+
+echo "\n=== A resposta viaja na resposta ao webhook ===\n";
+
+// This is the change that matters for the server: what used to be "answer 200,
+// then open a socket to Telegram and wait up to ten seconds" is now one request
+// that ends where it started. The assertion that proves it is not the body —
+// it is that nothing went out.
+$GLOBALS['__hti_subs']     = array();
+$GLOBALS['__hti_http']     = array();
+$GLOBALS['__hti_http_log'] = array();
+
+$reply = say( 4242, '/help' );
+
+check( 'sendMessage' === ( $reply['method'] ?? '' ), '/help responde com um sendMessage no corpo' );
+check( 4242 === ( $reply['chat_id'] ?? 0 ), 'endereçado a quem escreveu' );
+check( 'HTML' === ( $reply['parse_mode'] ?? '' ), 'em HTML, como o Telegram espera' );
+check( array() === $GLOBALS['__hti_http_log'], 'e sem uma única chamada de saída' );
+
+$reply = say( 4242, 'isto não é um número' );
+check( 'sendMessage' === ( $reply['method'] ?? '' ), 'texto que não é um saldo também responde no corpo' );
+check( array() === $GLOBALS['__hti_http_log'], 'ainda sem chamadas de saída' );
+
+$reply = say( 4242, '50000' );
+check( 'sendMessage' === ( $reply['method'] ?? '' ), 'um saldo é respondido no corpo' );
+check( str_contains( (string) ( $reply['text'] ?? '' ), '₹' ), 'com a conta em rupias' );
+check( isset( $reply['reply_markup']['inline_keyboard'] ), 'e com os botões agarrados' );
+check( array() === $GLOBALS['__hti_http_log'], 'sem chamadas de saída' );
+
+$reply = say( 4242, '/stop' );
+check( 'sendMessage' === ( $reply['method'] ?? '' ), '/stop também' );
+check( ! in_array( 4242, $GLOBALS['__hti_subs'], true ), 'e a pessoa sai mesmo da lista' );
+
+echo "\n=== O botão deixa de custar duas chamadas ===\n";
+
+$GLOBALS['__hti_http']     = array();
+$GLOBALS['__hti_http_log'] = array();
+
+$request = new WP_REST_Request(
+	array( 'x_telegram_bot_api_secret_token' => Telegram::secret() ),
+	array(
+		'callback_query' => array(
+			'id'      => 'cb1',
+			'data'    => 'p:GBPUSD:50000',
+			'message' => array( 'chat' => array( 'id' => 4242 ) ),
+		),
+	)
+);
+$reply = (array) Bot::receive( $request )->get_data();
+
+check( 'sendMessage' === ( $reply['method'] ?? '' ), 'a nova resposta vem no corpo' );
+check( str_contains( (string) ( $reply['text'] ?? '' ), 'GBP/USD' ), 'já com o par que foi escolhido' );
+check( 1 === count( $GLOBALS['__hti_http_log'] ), 'resta uma só chamada, não duas' );
+check(
+	str_contains( (string) ( $GLOBALS['__hti_http_log'][0]['url'] ?? '' ), 'answerCallbackQuery' ),
+	'e é a que limpa o indicador do botão'
+);
 
 echo "\n=== O que o Telegram diz sobre o webhook ===\n";
 
