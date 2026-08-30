@@ -27,9 +27,18 @@ pages and carry their own CSS, so `functions.php`, `theme.json` and
   leaderboard that rewards risk next to a broker CTA would be one. There is a
   test that greps the rendered pages for `/go/` and the broker slugs.
 - **No prizes, no real money.** Virtual capital only, and the page says so.
-- **The Reveal never serves an unverified case.** A case without a source URL
-  and a recorded verification is forced back to draft and is excluded from the
-  pool by the query itself. Editing any of the numbers clears the verification.
+- **The Reveal never serves a case that has not met the conditions for what it
+  claims to be.** Each case carries `hti_rev_provenance`. A *verified* case
+  claims its figures came out of a document, so it cannot be published without
+  that document's address and a recorded verification, and editing any of the
+  three verified numbers clears the tick. An *illustrative* case claims no
+  document — the company, the period and the direction of what happened are
+  real, the figures and headlines are reconstructed to show the pattern — so
+  what it must carry instead is the whole dossier, and the reveal screen prints
+  a line saying exactly that where the source would otherwise sit. Anything
+  that does not say `illustrative` is judged as verified: the default fails
+  closed. Both branches are enforced twice, by the publish gate and again by
+  the pool query. The thirty-four seeded cases ship illustrative.
 - **The server decides.** The client is never sent the outcome candles, nor the
   company name, year or return, before its decision is recorded.
 

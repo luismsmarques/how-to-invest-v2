@@ -8,8 +8,23 @@
  * the player has already decided — and that exemption is conditional. It holds
  * only while every case is (a) about a period at least
  * Config::REVEAL_MIN_AGE_YEARS in the past, so it is history rather than a
- * view on a listed company today, and (b) sourced and verified, so that every
- * number shown next to that name can be traced to a document.
+ * view on a listed company today, and (b) honest about what the figures beside
+ * that name are.
+ *
+ * (b) has two answers, and `hti_rev_provenance` is which one a case gives:
+ *
+ *  - 'verified' — every figure was read out of a document, so the case needs
+ *    that document's address and a tick from the person who read it. The
+ *    default for anything that does not say otherwise, because a default that
+ *    fails open is how a gate stops being a gate.
+ *  - 'illustrative' — the company, the period and the direction of what
+ *    happened are real and the figures are a reconstruction of the pattern.
+ *    No document is required, because none is being claimed; what is required
+ *    instead is the whole dossier, because the dossier IS the case, and the
+ *    reveal screen saying so where the source would otherwise sit.
+ *
+ * Promoting a case from the second to the first is a change of claim, so it
+ * puts the case behind the first gate: a source and a tick, like any other.
  *
  * A condition that is only written down is not a condition. So it is enforced
  * three times, in three places that fail independently:
@@ -315,6 +330,20 @@ class Case_Admin {
 	 */
 	public static function labels(): array {
 		return array(
+			// The dossier keys only block an illustrative case, but they are
+			// worded here for both: the notice after a refused publish has to
+			// name the field the editor has to go and fill, whichever gate
+			// refused it.
+			'hti_rev_sector_en'          => __( 'Sector (EN)', 'hti-games' ),
+			'hti_rev_sector_pt'          => __( 'Sector (PT)', 'hti-games' ),
+			'hti_rev_revenue_band_en'    => __( 'Revenue band (EN) — a band, never a figure that resolves to one company', 'hti-games' ),
+			'hti_rev_revenue_band_pt'    => __( 'Revenue band (PT)', 'hti-games' ),
+			'hti_rev_fundamentals'       => __( 'Six fundamentals, each with a key, both languages and a tint', 'hti-games' ),
+			'hti_rev_headlines'          => __( 'Three headlines from the period, in both languages', 'hti-games' ),
+			'hti_rev_context_en'         => __( 'What happened next (EN)', 'hti-games' ),
+			'hti_rev_context_pt'         => __( 'What happened next (PT)', 'hti-games' ),
+			'hti_rev_lesson_en'          => __( 'Lesson (EN)', 'hti-games' ),
+			'hti_rev_lesson_pt'          => __( 'Lesson (PT)', 'hti-games' ),
 			'hti_rev_source_url'         => __( 'Source URL (must be a full http(s) address)', 'hti-games' ),
 			'hti_rev_verified'           => __( 'Verified (tick it only after checking the numbers against the source)', 'hti-games' ),
 			'hti_rev_return_5y_bp'       => __( 'Five-year return, in basis points', 'hti-games' ),
@@ -440,21 +469,41 @@ class Case_Admin {
 	 * @return array<int,array{key:string,have:int,need:int,done:bool,blocking:bool}>
 	 */
 	public static function checklist( array $meta, ?int $now = null ): array {
-		$missing = self::missing( $meta, $now );
-		$has     = static fn( string $field ): int => in_array( $field, $missing, true ) ? 0 : 1;
+		$missing      = self::missing( $meta, $now );
+		$illustrative = 'illustrative' === self::provenance( $meta );
+		$has          = static fn( string $field ): int => in_array( $field, $missing, true ) ? 0 : 1;
 
-		return array(
+		$rows = array(
 			self::step( 'year', $has( 'hti_rev_year' ), 1, true ),
 			self::step( 'returns', $has( 'hti_rev_return_5y_bp' ) + $has( 'hti_rev_index_return_5y_bp' ), 2, true ),
-			self::step( 'source', $has( 'hti_rev_source_url' ), 1, true ),
-			self::step( 'verified', $has( 'hti_rev_verified' ), 1, true ),
-			self::step( 'company', self::filled( $meta, array( 'hti_rev_company' ) ), 1, false ),
-			self::step( 'dossier', self::filled( $meta, array( 'hti_rev_sector_en', 'hti_rev_sector_pt', 'hti_rev_revenue_band_en', 'hti_rev_revenue_band_pt' ) ), 4, false ),
-			self::step( 'fundamentals', self::fundamentals_complete( (string) ( $meta['hti_rev_fundamentals'] ?? '' ) ), self::FUNDAMENTALS, false ),
-			self::step( 'headlines', self::headlines_complete( (string) ( $meta['hti_rev_headlines'] ?? '' ) ), self::HEADLINES, false ),
-			self::step( 'aftermath', self::filled( $meta, array( 'hti_rev_context_en', 'hti_rev_context_pt', 'hti_rev_lesson_en', 'hti_rev_lesson_pt' ) ), 4, false ),
-			self::step( 'credit', self::filled( $meta, array( 'hti_rev_source_label', 'hti_rev_source_accessed' ) ), 2, false ),
 		);
+
+		// The two gates ask for different things, so the screen shows
+		// different rows — a source row that says "done" on a case with no
+		// source, or an open row nothing is waiting on, both teach an editor
+		// that this screen does not mean anything.
+		if ( ! $illustrative ) {
+			$rows[] = self::step( 'source', $has( 'hti_rev_source_url' ), 1, true );
+			$rows[] = self::step( 'verified', $has( 'hti_rev_verified' ), 1, true );
+		}
+
+		$rows[] = self::step( 'company', self::filled( $meta, array( 'hti_rev_company' ) ), 1, false );
+		$rows[] = self::step( 'dossier', self::filled( $meta, self::DOSSIER_FIELDS ), count( self::DOSSIER_FIELDS ), $illustrative );
+		$rows[] = self::step( 'fundamentals', self::fundamentals_complete( (string) ( $meta['hti_rev_fundamentals'] ?? '' ) ), self::FUNDAMENTALS, $illustrative );
+		$rows[] = self::step( 'headlines', self::headlines_complete( (string) ( $meta['hti_rev_headlines'] ?? '' ) ), self::HEADLINES, $illustrative );
+		$rows[] = self::step( 'aftermath', self::filled( $meta, self::AFTERMATH_FIELDS ), count( self::AFTERMATH_FIELDS ), $illustrative );
+
+		if ( $illustrative ) {
+			// Not a requirement — an offer. An illustrative case is finished;
+			// this is the row that says what promoting it to verified would
+			// take, so the upgrade path is on the screen rather than in a
+			// document somebody has to be told about.
+			$rows[] = self::step( 'promote', self::filled( $meta, array( 'hti_rev_source_url' ) ) + ( '1' === (string) ( $meta['hti_rev_verified'] ?? '' ) ? 1 : 0 ), 2, false );
+		} else {
+			$rows[] = self::step( 'credit', self::filled( $meta, array( 'hti_rev_source_label', 'hti_rev_source_accessed' ) ), 2, false );
+		}
+
+		return $rows;
 	}
 
 	/**
@@ -543,7 +592,7 @@ class Case_Admin {
 			),
 			'dossier'      => array(
 				__( 'Sector and revenue band, in both languages', 'hti-games' ),
-				__( 'The two lines at the top of the file. A band, never an exact figure a search engine can resolve to one company — the dossier is anonymous or it is not a dossier.', 'hti-games' ),
+				__( 'The two lines at the top of the file. A band, never an exact figure a search engine can resolve to one company — the dossier is anonymous or it is not a dossier. On an illustrative case this blocks publication: there is no source document behind it, so the dossier being whole is what holds it up.', 'hti-games' ),
 			),
 			'fundamentals' => array(
 				__( 'Six fundamentals, each against its sector average', 'hti-games' ),
@@ -551,11 +600,15 @@ class Case_Admin {
 			),
 			'headlines'    => array(
 				__( 'Three headlines from the period', 'hti-games' ),
-				__( 'Real headlines from the year, in both languages, and never one that names the company. They are the mood of the time, which is the half of the dossier the figures cannot carry.', 'hti-games' ),
+				__( 'In both languages, and never one that names the company. They are the mood of the time, which is the half of the dossier the figures cannot carry. On a verified case they are quotations with a reference; on an illustrative one they are written as the kind of thing being said at the time — never in quotation marks and never attributed to a publication.', 'hti-games' ),
 			),
 			'aftermath'    => array(
 				__( 'What happened next, and the lesson', 'hti-games' ),
 				__( 'Both in both languages. They are what the player reads after the number lands, and they are the difference between a score and a lesson.', 'hti-games' ),
+			),
+			'promote'      => array(
+				__( 'Optional: promote this case to verified', 'hti-games' ),
+				__( 'This case ships as an illustrative reconstruction and is publishable as one. Paste the address of the document you actually read, replace every figure with what it says, then tick verified — at which point the case is judged as a verified one and cannot be published without both.', 'hti-games' ),
 			),
 			'credit'       => array(
 				__( 'Source label and the date it was accessed', 'hti-games' ),
@@ -748,7 +801,7 @@ class Case_Admin {
 
 		$labels = self::labels();
 		echo '<div class="notice notice-error"><p><strong>';
-		esc_html_e( 'This case was kept as a draft: The Reveal never serves an unverified case.', 'hti-games' );
+		esc_html_e( 'This case was kept as a draft: The Reveal never serves a case that has not met the conditions for what it claims to be.', 'hti-games' );
 		echo '</strong></p><ul style="list-style:disc;margin-left:20px">';
 		foreach ( $missing as $field ) {
 			printf( '<li>%s</li>', esc_html( $labels[ $field ] ?? (string) $field ) );
@@ -832,7 +885,9 @@ class Case_Admin {
 		$area( 'hti_rev_lesson_en', __( 'Lesson (EN)', 'hti-games' ) );
 		$area( 'hti_rev_lesson_pt', __( 'Lesson (PT)', 'hti-games' ) );
 
-		echo '<h4>' . esc_html__( 'Sourcing — the case cannot be published without this', 'hti-games' ) . '</h4>';
+		self::render_provenance( $meta );
+
+		echo '<h4>' . esc_html__( 'Sourcing — a verified case cannot be published without this', 'hti-games' ) . '</h4>';
 		$text( 'hti_rev_source_url', __( 'Source URL', 'hti-games' ), __( 'The document the numbers came from: an annual report, a regulator filing, an index factsheet.', 'hti-games' ) );
 		$text( 'hti_rev_source_label', __( 'Source label', 'hti-games' ), __( 'How it is credited on the reveal screen.', 'hti-games' ) );
 		$text( 'hti_rev_source_accessed', __( 'Accessed (YYYY-MM-DD)', 'hti-games' ) );
@@ -840,6 +895,48 @@ class Case_Admin {
 		self::render_verification( $meta );
 
 		$text( 'hti_rev_slot', __( 'Pinned slot (optional)', 'hti-games' ), __( 'A rotation position, or an absolute day index to line the case up with a date. 0 = unpinned.', 'hti-games' ) );
+	}
+
+	/**
+	 * What the figures on this case are, and which gate that puts it behind.
+	 *
+	 * A radio pair rather than a checkbox, because there is no neutral third
+	 * state: every case makes one of these two claims to the player, and the
+	 * reveal screen shows one sentence or the other. The stored default is
+	 * 'verified' (CPT::san_provenance), so a case created here before anybody
+	 * touches this control is judged strictly — which is the safe direction
+	 * and the only one worth defaulting to.
+	 *
+	 * @param array<string,mixed> $meta Case meta.
+	 */
+	private static function render_provenance( array $meta ): void {
+		$current = self::provenance( $meta );
+
+		$options = array(
+			'verified'     => array(
+				__( 'Verified — every figure was read out of a document', 'hti-games' ),
+				__( 'Needs a source URL and the verification tick before it can be published. The reveal screen credits the document and links to it.', 'hti-games' ),
+			),
+			'illustrative' => array(
+				__( 'Illustrative — the figures are a reconstruction of the pattern', 'hti-games' ),
+				__( 'The company, the period and the direction of what happened are real; the figures and the headlines are written to show the shape rather than copied from a filing. No source URL is required, and the whole dossier has to be filled instead. The reveal screen says so, in as many words, where the source would otherwise be.', 'hti-games' ),
+			),
+		);
+
+		echo '<div class="hti-cw hti-cw--prov">';
+		echo '<h4 class="hti-cw__h">' . esc_html__( 'What these figures are', 'hti-games' ) . '</h4>';
+
+		foreach ( $options as $value => $option ) {
+			printf(
+				'<p class="hti-cw__opt"><label><input type="radio" name="hti_rev_provenance" value="%1$s" %2$s /> <strong>%3$s</strong></label><br /><span class="description">%4$s</span></p>',
+				esc_attr( $value ),
+				checked( $current, $value, false ),
+				esc_html( $option[0] ),
+				esc_html( $option[1] )
+			);
+		}
+
+		echo '</div>';
 	}
 
 	/**
@@ -1588,15 +1685,21 @@ class Case_Admin {
 		self::preview_row( __( 'What happened next', 'hti-games' ), self::preview_block( $meta, 'hti_rev_context_', $lang ) );
 		self::preview_row( __( 'Lesson', 'hti-games' ), self::preview_block( $meta, 'hti_rev_lesson_', $lang ) );
 
-		$url   = trim( (string) ( $meta['hti_rev_source_url'] ?? '' ) );
-		$label = trim( (string) ( $meta['hti_rev_source_label'] ?? '' ) );
-		$when  = trim( (string) ( $meta['hti_rev_source_accessed'] ?? '' ) );
+		// One line or the other, never both and never neither — the same rule
+		// the result screen follows, checked here where an editor can see it.
+		if ( 'illustrative' === self::provenance( $meta ) ) {
+			self::preview_row( __( 'What these figures are', 'hti-games' ), Strings::get( 'rev_illustrative', $lang ) );
+		} else {
+			$url   = trim( (string) ( $meta['hti_rev_source_url'] ?? '' ) );
+			$label = trim( (string) ( $meta['hti_rev_source_label'] ?? '' ) );
+			$when  = trim( (string) ( $meta['hti_rev_source_accessed'] ?? '' ) );
 
-		$source = '' === $url
-			? __( 'No source — the case cannot be published, and the reveal screen would credit nothing.', 'hti-games' )
-			: ( '' !== $label ? $label : $url ) . ( '' !== $when ? ' · ' . sprintf( Strings::get( 'rev_source_note', $lang ), $when ) : '' );
+			$source = '' === $url
+				? __( 'No source — the case cannot be published, and the reveal screen would credit nothing.', 'hti-games' )
+				: ( '' !== $label ? $label : $url ) . ( '' !== $when ? ' · ' . sprintf( Strings::get( 'rev_source_note', $lang ), $when ) : '' );
 
-		self::preview_row( Strings::get( 'rev_source', $lang ), $source );
+			self::preview_row( Strings::get( 'rev_source', $lang ), $source );
+		}
 
 		echo '</tbody></table>';
 		echo '<p class="description">' . esc_html( Strings::get( 'rev_historical', $lang ) ) . '</p>';

@@ -16,12 +16,19 @@
  * when no blocking row is open, and every field missing() can name has wording
  * an editor can act on.
  *
- * Second, the awkward values again. A five-year return of exactly zero is a
+ * Second, the checklist has to change shape with the claim the case makes. An
+ * illustrative case has no document, so a "source URL" row reading DONE beside
+ * an empty box — or reading OPEN when nothing is waiting on it — would teach an
+ * editor that this screen does not mean anything. What it gets instead is the
+ * dossier as blocking rows and one optional row describing what promoting the
+ * case to verified would take.
+ *
+ * Third, the awkward values again. A five-year return of exactly zero is a
  * real answer and reads as done; a fundamentals row with no key looks filled in
  * the editor and is DROPPED by REST::fundamentals() on the way to the player,
  * so it must not count as done here either.
  *
- * Third, the two renderers. The player's dossier is painted by reveal.js into
+ * Fourth, the two renderers. The player's dossier is painted by reveal.js into
  * the empty shell Frontend::shell_reveal() prints; the admin preview paints the
  * same dossier in PHP, because there is no server-side renderer of a filled
  * dossier to call and building one would mean putting the answer's neighbours
@@ -126,6 +133,27 @@ function hti_wf_case( array $override = array() ): array {
 }
 
 /**
+ * A finished ILLUSTRATIVE case: whole dossier, no document, no tick.
+ *
+ * @param array<string,mixed> $override Fields to replace.
+ * @return array<string,mixed>
+ */
+function hti_wf_illustrative( array $override = array() ): array {
+	return hti_wf_case(
+		array_merge(
+			array(
+				'hti_rev_provenance'      => 'illustrative',
+				'hti_rev_source_url'      => '',
+				'hti_rev_source_label'    => '',
+				'hti_rev_source_accessed' => '',
+				'hti_rev_verified'        => '0',
+			),
+			$override
+		)
+	);
+}
+
+/**
  * One checklist row by key.
  *
  * @param array<int,array<string,mixed>> $list Checklist.
@@ -207,6 +235,61 @@ hti_games_check(
 	false !== stripos( $labels['verified'][1], 'withdraw' ) || false !== stripos( $labels['verified'][1], 'again' ),
 	'and the verification row warns that editing a number takes the tick back'
 );
+
+echo "\nAn illustrative case gets a different checklist, because it is a different claim\n";
+$illus = Case_Admin::checklist( hti_wf_illustrative(), $now );
+$prog  = Case_Admin::progress( $illus );
+hti_games_check( 0 === $prog['blocking'], 'a complete illustrative case has nothing blocking' );
+hti_games_check( Case_Admin::publishable( hti_wf_illustrative(), $now ), 'which is what the gate says too' );
+hti_games_check( array() === hti_wf_row( $illus, 'source' ), 'there is no source row: no document is being claimed, and a row that said "done" beside an empty box would be a lie' );
+hti_games_check( array() === hti_wf_row( $illus, 'verified' ), 'and no verification row either' );
+
+$promote = hti_wf_row( $illus, 'promote' );
+hti_games_check( array() !== $promote && empty( $promote['blocking'] ), 'instead there is an optional row for promoting the case to verified' );
+hti_games_check( 0 === $promote['have'] && 2 === $promote['need'], 'open at nought of two, which is what promoting would cost' );
+hti_games_check(
+	1 === hti_wf_row( Case_Admin::checklist( hti_wf_illustrative( array( 'hti_rev_source_url' => 'https://example.org/a' ) ), $now ), 'promote' )['have'],
+	'and it counts a source URL pasted in advance, so the upgrade path is visibly half done rather than invisible'
+);
+
+$hollow_illus = Case_Admin::checklist( hti_wf_illustrative( array(
+	'hti_rev_revenue_band_pt' => '',
+	'hti_rev_context_pt'      => '',
+	'hti_rev_fundamentals'    => hti_wf_fundamentals( 4 ),
+	'hti_rev_headlines'       => hti_wf_headlines( 1 ),
+) ), $now );
+$prog = Case_Admin::progress( $hollow_illus );
+hti_games_check( 4 === $prog['blocking'], 'and a half-written dossier blocks publication on all four of its rows at once' );
+foreach ( array( 'dossier', 'fundamentals', 'headlines', 'aftermath' ) as $key ) {
+	$row = hti_wf_row( $hollow_illus, $key );
+	hti_games_check( ! empty( $row['blocking'] ), "the '{$key}' row blocks on an illustrative case" );
+	hti_games_check( empty( hti_wf_row( Case_Admin::checklist( hti_wf_case(), $now ), $key )['blocking'] ), "and does not on a verified one, where the document is the evidence" );
+}
+
+$agree = true;
+foreach ( array(
+	hti_wf_illustrative(),
+	hti_wf_illustrative( array( 'hti_rev_lesson_pt' => '' ) ),
+	hti_wf_illustrative( array( 'hti_rev_headlines' => hti_wf_headlines( 2 ) ) ),
+	hti_wf_illustrative( array( 'hti_rev_year' => '2025' ) ),
+	hti_wf_illustrative( array( 'hti_rev_provenance' => 'verified' ) ),
+) as $meta ) {
+	$blocking = Case_Admin::progress( Case_Admin::checklist( $meta, $now ) )['blocking'];
+	$agree    = $agree && ( 0 === $blocking ) === Case_Admin::publishable( $meta, $now );
+}
+hti_games_check( $agree, 'on this path too, a case is publishable exactly when no blocking row is open' );
+
+$unworded = array();
+foreach ( array_merge( Case_Admin::checklist( hti_wf_illustrative(), $now ), Case_Admin::checklist( array(), $now ) ) as $row ) {
+	if ( ! array_key_exists( (string) $row['key'], Case_Admin::checklist_labels() ) ) {
+		$unworded[] = (string) $row['key'];
+	}
+}
+hti_games_check( array() === $unworded, 'every row either checklist can show has wording (' . ( $unworded ? implode( ', ', $unworded ) : 'all worded' ) . ')' );
+
+$queue_illus = Case_Admin::queue_row( 5, 'Illustrative', 'draft', 'Photography', hti_wf_illustrative(), $now );
+hti_games_check( $queue_illus['publishable'] && array() === $queue_illus['open_blocking'], 'the queue reports a finished illustrative case as ready rather than as missing a source' );
+hti_games_check( in_array( 'promote', $queue_illus['open'], true ), 'and still lists the optional promotion, so the upgrade path is visible to the lead as well' );
 
 /* -------------------------------------------------------------------------
  * 2. The dossier half: what counts as a finished row
@@ -603,6 +686,27 @@ hti_games_check(
 );
 hti_games_check( str_contains( $answer, 'Kodak' ) && str_contains( $answer, '-9700 bp' ), 'the answer half does carry them, which is what the editor is checking' );
 hti_games_check( str_contains( $answer, '(-97.00%)' ), 'basis points are shown as the percentage they mean, next to the figure that was typed' );
+
+echo "\nThe preview says which of the two things the player would be reading\n";
+$illus_answer    = hti_wf_render( 'render_preview_answer', array( hti_wf_illustrative(), 'en' ) );
+$verified_answer = hti_wf_render( 'render_preview_answer', array( hti_wf_case(), 'en' ) );
+
+hti_games_check( str_contains( $illus_answer, Strings::get( 'rev_illustrative', 'en' ) ), 'an illustrative case shows the sentence the player is shown, word for word' );
+hti_games_check( ! str_contains( $illus_answer, 'sec.gov' ), 'and no source, because there is none to credit' );
+hti_games_check( str_contains( $verified_answer, 'sec.gov' ) || str_contains( $verified_answer, 'Annual report' ), 'a verified case still credits its document' );
+hti_games_check( ! str_contains( $verified_answer, Strings::get( 'rev_illustrative', 'en' ) ), 'and never claims to be a reconstruction — one line or the other, never both' );
+
+$illus_pt = hti_wf_render( 'render_preview_answer', array( hti_wf_illustrative(), 'pt' ) );
+hti_games_check( str_contains( $illus_pt, Strings::get( 'rev_illustrative', 'pt' ) ), 'and the Portuguese preview shows the Portuguese sentence, which is the half nobody checks' );
+
+$illus_check = hti_wf_render( 'render_checklist', array( hti_wf_illustrative(), 12 ) );
+hti_games_check( str_contains( $illus_check, 'Nothing blocks publication' ), 'the checklist for a finished illustrative case says so' );
+hti_games_check( ! str_contains( $illus_check, 'The source URL' ), 'and does not ask for a source URL it does not want' );
+hti_games_check( str_contains( $illus_check, 'promote this case to verified' ), 'while still offering the promotion, which is the one thing left to do with it' );
+
+$prov_box = hti_wf_render( 'render_provenance', array( hti_wf_illustrative() ) );
+hti_games_check( str_contains( $prov_box, 'name="hti_rev_provenance"' ) && substr_count( $prov_box, 'type="radio"' ) === 2, 'the editor can switch a case between the two claims, and there is no neutral third state' );
+hti_games_check( str_contains( $prov_box, 'value="illustrative"' ) && str_contains( $prov_box, 'value="verified"' ), 'the two values it writes are the two the sanitizer accepts' );
 
 echo "\nAnd it says out loud when the Portuguese is missing\n";
 $half_pt = hti_wf_render( 'render_preview_answer', array( hti_wf_case( array( 'hti_rev_context_pt' => '' ) ), 'pt' ) );

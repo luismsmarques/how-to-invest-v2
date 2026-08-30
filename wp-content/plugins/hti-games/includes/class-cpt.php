@@ -379,8 +379,9 @@ class CPT {
 	 * A flag, stored as the literal '1' or '0'.
 	 *
 	 * Stored rather than deleted when false, because Library's pool query
-	 * filters on `hti_rev_verified = 1` and a missing row and a false row
-	 * should not need two different comparisons to tell apart.
+	 * compares against `hti_rev_verified = 1` on its verified branch, and a
+	 * missing row and a false row should not need two different comparisons to
+	 * tell apart.
 	 *
 	 * @param mixed $value Raw value.
 	 */

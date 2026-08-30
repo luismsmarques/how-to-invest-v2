@@ -322,9 +322,15 @@ class Strings {
 				'en' => 'These are case studies, not tips.',
 				'pt' => 'Isto são casos de estudo, não são dicas.',
 			),
+			// It says "each case says which it is" rather than promising that
+			// every case is sourced, because they are not all sourced: some
+			// carry figures read out of a document and some carry figures
+			// reconstructed to show the pattern, and the reveal screen tells
+			// you which one you just played. A promise the library cannot keep
+			// is worse than no promise.
 			'rev_ob3_body'        => array(
-				'en' => 'Every case is historical, at least five years past, and checked against a published source you can open. None of it is a view on that company today.',
-				'pt' => 'Todos os casos são históricos, com pelo menos cinco anos, e verificados contra uma fonte publicada que podes abrir. Nada disto é uma opinião sobre essa empresa hoje.',
+				'en' => 'Every case is historical, at least five years past, and none of it is a view on that company today. At the end, each case tells you whether its figures came out of a published document or were reconstructed to show the pattern.',
+				'pt' => 'Todos os casos são históricos, com pelo menos cinco anos, e nada disto é uma opinião sobre essa empresa hoje. No fim, cada caso diz-te se os números saíram de um documento publicado ou se foram reconstruídos para mostrar o padrão.',
 			),
 		);
 	}
@@ -681,6 +687,22 @@ class Strings {
 				'en' => 'Figures checked against a published source, accessed %s.',
 				'pt' => 'Números verificados contra uma fonte publicada, consultada em %s.',
 			),
+			// The other half of that sentence, and the one a case shows when
+			// there is no document behind it. A case shows this line or the
+			// source line above, never both and never neither: the reader is
+			// entitled to know which of the two things they are looking at,
+			// and the difference is not a footnote.
+			//
+			// It names the headlines as well as the figures on purpose. A
+			// headline reads as a quotation whether or not it is one, and it
+			// is the part of a dossier a player is most likely to repeat
+			// afterwards — so the one line that says "reconstructed" has to
+			// cover it, or the most quotable half of the case is the half
+			// nothing accounts for.
+			'rev_illustrative'  => array(
+				'en' => 'The company, the period and the direction of what happened next are real. The figures and the headlines are reconstructed to show the pattern, not copied from a filing or quoted from a newspaper.',
+				'pt' => 'A empresa, o período e a direção do que aconteceu a seguir são reais. Os números e as manchetes são reconstruídos para mostrar o padrão, não foram copiados de um relatório nem citados de um jornal.',
+			),
 			'rev_crowd_passed'  => array(
 				'en' => 'Players who passed on this one',
 				'pt' => 'Jogadores que passaram nesta',
@@ -701,9 +723,12 @@ class Strings {
 				'en' => 'The index player',
 				'pt' => 'O jogador índice',
 			),
+			// "Historical" and not "verified historical": the library holds
+			// both kinds of case, and the line right above this one on the
+			// result screen has already said which kind this one is.
 			'rev_historical'    => array(
-				'en' => 'Educational simulation built on verified historical cases. Not a recommendation, and not a view on this company today.',
-				'pt' => 'Simulação educativa construída sobre casos históricos verificados. Não é recomendação, nem é uma opinião sobre esta empresa hoje.',
+				'en' => 'Educational simulation built on historical cases. Not a recommendation, and not a view on this company today.',
+				'pt' => 'Simulação educativa construída sobre casos históricos. Não é recomendação, nem é uma opinião sobre esta empresa hoje.',
 			),
 		);
 	}

@@ -166,20 +166,52 @@ class Library {
 		);
 
 		if ( Config::GAME_REVEAL === $game ) {
-			// The query itself refuses an unverified or unsourced case. This
-			// duplicates the admin publish gate deliberately: a bypassed gate
-			// (direct SQL, another plugin's wp_update_post) must still not be
-			// able to put a named real company in front of a player.
+			// The query refuses a case that has not met the conditions for
+			// what it claims to be. This duplicates the admin publish gate
+			// deliberately: a bypassed gate (direct SQL, another plugin's
+			// wp_update_post) must still not be able to put a named real
+			// company in front of a player.
+			//
+			// Two branches because there are two claims a case can make, and
+			// Case_Admin::missing() is built on the same split. A VERIFIED
+			// case is one whose figures came out of a document, so it needs
+			// that document and the tick. An ILLUSTRATIVE case claims no
+			// document, so what it needs instead is a dossier with something
+			// in it — the fundamentals and the headlines are checked here
+			// because those two empty would serve a blank file with a real
+			// company's name at the end of it. The rest of the completeness
+			// rule stays in the gate, where it can be expressed without five
+			// more joins.
 			$args['meta_query'] = array( // phpcs:ignore WordPress.DB.SlowMetaQuery.SlowMetaQuery -- the result is cached for 12h and busted on write; correctness here outranks the join.
-				'relation' => 'AND',
+				'relation' => 'OR',
 				array(
-					'key'   => 'hti_rev_verified',
-					'value' => '1',
+					'relation' => 'AND',
+					array(
+						'key'   => 'hti_rev_provenance',
+						'value' => 'illustrative',
+					),
+					array(
+						'key'     => 'hti_rev_fundamentals',
+						'value'   => '',
+						'compare' => '!=',
+					),
+					array(
+						'key'     => 'hti_rev_headlines',
+						'value'   => '',
+						'compare' => '!=',
+					),
 				),
 				array(
-					'key'     => 'hti_rev_source_url',
-					'value'   => '',
-					'compare' => '!=',
+					'relation' => 'AND',
+					array(
+						'key'   => 'hti_rev_verified',
+						'value' => '1',
+					),
+					array(
+						'key'     => 'hti_rev_source_url',
+						'value'   => '',
+						'compare' => '!=',
+					),
 				),
 			);
 		}

@@ -9,11 +9,14 @@
  * and the one division that leaves the integers is rounded by the helper both
  * ports ship identically.
  *
- * The numbers are real: a case carries a company's actual five-year forward
- * return from a year at least Config::REVEAL_MIN_AGE_YEARS in the past. The
- * engine never opines on any of it — it multiplies what happened by what the
- * player committed, and puts the result next to what doing nothing would have
- * paid.
+ * The company and the period are real, and so is the direction of the return:
+ * a case carries a five-year forward return from a year at least
+ * Config::REVEAL_MIN_AGE_YEARS in the past. Whether that figure was read out
+ * of a document or reconstructed to show the pattern is the case's own
+ * `hti_rev_provenance`, and the result screen says which — see
+ * Strings::get( 'rev_illustrative' ). The engine never opines on any of it: it
+ * multiplies the figure it is given by what the player committed, and puts the
+ * result next to what doing nothing would have paid.
  *
  * @package HTI_Games
  */

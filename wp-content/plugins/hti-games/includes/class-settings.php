@@ -278,15 +278,15 @@ class Settings {
 
 		// 5. Cases waiting on somebody. This is a queue, and a queue with
 		// nobody watching it is how a game runs out of content on a Sunday.
-		$waiting = self::unverified_cases();
+		$waiting = self::unpublishable_cases();
 		$rows[]  = array(
 			0 === $waiting ? 'ok' : 'warn',
-			__( 'Reveal cases awaiting verification', 'hti-games' ),
+			__( 'Reveal cases waiting on somebody', 'hti-games' ),
 			0 === $waiting
-				? __( 'Nothing waiting — every case in the library is verified against a published source.', 'hti-games' )
+				? __( 'Nothing waiting — every case in the library meets the conditions for what it claims to be.', 'hti-games' )
 				: sprintf(
-					/* translators: %d: number of unverified cases. */
-					__( '%d case(s) drafted but not verified. They cannot be published or served until the figures are checked against a source.', 'hti-games' ),
+					/* translators: %d: number of cases the publish gate would refuse. */
+					__( '%d case(s) the publish gate would refuse. Open each one: a verified case wants a source and the tick, an illustrative one wants the rest of its dossier.', 'hti-games' ),
 					$waiting
 				),
 		);
@@ -337,11 +337,11 @@ class Settings {
 			$status,
 			__( 'Educational games', 'hti-games' ),
 			sprintf(
-				/* translators: 1: STC scenarios, 2: Reveal cases, 3: cases awaiting verification. */
-				__( '%1$d chart scenarios and %2$d verified cases published, %3$d case(s) awaiting verification. Details under Settings → HTI Games.', 'hti-games' ),
+				/* translators: 1: STC scenarios, 2: Reveal cases, 3: cases the publish gate would refuse. */
+				__( '%1$d chart scenarios and %2$d cases published, %3$d case(s) the gate would still refuse. Details under Settings → HTI Games.', 'hti-games' ),
 				self::pool_size( Config::GAME_STC ),
 				self::pool_size( Config::GAME_REVEAL ),
-				self::unverified_cases()
+				self::unpublishable_cases()
 			),
 		);
 
@@ -457,10 +457,16 @@ class Settings {
 	}
 
 	/**
-	 * Cases that exist but cannot be served: drafted, pending or published
-	 * without a recorded verification.
+	 * Cases that exist but could not be published as they stand.
+	 *
+	 * Asked of Case_Admin::missing() rather than of one meta key, because
+	 * there are now two ways a case can be finished — figures read out of a
+	 * document and vouched for, or figures reconstructed to show the pattern
+	 * with the whole dossier filled — and a count that only looked at the
+	 * verification tick would report a finished illustrative library as
+	 * thirty-four cases waiting on somebody.
 	 */
-	private static function unverified_cases(): int {
+	private static function unpublishable_cases(): int {
 		$ids = get_posts(
 			array(
 				'post_type'              => Config::CPT_CASE,
@@ -475,7 +481,7 @@ class Settings {
 
 		$count = 0;
 		foreach ( (array) $ids as $id ) {
-			if ( '1' !== (string) get_post_meta( (int) $id, 'hti_rev_verified', true ) ) {
+			if ( ! Case_Admin::publishable( Case_Admin::stored_meta( (int) $id ) ) ) {
 				++$count;
 			}
 		}

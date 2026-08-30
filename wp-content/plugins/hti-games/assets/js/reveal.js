@@ -267,6 +267,22 @@
 	}
 
 	/**
+	 * What the figures on this case were, in one line.
+	 *
+	 * Exactly one line shows: a verified case credits its document, an
+	 * illustrative one says the figures and headlines were reconstructed to
+	 * show the pattern. A screen that shows both, or neither, has stopped
+	 * telling the reader which of the two they just played.
+	 *
+	 * @param {Object} result Result payload.
+	 */
+	function paintProvenance( result ) {
+		var illustrative = 'illustrative' === result.provenance;
+		set( 'provenance', illustrative ? H.t( 'rev_illustrative' ) : '' );
+		paintSource( illustrative ? null : result.source );
+	}
+
+	/**
 	 * The published source, revealed with the answer.
 	 *
 	 * Kept out of the dossier because a URL names the company in its own slug.
@@ -353,7 +369,7 @@
 
 		paintLines( result );
 		paintCrowd( result.crowd );
-		paintSource( result.source );
+		paintProvenance( result );
 
 		var block = H.hook( root, 'lesson-block' );
 		var lesson = H.hook( root, 'lesson' );

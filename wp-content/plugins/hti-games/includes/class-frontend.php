@@ -879,6 +879,13 @@ class Frontend {
 			. '<div class="hti-g__lessonbody" data-hti="lesson"></div>'
 			. '</div>'
 			. '<p class="hti-g__row" data-hti="crowd-row" hidden><span data-hti="crowd-label"></span><span class="hti-num" data-hti="crowd-value"></span></p>'
+			// Two empty notes, and reveal.js fills exactly one of them: the
+			// case either credits the document its figures came out of, or
+			// says the figures and the headlines were reconstructed to show
+			// the pattern. Both are printed as empty shells here because the
+			// case is chosen after this HTML is cached, and the sentence a
+			// reader most needs is the one that says which kind they played.
+			. '<p class="hti-g__note" data-hti="provenance"></p>'
 			. '<p class="hti-g__note" data-hti="source"></p>'
 			. self::result_actions( $lang )
 			. '<p class="hti-g__note hti-num" data-hti="reset"></p>'

@@ -1439,6 +1439,14 @@ class REST {
 		$base['index_return_5y_bp'] = (int) ( $meta['hti_rev_index_return_5y_bp'] ?? 0 );
 		$base['context']            = self::block( $meta, 'hti_rev_context', $lang );
 		$base['lesson']             = self::block( $meta, 'hti_rev_lesson', $lang );
+		// What the figures ARE, so the result screen can say so. The rule is
+		// CPT::san_provenance's and is repeated rather than imported: this
+		// file must not depend on the admin or the CPT class to answer a
+		// question on a public request, and the direction is the important
+		// half — anything that does not say 'illustrative' is treated as a
+		// verified case, which is the one that had to carry a source to be
+		// published at all.
+		$base['provenance']         = 'illustrative' === (string) ( $meta['hti_rev_provenance'] ?? '' ) ? 'illustrative' : 'verified';
 		$base['source']             = self::source( $meta );
 		// Keys, not sentences: the three lines are worded bilingually in
 		// Strings, and the engine only decides which numbers sit under them.
