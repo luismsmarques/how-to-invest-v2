@@ -1329,22 +1329,31 @@ class Seeder {
 	 * Map each glossary term slug to its topic. Centralized so a term lands in
 	 * exactly one topic. Unknown slugs fall back to "fundamentals".
 	 *
+	 * Public because the Markdown importer needs the same answer: terms that
+	 * arrive as `content/glossary/*.md` declare `topic: key-terms` in their
+	 * front matter, which is not one of the ten curated topics and so resolved
+	 * to no term at all — leaving sixteen terms filed under nothing and absent
+	 * from every topic archive. Registering `key-terms` as an eleventh topic
+	 * would have "fixed" it by putting fifty-three of the fifty-eight terms in
+	 * one bucket, which is not a taxonomy. They belong in the topics that
+	 * already exist.
+	 *
 	 * @param string $slug Glossary term slug.
 	 */
-	private static function glossary_topic_of( string $slug ): string {
+	public static function glossary_topic_of( string $slug ): string {
 		static $map = null;
 		if ( null === $map ) {
 			$groups = array(
 				'asset-classes' => array( 'global-equities', 'bonds', 'cash', 'reits-and-alternatives', 'crypto', 'commodities' ),
-				'stocks'        => array( 'stock', 'dividend', 'ipo', 'market-capitalization', 'capital-gain' ),
-				'bonds-income'  => array( 'fixed-income', 'variable-income', 'zero-coupon-bond', 'yield' ),
+				'stocks'        => array( 'stock', 'dividend', 'ipo', 'market-capitalization', 'capital-gain', 'fractional-shares' ),
+				'bonds-income'  => array( 'fixed-income', 'variable-income', 'zero-coupon-bond', 'yield', 'treasury-bonds', 'tanb' ),
 				'funds'         => array( 'etf', 'investment-fund' ),
 				'markets'       => array( 'bull-market', 'bear-market', 'benchmark', 'nasdaq', 'wall-street', 'spread' ),
-				'trading'       => array( 'leverage', 'margin', 'hedge', 'option', 'short-selling', 'value-investing' ),
-				'risk'          => array( 'volatility', 'diversification', 'portfolio' ),
+				'trading'       => array( 'leverage', 'margin', 'hedge', 'option', 'short-selling', 'value-investing', 'day-trading', 'dollar-cost-averaging' ),
+				'risk'          => array( 'volatility', 'diversification', 'portfolio', 'asset-allocation', 'emergency-fund', 'rebalancing', 'risk-and-reward', 'time-horizon' ),
 				'economy'       => array( 'inflation', 'interest-rate', 'quantitative-easing' ),
 				'fundamentals'  => array( 'asset', 'compound-interest', 'cash-flow', 'pe-ratio', 'ebitda' ),
-				'compliance'    => array( 'kyc', 'underwriting' ),
+				'compliance'    => array( 'kyc', 'underwriting', 'brokerage-account', 'deposit-guarantee', 'financial-regulator', 'guaranteed-returns', 'ponzi-scheme', 'tax-advantaged-account' ),
 			);
 			$map = array();
 			foreach ( $groups as $topic => $slugs ) {

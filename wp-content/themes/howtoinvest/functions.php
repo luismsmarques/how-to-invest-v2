@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Theme version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.8.58';
+const VERSION = '0.8.59';
 
 /**
  * Load the theme text domain (EN default + PT translations in languages/).
@@ -393,7 +393,7 @@ function strings(): array {
 		'hero_explore'     => array( 'en' => 'Explore articles', 'pt' => 'Explorar artigos' ),
 		'hero_fineprint'   => array( 'en' => 'Educational tool · not advice · examples by asset class only', 'pt' => 'Ferramenta educativa · não é aconselhamento · exemplos só por classe de ativos' ),
 		'step1_t'          => array( 'en' => 'You answer', 'pt' => 'Respondes' ),
-		'step1_d'          => array( 'en' => 'Six short questions about your time frame, goals and how you react to drops.', 'pt' => 'Seis perguntas curtas sobre o teu tempo, objetivos e como reages a quedas.' ),
+		'step1_d'          => array( 'en' => 'Eight short questions about your time frame, goals and how you react to drops.', 'pt' => 'Oito perguntas curtas sobre o teu tempo, objetivos e como reages a quedas.' ),
 		'step2_t'          => array( 'en' => 'You see your profile', 'pt' => 'Vês o teu perfil' ),
 		'step2_d'          => array( 'en' => 'A clear archetype, with an illustrative example by asset class — never tickers.', 'pt' => 'Um arquétipo claro, com um exemplo ilustrativo por classes — nunca tickers.' ),
 		'step3_t'          => array( 'en' => 'You learn', 'pt' => 'Aprendes' ),
@@ -1307,7 +1307,7 @@ function learn_hub_strings( bool $pt ): array {
 			'feat_tag'   => 'Na prática',
 			'read_guide' => 'Ler o guia →',
 			'quiz_h'     => 'Descobre o teu perfil de investidor',
-			'quiz_p'     => '6 perguntas curtas. Ajuda-te a saber por onde começar.',
+			'quiz_p'     => '8 perguntas curtas. Ajuda-te a saber por onde começar.',
 			'quiz_btn'   => 'Começar o questionário',
 			'gloss_h'    => 'Glossário',
 			'gloss_p'    => 'Termos essenciais, sem jargão',
