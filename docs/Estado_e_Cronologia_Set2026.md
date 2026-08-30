@@ -68,10 +68,14 @@ gravados e nunca mostrados — entre eles `forex_bot_start`, `forex_bot_calc`,
 `forex.js:297`). O `location` do `forex_tool_use` é descartado: o desdobramento
 só existe para `cta_click` (`class-metrics.php:197`).
 
-**O `/forex/` pode emitir um URL de afiliado em cru.** `cta_url` só é validado
-como `https://` (`class-settings.php:145-158`) e vai direto para o `href`
-(`class-tools.php:712`). Os URLs do bot passam por `normalize_go_url()` e
-exigem o host próprio (`:263-279`) — o código documenta a assimetria em `:128`.
+**O `/forex/` podia emitir um URL de afiliado em cru — resolvido em 30 ago
+(hti-forex 0.13.8).** O `href` do botão passou a ser `/forex/go/{ferramenta}/`,
+o mesmo redirector que o PDF já usava: o `cta_for()` devolve a *placement* e
+nunca o URL, portanto quem desenha a página não tem sequer o que imprimir. O id
+de campanha, que o browser escrevia em cima do `href` do afiliado, viaja agora
+como `cid` no nosso próprio URL e é reposto no destino do lado do servidor — o
+painel do afiliado vê exatamente o que via antes. Um teste enumera os ficheiros
+que leem `cta_url` e falha se aparecer um terceiro.
 
 **O mapa `cta` não tem teto de cardinalidade** (`class-metrics.php:197-200`) e
 `POST /htinvest/v1/event` é público, sem nonce, e aceita `location` arbitrário.
@@ -143,7 +147,9 @@ duas primeiras semanas desbloqueiam e medem; a terceira constrói.
 **Config (dono)**
 - Criar `/go/xm-demo` e `/go/open-account-xm`; ligar `cta_enabled` e
   `bot_ad_enabled` — o diagnóstico de 4 condições diz qual falta.
-- Ver o que está em `cta_url`; se for URL de afiliado em cru, trocar por `/go/`.
+- ✅ `cta_url` já não sai da máquina (hti-forex 0.13.8): pode continuar a ser o
+  URL de afiliado em cru, porque só o redirector o segue. **Confirmar** que
+  `/forex/go/position-size/` aterra na XM depois do deploy.
 - Depois do deploy, confirmar que o export PDF ainda sai em PDF.
 
 **Marketing**
@@ -156,7 +162,7 @@ duas primeiras semanas desbloqueiam e medem; a terceira constrói.
 ### Semana 2 (8–12 Set) · Provar a conversão
 
 **Desenvolvimento**
-- Prender `cta_url` ao host próprio.
+- ✅ Prender o CTA do `/forex/` ao host próprio (feito, hti-forex 0.13.8).
 - ✅ Teto de cardinalidade no `cta` (feito, hti-engine 0.15.1) + allowlist de
   `location` no endpoint público.
 - ✅ Estado do webhook no painel + registo das falhas (feito, hti-forex 0.12.5 —

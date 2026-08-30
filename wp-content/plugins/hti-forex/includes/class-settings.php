@@ -125,9 +125,9 @@ class Settings {
 			$out[ $slot ] = $code;
 		}
 
-		// The bot's two partner destinations. Unlike cta_url these must be our
-		// OWN /go/ redirector, not the affiliate URL: the bot posts them into
-		// private inboxes, where a raw affiliate URL is neither disclosed nor
+		// The bot's two partner destinations. These are our OWN /go/
+		// redirector, not the affiliate URL: the bot posts them into private
+		// inboxes, where a raw affiliate URL is neither disclosed nor
 		// swappable. Requiring the site's own host makes that structural
 		// rather than a rule someone has to remember.
 		foreach ( array( 'bot_ad_demo_url', 'bot_ad_real_url' ) as $field ) {
@@ -143,6 +143,11 @@ class Settings {
 
 		// Affiliate URL: https only. Anything else is dropped (and reported),
 		// which also force-disables the CTA via cta_for()'s empty-URL check.
+		//
+		// This value is never printed. It is the DESTINATION the /forex/go/
+		// redirector resolves at click time; every link the site emits points
+		// at that own-host route instead (see cta_for()), so the deal can
+		// change without a single published URL going stale.
 		$url = trim( (string) ( $input['cta_url'] ?? '' ) );
 		if ( '' === $url ) {
 			$out['cta_url'] = '';
@@ -367,9 +372,15 @@ class Settings {
 	 * action, which is what stops a 90-character label from stretching the
 	 * button past the edge of its card.
 	 *
+	 * Deliberately returns a placement SLOT and never the affiliate URL. The
+	 * caller renders /forex/go/{slot}, so the partner destination is resolved
+	 * server-side at click time and cta_url never reaches a page, a PDF or an
+	 * inbox. Handing the URL out here is what used to make that a rule someone
+	 * had to remember instead of something the code enforces.
+	 *
 	 * @param string                   $tool     Tool name (position_size|pip_value|sessions).
 	 * @param array<string,mixed>|null $settings Optional settings (defaults to stored).
-	 * @return array{url:string,label:string,headline:string,brand:string,logo:string}|null
+	 * @return array{slot:string,label:string,headline:string,brand:string,logo:string}|null
 	 */
 	public static function cta_for( string $tool, ?array $settings = null ): ?array {
 		$s = $settings ?? self::settings();
@@ -389,7 +400,7 @@ class Settings {
 		}
 
 		return array(
-			'url'      => (string) $s['cta_url'],
+			'slot'     => str_replace( '_', '-', $tool ),
 			'label'    => $label,
 			'headline' => $headline,
 			'brand'    => (string) ( $s['cta_brand'] ?? '' ),

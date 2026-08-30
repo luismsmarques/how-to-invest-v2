@@ -50,6 +50,21 @@ class Go {
 	private const SLOT_MAX = 32;
 
 	/**
+	 * Our own query parameter carrying the campaign id through the redirect.
+	 *
+	 * The landing URL's campaign id used to be written straight onto the
+	 * affiliate href in the browser. Now that the href is this route, the id
+	 * travels here and is re-attached to the destination server-side, so the
+	 * affiliate panel sees exactly what it saw before.
+	 */
+	private const CID_PARAM = 'cid';
+
+	/**
+	 * Max length of a campaign id (mirrors the cap in forex.js).
+	 */
+	private const CID_MAX = 64;
+
+	/**
 	 * Wire up the rewrite rule, query var, redirect and robots exclusion.
 	 */
 	public static function init(): void {
@@ -124,11 +139,17 @@ class Go {
 	 * placement so the affiliate panel can tell the PDF from the tool pages.
 	 * With no usable partner URL the caller sends the visitor to the hub.
 	 *
+	 * A campaign id, when the click carried one, takes the sub-id slot ahead of
+	 * the placement — that is what the tool pages already sent before the href
+	 * became this route, and paid attribution is the reason the parameter
+	 * exists at all.
+	 *
 	 * @param array<string,mixed> $settings Settings::settings() array.
 	 * @param string              $slot     Normalized placement slot.
+	 * @param string              $cid      Normalized campaign id, or ''.
 	 * @return string Partner URL with the sub-id, or '' for the hub fallback.
 	 */
-	public static function destination( array $settings, string $slot ): string {
+	public static function destination( array $settings, string $slot, string $cid = '' ): string {
 		if ( empty( $settings['cta_enabled'] ) ) {
 			return '';
 		}
@@ -137,7 +158,9 @@ class Go {
 		if ( ! str_starts_with( $url, 'https://' ) ) {
 			return '';
 		}
-		if ( '' === $slot ) {
+
+		$value = '' !== $cid ? $cid : $slot;
+		if ( '' === $value ) {
 			return $url;
 		}
 
@@ -147,7 +170,19 @@ class Go {
 		}
 
 		$glue = str_contains( $url, '?' ) ? '&' : '?';
-		return $url . $glue . rawurlencode( $param ) . '=' . rawurlencode( $slot );
+		return $url . $glue . rawurlencode( $param ) . '=' . rawurlencode( $value );
+	}
+
+	/**
+	 * Normalize a campaign id. Pure (unit-tested): the same charset and cap
+	 * forex.js applies before it puts the value on the link, so a hand-edited
+	 * URL can never widen what reaches the partner.
+	 *
+	 * @param string $raw Raw value from the query string.
+	 */
+	public static function cid( string $raw ): string {
+		$cid = (string) preg_replace( '/[^A-Za-z0-9_\-]/', '', $raw );
+		return substr( $cid, 0, self::CID_MAX );
 	}
 
 	/**
@@ -188,7 +223,9 @@ class Go {
 			return;
 		}
 
-		$destination = self::destination( Settings::settings(), $slot );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a public outbound link, not a state change.
+		$cid         = self::cid( (string) ( $_GET[ self::CID_PARAM ] ?? '' ) );
+		$destination = self::destination( Settings::settings(), $slot, $cid );
 		$fallback    = '' === $destination;
 		if ( $fallback ) {
 			$destination = home_url( '/forex/' );
