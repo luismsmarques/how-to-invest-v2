@@ -196,7 +196,32 @@ class Metrics {
 		}
 		if ( 'cta_click' === $event && isset( $params['location'] ) ) {
 			$loc = (string) $params['location'];
-			$data[ $day ]['cta'][ $loc ] = ( $data[ $day ]['cta'][ $loc ] ?? 0 ) + 1;
+			if ( ! isset( $data[ $day ]['cta'] ) || ! is_array( $data[ $day ]['cta'] ) ) {
+				$data[ $day ]['cta'] = array();
+			}
+			// Bounded like the path map. This one was the exception for a long
+			// time, on the reasoning that locations are written by us — but the
+			// beacon is public and unauthenticated, so the value arrives from
+			// the open web like any other and grows the option just as freely.
+			if ( isset( $data[ $day ]['cta'][ $loc ] ) || count( $data[ $day ]['cta'] ) < self::MAX_PATHS_PER_DAY ) {
+				$data[ $day ]['cta'][ $loc ] = ( $data[ $day ]['cta'][ $loc ] ?? 0 ) + 1;
+			} else {
+				$data[ $day ]['cta']['_other'] = ( $data[ $day ]['cta']['_other'] ?? 0 ) + 1;
+			}
+		}
+		if ( 'forex_tool_use' === $event && isset( $params['location'] ) ) {
+			$tool = (string) $params['location'];
+			if ( ! isset( $data[ $day ]['tool'] ) || ! is_array( $data[ $day ]['tool'] ) ) {
+				$data[ $day ]['tool'] = array();
+			}
+			// Which calculator, not which CTA — kept apart so neither table
+			// has to be read with the other's meaning in mind. Bounded like
+			// the rest, because the beacon is public.
+			if ( isset( $data[ $day ]['tool'][ $tool ] ) || count( $data[ $day ]['tool'] ) < self::MAX_PATHS_PER_DAY ) {
+				$data[ $day ]['tool'][ $tool ] = ( $data[ $day ]['tool'][ $tool ] ?? 0 ) + 1;
+			} else {
+				$data[ $day ]['tool']['_other'] = ( $data[ $day ]['tool']['_other'] ?? 0 ) + 1;
+			}
 		}
 		if ( 'broker_click' === $event ) {
 			// Per-broker and per-location breakdowns (server-side, from /go/).
@@ -507,6 +532,7 @@ class Metrics {
 			'step'     => array(),
 			'arch'     => array(),
 			'cta'      => array(),
+			'tool'     => array(),
 			'page'     => array(),
 			'lang'     => array(),
 			'ref'      => array(),
@@ -522,7 +548,7 @@ class Metrics {
 			if ( $day < $from || $day > $to ) {
 				continue;
 			}
-			foreach ( array( 'e', 'step', 'arch', 'cta', 'page', 'lang', 'ref', 'camp', 'rec', 'lat', 'bkr', 'bkr_loc', 'bkr_arch' ) as $group ) {
+			foreach ( array( 'e', 'step', 'arch', 'cta', 'tool', 'page', 'lang', 'ref', 'camp', 'rec', 'lat', 'bkr', 'bkr_loc', 'bkr_arch' ) as $group ) {
 				if ( empty( $buckets[ $group ] ) || ! is_array( $buckets[ $group ] ) ) {
 					continue;
 				}
@@ -945,11 +971,90 @@ class Metrics {
 				</tbody>
 			</table>
 
+			<h2><?php esc_html_e( 'Forex bot & tools', 'hti-engine' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'What the paid campaigns are buying. A bot start is someone opening the bot; a calculation is someone actually using it — the gap between the two is the campaign\'s real quality.', 'hti-engine' ); ?>
+			</p>
+			<?php
+			$bot = array(
+				__( 'Bot opened (/start)', 'hti-engine' ) => 'forex_bot_start',
+				__( 'Calculation answered', 'hti-engine' ) => 'forex_bot_calc',
+				__( 'Left the bot (/stop)', 'hti-engine' ) => 'forex_bot_stop',
+				__( 'Calculator used on the site', 'hti-engine' ) => 'forex_tool_use',
+			);
+			$bot_rows = array();
+			foreach ( $bot as $label => $key ) {
+				$bot_rows[] = array( $label, (int) ( $e[ $key ] ?? 0 ) );
+			}
+			self::bar_table( $bot_rows, (int) ( $e['forex_bot_start'] ?? 0 ) );
+
+			$tool = $t['tool'] ?? array();
+			arsort( $tool );
+			if ( array() !== $tool ) :
+				?>
+				<h3><?php esc_html_e( 'Which calculator', 'hti-engine' ); ?></h3>
+				<?php
+				$tool_rows = array();
+				foreach ( array_slice( $tool, 0, 20, true ) as $name => $n ) {
+					$tool_rows[] = array( (string) $name, (int) $n );
+				}
+				self::bar_table( $tool_rows, 0 );
+			endif;
+			?>
+
+			<h2><?php esc_html_e( 'Every event counted', 'hti-engine' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Every event this site knows how to count, whether or not it has a chart of its own above. A zero here means either nothing happened or nothing is firing it — both worth knowing, and neither visible while an event has no screen.', 'hti-engine' ); ?>
+			</p>
+			<table class="widefat striped" style="max-width:520px;">
+				<thead><tr>
+					<th><?php esc_html_e( 'Event', 'hti-engine' ); ?></th>
+					<th style="text-align:right;"><?php esc_html_e( 'Count', 'hti-engine' ); ?></th>
+				</tr></thead>
+				<tbody>
+				<?php foreach ( self::event_rows( $e ) as $row ) : ?>
+					<tr>
+						<td><code><?php echo esc_html( $row[0] ); ?></code></td>
+						<td style="text-align:right;font-variant-numeric:tabular-nums;<?php echo 0 === $row[1] ? 'color:#646970;' : ''; ?>">
+							<?php echo esc_html( number_format_i18n( $row[1] ) ); ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+
 			<p style="margin-top:1.5em;color:#646970;font-size:12px;">
 				<?php esc_html_e( 'Counts come from anonymous first-party beacons; visitors who block scripts are not counted (same as any client-side analytics). Approximate under heavy concurrent traffic.', 'hti-engine' ); ?>
 			</p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * One row per countable event, busiest first.
+	 *
+	 * Built from `events()` rather than from a hand-written list, which is the
+	 * whole point: eleven events were once counted for months without a single
+	 * screen showing them, because surfacing an event was a second, separate
+	 * act of remembering. Here, adding a name to the allowlist is enough.
+	 *
+	 * @param array<string,int> $e Event totals for the period.
+	 * @return array<int,array{0:string,1:int}> Rows of [event, count].
+	 */
+	public static function event_rows( array $e ): array {
+		$rows = array();
+		foreach ( self::events() as $name ) {
+			$rows[] = array( $name, (int) ( $e[ $name ] ?? 0 ) );
+		}
+
+		usort(
+			$rows,
+			static function ( array $a, array $b ): int {
+				return $b[1] <=> $a[1] ?: strcmp( $a[0], $b[0] );
+			}
+		);
+
+		return $rows;
 	}
 
 	/**
