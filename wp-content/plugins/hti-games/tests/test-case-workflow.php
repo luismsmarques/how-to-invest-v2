@@ -326,6 +326,16 @@ hti_games_check(
 );
 hti_games_check( '' === Case_Admin::pattern_of( array(), array() ), 'and a case with neither shows nothing rather than a guess' );
 
+// With the lesson library present — which is how the queue actually runs — the
+// id becomes the sentence the library already words, in one place, for both
+// the queue and the lesson a player is shown.
+require_once __DIR__ . '/../includes/class-reveal-lessons.php';
+$known = array_key_first( \HTI\Games\Reveal_Lessons::patterns() );
+hti_games_check(
+	Case_Admin::pattern_of( array( 'hti_rev_pattern' => $known ), array( 'hti_rev_pattern' ) ) === \HTI\Games\Reveal_Lessons::patterns()[ $known ]['en'],
+	"a known pattern is shown by its name, not its slug ({$known})"
+);
+
 /* -------------------------------------------------------------------------
  * 6. The preview cannot drift away from the game
  * ---------------------------------------------------------------------- */

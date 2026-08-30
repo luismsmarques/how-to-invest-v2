@@ -946,7 +946,18 @@ class Case_Admin {
 		self::render_checklist_group( __( 'Required before this case can be published', 'hti-games' ), $blocking );
 		self::render_checklist_group( __( 'Required before the dossier reads properly', 'hti-games' ), $rest );
 
-		echo '<p class="hti-cw__foot">' . esc_html__( 'The four requirements above the line are what the publish gate checks, and the same four are checked again by the query that picks the day — so a case that reaches Publish by any other route is still not served.', 'hti-games' ) . '</p>';
+		// The count is derived rather than typed: a fifth blocking requirement
+		// would otherwise leave a sentence on the screen saying there are four.
+		printf(
+			'<p class="hti-cw__foot">%s</p>',
+			esc_html(
+				sprintf(
+					/* translators: %d: number of requirements the publish gate enforces. */
+					__( 'Those first %d requirements are what the publish gate checks, and the same ones are checked again by the query that picks the day — so a case that reaches Publish by any other route is still not served.', 'hti-games' ),
+					count( $blocking )
+				)
+			)
+		);
 
 		if ( $post_id > 0 ) {
 			printf(
@@ -1215,12 +1226,7 @@ class Case_Admin {
 
 		printf( '<td>%s</td>', esc_html( '' !== trim( (string) $row['pattern'] ) ? (string) $row['pattern'] : '—' ) );
 
-		// Publishable-but-draft is its own state and the most actionable one on
-		// the screen: the work is done and one click is left.
-		$state = ! empty( $row['publishable'] )
-			? __( 'Ready to publish', 'hti-games' )
-			: (string) $row['status'];
-		printf( '<td>%s</td>', esc_html( $state ) );
+		printf( '<td>%s</td>', esc_html( self::queue_state( $row ) ) );
 
 		$open = array();
 		foreach ( (array) $row['open_blocking'] as $key ) {
@@ -1230,7 +1236,7 @@ class Case_Admin {
 		if ( $soft > 0 ) {
 			$open[] = sprintf(
 				/* translators: %d: number of non-blocking gaps. */
-				_n( '%d more to write before it reads properly', '%d more to write before it reads properly', $soft, 'hti-games' ),
+				_n( '%d more thing to write before it reads properly', '%d more things to write before it reads properly', $soft, 'hti-games' ),
 				$soft
 			);
 		}
@@ -1238,6 +1244,35 @@ class Case_Admin {
 		printf( '<td>%s</td>', esc_html( array() === $open ? __( 'Nothing — publish it', 'hti-games' ) : implode( ' · ', $open ) ) );
 
 		echo '</tr>';
+	}
+
+	/**
+	 * What state one queued case is in, in words.
+	 *
+	 * "Ready to publish" is its own state and the most actionable one on the
+	 * screen: the work is finished and a click is left. "Published but not
+	 * served" is the state that should be impossible — the gate forces such a
+	 * post back to draft — so if it ever appears it is named loudly rather
+	 * than shown as an ordinary published post, because the pool query is
+	 * silently refusing to serve it.
+	 *
+	 * @param array<string,mixed> $row A queue_row().
+	 */
+	private static function queue_state( array $row ): string {
+		$status = (string) $row['status'];
+
+		if ( 'publish' === $status ) {
+			return __( 'Published but not served', 'hti-games' );
+		}
+		if ( ! empty( $row['publishable'] ) ) {
+			return __( 'Ready to publish', 'hti-games' );
+		}
+
+		return match ( $status ) {
+			'pending' => __( 'Pending review', 'hti-games' ),
+			'future'  => __( 'Scheduled', 'hti-games' ),
+			default   => __( 'Draft', 'hti-games' ),
+		};
 	}
 
 	/* ---------------------------------------------------------------------
