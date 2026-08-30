@@ -626,6 +626,13 @@ class REST {
 		$payload['player'] = $public;
 		$payload['real']   = Library::is_real( $game );
 
+		// "Still here." last_seen is what the 180-day retention prune measures
+		// against, so a player who opens the chart every day and decides on
+		// half of them must not look idle to it.
+		if ( $row ) {
+			Player::touch( (int) $row['id'], $lang );
+		}
+
 		// Already decided? Then the answer is no longer secret from them.
 		$run = $row ? self::find_run( (int) $row['id'], $game, $day ) : null;
 		if ( $run ) {

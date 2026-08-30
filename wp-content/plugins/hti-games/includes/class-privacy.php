@@ -216,7 +216,7 @@ class Privacy {
 	 * @return array<string,array<string,mixed>>
 	 */
 	public static function register_exporter( $exporters ): array {
-		$exporters                = is_array( $exporters ) ? $exporters : array();
+		$exporters              = is_array( $exporters ) ? $exporters : array();
 		$exporters['hti-games'] = array(
 			'exporter_friendly_name' => __( 'HowToInvest games', 'hti-games' ),
 			'callback'               => array( __CLASS__, 'core_exporter' ),
@@ -231,7 +231,7 @@ class Privacy {
 	 * @return array<string,array<string,mixed>>
 	 */
 	public static function register_eraser( $erasers ): array {
-		$erasers                = is_array( $erasers ) ? $erasers : array();
+		$erasers              = is_array( $erasers ) ? $erasers : array();
 		$erasers['hti-games'] = array(
 			'eraser_friendly_name' => __( 'HowToInvest games', 'hti-games' ),
 			'callback'             => array( __CLASS__, 'core_eraser' ),
