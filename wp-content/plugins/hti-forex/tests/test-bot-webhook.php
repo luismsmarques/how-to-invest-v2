@@ -91,5 +91,90 @@ echo "\n=== O URL do webhook ===\n";
 check( str_contains( Telegram::webhook_url(), 'htinvest/v1/forex/telegram' ), 'o URL aponta para a rota REST registada' );
 check( 30 === Telegram::RATE_PER_SECOND, 'o tecto gratuito do Telegram está registado no código' );
 
+echo "\n=== O que o Telegram diz sobre o webhook ===\n";
+
+// The last delivery error is the one diagnostic this side cannot produce for
+// itself: if our endpoint fails, updates simply stop arriving.
+$GLOBALS['__hti_http'] = array(
+	array(
+		'body' => array(
+			'ok'     => true,
+			'result' => array(
+				'url'                  => Telegram::webhook_url(),
+				'pending_update_count' => 3,
+				'last_error_date'      => 1756000000,
+				'last_error_message'   => 'Wrong response from the webhook: 500 Internal Server Error',
+			),
+		),
+		'code' => 200,
+	),
+);
+
+$info = Telegram::webhook_info();
+
+check( true === $info['ok'], 'uma resposta boa é lida' );
+check( Telegram::webhook_url() === $info['url'], 'o URL registado vem de lá' );
+check( 3 === $info['pending'], 'e as atualizações à espera' );
+check( str_contains( $info['error'], '500' ), 'e o último erro de entrega' );
+check( 1756000000 === $info['error_at'], 'com a data do erro' );
+
+$GLOBALS['__hti_http'] = array(
+	array( 'body' => array( 'ok' => false, 'error_code' => 401, 'description' => 'Unauthorized' ), 'code' => 401 ),
+);
+$info = Telegram::webhook_info();
+
+check( false === $info['ok'], 'um token recusado não é uma resposta boa' );
+check( 'Unauthorized' === $info['description'], 'e diz-se porquê' );
+check( '' === $info['url'] && 0 === $info['pending'], 'sem inventar valores' );
+
+$GLOBALS['__hti_http'] = array(
+	array( 'body' => 'não é json', 'code' => 200 ),
+);
+$info = Telegram::webhook_info();
+check( false === $info['ok'] && '' !== $info['description'], 'uma resposta ilegível não rebenta nada' );
+
+echo "\n=== O estado do bot, em cache ===\n";
+
+delete_transient( Telegram::TRANSIENT_HEALTH );
+$GLOBALS['__hti_http']     = array(
+	array( 'body' => array( 'ok' => true, 'result' => array( 'url' => Telegram::webhook_url(), 'pending_update_count' => 0 ) ), 'code' => 200 ),
+	array( 'body' => array( 'ok' => true, 'result' => array( 'username' => 'HowToInvestForexBot' ) ), 'code' => 200 ),
+);
+$GLOBALS['__hti_http_log'] = array();
+
+$health = Telegram::health();
+
+check( 'HowToInvestForexBot' === $health['username'], 'o bot identifica-se' );
+check( true === $health['ours'], 'e o webhook registado é o nosso' );
+check( 2 === count( $GLOBALS['__hti_http_log'] ), 'ao custo de duas chamadas' );
+
+$GLOBALS['__hti_http_log'] = array();
+$again = Telegram::health();
+check( $again === $health, 'a segunda leitura devolve o mesmo' );
+check( array() === $GLOBALS['__hti_http_log'], 'sem voltar a falar com o Telegram' );
+
+// A webhook pointing elsewhere is invisible from every other angle: Telegram
+// allows one per bot, so whoever registered last is receiving the messages.
+delete_transient( Telegram::TRANSIENT_HEALTH );
+$GLOBALS['__hti_http'] = array(
+	array( 'body' => array( 'ok' => true, 'result' => array( 'url' => 'https://staging.example.com/wp-json/htinvest/v1/forex/telegram' ) ), 'code' => 200 ),
+	array( 'body' => array( 'ok' => true, 'result' => array( 'username' => 'HowToInvestForexBot' ) ), 'code' => 200 ),
+);
+$stolen = Telegram::health();
+
+check( false === $stolen['ours'], 'um webhook roubado por outro site é detetado' );
+check( str_contains( $stolen['webhook']['url'], 'staging' ), 'e diz-se quem o tem' );
+
+echo "\n=== Mexer no webhook limpa o que estava em cache ===\n";
+
+$GLOBALS['__hti_http'] = array( array( 'body' => array( 'ok' => true, 'result' => true ), 'code' => 200 ) );
+Telegram::register_webhook();
+check( false === get_transient( Telegram::TRANSIENT_HEALTH ), 'registar o webhook invalida o estado guardado' );
+
+set_transient( Telegram::TRANSIENT_HEALTH, array( 'stale' => true ), 300 );
+$GLOBALS['__hti_http'] = array( array( 'body' => array( 'ok' => true, 'result' => true ), 'code' => 200 ) );
+Telegram::remove_webhook();
+check( false === get_transient( Telegram::TRANSIENT_HEALTH ), 'e removê-lo também' );
+
 echo "\n=== {$passes} passed, {$failures} failed ===\n";
 exit( $failures > 0 ? 1 : 0 );

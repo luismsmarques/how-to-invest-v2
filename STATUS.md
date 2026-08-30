@@ -256,8 +256,10 @@ O retrato completo, com evidência por `ficheiro:linha`, e a cronologia de setem
   do bot, que exigem o host próprio.
 - **O mapa `cta` não tem teto de cardinalidade** e `POST /htinvest/v1/event` é público e aceita `location`
   arbitrário.
-- **O bot falha em silêncio:** zero `error_log`, retorno de `Telegram::send()` descartado, e nenhum sinal no
-  wp-admin se o token for revogado.
+- ~~**O bot falha em silêncio**~~ — **resolvido** (hti-forex 0.12.5): o painel mostra o @username do bot, se o
+  webhook registado no Telegram é o nosso, as atualizações à espera e **o último erro de entrega que o Telegram
+  guardou**; mais o histórico das últimas dez difusões, a razão da última recusa, e as falhas de envio agrupadas
+  por código.
 - **`hti-forex` não tem `uninstall.php`** — desinstalar deixa chat_ids na base de dados.
 - **Acessibilidade:** o token de foco `#FF6B5E` dá 2,79:1 (falha WCAG 1.4.11) em todo o site; o auto-avanço do
   questionário parte a navegação por teclado; `outline:none` em 4 inputs.

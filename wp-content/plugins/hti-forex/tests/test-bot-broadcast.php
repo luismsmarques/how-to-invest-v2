@@ -20,6 +20,10 @@
 
 require_once __DIR__ . '/bootstrap.php';
 
+// Without a token every start() refuses before it reaches the logic under
+// test, which would make most of this file pass for the wrong reason.
+define( 'HTI_TELEGRAM_BOT_TOKEN', '123456:test-token' );
+
 define( 'HTI_FOREX_PATH', dirname( __DIR__ ) . '/' );
 define( 'HTI_FOREX_URL', 'https://howtoinvest.pro/wp-content/plugins/hti-forex/' );
 
@@ -27,6 +31,7 @@ require_once __DIR__ . '/../includes/class-config.php';
 require_once __DIR__ . '/../includes/class-bot-math.php';
 require_once __DIR__ . '/../includes/class-bot-images.php';
 require_once __DIR__ . '/../includes/class-telegram.php';
+require_once __DIR__ . '/fixtures/bot-store-stub.php';
 require_once __DIR__ . '/../includes/class-bot-broadcast.php';
 
 use HTI\Forex\Bot_Broadcast;
@@ -185,6 +190,224 @@ check( ! Bot_Broadcast::running(), 'e deixa de estar a enviar' );
 check( ! Bot_Broadcast::stalled(), 'um envio terminado não é um envio encravado' );
 check( 100 === $after['sent'], 'o que já tinha saído mantém-se contado' );
 check( false === wp_next_scheduled( Bot_Broadcast::HOOK ), 'e o tick agendado é limpo' );
+
+echo "\n=== A recusa deixa de ser um aviso que desaparece ===\n";
+
+// The reason used to live only in an admin notice, gone on the next reload.
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+
+check( false === Bot_Broadcast::start( '' ), 'uma mensagem vazia é recusada' );
+check( 'empty' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'e a razão fica registada' );
+check( ( Bot_Broadcast::log()['refused']['at'] ?? 0 ) > 0, 'com a data' );
+
+check( false === Bot_Broadcast::start( str_repeat( 'a', 2000 ), 'promo' ), 'uma legenda longa demais é recusada' );
+check( 'caption-too-long' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'e diz que foi a legenda' );
+
+put_state(
+	array(
+		'text'     => 'a correr',
+		'image'    => '',
+		'cursor'   => 0,
+		'sent'     => 0,
+		'dropped'  => 0,
+		'total'    => 10,
+		'started'  => time(),
+		'updated'  => time(),
+		'finished' => 0,
+	)
+);
+wp_schedule_single_event( time() + 1, Bot_Broadcast::HOOK );
+check( false === Bot_Broadcast::start( 'outra' ), 'uma segunda difusão em cima de outra é recusada' );
+check( 'already-running' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'e diz que já havia uma a correr' );
+
+echo "\n=== O histórico ===\n";
+
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+
+check( array() === Bot_Broadcast::log()['history'], 'sem difusões, o histórico está vazio' );
+
+// A send that died: start() is the last moment its state exists, so that is
+// where it gets written down.
+put_state(
+	array(
+		'text'     => 'a que morreu a meio',
+		'image'    => 'promo',
+		'cursor'   => 40,
+		'sent'     => 40,
+		'dropped'  => 1,
+		'total'    => 917,
+		'started'  => time() - 86400,
+		'updated'  => time() - 86400,
+		'finished' => 0,
+	)
+);
+Bot_Broadcast::start( 'a seguinte' );
+
+$history = Bot_Broadcast::log()['history'];
+check( 1 === count( $history ), 'a difusão morta é arquivada quando a seguinte começa' );
+check( 'stalled' === $history[0]['how'], 'marcada como morta a meio' );
+check( 40 === $history[0]['sent'], 'com o que chegou a sair' );
+check( 917 === $history[0]['total'], 'e quantos havia na altura' );
+check( 'a que morreu a meio' === $history[0]['excerpt'], 'e o texto, para se reconhecer qual era' );
+check( 'promo' === $history[0]['image'], 'e a imagem que levava' );
+
+check( array() === Bot_Broadcast::log()['refused'], 'e a recusa anterior é esquecida quando uma difusão arranca' );
+
+Bot_Broadcast::cancel();
+$history = Bot_Broadcast::log()['history'];
+check( 2 === count( $history ), 'cancelar arquiva também' );
+check( 'cancelled' === $history[0]['how'], 'marcada como parada à mão' );
+check( 'a seguinte' === $history[0]['excerpt'], 'e é a mais recente que vem primeiro' );
+
+// Bounded: ten is memory, not a log file.
+for ( $i = 0; $i < 15; $i++ ) {
+	Bot_Broadcast::start( "mensagem {$i}" );
+	Bot_Broadcast::cancel();
+}
+$history = Bot_Broadcast::log()['history'];
+check( 10 === count( $history ), 'o histórico pára nas dez' );
+check( 'mensagem 14' === $history[0]['excerpt'], 'e a mais recente está no topo' );
+
+echo "\n=== Uma difusão inteira, do princípio ao fim ===\n";
+
+// The path that was fatally broken: the loop that actually sends. With a
+// Telegram that answers, it can be walked end to end.
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+$GLOBALS['__hti_http']    = array();
+$GLOBALS['__hti_subs']    = range( 1001, 1010 );
+
+check( true === Bot_Broadcast::start( 'olá a todos' ), 'a difusão é aceite' );
+check( Bot_Broadcast::running(), 'e fica a correr' );
+
+Bot_Broadcast::run();
+$after = Bot_Broadcast::status();
+
+check( 10 === $after['sent'], 'toda a gente recebeu' );
+check( 0 === $after['dropped'], 'e ninguém foi descartado' );
+check( 10 === $after['cursor'], 'o cursor parou no último' );
+check( count( $GLOBALS['__hti_http_log'] ) === 10, 'houve uma chamada ao Telegram por pessoa' );
+check( str_contains( (string) ( $GLOBALS['__hti_http_log'][0]['url'] ?? '' ), 'sendMessage' ), 'como sendMessage' );
+check( str_contains( (string) ( $GLOBALS['__hti_http_log'][0]['body']['text'] ?? '' ), 'olá a todos' ), 'com o texto escrito' );
+check( str_contains( (string) ( $GLOBALS['__hti_http_log'][0]['body']['text'] ?? '' ), '/stop' ), 'e o rodapé de saída colado' );
+
+Bot_Broadcast::run();
+check( Bot_Broadcast::status()['finished'] > 0, 'o tique seguinte não encontra ninguém e fecha' );
+check( 'finished' === ( Bot_Broadcast::log()['history'][0]['how'] ?? '' ), 'e fica arquivada como terminada' );
+
+echo "\n=== Com imagem ===\n";
+
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+$GLOBALS['__hti_http']     = array();
+$GLOBALS['__hti_http_log'] = array();
+$GLOBALS['__hti_subs']     = array( 2001 );
+
+Bot_Broadcast::start( 'com fotografia', 'promo' );
+Bot_Broadcast::run();
+
+check( 1 === Bot_Broadcast::status()['sent'], 'a mensagem com imagem sai' );
+check( str_contains( (string) ( $GLOBALS['__hti_http_log'][0]['url'] ?? '' ), 'sendPhoto' ), 'como sendPhoto, não sendMessage' );
+
+echo "\n=== Quem bloqueou, e quem falhou ===\n";
+
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+$GLOBALS['__hti_http_log'] = array();
+$GLOBALS['__hti_subs']     = array( 3001, 3002, 3003 );
+
+// One blocked the bot, one failed for a reason we can neither retry nor
+// explain away, one went out.
+$GLOBALS['__hti_http'] = array(
+	array( 'body' => array( 'ok' => false, 'error_code' => 403, 'description' => 'Forbidden: bot was blocked by the user' ), 'code' => 403 ),
+	array( 'body' => array( 'ok' => false, 'error_code' => 400, 'description' => "Bad Request: can't parse entities" ), 'code' => 400 ),
+	array( 'body' => array( 'ok' => true, 'result' => array() ), 'code' => 200 ),
+);
+
+Bot_Broadcast::start( 'mistura' );
+Bot_Broadcast::run();
+$after = Bot_Broadcast::status();
+
+check( 1 === $after['sent'], 'só um foi entregue' );
+check( 2 === $after['dropped'], 'os dois recusados foram descartados' );
+check( 1 === count( $GLOBALS['__hti_subs'] ), 'e as linhas mortas saíram da tabela' );
+
+echo "\n=== Uma falha que não é nem bloqueio nem excesso ===\n";
+
+// A revoked token, Telegram down, a tag it will not parse: not a dead chat and
+// not a rate limit. This used to move the cursor on and leave no trace.
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+$GLOBALS['__hti_subs']    = array( 5001, 5002 );
+$GLOBALS['__hti_http']    = array(
+	array( 'body' => array( 'ok' => false, 'error_code' => 401, 'description' => 'Unauthorized' ), 'code' => 401 ),
+	array( 'body' => array( 'ok' => false, 'error_code' => 401, 'description' => 'Unauthorized' ), 'code' => 401 ),
+);
+
+Bot_Broadcast::start( 'com token revogado' );
+Bot_Broadcast::run();
+$after  = Bot_Broadcast::status();
+$errors = Bot_Broadcast::log()['errors'];
+
+check( 0 === $after['sent'], 'nada foi entregue' );
+check( 0 === $after['dropped'], 'e ninguém foi descartado — não é culpa deles' );
+check( 2 === count( $GLOBALS['__hti_subs'] ), 'a tabela fica intacta' );
+check( isset( $errors['401'] ), 'a falha fica registada pelo código do Telegram' );
+check( 'Unauthorized' === ( $errors['401']['description'] ?? '' ), 'com o que o Telegram disse' );
+check( 2 === ( $errors['401']['count'] ?? 0 ), 'e a mesma falha é contada, não repetida' );
+
+// An error code is a numeric key, and PHP reindexes those — so evicting the
+// oldest with array_shift would renumber every code and silently destroy the
+// grouping the log exists for.
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+$GLOBALS['__hti_subs']    = array( 6001 );
+
+for ( $code = 500; $code < 512; $code++ ) {
+	$GLOBALS['__hti_http'] = array(
+		array( 'body' => array( 'ok' => false, 'error_code' => $code, 'description' => "erro {$code}" ), 'code' => $code ),
+	);
+	Bot_Broadcast::start( "falha {$code}" );
+	Bot_Broadcast::run();
+	Bot_Broadcast::cancel();
+}
+
+$errors = Bot_Broadcast::log()['errors'];
+
+check( 10 === count( $errors ), 'o registo de falhas pára nas dez' );
+check( isset( $errors['511'] ), 'a mais recente está lá, pelo seu código' );
+check( 511 === ( $errors['511']['code'] ?? 0 ), 'com o código intacto' );
+check( ! isset( $errors['500'] ), 'e a mais antiga saiu' );
+
+$keys = array_keys( $errors );
+$ok   = true;
+foreach ( $keys as $k ) {
+	if ( (int) $k !== (int) ( $errors[ $k ]['code'] ?? -1 ) ) {
+		$ok = false;
+	}
+}
+check( $ok, 'nenhuma chave foi renumerada — cada uma continua a ser o seu código' );
+
+echo "\n=== Quando o Telegram manda abrandar ===\n";
+
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+$GLOBALS['__hti_subs']    = array( 4001, 4002, 4003 );
+$GLOBALS['__hti_http']    = array(
+	array( 'body' => array( 'ok' => true, 'result' => array() ), 'code' => 200 ),
+	array( 'body' => array( 'ok' => false, 'error_code' => 429, 'description' => 'Too Many Requests', 'parameters' => array( 'retry_after' => 7 ) ), 'code' => 429 ),
+);
+
+Bot_Broadcast::start( 'devagar' );
+Bot_Broadcast::run();
+$after = Bot_Broadcast::status();
+
+check( 1 === $after['sent'], 'o lote pára no 429' );
+check( 1 === $after['cursor'], 'e o cursor não passa por cima de quem não recebeu' );
+check( 0 === $after['finished'], 'a difusão não é dada como terminada' );
+check( false !== wp_next_scheduled( Bot_Broadcast::HOOK ), 'e fica um tique agendado para retomar' );
 
 echo "\n=== O limite da legenda ===\n";
 

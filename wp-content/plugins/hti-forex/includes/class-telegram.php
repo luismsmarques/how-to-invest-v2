@@ -45,6 +45,17 @@ class Telegram {
 	public const CAPTION_MAX = 1024;
 
 	/**
+	 * Where the cached health check lives, and how long it stands.
+	 */
+	public const TRANSIENT_HEALTH = 'hti_forex_bot_health';
+
+	/**
+	 * Five minutes: long enough that reloading the panel is free, short enough
+	 * that someone fixing a webhook sees it fixed without wondering.
+	 */
+	public const HEALTH_TTL = 300;
+
+	/**
 	 * The bot token, or '' when the site has not been given one.
 	 */
 	public static function token(): string {
@@ -154,6 +165,8 @@ class Telegram {
 			return array(
 				'status'      => 'sent',
 				'retry_after' => 0,
+				'code'        => 0,
+				'description' => '',
 			);
 		}
 
@@ -165,8 +178,12 @@ class Telegram {
 	 * is gone, or we are going too fast. Shared by send() and send_photo() so
 	 * a photo that fails is handled exactly like a message that fails.
 	 *
+	 * The API's own code and wording ride along: `status` is what a caller
+	 * acts on, but "failed" with nothing attached is unloggable, and a send
+	 * that fails silently is the hardest kind of bug to be told about.
+	 *
 	 * @param array<string,mixed> $result Result from call().
-	 * @return array{status:string,retry_after:int}
+	 * @return array{status:string,retry_after:int,code:int,description:string}
 	 */
 	private static function outcome( array $result ): array {
 		// 403 is "bot was blocked by the user" or "chat not found" — either
@@ -175,6 +192,8 @@ class Telegram {
 			return array(
 				'status'      => 'blocked',
 				'retry_after' => 0,
+				'code'        => (int) $result['error_code'],
+				'description' => (string) $result['description'],
 			);
 		}
 
@@ -182,12 +201,16 @@ class Telegram {
 			return array(
 				'status'      => 'slow_down',
 				'retry_after' => max( 1, (int) $result['retry_after'] ),
+				'code'        => (int) $result['error_code'],
+				'description' => (string) $result['description'],
 			);
 		}
 
 		return array(
 			'status'      => 'failed',
 			'retry_after' => 0,
+			'code'        => (int) $result['error_code'],
+			'description' => (string) $result['description'],
 		);
 	}
 
@@ -224,6 +247,8 @@ class Telegram {
 			return array(
 				'status'      => 'sent',
 				'retry_after' => 0,
+				'code'        => 0,
+				'description' => '',
 				'file_id'     => Bot_Images::file_id_from( $result['result'] ),
 			);
 		}
@@ -250,6 +275,11 @@ class Telegram {
 			)
 		);
 
+		// Whoever just changed the webhook is about to look at the screen that
+		// reports it. A five-minute cache would show them the old answer and
+		// leave them wondering whether it worked.
+		delete_transient( self::TRANSIENT_HEALTH );
+
 		return array(
 			'ok'          => $result['ok'],
 			'description' => $result['ok'] ? 'Webhook registered.' : $result['description'],
@@ -260,7 +290,10 @@ class Telegram {
 	 * Stop Telegram sending updates here.
 	 */
 	public static function remove_webhook(): bool {
-		return self::call( 'deleteWebhook' )['ok'];
+		$ok = self::call( 'deleteWebhook' )['ok'];
+		delete_transient( self::TRANSIENT_HEALTH );
+
+		return $ok;
 	}
 
 	/**
@@ -273,5 +306,81 @@ class Telegram {
 		return $me['ok'] && isset( $me['result']['username'] )
 			? (string) $me['result']['username']
 			: '';
+	}
+
+	/**
+	 * What Telegram thinks of our webhook.
+	 *
+	 * Telegram remembers the last delivery it could not complete, which is the
+	 * one diagnostic this side cannot produce for itself: if our endpoint is
+	 * 500ing, or the certificate went bad, or another site claimed the webhook,
+	 * nothing here would know — the updates simply stop arriving, silently.
+	 *
+	 * @return array{ok:bool,url:string,pending:int,error:string,error_at:int,description:string}
+	 */
+	public static function webhook_info(): array {
+		$out = array(
+			'ok'          => false,
+			'url'         => '',
+			'pending'     => 0,
+			'error'       => '',
+			'error_at'    => 0,
+			'description' => '',
+		);
+
+		$result = self::call( 'getWebhookInfo' );
+
+		if ( ! $result['ok'] || ! is_array( $result['result'] ) ) {
+			$out['description'] = '' !== $result['description']
+				? $result['description']
+				: 'Telegram did not answer.';
+			return $out;
+		}
+
+		$info = $result['result'];
+
+		$out['ok']       = true;
+		$out['url']      = (string) ( $info['url'] ?? '' );
+		$out['pending']  = (int) ( $info['pending_update_count'] ?? 0 );
+		$out['error']    = (string) ( $info['last_error_message'] ?? '' );
+		$out['error_at'] = (int) ( $info['last_error_date'] ?? 0 );
+
+		return $out;
+	}
+
+	/**
+	 * The bot's health, cached, for the settings screen.
+	 *
+	 * Two HTTP round trips, so it sits behind a short transient: the panel is
+	 * reloaded far more often than a webhook changes, and nobody should pay a
+	 * trip to Telegram for opening a settings page.
+	 *
+	 * @param bool $fresh Skip the cache.
+	 * @return array{username:string,webhook:array<string,mixed>,ours:bool,checked:int}
+	 */
+	public static function health( bool $fresh = false ): array {
+		if ( ! $fresh ) {
+			$cached = get_transient( self::TRANSIENT_HEALTH );
+			if ( is_array( $cached ) ) {
+				return $cached;
+			}
+		}
+
+		$webhook = self::webhook_info();
+
+		$health = array(
+			'username' => self::username(),
+			'webhook'  => $webhook,
+			// A webhook pointing somewhere else is not a small thing: Telegram
+			// allows one per bot, so whoever registered last is receiving the
+			// messages this site thinks it is answering. Staging is the usual
+			// culprit and it is invisible from every other angle.
+			'ours'     => $webhook['ok'] && self::webhook_url() === $webhook['url'],
+			'checked'  => time(),
+		);
+
+		set_transient( self::TRANSIENT_HEALTH, $health, self::HEALTH_TTL );
+
+		return $health;
 	}
 }

@@ -76,9 +76,13 @@ exigem o host próprio (`:263-279`) — o código documenta a assimetria em `:12
 **O mapa `cta` não tem teto de cardinalidade** (`class-metrics.php:197-200`) e
 `POST /htinvest/v1/event` é público, sem nonce, e aceita `location` arbitrário.
 
-**O bot falha em silêncio.** Zero `error_log` em `includes/`; o retorno de
-`Telegram::send()` é descartado em 6 sítios. `Telegram::username()` existe
-"for the settings screen" e nunca é chamado (`class-telegram.php:271`).
+**O bot falhava em silêncio — resolvido em 30 ago (hti-forex 0.12.5).** Não
+havia um `error_log` em `includes/`, o retorno de `Telegram::send()` era
+descartado em 6 sítios, e `Telegram::username()` existia "for the settings
+screen" sem nunca ser chamado. O painel passa a mostrar o estado do webhook
+vindo do próprio Telegram (incluindo o último erro de entrega que ele guarda),
+o histórico das últimas dez difusões, a razão da última recusa, e as falhas de
+envio agrupadas por código.
 
 **`hti-forex` não tem `uninstall.php`** — desinstalar deixa chat_ids e o
 segredo do webhook na base de dados.
@@ -153,8 +157,11 @@ duas primeiras semanas desbloqueiam e medem; a terceira constrói.
 
 **Desenvolvimento**
 - Prender `cta_url` ao host próprio.
-- Teto de cardinalidade no `cta` + allowlist de `location` no endpoint público.
-- Estado do webhook no painel (`getMe`/`getWebhookInfo`) + registo das falhas.
+- ✅ Teto de cardinalidade no `cta` (feito, hti-engine 0.15.1) + allowlist de
+  `location` no endpoint público.
+- ✅ Estado do webhook no painel + registo das falhas (feito, hti-forex 0.12.5 —
+  subiu de prioridade porque uma difusão que não saiu custou três rondas de
+  perguntas para se perceber porquê).
 
 **Marketing**
 - Revelar o bot no canal, depois das sondagens.
