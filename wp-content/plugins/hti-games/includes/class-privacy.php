@@ -359,7 +359,11 @@ class Privacy {
 	 */
 	public static function rest_forget( WP_REST_Request $request ) {
 		if ( RateLimit::exceeded( 'game_forget' ) ) {
-			return new WP_Error( 'hti_rate_limited', __( 'Too many requests. Please wait a moment and try again.', 'hti-games' ), array( 'status' => 429 ) );
+			return new WP_Error(
+				'hti_rate_limited',
+				Strings::get( 'st_rate_limited', Player::lang( (string) $request->get_param( 'lang' ) ) ),
+				array( 'status' => 429 )
+			);
 		}
 
 		$row = Player::resolve( $request );

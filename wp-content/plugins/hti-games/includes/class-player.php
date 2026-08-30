@@ -355,8 +355,6 @@ class Player {
 			return null;
 		}
 
-		global $wpdb;
-
 		$lang       = self::lang( (string) ( $ctx['lang'] ?? '' ) );
 		$newsletter = ! empty( $ctx['newsletter'] ) ? 1 : 0;
 		$ack_ver    = substr( (string) ( $ctx['ack_ver'] ?? self::ACK_VERSION ), 0, 8 );
@@ -378,7 +376,6 @@ class Player {
 				'lang'      => $lang,
 				'last_seen' => $now,
 			);
-			$format = array( '%s', '%s' );
 
 			// The newsletter tick is only ever turned ON here: unticking it in
 			// a later session is not an unsubscribe (that lives at Brevo), and
@@ -386,7 +383,6 @@ class Player {
 			// once given.
 			if ( 1 === $newsletter ) {
 				$fields['newsletter'] = 1;
-				$format[]             = '%d';
 			}
 
 			// First acknowledgement wins; a re-onboarding does not rewrite when
@@ -394,12 +390,9 @@ class Player {
 			if ( empty( $row['ack_at'] ) ) {
 				$fields['ack_at']  = $now;
 				$fields['ack_ver'] = $ack_ver;
-				$format[]          = '%s';
-				$format[]          = '%s';
 			}
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, no core API.
-			$wpdb->update( self::table(), $fields, array( 'id' => (int) $row['id'] ), $format, array( '%d' ) );
+			Store::update( 'players', $fields, array( 'id' => (int) $row['id'] ) );
 
 			self::set_cookie( (string) $row['uuid'] );
 			return self::by_id( (int) $row['id'] );
@@ -431,15 +424,13 @@ class Player {
 			'last_seen'       => $now,
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, no core API.
-		$ok = $wpdb->insert( self::table(), $fresh, self::formats( $fresh ) );
-
-		if ( ! $ok ) {
+		$id = Store::insert( 'players', $fresh );
+		if ( $id <= 0 ) {
 			return null;
 		}
 
 		self::set_cookie( $uuid );
-		return self::by_id( (int) $wpdb->insert_id );
+		return self::by_id( $id );
 	}
 
 	/**
@@ -455,17 +446,12 @@ class Player {
 		if ( $player_id <= 0 ) {
 			return;
 		}
-		global $wpdb;
-
 		$fields = array( 'last_seen' => self::now() );
-		$format = array( '%s' );
 		if ( '' !== $lang ) {
 			$fields['lang'] = self::lang( $lang );
-			$format[]       = '%s';
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, no core API.
-		$wpdb->update( self::table(), $fields, array( 'id' => $player_id ), $format, array( '%d' ) );
+		Store::update( 'players', $fields, array( 'id' => $player_id ) );
 	}
 
 	/* ---------------------------------------------------------------- */
@@ -582,17 +568,21 @@ class Player {
 		// than asking "is it free?" and then taking it — between those two
 		// statements somebody else can take it, and the second writer would
 		// win silently under a check-then-write.
+		$fields = array(
+			'nickname'     => $check['nickname'],
+			'nickname_key' => self::nickname_key( $check['nickname'] ),
+			'last_seen'    => self::now(),
+		);
+
+		// Not Store::update(): that one folds a refusal into "0 rows", and
+		// here the refusal IS the answer the caller needs.
 		$suppress = $wpdb->suppress_errors( true );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, no core API.
 		$ok = $wpdb->update(
 			self::table(),
-			array(
-				'nickname'     => $check['nickname'],
-				'nickname_key' => self::nickname_key( $check['nickname'] ),
-				'last_seen'    => self::now(),
-			),
+			$fields,
 			array( 'id' => $player_id ),
-			array( '%s', '%s', '%s' ),
+			Store::formats( 'players', $fields ),
 			array( '%d' )
 		);
 		$error = (string) $wpdb->last_error;
@@ -736,9 +726,8 @@ class Player {
 		}
 
 		if ( ! $acct ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, no core API.
-			$wpdb->update(
-				self::table(),
+			Store::update(
+				'players',
 				array(
 					'user_id'   => $user_id,
 					'last_seen' => self::now(),
@@ -746,9 +735,7 @@ class Player {
 				array(
 					'id'      => (int) $anon['id'],
 					'user_id' => 0,
-				),
-				array( '%d', '%s' ),
-				array( '%d', '%d' )
+				)
 			);
 			return self::by_id( (int) $anon['id'] );
 		}
@@ -778,8 +765,7 @@ class Player {
 
 		$merged['last_seen'] = self::now();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, no core API.
-		$wpdb->update( self::table(), $merged, array( 'id' => $keep_id ), self::formats( $merged ), array( '%d' ) );
+		Store::update( 'players', $merged, array( 'id' => $keep_id ) );
 
 		return self::by_id( $keep_id );
 	}
@@ -860,42 +846,6 @@ class Player {
 	/* ---------------------------------------------------------------- */
 	/* Small shared helpers                                              */
 	/* ---------------------------------------------------------------- */
-
-	/**
-	 * The placeholder format for each column of the players table.
-	 *
-	 * $wpdb takes formats as a positional list, so a hand-written array has to
-	 * stay in step with the key order of the data array beside it — a silent,
-	 * type-confusing break the first time somebody inserts a field in the
-	 * middle. Deriving the list from the column names removes that class of
-	 * bug entirely, and an unknown column defaults to %s (never to "no format
-	 * at all", which is what makes $wpdb guess).
-	 *
-	 * @param array<string,mixed> $fields Column => value, in write order.
-	 * @return array<int,string>
-	 */
-	private static function formats( array $fields ): array {
-		$ints = array(
-			'id',
-			'user_id',
-			'newsletter',
-			'stc_capital',
-			'stc_streak',
-			'stc_best_streak',
-			'stc_deaths',
-			'rev_capital',
-			'rev_index_cap',
-			'rev_streak',
-			'rev_best_streak',
-			'rev_deaths',
-		);
-
-		$out = array();
-		foreach ( array_keys( $fields ) as $column ) {
-			$out[] = in_array( $column, $ints, true ) ? '%d' : '%s';
-		}
-		return $out;
-	}
 
 	/**
 	 * Reduce anything language-shaped to the two we serve.

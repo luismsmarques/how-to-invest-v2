@@ -103,10 +103,21 @@ class Auth {
 	public static function rest_link( WP_REST_Request $request ) {
 		// The neutral body. Built once, returned from every path below that is
 		// not a hard input error, so no branch can accidentally differ.
-		$neutral = new WP_REST_Response( array( 'sent' => true ), 200 );
+		$lang    = Player::lang( (string) $request->get_param( 'lang' ) );
+		$neutral = new WP_REST_Response(
+			array(
+				'sent'    => true,
+				'message' => Strings::get( 'link_sent_body', $lang ),
+			),
+			200
+		);
 
 		if ( RateLimit::exceeded( 'game_link' ) ) {
-			return new WP_Error( 'hti_rate_limited', __( 'Too many requests. Please wait a moment and try again.', 'hti-games' ), array( 'status' => 429 ) );
+			return new WP_Error(
+				'hti_rate_limited',
+				Strings::get( 'st_rate_limited', $lang ),
+				array( 'status' => 429 )
+			);
 		}
 
 		// Honeypot: a bot fills every field it finds. Report success and do
@@ -123,10 +134,13 @@ class Auth {
 
 		$email = sanitize_email( (string) $request->get_param( 'email' ) );
 		if ( ! is_email( $email ) ) {
-			return new WP_Error( 'hti_game_invalid_email', __( 'Please enter a valid email.', 'hti-games' ), array( 'status' => 422 ) );
+			return new WP_Error(
+				'hti_game_invalid_email',
+				Strings::get( 'link_bad_email', $lang ),
+				array( 'status' => 422 )
+			);
 		}
 
-		$lang = Player::lang( (string) $request->get_param( 'lang' ) );
 		$user = get_user_by( 'email', $email );
 
 		if ( ! $user instanceof \WP_User ) {
