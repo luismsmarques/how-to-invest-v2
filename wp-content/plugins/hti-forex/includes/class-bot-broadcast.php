@@ -24,8 +24,20 @@ defined( 'ABSPATH' ) || exit;
  */
 class Bot_Broadcast {
 
-	public const HOOK   = 'hti_forex_bot_broadcast';
-	public const OPTION = 'hti_forex_bot_broadcast';
+	public const HOOK = 'hti_forex_bot_broadcast';
+
+	/**
+	 * Where the running broadcast lives.
+	 *
+	 * The name carries a suffix because the one before it became unwritable on
+	 * the live site: the row was gone from the database while WordPress still
+	 * believed the option existed, so every write took the UPDATE path, matched
+	 * no row, and reported failure — permanently, and identically to a message
+	 * that had been sent. A name with no history anywhere resolves that without
+	 * having to characterise it: no cached blob mentions it, no `notoptions`
+	 * entry hides it, and `add_option()` simply creates it.
+	 */
+	public const OPTION = 'hti_forex_broadcast_state';
 
 	/**
 	 * The memory the state itself does not keep.
@@ -334,11 +346,15 @@ class Bot_Broadcast {
 
 		if ( ! $written ) {
 			// A stale object cache is a known way for this to fail permanently
-			// rather than once: `add_option()` asks whether the option exists,
-			// the cache answers yes with a value the database no longer holds,
-			// and it refuses — every time, for ever. Dropping the cached entry
-			// and trying once more costs nothing and rules that out.
+			// rather than once: WordPress asks whether the option exists, the
+			// cache answers with something the database no longer holds, and
+			// the write goes down a path that matches no row — every time, for
+			// ever. Both places have to be dropped: an autoloaded option is
+			// served from the `alloptions` blob, which clearing the individual
+			// entry leaves untouched.
 			wp_cache_delete( self::OPTION, 'options' );
+			wp_cache_delete( 'alloptions', 'options' );
+			wp_cache_delete( 'notoptions', 'options' );
 			$written = update_option( self::OPTION, $state, false );
 		}
 

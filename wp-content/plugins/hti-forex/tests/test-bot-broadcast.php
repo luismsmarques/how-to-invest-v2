@@ -278,6 +278,17 @@ check( true === Bot_Broadcast::start( 'esta passa' ), 'uma gravação que result
 check( Bot_Broadcast::just_started(), 'e só então fica registada como começada' );
 check( Bot_Broadcast::status()['started'] > 0, 'com o estado gravado' );
 
+echo "\n=== A opção do estado tem nome próprio ===\n";
+
+// The old name became unwritable on the live site: the row was gone from the
+// database while WordPress still believed the option existed, so every write
+// took the UPDATE path, matched no row, and failed — permanently, and looking
+// exactly like a message that had gone out. Going back to that name would walk
+// into the same wall.
+check( 'hti_forex_bot_broadcast' !== Bot_Broadcast::OPTION, 'não voltámos ao nome que ficou inutilizável' );
+check( Bot_Broadcast::OPTION !== Bot_Broadcast::OPTION_LOG, 'o estado e o registo são opções distintas' );
+check( Bot_Broadcast::HOOK !== Bot_Broadcast::OPTION, 'e o hook do cron não se confunde com a opção' );
+
 echo "\n=== Uma cache velha não pode travar isto para sempre ===\n";
 
 // add_option() asks whether the option exists; a stale object cache answers yes
