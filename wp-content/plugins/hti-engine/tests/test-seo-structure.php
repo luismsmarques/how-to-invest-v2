@@ -194,5 +194,45 @@ if ( HTI_SEO_STRICT ) {
 	check( array() === $thin, 'every learn chapter has ≥' . HTI_MIN_LINKS . ' inline links (EN)' . ( $thin ? ' (' . implode( ', ', array_slice( $thin, 0, 5 ) ) . ')' : '' ) );
 }
 
+/* -------------------------------------------------------------------------
+ * Every glossary term has a topic
+ *
+ * A term with no topic is in no archive: unreachable by browsing, and absent
+ * from the internal links a topic page would give it. Sixteen of them sat
+ * that way, because the Markdown front matter says `topic: key-terms` and
+ * `key-terms` is not one of the ten curated topics — so the importer, which
+ * refuses to invent taxonomy, filed them under nothing. The curated map in
+ * Seeder::glossary_topic_of() is the authority, and this holds it to the
+ * content directory: a new .md whose slug nobody mapped fails here rather
+ * than quietly disappearing from the site.
+ * ---------------------------------------------------------------------- */
+
+$seeder = (string) file_get_contents( __DIR__ . '/../includes/class-seeder.php' );
+$start  = strpos( $seeder, '$groups = array(', strpos( $seeder, 'function glossary_topic_of' ) );
+$end    = strpos( $seeder, ');', $start );
+$block  = false === $start ? '' : substr( $seeder, $start, $end - $start );
+
+preg_match_all( "/'([a-z0-9-]+)'/", $block, $m );
+$topic_names = array( 'asset-classes', 'stocks', 'bonds-income', 'funds', 'markets', 'trading', 'risk', 'economy', 'fundamentals', 'compliance' );
+$mapped      = array_diff( array_unique( $m[1] ), $topic_names );
+
+check( count( $mapped ) > 40, 'the curated topic map was read from the seeder (' . count( $mapped ) . ' slugs)' );
+
+$orphans = array();
+foreach ( glob( __DIR__ . '/../content/glossary/*.md' ) as $file ) {
+	$raw = (string) file_get_contents( $file );
+	if ( ! preg_match( '/^slug:\s*(\S+)/m', $raw, $hit ) ) {
+		continue;
+	}
+	if ( ! in_array( trim( $hit[1] ), $mapped, true ) ) {
+		$orphans[] = trim( $hit[1] );
+	}
+}
+
+check(
+	array() === $orphans,
+	'every glossary term has a curated topic' . ( $orphans ? ' (sem tópico: ' . implode( ', ', array_slice( $orphans, 0, 8 ) ) . ')' : '' )
+);
+
 echo "\n" . ( $failures ? "\033[31m" : "\033[32m" ) . "{$passes} passed, {$failures} failed\033[0m\n";
 exit( $failures ? 1 : 0 );

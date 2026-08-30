@@ -110,9 +110,9 @@ class Glossary_Import {
 		}
 
 		self::link_languages( $en_id, $pt_id );
-		self::assign_topic( $en_id, $topic, 'en' );
+		self::assign_topic( $en_id, $topic, 'en', $slug );
 		if ( $pt_id ) {
-			self::assign_topic( $pt_id, $topic, 'pt' );
+			self::assign_topic( $pt_id, $topic, 'pt', $slug );
 		}
 
 		return array(
@@ -215,16 +215,32 @@ class Glossary_Import {
 	 * @param string $topic   Topic slug.
 	 * @param string $lang    Language ('en'|'pt').
 	 */
-	private static function assign_topic( int $post_id, string $topic, string $lang ): void {
-		if ( '' === $topic || ! taxonomy_exists( 'glossary_topic' ) ) {
+	private static function assign_topic( int $post_id, string $topic, string $lang, string $term_slug = '' ): void {
+		if ( ! taxonomy_exists( 'glossary_topic' ) ) {
 			return;
 		}
-		$candidates = 'pt' === $lang ? array( $topic . '-pt', $topic ) : array( $topic );
-		foreach ( $candidates as $slug ) {
-			$term = get_term_by( 'slug', $slug, 'glossary_topic' );
-			if ( $term instanceof \WP_Term ) {
-				wp_set_object_terms( $post_id, array( (int) $term->term_id ), 'glossary_topic', false );
-				return;
+
+		// The front matter says `key-terms`, which is not one of the ten
+		// curated topics and never resolved to a term — so a term whose only
+		// home was the Markdown file ended up filed under nothing, missing
+		// from every topic archive. The curated map is the authority; the
+		// front matter is a hint, and a hint that misses falls back to it.
+		$topics = array();
+		if ( '' !== $topic ) {
+			$topics[] = $topic;
+		}
+		if ( '' !== $term_slug ) {
+			$topics[] = Seeder::glossary_topic_of( $term_slug );
+		}
+
+		foreach ( $topics as $t ) {
+			$candidates = 'pt' === $lang ? array( $t . '-pt', $t ) : array( $t );
+			foreach ( $candidates as $slug ) {
+				$term = get_term_by( 'slug', $slug, 'glossary_topic' );
+				if ( $term instanceof \WP_Term ) {
+					wp_set_object_terms( $post_id, array( (int) $term->term_id ), 'glossary_topic', false );
+					return;
+				}
 			}
 		}
 	}
