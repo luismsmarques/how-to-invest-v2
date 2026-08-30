@@ -34,6 +34,21 @@ class Broker_Go {
 	private const QUERY_VAR = 'hti_go';
 
 	/**
+	 * Our own query parameter carrying a campaign id through the redirect.
+	 *
+	 * The affiliate URL is never printed, so the only way a campaign can reach
+	 * the network is if the click hands it to us here and we re-attach it on
+	 * the way out. Without this the panel reports conversions with nothing to
+	 * attribute them to — which is the same as not measuring at all.
+	 */
+	private const CID_PARAM = 'cid';
+
+	/**
+	 * Max length of a campaign id.
+	 */
+	private const CID_MAX = 64;
+
+	/**
 	 * Allowed `loc` values (where the click came from), for the breakdown.
 	 * On-site surfaces first, then the off-site channels used by the managed
 	 * links (Go_Links). Deliberately an allowlist: `loc` reaches us from the
@@ -101,13 +116,52 @@ class Broker_Go {
 	 *
 	 * @param string $slug Broker (EN/default-language) slug.
 	 * @param string $loc  One of self::LOCATIONS, or ''.
+	 * @param string $cid  Campaign id to carry to the network, or ''.
 	 */
-	public static function url( string $slug, string $loc = '' ): string {
+	public static function url( string $slug, string $loc = '', string $cid = '' ): string {
 		$url = home_url( '/go/' . sanitize_key( $slug ) . '/' );
 		if ( '' !== $loc && in_array( $loc, self::LOCATIONS, true ) ) {
 			$url = add_query_arg( 'loc', $loc, $url );
 		}
+		$cid = self::cid( $cid );
+		if ( '' !== $cid ) {
+			$url = add_query_arg( self::CID_PARAM, $cid, $url );
+		}
 		return $url;
+	}
+
+	/**
+	 * Normalize a campaign id. Pure (unit-tested).
+	 *
+	 * Deliberately narrow: this value is written into an outbound URL, so it
+	 * is reduced to the characters every affiliate panel handles rather than
+	 * trusted and escaped.
+	 *
+	 * @param string $raw Raw value from a caller or the query string.
+	 */
+	public static function cid( string $raw ): string {
+		$cid = (string) preg_replace( '/[^A-Za-z0-9_\-]/', '', $raw );
+		return substr( $cid, 0, self::CID_MAX );
+	}
+
+	/**
+	 * Attach the campaign id to an outbound URL. Pure (unit-tested).
+	 *
+	 * Nothing happens without both halves: a network that never told us what
+	 * its tracking field is called gets the link exactly as before, which is
+	 * the safe outcome — a wrong parameter name is silently ignored by the
+	 * network and looks identical to a right one.
+	 *
+	 * @param string $url   Destination URL.
+	 * @param string $param Network's sub-id parameter name ('' → unchanged).
+	 * @param string $cid   Normalized campaign id ('' → unchanged).
+	 */
+	public static function with_sub_id( string $url, string $param, string $cid ): string {
+		if ( '' === $url || '' === $param || '' === $cid ) {
+			return $url;
+		}
+		$glue = str_contains( $url, '?' ) ? '&' : '?';
+		return $url . $glue . rawurlencode( $param ) . '=' . rawurlencode( $cid );
 	}
 
 	/**
@@ -167,7 +221,8 @@ class Broker_Go {
 			return;
 		}
 
-		$destination = self::destination( $slug );
+		$target      = self::destination( $slug );
+		$destination = (string) $target['url'];
 		if ( '' === $destination ) {
 			global $wp_query;
 			$wp_query->set_404();
@@ -187,6 +242,10 @@ class Broker_Go {
 			);
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, anonymous outbound link; no state changes.
+		$cid         = self::cid( (string) ( $_GET[ self::CID_PARAM ] ?? '' ) );
+		$destination = self::with_sub_id( $destination, (string) $target['sub_param'], $cid );
+
 		nocache_headers();
 		if ( ! headers_sent() ) {
 			header( 'X-Robots-Tag: noindex, nofollow', true );
@@ -204,17 +263,36 @@ class Broker_Go {
 	 * owner-managed links (Tools → Outbound links).
 	 *
 	 * @param string $slug Requested slug.
+	 * @return array{url:string,sub_param:string}
 	 */
-	private static function destination( string $slug ): string {
+	private static function destination( string $slug ): array {
 		$post = get_page_by_path( $slug, OBJECT, 'broker' );
 		if ( $post instanceof \WP_Post && 'publish' === $post->post_status ) {
-			return self::choose(
-				(string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'affiliate_url', true ),
+			$affiliate = (string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'affiliate_url', true );
+			$active    = '1' === (string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'affiliate_active', true );
+			$url       = self::choose(
+				$affiliate,
 				(string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'official_url', true ),
-				'1' === (string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'affiliate_active', true )
+				$active
+			);
+
+			// The sub-id belongs to the affiliate deal, not to the broker: on
+			// the official-site fallback there is no panel to report into, and
+			// tagging a plain outbound link would leak the campaign for
+			// nothing.
+			$param = ( $active && $url === $affiliate )
+				? (string) get_post_meta( $post->ID, Broker_Admin::PREFIX . 'affiliate_sub_param', true )
+				: '';
+
+			return array(
+				'url'       => $url,
+				'sub_param' => $param,
 			);
 		}
 
-		return Go_Links::destination( $slug );
+		return array(
+			'url'       => Go_Links::destination( $slug ),
+			'sub_param' => '',
+		);
 	}
 }

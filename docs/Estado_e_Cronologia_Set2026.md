@@ -152,6 +152,16 @@ duas primeiras semanas desbloqueiam e medem; a terceira constrói.
   `/forex/go/position-size/` aterra na XM depois do deploy.
 - Depois do deploy, confirmar que o export PDF ainda sai em PDF.
 
+**Atribuição de ponta a ponta — feito em 30 ago** (hti-engine 0.15.3,
+hti-forex 0.13.9). O `/go/{slug}` não reencaminhava query string nenhuma:
+o id de campanha morria no salto e a corretora via todos os cliques sem
+atribuição — incluindo os que vinham do bot, que é onde o dinheiro dos
+anúncios foi. Agora o `/go/` reencaminha um `cid` como sub-id da rede (nome do
+parâmetro por corretora, vazio → não envia nada), o bot grava a campanha de
+cada pessoa na sua linha (primeiro toque, nunca sobrescrito) e cola-a no link
+do parceiro. A cadeia fecha: anúncio → `/start b2` → resposta do bot →
+`/go/open-xm/?cid=b2` → painel da corretora com `b2` ao lado da conta aberta.
+
 **Marketing**
 - Sondagens de aquecimento no canal.
 - **Puxar o gasto por criativo da Propeller** — sem isso, `tg_b2 452 /

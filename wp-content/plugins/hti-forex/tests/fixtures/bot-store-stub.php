@@ -117,6 +117,28 @@ class Bot_Store {
 	}
 
 	/**
+	 * Remember where a chat came from — first touch only, as the real one is.
+	 *
+	 * @param int    $chat_id Chat id.
+	 * @param string $source  Campaign code.
+	 */
+	public static function set_source( int $chat_id, string $source ): void {
+		if ( '' === $source || '' !== ( $GLOBALS['__hti_chat_sources'][ $chat_id ] ?? '' ) ) {
+			return;
+		}
+		$GLOBALS['__hti_chat_sources'][ $chat_id ] = $source;
+	}
+
+	/**
+	 * Where a chat came from, or ''.
+	 *
+	 * @param int $chat_id Chat id.
+	 */
+	public static function source( int $chat_id ): string {
+		return (string) ( $GLOBALS['__hti_chat_sources'][ $chat_id ] ?? '' );
+	}
+
+	/**
 	 * Drop a chat that can never receive anything again.
 	 *
 	 * @param int $chat_id Chat id.
