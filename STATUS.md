@@ -263,8 +263,11 @@ O retrato completo, com evidência por `ficheiro:linha`, e a cronologia de setem
   guardou**; mais o histórico das últimas dez difusões, a razão da última recusa, e as falhas de envio agrupadas
   por código.
 - **`hti-forex` não tem `uninstall.php`** — desinstalar deixa chat_ids na base de dados.
-- **Acessibilidade:** o token de foco `#FF6B5E` dá 2,79:1 (falha WCAG 1.4.11) em todo o site; o auto-avanço do
-  questionário parte a navegação por teclado; `outline:none` em 4 inputs.
+- ~~**Acessibilidade:** o token de foco `#FF6B5E` dá 2,79:1…~~ — **resolvido** (tema 0.8.60, hti-engine 0.15.4,
+  hti-forex 0.13.10): o anel de foco passou a ter token próprio (`--wp--custom--focus-ring` = `#D9432F`, ≥3,41:1
+  em todas as superfícies da paleta), catorze `outline: none` saíram dos campos, o auto-avanço só dispara com
+  toque ou rato — a seta do teclado deixou de saltar a pergunta — e o scroll respeita `prefers-reduced-motion`.
+  `test-focus-contrast.php` recalcula os rácios a partir do `theme.json` a cada corrida.
 - **A homepage diz "Seis perguntas curtas"** para um questionário de 8.
 - **~479 strings `__()` sem tradução PT**, e os ficheiros `pt_PT` podem nem carregar num site `pt_PT_ao90`.
 

@@ -103,7 +103,6 @@ section.hti-dep {
 	padding: 14px 44px 14px 18px;
 	font: 700 clamp( 1.4rem, 3vw, 1.625rem ) var( --dep-head );
 	color: #fff;
-	outline: none;
 }
 .hti-dep__amount:focus { border-color: var( --dep-primary ); background: rgba( 255, 255, 255, 0.12 ); }
 .hti-dep__calc-eur { position: absolute; right: 18px; top: 50%; transform: translateY( -50% ); font: 700 1.375rem var( --dep-head ); color: #9AA0C9; }
@@ -154,7 +153,6 @@ section.hti-dep {
 	padding: 11px 12px 11px 38px;
 	font: 400 14px var( --dep-body );
 	color: var( --dep-text );
-	outline: none;
 }
 .hti-dep__q:focus { border-color: var( --dep-primary ); }
 
@@ -196,7 +194,6 @@ section.hti-dep {
 	padding: 11px 12px;
 	font: 500 14px var( --dep-body );
 	color: var( --dep-text );
-	outline: none;
 	cursor: pointer;
 }
 .hti-dep__bank:focus { border-color: var( --dep-primary ); }
@@ -222,7 +219,6 @@ section.hti-dep {
 	padding: 8px 10px;
 	font: 600 13px var( --dep-body );
 	color: var( --dep-text );
-	outline: none;
 	cursor: pointer;
 }
 .hti-dep__sort:focus { border-color: var( --dep-primary ); }
@@ -339,4 +335,21 @@ section.hti-dep {
 	.hti-dep__est { text-align: right; min-width: 0; }
 	.hti-dep__est-net { font-size: 20px; }
 	.hti-dep__chiptags { margin-top: 0; }
+}
+
+/* Focus — WCAG 1.4.11.
+   The fields above dropped the browser outline and signalled focus with a
+   border tint alone, which is a colour change on a 1.5px line: not an
+   indicator anyone can find with a keyboard. The tint stays (it reads well
+   with a mouse); the ring is what makes it conformant, and it uses the one
+   palette colour that clears 3:1 on both the dark hero and the light table. */
+.hti-dep__amount:focus-visible,
+.hti-dep__q:focus-visible,
+.hti-dep__sort:focus-visible,
+.hti-dep__term:focus-visible,
+.hti-dep select:focus-visible,
+.hti-dep button:focus-visible,
+.hti-dep a:focus-visible {
+	outline: 2.5px solid var( --wp--custom--focus-ring, #D9432F );
+	outline-offset: 2px;
 }
