@@ -166,9 +166,13 @@ class Seed_Cases {
 
 			// A band is still a figure about a real company, so what is seeded
 			// is the SHAPE of the answer and not an answer. It reads as an
-			// instruction on any screen it could ever reach.
-			'hti_rev_revenue_band_en'    => 'To fill: a revenue band, never an exact figure (for example, $1bn–$5bn).',
-			'hti_rev_revenue_band_pt'    => 'A preencher: uma banda de receitas, nunca um valor exato (por exemplo, 1–5 mil milhões de dólares).',
+			// instruction on any screen it could ever reach — and it states
+			// the CRITERION rather than showing a specimen band, because a
+			// specimen band sitting in the revenue-band box of thirty-four
+			// cases is a plausible figure one paste away from being somebody's
+			// answer. That is the failure this whole file is built against.
+			'hti_rev_revenue_band_en'    => 'To fill: a revenue band, never an exact figure — wide enough that a search engine cannot resolve it to one company.',
+			'hti_rev_revenue_band_pt'    => 'A preencher: uma banda de receitas, nunca um valor exato — larga o suficiente para que um motor de busca não a resolva numa única empresa.',
 
 			// Labels yes, values no. The editor gets the six questions; the
 			// answers come out of the filing.

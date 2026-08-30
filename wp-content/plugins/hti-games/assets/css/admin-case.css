@@ -171,3 +171,10 @@
 
 .hti-cp__rows { max-width: 900px; }
 .hti-cp__rows th { width: 220px; }
+
+.hti-cw__brief {
+	max-height: 22em;
+	overflow: auto;
+	padding: 2px 4px;
+	max-width: 78ch;
+}

@@ -530,16 +530,26 @@ class Case_Admin {
 	/**
 	 * What this case teaches, for the queue's second column.
 	 *
-	 * The pattern key when one exists, the sector when it does not, and an
-	 * empty string when the case has neither — never a guess.
+	 * The pattern's name when the case names a pattern, the sector when it does
+	 * not, and an empty string when it has neither — never a guess. The name
+	 * rather than the id, because `great_company_bad_price` in a table column
+	 * is a screen an editorial lead stops reading; Reveal_Lessons is the
+	 * library that already words every pattern, so it is asked rather than
+	 * second-guessed, and an id it does not know falls back to itself instead
+	 * of to a blank.
 	 *
 	 * @param array<string,mixed>    $meta       Case meta.
 	 * @param array<int,string>|null $registered Registered keys, for tests.
 	 */
 	public static function pattern_of( array $meta, ?array $registered = null ): string {
 		$key = self::optional_key( self::PATTERN_KEYS, $registered );
-		if ( '' !== $key && '' !== trim( (string) ( $meta[ $key ] ?? '' ) ) ) {
-			return trim( (string) $meta[ $key ] );
+		$id  = '' !== $key ? trim( (string) ( $meta[ $key ] ?? '' ) ) : '';
+
+		if ( '' !== $id ) {
+			$patterns = class_exists( __NAMESPACE__ . '\\Reveal_Lessons' ) ? Reveal_Lessons::patterns() : array();
+			$name     = (string) ( $patterns[ $id ]['en'] ?? '' );
+
+			return '' !== $name ? $name : $id;
 		}
 
 		return trim( (string) ( $meta['hti_rev_sector_en'] ?? '' ) );
@@ -868,7 +878,16 @@ class Case_Admin {
 		if ( '' === $brief ) {
 			echo '<p class="description">' . esc_html__( 'No brief recorded for this case. Whoever plans it should say which document the figures come out of before anybody starts typing numbers into the boxes below.', 'hti-games' ) . '</p>';
 		} else {
-			echo '<div class="hti-cw__brief">' . wp_kses_post( wpautop( esc_html( $brief ) ) ) . '</div>';
+			// A scrollable region so a long brief does not push the fields off
+			// the screen, and focusable because a region that scrolls and
+			// cannot be reached by keyboard is a region half the people who
+			// need it cannot read (WCAG 2.1.1).
+			printf(
+				'<div class="hti-cw__brief" role="region" tabindex="0" aria-label="%s">',
+				esc_attr__( 'Research brief', 'hti-games' )
+			);
+			echo wp_kses_post( wpautop( esc_html( $brief ) ) );
+			echo '</div>';
 		}
 
 		echo '</div>';

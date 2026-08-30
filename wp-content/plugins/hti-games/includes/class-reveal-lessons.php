@@ -434,8 +434,8 @@ class Reveal_Lessons {
 	 *
 	 * The index wraps, and a negative index wraps the same way a positive one
 	 * does — the same arithmetic as Lessons::for_class(), and for the same
-	 * reason: PHP's % keeps the sign of the dividend, so -1 % 2 is -1 and
-	 * would index off the front of the list.
+	 * reason: PHP's remainder operator keeps the sign of the dividend, so a
+	 * negative rotation position would index off the front of the list.
 	 *
 	 * @param string $pattern Pattern id; anything unknown falls back.
 	 * @param int    $index   Rotation position.

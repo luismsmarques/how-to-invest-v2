@@ -913,10 +913,24 @@ class Seeder {
 	/**
 	 * The Reveal.
 	 *
+	 * Two sections here are not decoration and should not be trimmed as prose.
+	 *
+	 * "Why is the company's name hidden?" is the page's own question — it is
+	 * what somebody who has just heard of the game actually types — and the
+	 * answer is the argument the whole game is built on.
+	 *
+	 * "Where do the cases come from, and how are they checked?" is the one that
+	 * earns the right to name a company at all. CLAUDE.md invariant 2 forbids
+	 * naming companies; The Reveal's exemption is conditional on the case being
+	 * history and on every figure being traceable to a published document, and
+	 * a condition nobody is told about is a condition nobody can hold us to.
+	 * The paragraph says what the condition is, in public, in both languages,
+	 * so that a reader can check the claim rather than take it.
+	 *
 	 * @param string $lang 'en' or 'pt'.
 	 */
 	private static function content_reveal( string $lang ): string {
-		return self::p( esc_html( Strings::get( 'rev_ob1_body', $lang ) ) )
+		return self::p( esc_html( Strings::get( 'rev_ob1_body', $lang ) ) . ' ' . esc_html( self::c( 'reveal_lede2', $lang ) ) )
 			. self::tiles(
 				array(
 					array( self::money( Config::CAPITAL_START, $lang ), self::c( 'tile_capital', $lang ) ),
@@ -938,6 +952,16 @@ class Seeder {
 					esc_html( Strings::get( 'rev_ob2_r4', $lang ) ),
 				)
 			)
+			. self::h2( self::c( 'reveal_h_blind', $lang ) )
+			// The bolded sentence of each section is the answer to the heading
+			// above it, which is the fragment a snippet or an AI answer lifts.
+			// Two of them on the page, and neither is a keyword in bold.
+			. self::p( '<strong>' . esc_html( self::c( 'reveal_blind1', $lang ) ) . '</strong> ' . esc_html( self::c( 'reveal_blind2', $lang ) ) )
+			. self::h2( self::c( 'reveal_h_sources', $lang ) )
+			. self::p( '<strong>' . esc_html( self::c( 'reveal_sources1', $lang ) ) . '</strong>' )
+			. self::p( esc_html( self::c( 'reveal_sources2', $lang ) ) )
+			. self::p( esc_html( self::c( 'reveal_sources3', $lang ) ) )
+			. self::p( esc_html( self::c( 'reveal_sources4', $lang ) ) )
 			. self::faq_section( 'reveal', $lang )
 			. self::h2( self::c( 'h_not', $lang ) )
 			. self::p( esc_html( Strings::get( 'rev_historical', $lang ) ) )
@@ -1521,8 +1545,12 @@ class Seeder {
 				'pt' => 'A Revelação — Jogo Diário de Análise de Empresas',
 			),
 			'reveal_seo_desc'  => array(
-				'en' => 'A free daily game: an anonymised dossier of a real company, six fundamentals and three headlines. Invest or pass, then see the name and the real return.',
-				'pt' => 'Um jogo diário grátis: o dossiê anónimo de uma empresa real, seis fundamentais e três manchetes. Investe ou passa, e vê depois o nome e o retorno real.',
+				'en' => 'A free daily game: an anonymised dossier of a real company, six fundamentals, three headlines. Invest or pass, then see the name, return and source.',
+				'pt' => 'Jogo diário grátis: o dossiê anónimo de uma empresa real, seis fundamentais e três manchetes. Investe ou passa e vê o nome, o retorno e a fonte usada.',
+			),
+			'reveal_lede2'     => array(
+				'en' => 'Every case is a real company at a real year — at least five years in the past, with every figure read out of a published document and the source shown next to the answer.',
+				'pt' => 'Cada caso é uma empresa real num ano real — com pelo menos cinco anos, com todos os números lidos de um documento publicado e a fonte mostrada ao lado da resposta.',
 			),
 			'reveal_teaches'   => array(
 				'en' => 'That a company you have heard of and a company worth owning are different questions. With the name removed there is no brand to lean on, no story you already believe and nothing to look up — only six numbers against their sector and three headlines from the year. What is left is the habit the game is trying to build: reading the figures before deciding how you feel about them.',
@@ -1543,6 +1571,38 @@ class Seeder {
 			'reveal_step4'     => array(
 				'en' => 'Then the name, the year, and what the company actually returned over the five years that followed — next to what the index did over the same period.',
 				'pt' => 'Depois o nome, o ano, e o que a empresa rendeu de facto nos cinco anos seguintes — ao lado do que o índice fez no mesmo período.',
+			),
+			'reveal_h_blind'   => array(
+				'en' => 'Why is the company\'s name hidden?',
+				'pt' => 'Porque é que o nome da empresa está tapado?',
+			),
+			'reveal_blind1'    => array(
+				'en' => 'Because a name is an argument you have already heard.',
+				'pt' => 'Porque um nome é um argumento que já ouviste.',
+			),
+			'reveal_blind2'    => array(
+				'en' => 'A company you use every week, or one whose collapse you remember, arrives with a verdict attached — and that verdict is usually somebody else\'s, formed at a different price, about a different year. With the name removed there are six figures against their sector and three headlines from the period, which is roughly what the people deciding at the time had in front of them. It comes back the moment you have committed, because that is the point at which it is information rather than a shortcut.',
+				'pt' => 'Uma empresa que usas todas as semanas, ou uma cujo colapso te lembras, chega com um veredicto agarrado — e esse veredicto costuma ser de outra pessoa, formado a outro preço, sobre outro ano. Sem o nome ficam seis números contra o setor e três manchetes da época, que é mais ou menos o que tinha à frente quem decidiu na altura. Volta assim que te comprometes, porque é aí que passa a ser informação em vez de atalho.',
+			),
+			'reveal_h_sources' => array(
+				'en' => 'Where do the cases come from, and how are they checked?',
+				'pt' => 'De onde vêm os casos, e como são verificados?',
+			),
+			'reveal_sources1'  => array(
+				'en' => 'Every case is a real company at a real year, at least five years in the past, and every figure printed beside that name was read out of a document anybody can open.',
+				'pt' => 'Cada caso é uma empresa real num ano real, com pelo menos cinco anos, e todos os números impressos ao lado desse nome foram lidos de um documento que qualquer pessoa pode abrir.',
+			),
+			'reveal_sources2'  => array(
+				'en' => 'The age is not a detail. Five years back means the five years that followed have already happened, so what you are judging is history rather than a business as it stands now — and nothing on this page, in a dossier or on a result screen is a view on any company today. The name is withheld until you have decided, and when it appears it appears beside what already happened and nothing else.',
+				'pt' => 'A idade não é um detalhe. Cinco anos para trás quer dizer que os cinco anos seguintes já aconteceram, por isso o que estás a avaliar é história e não um negócio tal como ele está agora — e nada nesta página, num dossiê ou num ecrã de resultado é uma opinião sobre uma empresa hoje. O nome fica tapado até decidires e, quando aparece, aparece ao lado do que já aconteceu e de mais nada.',
+			),
+			'reveal_sources3'  => array(
+				'en' => 'A case cannot be served until somebody has recorded where its numbers came from — an annual report, a filing lodged with a regulator, an index factsheet — and has confirmed by hand that the year and both five-year returns match it. That confirmation is a statement about those three numbers and nothing else: change one of them and it is withdrawn automatically, and the case waits until somebody has read the document again.',
+				'pt' => 'Um caso não pode ser servido enquanto alguém não registar de onde vieram os números — um relatório e contas, um documento entregue a um regulador, a ficha de um índice — e não confirmar à mão que o ano e os dois retornos a cinco anos batem certo com ele. Essa confirmação é uma afirmação sobre esses três números e mais nada: basta mudar um deles para ela ser retirada automaticamente, e o caso fica à espera de que alguém releia o documento.',
+			),
+			'reveal_sources4'  => array(
+				'en' => 'A case missing either half is refused twice: once when anybody tries to publish it, and again by the query that picks the dossier of the day. That is why an unchecked case cannot reach you by accident rather than merely being unlikely to. The source is on the result screen with the date it was read, so if a figure looks wrong to you, the document that produced it is one click away.',
+				'pt' => 'Um caso a que falte qualquer uma das metades é recusado duas vezes: uma quando alguém tenta publicá-lo, outra pela consulta que escolhe o dossiê do dia. É por isso que um caso por verificar não te chega por acidente, em vez de ser apenas pouco provável que chegue. A fonte está no ecrã de resultado com a data em que foi consultada, por isso, se um número te parecer errado, o documento que o produziu está a um clique.',
 			),
 		);
 	}
@@ -1768,6 +1828,66 @@ class Seeder {
 					'a' => array(
 						'en' => 'From what the company actually returned over the five years after the year in the dossier, applied to the share of the account you committed, and shown next to what a broad index did over the same period. The index line is the point of comparison: doing nothing is a strategy, and it wins more often than people expect.',
 						'pt' => 'A partir do que a empresa rendeu de facto nos cinco anos seguintes ao ano do dossiê, aplicado à parte da conta que comprometeste, e mostrado ao lado do que um índice largo fez no mesmo período. A linha do índice é o ponto de comparação: não fazer nada é uma estratégia, e ganha mais vezes do que se espera.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Can I look the company up before deciding?',
+						'pt' => 'Posso procurar a empresa antes de decidir?',
+					),
+					'a' => array(
+						'en' => 'There is nothing to look up. The dossier carries no name, no ticker and no exact revenue figure — a band instead — precisely so that recognising the company is not the skill being rewarded. If you do work out who it is from the six figures and the three headlines, that is the reading the game is trying to build, and it is not cheating.',
+						'pt' => 'Não há nada para procurar. O dossiê não traz nome, não traz símbolo de bolsa e não traz um valor exato de receitas — traz uma banda — precisamente para que reconhecer a empresa não seja a competência premiada. Se descobrires quem é a partir dos seis números e das três manchetes, essa é a leitura que o jogo quer construir, e não é batota.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'What do the six fundamentals show?',
+						'pt' => 'O que mostram os seis fundamentais?',
+					),
+					'a' => array(
+						'en' => 'Six figures from that year, each one printed next to the average for its sector, because a 4% margin means one thing in software and another in supermarkets. The six change from case to case: months of cash remaining is the whole story of one company and says nothing about another. The colour beside a figure is an editor\'s judgement about that number in that year, never a view on the company.',
+						'pt' => 'Seis números daquele ano, cada um ao lado da média do seu setor, porque uma margem de 4% quer dizer uma coisa em software e outra num supermercado. Os seis mudam de caso para caso: os meses de caixa que restam são a história toda de uma empresa e não dizem nada sobre outra. A cor ao lado de um número é o juízo de um editor sobre aquele número naquele ano, nunca uma opinião sobre a empresa.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Where do the headlines come from?',
+						'pt' => 'De onde vêm as manchetes?',
+					),
+					'a' => array(
+						'en' => 'From the period the dossier describes, in both languages, and never one that names the company. They are there because six numbers do not carry what it felt like to be reading about that business at the time — and the mood of the time is frequently wrong, which is most of the lesson.',
+						'pt' => 'Da época que o dossiê descreve, nos dois idiomas, e nunca uma que nomeie a empresa. Estão lá porque seis números não carregam o que era ler sobre aquele negócio na altura — e o estado de espírito da altura engana-se muitas vezes, que é quase toda a lição.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Is passing a wasted day?',
+						'pt' => 'Passar é um dia desperdiçado?',
+					),
+					'a' => array(
+						'en' => 'No. Passing costs nothing, keeps the capital intact and never breaks the streak, and the result screen judges it against what the company went on to do: passing on one that lost most of its value is scored as the good decision it was. Most dossiers do not deserve the money, and a game that never said so would be teaching the opposite.',
+						'pt' => 'Não. Passar não custa nada, mantém o capital intacto e nunca quebra a série, e o ecrã de resultado julga essa escolha pelo que a empresa fez a seguir: passar numa que perdeu quase todo o valor conta como a boa decisão que foi. A maioria dos dossiês não merece o dinheiro, e um jogo que nunca dissesse isso estava a ensinar o contrário.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Why is there an index balance next to mine?',
+						'pt' => 'Porque há um saldo do índice ao lado do meu?',
+					),
+					'a' => array(
+						'en' => 'Because doing nothing is a strategy, and it is the one you are really competing with. A second balance moves alongside yours every day, following a broad index and touched by nobody, so beating your own starting capital is not the same as beating it. It is usually ahead, which makes it the least comfortable and most useful number on the screen.',
+						'pt' => 'Porque não fazer nada é uma estratégia, e é com ela que estás mesmo a competir. Um segundo saldo anda ao lado do teu todos os dias, a seguir um índice largo e sem ninguém lhe tocar, por isso bater o teu capital inicial não é o mesmo que bater esse saldo. Costuma estar à frente, o que faz dele o número menos confortável e mais útil do ecrã.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Is any of this investment advice?',
+						'pt' => 'Isto é aconselhamento financeiro?',
+					),
+					'a' => array(
+						'en' => 'No. It is an educational simulation on virtual money, built on cases at least five years old, and neither the dossier nor the result screen carries a recommendation, a product or a link to anywhere you could act on one. What it teaches is a habit — reading the figures before deciding how you feel about them — and that habit is the only thing meant to leave with you.',
+						'pt' => 'Não. É uma simulação educativa sobre dinheiro virtual, construída sobre casos com pelo menos cinco anos, e nem o dossiê nem o ecrã de resultado trazem uma recomendação, um produto ou uma ligação para onde pudesses agir sobre uma. O que ensina é um hábito — ler os números antes de decidir o que sentes sobre eles — e esse hábito é a única coisa que deve sair daqui contigo.',
 					),
 				),
 			),
