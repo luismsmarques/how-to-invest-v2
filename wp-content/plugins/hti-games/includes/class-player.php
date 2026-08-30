@@ -407,34 +407,32 @@ class Player {
 
 		$uuid = wp_generate_uuid4();
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, no core API.
-		$ok = $wpdb->insert(
-			self::table(),
-			array(
-				'uuid'            => $uuid,
-				'user_id'         => $user_id,
-				'nickname'        => '',
-				'nickname_key'    => null,
-				'lang'            => $lang,
-				'ack_at'          => $now,
-				'ack_ver'         => $ack_ver,
-				'newsletter'      => $newsletter,
-				'stc_capital'     => Config::CAPITAL_START,
-				'stc_streak'      => 0,
-				'stc_best_streak' => 0,
-				'stc_deaths'      => 0,
-				'stc_last_day'    => '',
-				'rev_capital'     => Config::CAPITAL_START,
-				'rev_index_cap'   => Config::CAPITAL_START,
-				'rev_streak'      => 0,
-				'rev_best_streak' => 0,
-				'rev_deaths'      => 0,
-				'rev_last_day'    => '',
-				'created_at'      => $now,
-				'last_seen'       => $now,
-			),
-			array( '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%s', '%s', '%s' )
+		$fresh = array(
+			'uuid'            => $uuid,
+			'user_id'         => $user_id,
+			'nickname'        => '',
+			'nickname_key'    => null,
+			'lang'            => $lang,
+			'ack_at'          => $now,
+			'ack_ver'         => $ack_ver,
+			'newsletter'      => $newsletter,
+			'stc_capital'     => Config::CAPITAL_START,
+			'stc_streak'      => 0,
+			'stc_best_streak' => 0,
+			'stc_deaths'      => 0,
+			'stc_last_day'    => '',
+			'rev_capital'     => Config::CAPITAL_START,
+			'rev_index_cap'   => Config::CAPITAL_START,
+			'rev_streak'      => 0,
+			'rev_best_streak' => 0,
+			'rev_deaths'      => 0,
+			'rev_last_day'    => '',
+			'created_at'      => $now,
+			'last_seen'       => $now,
 		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, no core API.
+		$ok = $wpdb->insert( self::table(), $fresh, self::formats( $fresh ) );
 
 		if ( ! $ok ) {
 			return null;
@@ -862,6 +860,42 @@ class Player {
 	/* ---------------------------------------------------------------- */
 	/* Small shared helpers                                              */
 	/* ---------------------------------------------------------------- */
+
+	/**
+	 * The placeholder format for each column of the players table.
+	 *
+	 * $wpdb takes formats as a positional list, so a hand-written array has to
+	 * stay in step with the key order of the data array beside it — a silent,
+	 * type-confusing break the first time somebody inserts a field in the
+	 * middle. Deriving the list from the column names removes that class of
+	 * bug entirely, and an unknown column defaults to %s (never to "no format
+	 * at all", which is what makes $wpdb guess).
+	 *
+	 * @param array<string,mixed> $fields Column => value, in write order.
+	 * @return array<int,string>
+	 */
+	private static function formats( array $fields ): array {
+		$ints = array(
+			'id',
+			'user_id',
+			'newsletter',
+			'stc_capital',
+			'stc_streak',
+			'stc_best_streak',
+			'stc_deaths',
+			'rev_capital',
+			'rev_index_cap',
+			'rev_streak',
+			'rev_best_streak',
+			'rev_deaths',
+		);
+
+		$out = array();
+		foreach ( array_keys( $fields ) as $column ) {
+			$out[] = in_array( $column, $ints, true ) ? '%d' : '%s';
+		}
+		return $out;
+	}
 
 	/**
 	 * Reduce anything language-shaped to the two we serve.
