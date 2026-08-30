@@ -382,6 +382,14 @@ class Seeder {
 			}
 		}
 
+		// Applied on every run rather than only on a write: a page seeded
+		// before the template existed, or one whose hash still matches, picks
+		// it up on the next sync instead of staying on the default layout
+		// forever. Same reasoning as hti-engine's ensure_page_template().
+		foreach ( array_keys( $plan ) as $key ) {
+			self::ensure_page_template( $key );
+		}
+
 		update_option( self::OPTION_LAST, $report, false );
 
 		return $report;
@@ -560,6 +568,45 @@ class Seeder {
 	}
 
 	/**
+	 * Point a seeded page — and its Portuguese translation — at the theme
+	 * template the section wants. Idempotent.
+	 *
+	 * The PT half is the part that is easy to forget: Polylang keeps a wholly
+	 * separate post, so a template set only on the English page leaves the
+	 * Portuguese one rendering in the default layout, which on a wide chart is
+	 * visible immediately and only to Portuguese readers.
+	 *
+	 * @param string $key Page key.
+	 */
+	private static function ensure_page_template( string $key ): void {
+		/**
+		 * Filter the theme template the seeded game pages use. An empty
+		 * string leaves the page on the theme default.
+		 *
+		 * @param string $template Template name, without the extension.
+		 * @param string $key      Page key.
+		 */
+		$template = (string) apply_filters( 'hti_games_page_template', self::TEMPLATE, $key );
+		if ( '' === $template ) {
+			return;
+		}
+
+		$en = get_page_by_path( self::path( $key, 'en' ), OBJECT, 'page' );
+		if ( ! $en instanceof \WP_Post ) {
+			return;
+		}
+		update_post_meta( (int) $en->ID, '_wp_page_template', $template );
+
+		if ( ! self::polylang_active() ) {
+			return;
+		}
+		$pt_id = (int) pll_get_post( (int) $en->ID, self::lang_slug( 'pt' ) );
+		if ( $pt_id > 0 ) {
+			update_post_meta( $pt_id, '_wp_page_template', $template );
+		}
+	}
+
+	/**
 	 * Link an EN/PT pair in Polylang. No-op without both ids or the API.
 	 *
 	 * @param int $en_id English page ID.
@@ -590,17 +637,6 @@ class Seeder {
 		update_post_meta( $id, self::SEED_FLAG, VERSION );
 		update_post_meta( $id, self::HASH_META, $hash );
 		update_post_meta( $id, Schema::PAGE_META, $def['key'] );
-
-		/**
-		 * Filter the theme template the seeded game pages use.
-		 *
-		 * @param string $template Template file name, without the extension.
-		 * @param string $key      Page key.
-		 */
-		$template = (string) apply_filters( 'hti_games_page_template', self::TEMPLATE, (string) $def['key'] );
-		if ( '' !== $template ) {
-			update_post_meta( $id, '_wp_page_template', $template . '.html' );
-		}
 
 		if ( '' !== (string) $def['seo_title'][ $lang ] ) {
 			update_post_meta( $id, 'rank_math_title', $def['seo_title'][ $lang ] );
@@ -1587,7 +1623,7 @@ class Seeder {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'                => 'hti-games',
+					'page'                => Settings::PAGE,
 					'hti_games_seeded'    => (string) $report['created'],
 					'hti_games_updated'   => (string) $report['updated'],
 					'hti_games_unchanged' => (string) $report['unchanged'],
