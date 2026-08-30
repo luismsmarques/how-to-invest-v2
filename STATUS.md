@@ -243,10 +243,11 @@ o **comparador de depósitos é PT-first** (`class-deposits.php:169-173`).
 **Plano de expansão (Out–Dez 2026):** `docs/Forex_GEO_Ferramentas_Bot_Out2026.md` — o `/forex/`
   passa de Índia/INR a **nove GEOs/moedas** (IN, NG, ZA, MY, AE, VN, TH, BR, ID), com matriz de
   corretoras por país (**XM na Índia, Exness nas restantes**, decisão do dono de 30 ago), câmbios
-  a custo zero (peg do AED, override manual de NGN/VND), página por ferramenta × GEO (~107 no
-  estado final), e no bot: moeda, CTA por país, drip de 7 dias e **Telegram Mini App**. VN, ID e
-  TH nascem com o **CTA desligado** — têm restrições ao forex de retalho por confirmar na fonte
-  primária do regulador.
+  a custo zero (peg do AED, override manual de NGN/VND), e no bot: moeda, CTA por país, drip de
+  7 dias e **Telegram Mini App**. **Sem páginas por GEO** — uma página por ferramenta com
+  **seletor de moeda** (11 no estado final, 8 já existem); a escolha resolve moeda, regulador e
+  CTA num só caminho de código. VN, ID e TH nascem com o **CTA desligado** — têm restrições ao
+  forex de retalho por confirmar na fonte primária do regulador.
 
 **Antes de ligar o CTA em produção**: rever a exposição regulatória (Alert
   List RBI / FEMA — promover corretoras offshore a residentes indianos é o

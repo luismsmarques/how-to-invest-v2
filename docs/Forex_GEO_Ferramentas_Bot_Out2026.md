@@ -27,7 +27,7 @@ registo de afiliado. Metade da proposta já está construída e em produção.
 | Leverage calculator autónomo | ❌ idem |
 | Compounding calculator | ❌ |
 | Páginas por ativo (ouro primeiro) | ✅ parcial: `xauusd-lot-size-calculator` (`:333`) |
-| Localização por moeda/GEO | ❌ **é o âmago deste plano** |
+| Localização por moeda/GEO | ❌ **é o âmago deste plano** — por seletor, não por página (§6.1) |
 | Bot de Telegram com CTA de afiliado | ✅ ~915 subscritores; CTA global, não por país |
 | Telegram Mini App | ❌ |
 | Nurturing de 7 dias | ❌ existe difusão manual (`class-bot-broadcast.php`), não sequência |
@@ -55,16 +55,17 @@ Decisões do dono, tomadas em 30 ago 2026. Ficam aqui como decisões, não como 
 | **GEOs** | As nove da tabela §2 do `.docx` |
 | **Idiomas** | EN + vi, th, id, pt-BR |
 | **Câmbios** | Custo zero: grátis onde existe, peg e override manual onde não existe |
-| **URLs** | Página por ferramenta × GEO |
+| **URLs** | **Uma página por ferramenta, com seletor de moeda** — nenhuma página por GEO (§6.1) |
 | **Bot** | Moeda + CTA por país + nurturing de 7 dias + Telegram Mini App |
 | **Calendário** | Out–Dez 2026 |
 
 ### 2.1 Duas leituras do documento de origem
 
 **Só Telegram.** O §5.1 do `.docx` diz "APENAS Telegram nesta fase — sem WhatsApp/LINE/Zalo";
-o §6.5 do roadmap do mesmo documento diz "Bot WhatsApp (África/Brasil/Índia/SEA) + Telegram
-(MENA)". São incompatíveis. Assume-se o §5.1, que é a secção que argumenta a decisão; o §6.5
-lê-se como resíduo de uma versão anterior. WhatsApp fica para uma fase 2 fora deste plano.
+o item 5 do roadmap (§6) do mesmo documento diz "Bot WhatsApp (África/Brasil/Índia/SEA) +
+Telegram (MENA)". São incompatíveis. Assume-se o §5.1, que é a secção que argumenta a
+decisão; o item do roadmap lê-se como resíduo de uma versão anterior. WhatsApp fica para uma
+fase 2 fora deste plano.
 
 **Filipinas fora.** Aparece nas GEOs prioritárias do §8 mas não na tabela de nove moedas do
 §2. Fica registada como a candidata mais barata a uma décima GEO — anglófona, e o PHP não
@@ -207,7 +208,7 @@ primária** e não devem ser tratadas como facto.
 **Decisão de engenharia, que não espera pela verificação:** VN, ID e TH nascem com o **CTA
 desligado** por GEO. Servem ferramentas, conteúdo e tráfego; não emitem um único link de
 afiliado até o dono decidir com a fonte do regulador à frente. Custo: zero. É a posição
-defensável, e o kill-switch por GEO (§6.2) existe precisamente para a tornar reversível
+defensável, e o kill-switch por GEO (§6.4) existe precisamente para a tornar reversível
 com um clique quando a verificação for feita.
 
 **A VERIFICAR**, por ordem de custo: Bappebti (ID), SBV/Ngân hàng Nhà nước (VN), SEC
@@ -232,7 +233,7 @@ reduz exposição sem travar nada.
 
 A rota SEBI fica documentada como alternativa disponível — o `.docx` §9 identifica Angel
 One e Upstox como os programas de maior payout e mais fáceis de integrar — e a matriz de
-corretoras (§6.2) torna a troca uma linha de configuração se a decisão mudar.
+corretoras (§6.4) torna a troca uma linha de configuração se a decisão mudar.
 
 ### 5.3 Exclusões de país das duas corretoras
 
@@ -244,9 +245,11 @@ A matriz tem de as respeitar estruturalmente, não por convenção:
   da UE.
 
 Portugal na lista de exclusão da XM é a que mais importa aqui, porque **este site é
-PT-facing**. A mitigação é de arquitetura: o CTA só existe em páginas de GEO, todas em
-inglês, e **o lado `/pt/` do site nunca lhes liga**. Um teste da suite falha se uma GEO
-apontar para uma corretora que a exclui (§9).
+PT-facing**. A mitigação é de arquitetura: o CTA nunca é emitido sem uma GEO escolhida, as
+páginas do `/forex/` são inglesas, e **o lado `/pt/` do site nunca lhes liga**. Não existe
+GEO "Portugal" na tabela, portanto não existe caminho de código que resolva um CTA para um
+visitante português. Um teste da suite falha se uma GEO apontar para uma corretora que a
+exclui (§9).
 
 ### 5.4 O que se mantém do que já está feito
 
@@ -259,26 +262,75 @@ terceiro ficheiro voltar a ler `cta_url`.
 
 ## 6. Arquitetura
 
-### 6.1 URLs
+### 6.1 URLs — uma página por ferramenta, com seletor de moeda
 
-- `/forex/` — hub global, ganha índice de GEOs.
-- `/forex/{geo}/` — hub por GEO: `/forex/nigeria/`, `/forex/south-africa/`, `/forex/uae/`, …
-- `/forex/{ferramenta}/{geo}/` — ferramenta × GEO, página-neta do hub.
+**Decisão do dono (30 ago 2026): nenhuma página por GEO.** A estrutura de URLs não cresce
+com as nove GEOs — cada ferramenta é **uma página que serve as nove moedas** através de um
+seletor.
 
-O `class-seeder.php` já semeia uma hierarquia de um nível: cria o hub primeiro para os
-filhos poderem pendurar-se nele (`:134-144`) e o `upsert()` aceita um id de pai (`:176,216`).
-Passa a dois níveis — é um segundo passe no mesmo laço, não um mecanismo novo.
+- `/forex/` — hub, como hoje.
+- `/forex/{ferramenta}/` — uma por ferramenta, multi-moeda.
+- As três variantes por ativo e caso que já existem — `xauusd-lot-size-calculator`,
+  `lot-size-for-100-dollar-account`, `lot-size-calculator-with-leverage` — **mantêm-se e
+  são o padrão a repetir** quando houver apetite para mais long-tail: são páginas por
+  *ativo* e por *caso de uso*, que é onde a busca existe sem multiplicar por país.
 
-**As oito páginas atuais ficam intactas e passam a ser declaradas a variante Índia.** Sem
-301, sem renomear. São os landers das campanhas pagas a correr e carregam o histórico que
-existe. A assimetria resultante — `/forex/market-hours-ist/` em vez de
-`/forex/market-hours/india/` — fica registada com a razão.
+**Zero páginas novas nesta arquitetura.** As oito atuais ganham o seletor; a F2 acrescenta
+três ferramentas em falta. **Onze páginas no estado final**, contra ~107 do desenho
+anterior.
 
-> **Alternativa rejeitada:** renomear tudo para `/forex/{ferramenta}/india/` com 301s, pela
-> simetria. Rejeitada porque troca um ganho estético por risco real sobre as únicas páginas
-> com tração, a meio de campanhas pagas.
+O `class-seeder.php` continua com a hierarquia de um nível que já tem (`:134-144`,
+`:176,216`) — não precisa do segundo nível que a arquitetura por GEO exigia.
 
-### 6.2 Matriz de corretoras
+> **O que se perde, dito uma vez.** As buscas com país — "position size calculator in
+> naira", "pip value in rupees" — têm concorrência baixa e eram o ponto 1 da diferenciação
+> face à Myfxbook e à Investing.com (`.docx` §4). Numa página única, competimos pelos termos
+> de cabeça, onde a dificuldade é alta. É uma troca deliberada de alcance por custo de
+> conteúdo. O §6.3 descreve o que a recupera em parte sem criar páginas.
+
+### 6.2 O seletor de moeda
+
+Passa a ser a peça central da secção, e tem quatro requisitos que não são negociáveis
+porque cada um protege algo que já funciona.
+
+**1. O default vem de uma definição, não do IP.** Arranca em **INR**. As páginas atuais são
+os landers das campanhas pagas indianas em curso: um clique da Propeller tem de aterrar
+exactamente no que aterra hoje. A definição é de admin, portanto muda sem deploy quando a
+audiência deixar de ser só indiana. **Geolocalização por IP continua fora** — pelas três
+razões do §6.4 (privacidade, cache, dependência externa).
+
+**2. A escolha viaja no URL como parâmetro, não como página.** `?c=ngn` fixa a moeda sem
+criar um URL indexável — serve os deep links do bot, os landers de campanha e a partilha.
+O valor é validado contra a tabela de GEOs (allowlist), nunca aceite em cru. A escolha
+persiste em `localStorage` para o visitante recorrente.
+
+**3. A baseline sem JavaScript mantém-se.** A página de sessões renderiza hoje a tabela do
+lado do servidor e funciona com o JS desligado (`class-config.php:109`). Com o seletor, o
+servidor rende a moeda default e o JS troca — a propriedade não se perde. Vale para o
+câmbio editável, que passa a trocar com o seletor.
+
+**4. Um só caminho de compliance.** Este é o ganho real da arquitetura, e não é pequeno:
+escolher a moeda passa a resolver, no mesmo sítio, o bloco de regulador local, o aviso de
+risco, e se há ou não CTA. Escolher VND não mostra CTA nenhum (§5.1); escolher NGN resolve
+a Exness; escolher INR resolve a XM. **Uma implementação em vez de nove templates de
+página** — muito menos superfície onde a regra de compliance pode ficar por aplicar.
+
+### 6.3 Como recuperar parte do long-tail sem páginas novas
+
+Duas vias, ambas dentro das onze páginas:
+
+**As FAQs carregam as buscas por moeda.** "How much is 1 pip in Nigerian naira?" pode ser
+uma entrada de FAQ numa página que também responde em rands e em rupias. É `FAQPage`
+JSON-LD, elegível para resultados enriquecidos, e capta parte da consulta sem uma página
+por país. Nove entradas de FAQ numa página é legítimo; nove páginas quase iguais é onde
+estava o risco de thin content.
+
+**As variantes por ativo e caso são o padrão que já se provou.** `xauusd-lot-size-calculator`
+e `lot-size-for-100-dollar-account` existem e são long-tail real — por ativo e por caso, não
+por país. O `.docx` §3 identifica o ouro como o modificador que mais converte. Se houver
+apetite para mais páginas mais tarde, **é por aqui que se cresce**, não por GEO.
+
+### 6.4 Matriz de corretoras
 
 O `cta_url` único (`class-settings.php:57`) e o `sub_param` único (`:78`) dão lugar a duas
 tabelas:
@@ -289,9 +341,21 @@ brokers:    xm     => { label, url, sub_param, active }
 geo_broker: in => xm | ng => exness | za => exness | …
 ```
 
-**A GEO nunca vem de geolocalização por IP.** Vem do URL da página, que já diz de que GEO é,
-e no bot vem da linha do subscritor. Zero PII nova, zero problema de cache, zero dependência
-de um serviço de terceiros. É a escolha certa por três razões independentes.
+**A GEO nunca vem de geolocalização por IP.** Vem do **seletor de moeda** (no site) e da
+linha do subscritor (no bot). Zero PII nova, zero problema de cache, zero dependência de um
+serviço de terceiros. É a escolha certa por três razões independentes.
+
+**Como a GEO chega ao redirector sem furar a invariante.** Desde o `hti-forex` 0.13.8 o
+`cta_for()` devolve a *placement* e nunca o URL — o `cta_url` não está ao alcance de quem
+desenha a página, e um teste falha se um terceiro ficheiro o voltar a ler. Isso mantém-se:
+o `href` continua a ser `/forex/go/{slot}/`, escrito do lado do servidor, e o seletor
+acrescenta-lhe **`?g={geo}`** do lado do cliente — do mesmo modo que o `cid` de campanha já
+viaja hoje (`class-go.php:60,227`). O redirector valida o `g` contra a tabela de GEOs
+(**allowlist**, nunca texto livre, ou reabre-se a superfície de cardinalidade que a
+auditoria fechou), resolve a corretora, e só então anexa o sub-id dela.
+
+Sem `g`, ou com um `g` que não está na tabela, o redirector usa a GEO default das definições
+— nunca falha, nunca 404, que é a regra que esta rota já tem para o caso do PDF impresso.
 
 **Kill-switches:** o global e o por-ferramenta que já existem (`class-settings.php:111`),
 **mais um por GEO**. Necessário para o §5.1 (VN/ID/TH nascem desligadas), para o §5.3
@@ -301,39 +365,48 @@ Reutiliza-se a **forma** do `Broker_Go::with_sub_id()` do hti-engine
 (`class-broker-go.php:159`), sem criar dependência: o `hti-forex` é isolado por desenho e
 essa contenção é o que torna a secção removível desativando um plugin.
 
-### 6.3 Conteúdo: como não produzir 100 páginas finas
-
-Este é o risco central de uma arquitetura de página por ferramenta × GEO, e merece um
-número: **~107 páginas no estado final**, das quais oito existem.
+### 6.5 Conteúdo: as contas
 
 | Bloco | Páginas |
 |---|---|
-| Hub global | 1 |
-| Ferramentas canónicas (variante Índia) | 7 |
-| Variantes de ativo/caso da Índia (XAUUSD, conta de $100, com leverage) | 3 |
-| Hubs de GEO (8 GEOs novas) | 8 |
-| Ferramentas × GEO (7 × 8) | 56 |
-| **Subtotal EN** | **75** |
-| Duplicados em língua local (VN, TH, ID, BR × 8) | 32 |
-| **Total** | **107** |
+| Hub | 1 |
+| Ferramentas (4 existentes + 3 da F2) | 7 |
+| Variantes por ativo e caso (XAUUSD, conta de $100, com leverage) | 3 |
+| **Subtotal EN** | **11** (8 existem) |
+| Traduções para vi, th, id, pt-BR (F4) | 44 |
+| **Total** | **55** |
 
-A regra que torna isto sustentável e não spam: **cada página tem quatro FAQs, das quais duas
-são da aritmética e duas são do GEO.**
+Prosa a escrever à mão:
 
-As da aritmética são partilhadas por ferramenta (escrevem-se uma vez, sete vezes ao todo).
-As do GEO usam o que genuinamente difere: moeda e ordem de grandeza das contas locais,
-regulador e a sua posição, método de depósito (UPI/IMPS na Índia, Paystack/Flutterwave na
-Nigéria, PIX no Brasil, DuitNow na Malásia), enquadramento fiscal, horas de sessão no fuso
-local, e o ouro como ativo-estrela onde o `.docx` §3 o identifica.
+| Peça | Quantas |
+|---|---|
+| FAQs da aritmética — 2 por ferramenta, uma vez cada | ~20 |
+| Parágrafo de contexto local por GEO (regulador, depósito, fiscalidade) | 9 |
+| **Total à mão** | **~29** |
+| FAQs por moeda — templadas da tabela de GEOs, não escritas | ~20 |
 
-Dá **~155 respostas únicas a escrever** mais 32 páginas de tradução. É muito. Está aqui em
-número para ser aceite de olhos abertos, não descoberto a meio.
+**As FAQs por moeda saem da tabela, não da caneta.** "Quanto vale 1 pip em naira?" tem uma
+resposta que é aritmética com os dados dessa GEO — câmbio, símbolo, ordem de grandeza da
+conta, quanto é um micro-lote naquela moeda. Não é texto girado; são números genuinamente
+diferentes. O que precisa mesmo de um humano é **um parágrafo de contexto local por GEO**,
+reutilizado em todas as páginas onde essa moeda está escolhida: regulador e a sua posição,
+método de depósito (UPI/IMPS na Índia, Paystack/Flutterwave na Nigéria, PIX no Brasil,
+DuitNow na Malásia), enquadramento fiscal.
 
-As FAQs vivem em `Config::faqs()` (`class-config.php:164`), que é fonte única da página e do
+> **Nota honesta sobre a poupança.** Colapsar de ~107 para 11 páginas poupa **páginas**, não
+> prosa: ~29 peças à mão contra ~155 no desenho por GEO — mas contra ~23 no desenho
+> intermédio (duas âncoras por GEO). O ganho grande está noutro lado: menos superfície de
+> revisão, menos `hreflang` a gerir, menos seeding, e um só caminho de compliance (§6.2).
+> O custo está no alcance de busca (§6.1).
+
+**A tradução passa a ser o maior custo de conteúdo do plano** — 44 páginas contra 11 em
+inglês. Ver §8, F4.
+
+As FAQs vivem em `Config::faqs()` (`class-config.php:164`), fonte única da página e do
 JSON-LD. Vale o caveat de drift já documentado no README do plugin: reescrever a copy no
 wp-admin dessincroniza o schema.
 
-### 6.4 Bot
+### 6.6 Bot
 
 **Moeda e GEO passam a colunas** de `hti_forex_bot_subs`. A tabela já tem `pair`, `leverage`
 e `source` (`class-bot-store.php:82-84`) e versionamento de schema (`:36`) — é um bump de
@@ -383,42 +456,52 @@ mostrados, entre eles `forex_bot_start/calc/stop` e `forex_tool_use`, e que o `l
 `tool`, `bkr`, `bkr_loc` — carrega a GEO. Multiplicar por nove sem isso produz um agregado
 que não responde à única pergunta que interessa: **que GEO paga.**
 
-Precondição, antes de semear a primeira página de uma GEO nova:
+**A arquitetura de página única agrava isto, não alivia.** No desenho por GEO, o URL da
+página dizia sempre de que país era o clique — a GEO podia ser lida do caminho. Com uma
+página a servir nove moedas, **o URL deixa de dizer nada** e a única fonte da GEO é o
+seletor. Se o evento não a carregar, a informação não existe em lado nenhum. Isto passa de
+precondição a bloqueador.
 
-1. GEO como dimensão nos mapas `tool` e `cta`, ou codificada no `location` com uma convenção
-   fixa (`{ferramenta}_{geo}`) e desdobrada no ecrã.
-2. Confirmar que o teto de 300 chega para GEO × ferramenta × placement. Sete ferramentas × 9
+Precondição, antes de ligar o seletor em produção:
+
+1. GEO codificada no `location` com uma convenção fixa (`{ferramenta}_{geo}`) e desdobrada
+   no ecrã — nos mapas `tool` e `cta`.
+2. Confirmar que o teto de 300 chega para ferramenta × GEO × placement. Dez ferramentas × 9
    GEOs × alguns slots fica confortavelmente abaixo — mas é uma conta a fazer, não a assumir.
 3. O `source` do bot já distingue campanhas (`class-bot-store.php:84`, teto de 50 em `:47`);
    confirmar que os códigos de campanha por GEO cabem nesse teto.
+4. **Uma métrica nova que a arquitetura anterior não precisava:** quantas pessoas mexem no
+   seletor, e para que moeda. É o único sinal que diz se as nove GEOs têm procura real —
+   sem páginas por país, não há como o ler do Search Console.
 
 ---
 
 ## 8. Faseamento
 
+Sem páginas por GEO, as fases deixam de ser sobre semear conteúdo e passam a ser sobre
+capacidade. É um plano mais curto e com menos dependência de escrita.
+
 ### F0 · Precondição (início de outubro)
 
-GEO como dimensão nas métricas (§7). Verificar a lista de moedas do Frankfurter (§4.4).
-Verificar a Alert List do RBI na fonte primária (§5.2). Nenhuma página nova antes disto.
+GEO no `location` dos eventos e no ecrã, mais a métrica de uso do seletor (§7). Verificar a
+lista de moedas do Frankfurter (§4.4). Verificar a Alert List do RBI na fonte primária
+(§5.2). **Nada disto é opcional:** sem o ponto 1, ligar o seletor apaga a informação de país
+em vez de a criar.
 
-### F1 · Motor de GEO completo para as nove
+### F1 · Motor de GEO e seletor
 
-`class-geo.php`, registo de câmbios por moeda, formatadores por agrupamento, matriz de
-corretoras com kill-switch por GEO, bot com moeda e GEO na linha do subscritor.
+`class-geo.php`, registo de câmbios por moeda, formatadores por agrupamento, parser de
+montantes por locale, matriz de corretoras com kill-switch por GEO, e o **seletor de moeda**
+nas oito páginas atuais (§6.2) — default INR, `?c=` validado, baseline sem JS preservada,
+bloco de regulador e CTA a resolver pela escolha.
 
-**O código nasce GEO-completo para as nove: nenhuma GEO fica excluída por arquitetura.**
-O que é faseado é a publicação de páginas, que depende de idioma e de conteúdo escrito.
-
-Páginas nesta fase: as quatro GEOs anglófonas novas — Nigéria, África do Sul, UAE, Malásia —
-com as quatro ferramentas que já existem. **4 hubs + 16 páginas = 20.**
+**Zero páginas novas.** As nove GEOs ficam servidas no dia em que esta fase fecha.
 
 ### F2 · As três ferramentas em falta
 
-Margem e leverage autónomas (a matemática já existe embutida no position size — é uma
-página e um `[hti_forex_tool name=…]` novo, não uma implementação) e compounding, que é o
-funil aspiracional do `.docx` §1.
-
-Cruzadas com as cinco GEOs anglófonas (Índia + as quatro de F1): **15 páginas.**
+Margem e leverage autónomas — a matemática já existe embutida no position size, é uma página
+e um `[hti_forex_tool name=…]` novo, não uma implementação — e compounding, o funil
+aspiracional do `.docx` §1. **3 páginas**, cada uma multi-moeda à nascença.
 
 ### F3 · Bot
 
@@ -428,8 +511,12 @@ paga o bot.
 
 ### F4 · Idiomas
 
-vi, th, id e pt-BR. VN, TH, ID e BR ganham páginas: **4 hubs + 28 ferramentas, × 2 idiomas
-= 32 páginas** (EN e local).
+vi, th, id e pt-BR: **44 páginas traduzidas** (11 × 4).
+
+É agora, de longe, **a maior fatia de conteúdo do plano** — quatro vezes o site inglês —
+e a que menos se justifica sozinha. Vale a pena tratá-la como decisão à parte, tomada
+depois de F1 dizer se aquelas quatro GEOs têm procura no seletor. Se não tiverem, esta fase
+não deve acontecer.
 
 Duas questões por resolver antes de começar, ambas fora do que o código decide:
 
@@ -454,7 +541,8 @@ PHP e 83 Node, verdes.
 | `test-bot-math.php` (estender) | Agrupamento indiano vs ocidental; moedas sem casas decimais (VND, IDR); parser por locale; escalões derivados de USD |
 | `test-miniapp.php` (novo) | `initData` válido, adulterado, expirado, sem `hash`; `hash_equals` e não `==` |
 | `test-drip.php` (novo) | Avanço de dia; `/stop` interrompe; 403 larga a linha; 429 recua |
-| `test-geo-pages.php` (novo) | O seeder produz o conjunto de slugs esperado; nenhuma colisão entre GEOs; as oito páginas atuais mantêm os slugs |
+| `test-selector.php` (novo) | O `?c=` é validado contra a allowlist e um valor inválido cai no default; o `?g=` do redirector idem; o default vem das definições e não do IP; as oito páginas atuais mantêm os slugs |
+| `test-go.php` (estender) | `/forex/go/{slot}/?g={geo}` resolve a corretora certa por GEO; um `g` fora da tabela usa o default e nunca 404; o `cta_url` continua a não sair do ecrã de definições e do redirector |
 | `test-forex-core.mjs` (estender) | Paridade PHP↔JS para as moedas novas |
 
 A regra do projeto mantém-se: as suites correm antes de cada commit.
@@ -463,15 +551,21 @@ A regra do projeto mantém-se: as suites correm antes de cada commit.
 
 ## 10. Riscos, por ordem de custo
 
-1. **Volume de conteúdo.** ~155 respostas únicas e 32 páginas de tradução (§6.3). É o maior
-   custo do plano e o único que não tem atalho técnico. Se o ritmo de escrita não acompanhar,
-   a decisão certa é publicar menos GEOs bem do que nove mal.
+1. **O alcance de busca que a página única deixa na mesa** (§6.1). É o custo assumido da
+   decisão de 30 ago: competimos pelos termos de cabeça, onde a dificuldade é alta, em vez
+   das consultas com país, onde não é. **Como saber se foi caro:** a métrica de uso do
+   seletor (§7). Se muita gente trocar de moeda, há procura por GEO que não estamos a captar
+   na busca — e a saída é acrescentar páginas para as duas âncoras, sem tocar no código
+   (§6.3).
 2. **Exposição legal em VN/ID/TH** (§5.1) e na Índia (§5.2). Mitigado por defeito no código;
    por resolver na verificação.
-3. **Desatualização do NGN** (§4.3). Mitigado por três camadas; vigiar.
-4. **Revisão de copy financeira em quatro línguas** (§F4). Sem solução técnica.
-5. **Script de terceiros no Mini App** (§6.4). Contido a uma página `noindex`.
+3. **Tradução (F4): 44 páginas**, quatro vezes o site inglês, e sem revisor de copy
+   financeira nas quatro línguas. É o maior custo de conteúdo que resta e deve ser decidido
+   depois de F1, não antes. A alternativa honesta é publicar VN/TH/ID/BR só em inglês.
+4. **Desatualização do NGN** (§4.3). Mitigado por três camadas; vigiar.
+5. **Script de terceiros no Mini App** (§6.6). Contido a uma página `noindex`.
 6. **A revisão jurídica (L-D) continua por fazer** e a `Estado_e_Cronologia_Set2026.md`
    marca-a como bloqueador de divulgação, com o gate "Corretoras & afiliados" a 0/9 e a
-   secção em produção. Este plano multiplica por nove a superfície que ela teria de cobrir.
-   Não é razão para não avançar — é razão para a L-D deixar de esperar.
+   secção em produção. Este plano multiplica por nove os mercados que ela teria de cobrir —
+   mesmo sem multiplicar as páginas. Não é razão para não avançar; é razão para a L-D deixar
+   de esperar.
