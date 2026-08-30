@@ -1,0 +1,1240 @@
+/**
+ * The games section — the shell both games share, and the whole of the hub,
+ * the leaderboard and the profile.
+ *
+ * Structure lives here; the two games' worlds live in stc.css and reveal.css
+ * and do nothing but re-point the tokens below. That is why a survival bar
+ * looks amber on a dark panel and teal on a cream one without a single rule
+ * being written twice.
+ *
+ * The default palette here is the SITE's, not either game's: the hub, the
+ * board and the profile are ordinary pages with the ordinary header and
+ * footer, and a dark island in the middle of a cream site reads as a bug.
+ *
+ * Colour discipline, which is not negotiable in either world: green and red
+ * belong to candles and to trade outcomes. The brand colour is the brand
+ * colour and never signals a profit.
+ *
+ * @package HTI_Games
+ */
+
+/* ---------------------------------------------------------------------------
+ * 1. Page-level: lift the theme's content cap, and the full-bleed takeover.
+ *
+ * Both mirror what the theme already does for `.hti-page-quiz`
+ * (themes/howtoinvest/style.css:488-510). They are written here rather than
+ * there so that removing this plugin removes its layout with it.
+ * ------------------------------------------------------------------------- */
+
+.hti-page-game .wp-block-post-content,
+.hti-page-game .wp-block-post-content > *,
+.hti-page-game main { max-width: none; }
+
+html.hti-game-active .hti-header,
+html.hti-game-active .hti-footer,
+html.hti-game-active .hti-mbar,
+html.hti-game-active .hti-tabbar { display: none !important; }
+html.hti-game-active .hti-page-game main { margin-top: 0; margin-bottom: 0; }
+html.hti-game-active body { padding-bottom: 0; }
+
+/* ---------------------------------------------------------------------------
+ * 2. Tokens. The two game sheets override these and nothing else.
+ * ------------------------------------------------------------------------- */
+
+.hti-g {
+	--g-bg: var( --wp--preset--color--background, #FFF6F1 );
+	--g-surface: var( --wp--preset--color--white, #FFFFFF );
+	--g-surface-2: #FBF4F0;
+	--g-surface-3: #F6EDE8;
+	--g-border: var( --wp--preset--color--border, #F2E4DD );
+	--g-border-2: #E7D6CE;
+	--g-border-3: #DCC7BD;
+	--g-text: var( --wp--preset--color--contrast, #2A2438 );
+	--g-text-2: #4A4358;
+	--g-muted: var( --wp--preset--color--muted, #6E6680 );
+	--g-brand: var( --wp--preset--color--primary-strong, #C9362C );
+	--g-brand-ink: #FFFFFF;
+	--g-brand-soft: var( --wp--preset--color--primary-soft, #FFEDE9 );
+	--g-up: #1E7A55;
+	--g-up-soft: #E6F4EC;
+	--g-down: #B4402F;
+	--g-down-soft: #FDECE8;
+	--g-warn: #8A6310;
+	--g-warn-soft: #FFF3D6;
+	--g-grid: #E7D6CE;
+	--g-past-up: #1E7A55;
+	--g-past-down: #B4402F;
+	--g-ring: #D9432F;
+	--g-radius: 16px;
+	--g-radius-sm: 12px;
+	--g-head: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+	--g-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+	box-sizing: border-box;
+	display: block;
+	max-width: 560px;
+	margin: 28px auto;
+	padding: 0;
+	background: var( --g-bg );
+	color: var( --g-text );
+	font-family: var( --g-body );
+	line-height: 1.55;
+}
+
+.hti-g *,
+.hti-g *::before,
+.hti-g *::after { box-sizing: inherit; }
+
+/* Every money and percentage figure. Columns of digits that do not line up
+   read as noise, and this section is nothing but columns of digits. */
+.hti-num { font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------------------------
+ * 3. Focus. Never removed, never `outline: none` under :focus-visible —
+ *    hti-engine/tests/test-focus-contrast.php fails the build over it, and the
+ *    ring clears 3:1 on the site cream, the game cream and the game dark.
+ * ------------------------------------------------------------------------- */
+
+.hti-g a:focus-visible,
+.hti-g button:focus-visible,
+.hti-g input:focus-visible,
+.hti-g summary:focus-visible,
+.hti-g [tabindex]:focus-visible {
+	outline: 3px solid var( --g-ring );
+	outline-offset: 2px;
+	border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. Utilities
+ * ------------------------------------------------------------------------- */
+
+.hti-g__sr,
+.hti-g__hp {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect( 0 0 0 0 );
+	clip-path: inset( 50% );
+	white-space: nowrap;
+	border: 0;
+}
+
+.hti-g__h2 {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 21px;
+	letter-spacing: -0.02em;
+	color: var( --g-text );
+}
+
+.hti-g__h3 {
+	margin: 0 0 8px;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 16px;
+	letter-spacing: -0.01em;
+	color: var( --g-text );
+}
+
+.hti-g__kicker {
+	margin: 0;
+	font-weight: 700;
+	font-size: 11px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var( --g-brand );
+}
+
+.hti-g__note {
+	margin: 10px 0 0;
+	font-size: 12.5px;
+	line-height: 1.6;
+	color: var( --g-muted );
+	text-wrap: pretty;
+}
+
+.hti-g__status {
+	margin: 10px 0 0;
+	font-size: 13px;
+	color: var( --g-text-2 );
+	min-height: 1em;
+}
+
+.hti-g__disclaimer {
+	margin: 18px 0 0;
+	padding-top: 14px;
+	border-top: 1px solid var( --g-border );
+	font-size: 11.5px;
+	line-height: 1.65;
+	color: var( --g-muted );
+	text-wrap: pretty;
+}
+
+.hti-g__noscript {
+	margin: 14px 0 0;
+	padding: 14px 16px;
+	background: var( --g-warn-soft );
+	border: 1px solid var( --g-border-2 );
+	border-radius: var( --g-radius-sm );
+	font-size: 13.5px;
+	color: var( --g-text );
+}
+
+.hti-g__empty {
+	margin: 0;
+	padding: 22px;
+	background: var( --g-surface-2 );
+	border: 1px dashed var( --g-border-2 );
+	border-radius: var( --g-radius );
+	text-align: center;
+	color: var( --g-muted );
+}
+
+/* Collapsed rules. In the DOM for the crawler and for the reader without
+   JavaScript; folded away for the player mid-run. */
+.hti-g__rules {
+	margin: 16px 0 0;
+	background: var( --g-surface-2 );
+	border: 1px solid var( --g-border );
+	border-radius: var( --g-radius-sm );
+	padding: 12px 16px;
+}
+
+.hti-g__rules > summary {
+	cursor: pointer;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 14px;
+	color: var( --g-text );
+}
+
+.hti-g__ruleslist {
+	margin: 10px 0 0;
+	padding-left: 20px;
+	font-size: 13px;
+	line-height: 1.7;
+	color: var( --g-text-2 );
+}
+
+.hti-g__ruleslist li { margin: 0 0 4px; }
+
+/* ---------------------------------------------------------------------------
+ * 5. HUD
+ * ------------------------------------------------------------------------- */
+
+.hti-g__hud {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	padding: 14px 18px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border );
+	border-radius: var( --g-radius ) var( --g-radius ) 0 0;
+}
+
+.hti-g__brand { min-width: 0; }
+
+.hti-g__title {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 13px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var( --g-brand );
+}
+
+.hti-g__sub {
+	margin: 2px 0 0;
+	font-size: 10.5px;
+	line-height: 1.4;
+	color: var( --g-muted );
+}
+
+.hti-g__meters {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin: 0;
+}
+
+.hti-g__meter { text-align: right; }
+
+.hti-g__meter dt {
+	font-weight: 600;
+	font-size: 9.5px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var( --g-muted );
+}
+
+.hti-g__meter dd {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 16px;
+	letter-spacing: -0.02em;
+	color: var( --g-text );
+}
+
+.hti-g__meter dd.is-up { color: var( --g-up ); }
+.hti-g__meter dd.is-down { color: var( --g-down ); }
+
+.hti-g__meter--streak {
+	text-align: center;
+	background: var( --g-surface-3 );
+	border: 1px solid var( --g-border-2 );
+	border-radius: 10px;
+	padding: 4px 10px;
+}
+
+.hti-g__meter--streak dd { color: var( --g-brand ); }
+
+/* Account health. Decoration with the number beside it, so no ARIA. */
+.hti-g__health {
+	padding: 12px 18px 0;
+	background: var( --g-surface );
+	border-left: 1px solid var( --g-border );
+	border-right: 1px solid var( --g-border );
+}
+
+.hti-g__bar {
+	height: 5px;
+	background: var( --g-surface-3 );
+	border-radius: 999px;
+	overflow: hidden;
+}
+
+.hti-g__fill {
+	display: block;
+	height: 100%;
+	width: 100%;
+	border-radius: 999px;
+	background: var( --g-up );
+	transition: width 0.5s ease;
+}
+
+.hti-g__fill.is-brand { background: var( --g-brand ); }
+.hti-g__fill.is-down { background: var( --g-down ); }
+
+.hti-g__healthrow {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	margin: 6px 0 0;
+	font-size: 10.5px;
+	color: var( --g-muted );
+}
+
+/* ---------------------------------------------------------------------------
+ * 6. Phases
+ * ------------------------------------------------------------------------- */
+
+.hti-g__phases {
+	padding: 16px 18px 20px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border );
+	border-top: 0;
+	border-radius: 0 0 var( --g-radius ) var( --g-radius );
+}
+
+.hti-g__phase {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	animation: hti-g-rise 0.25s ease;
+}
+
+.hti-g__phase[hidden] { display: none; }
+
+.hti-g__phasehead {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 16px;
+	letter-spacing: -0.01em;
+	color: var( --g-text );
+}
+
+.hti-g__phasehead:focus { outline: none; }
+
+@keyframes hti-g-rise {
+	from { opacity: 0; transform: translateY( 8px ); }
+	to { opacity: 1; transform: none; }
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.hti-g__phase { animation: none; }
+	.hti-g__fill { transition: none; }
+}
+
+/* ---------------------------------------------------------------------------
+ * 7. Controls
+ * ------------------------------------------------------------------------- */
+
+.hti-g__choice {
+	display: block;
+	width: 100%;
+	min-height: 56px;
+	padding: 14px 16px;
+	background: var( --g-surface-2 );
+	border: 1.5px solid var( --g-border-2 );
+	border-radius: 14px;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 16px;
+	color: var( --g-text );
+	cursor: pointer;
+	text-align: center;
+}
+
+.hti-g__choice:hover { border-color: var( --g-border-3 ); }
+.hti-g__choice[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+.hti-g__choice--up { background: var( --g-up-soft ); border-color: var( --g-up ); color: var( --g-up ); }
+.hti-g__choice--down { background: var( --g-down-soft ); border-color: var( --g-down ); color: var( --g-down ); }
+.hti-g__choice--invest { background: var( --g-brand ); border-color: var( --g-brand ); color: var( --g-brand-ink ); }
+
+.hti-g__sides {
+	display: flex;
+	gap: 10px;
+}
+
+.hti-g__sides .hti-g__choice { flex: 1; }
+
+.hti-g__tiles {
+	display: grid;
+	grid-template-columns: repeat( 3, 1fr );
+	gap: 8px;
+}
+
+.hti-g__tile {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	min-height: 52px;
+	padding: 10px 6px;
+	background: var( --g-surface-2 );
+	border: 1.5px solid var( --g-border-2 );
+	border-radius: var( --g-radius-sm );
+	cursor: pointer;
+	color: var( --g-text );
+}
+
+.hti-g__tilelabel {
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 16px;
+	letter-spacing: -0.02em;
+}
+
+.hti-g__tilesub {
+	font-weight: 600;
+	font-size: 10px;
+	color: var( --g-muted );
+}
+
+.hti-g__tile.is-on { border-width: 2px; }
+.hti-g__tile--up.is-on { border-color: var( --g-up ); color: var( --g-up ); background: var( --g-up-soft ); }
+.hti-g__tile--brand.is-on { border-color: var( --g-brand ); color: var( --g-brand ); background: var( --g-brand-soft ); }
+.hti-g__tile--warn.is-on { border-color: var( --g-warn ); color: var( --g-warn ); background: var( --g-warn-soft ); }
+.hti-g__tile--down.is-on { border-color: var( --g-down ); color: var( --g-down ); background: var( --g-down-soft ); }
+.hti-g__tile.is-on .hti-g__tilesub { color: inherit; }
+
+.hti-g__warn {
+	margin: 0;
+	padding: 11px 14px;
+	background: var( --g-surface-2 );
+	border: 1px solid var( --g-border-2 );
+	border-radius: var( --g-radius-sm );
+	font-size: 12px;
+	line-height: 1.55;
+	color: var( --g-text-2 );
+	text-wrap: pretty;
+}
+
+.hti-g__warn.is-up { background: var( --g-up-soft ); border-color: var( --g-up ); }
+.hti-g__warn.is-brand { background: var( --g-brand-soft ); border-color: var( --g-brand ); }
+.hti-g__warn.is-warn { background: var( --g-warn-soft ); border-color: var( --g-warn ); }
+.hti-g__warn.is-down { background: var( --g-down-soft ); border-color: var( --g-down ); }
+
+/* The optional multiplier. A switch, drawn as one, announced as one. */
+.hti-g__switch {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	min-height: 52px;
+	padding: 11px 14px;
+	background: var( --g-surface-2 );
+	border: 1.5px solid var( --g-border-2 );
+	border-radius: var( --g-radius-sm );
+	cursor: pointer;
+	text-align: left;
+	color: var( --g-text );
+}
+
+.hti-g__switchtrack {
+	flex: none;
+	position: relative;
+	width: 36px;
+	height: 20px;
+	border-radius: 999px;
+	background: var( --g-border-3 );
+	transition: background 0.18s ease;
+}
+
+.hti-g__switchtrack::after {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #FFFFFF;
+	transition: transform 0.18s ease;
+}
+
+.hti-g__switch.is-on { border-color: var( --g-down ); color: var( --g-down ); }
+.hti-g__switch.is-on .hti-g__switchtrack { background: var( --g-down ); }
+.hti-g__switch.is-on .hti-g__switchtrack::after { transform: translateX( 16px ); }
+
+.hti-g__switchtext { display: block; }
+
+.hti-g__switchlabel {
+	display: block;
+	font-weight: 700;
+	font-size: 13px;
+}
+
+.hti-g__switchnote {
+	display: block;
+	font-size: 10.5px;
+	color: var( --g-muted );
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.hti-g__switchtrack,
+	.hti-g__switchtrack::after { transition: none; }
+}
+
+.hti-g__atrisk {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	margin: 0;
+	font-weight: 600;
+	font-size: 12.5px;
+	color: var( --g-muted );
+}
+
+.hti-g__atrisk span:last-child { color: var( --g-down ); font-family: var( --g-head ); font-weight: 700; }
+
+.hti-g__actions {
+	display: flex;
+	gap: 10px;
+	margin: 0;
+}
+
+.hti-g__btn {
+	flex: 1;
+	min-height: 52px;
+	padding: 14px 18px;
+	border-radius: 999px;
+	border: 1.5px solid transparent;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 15px;
+	cursor: pointer;
+	text-align: center;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.hti-g__btn--primary {
+	background: var( --g-brand );
+	color: var( --g-brand-ink );
+}
+
+.hti-g__btn--primary.is-grave { background: var( --g-down ); color: #FFFFFF; }
+
+.hti-g__btn--ghost {
+	flex: none;
+	background: transparent;
+	border-color: var( --g-border-3 );
+	color: var( --g-text-2 );
+}
+
+.hti-g__btn--danger {
+	flex: none;
+	background: transparent;
+	border-color: var( --g-down );
+	color: var( --g-down );
+}
+
+.hti-g__btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+/* The way out of the replay. First in the DOM, so first for the keyboard. */
+.hti-g__skip { align-self: flex-start; }
+
+.hti-g__position {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0;
+	padding: 12px 14px;
+	background: var( --g-surface-2 );
+	border: 1px solid var( --g-border-2 );
+	border-radius: var( --g-radius-sm );
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 14px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 8. Results
+ * ------------------------------------------------------------------------- */
+
+.hti-g__card {
+	padding: 18px;
+	background: var( --g-surface-2 );
+	border: 1.5px solid var( --g-border-2 );
+	border-radius: var( --g-radius );
+}
+
+.hti-g__card.is-up { background: var( --g-up-soft ); border-color: var( --g-up ); }
+.hti-g__card.is-down { background: var( --g-down-soft ); border-color: var( --g-down ); }
+.hti-g__card--dead { background: var( --g-down-soft ); border-color: var( --g-down ); }
+
+.hti-g__resulttitle {
+	margin: 4px 0 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 25px;
+	line-height: 1.12;
+	letter-spacing: -0.02em;
+	color: var( --g-text );
+	text-wrap: balance;
+}
+
+.hti-g__resulttitle:focus { outline: none; }
+
+.hti-g__pnl {
+	margin: 6px 0 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 28px;
+	letter-spacing: -0.02em;
+	color: var( --g-text );
+}
+
+.hti-g__pnl.is-up { color: var( --g-up ); }
+.hti-g__pnl.is-down { color: var( --g-down ); }
+
+.hti-g__row {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 10px 0 0;
+	padding-top: 10px;
+	border-top: 1px solid var( --g-border-2 );
+	font-weight: 600;
+	font-size: 12.5px;
+	color: var( --g-muted );
+}
+
+.hti-g__row span:last-child { color: var( --g-text ); }
+
+.hti-g__lucky {
+	margin: 10px 0 0;
+	font-size: 12.5px;
+	line-height: 1.6;
+	color: var( --g-text-2 );
+	text-wrap: pretty;
+}
+
+.hti-g__lesson {
+	padding: 14px 16px;
+	background: var( --g-surface-2 );
+	border: 1px solid var( --g-border-2 );
+	border-left: 3px solid var( --g-brand );
+	border-radius: var( --g-radius-sm );
+}
+
+.hti-g__lessonbody,
+.hti-g__context {
+	font-size: 13px;
+	line-height: 1.65;
+	color: var( --g-text-2 );
+	text-wrap: pretty;
+}
+
+.hti-g__lessonbody p:first-child,
+.hti-g__context p:first-child { margin-top: 6px; }
+
+.hti-g__lessonbody p:last-child,
+.hti-g__context p:last-child { margin-bottom: 0; }
+
+.hti-g__deadrows {
+	margin: 14px 0 0;
+	padding: 14px;
+	background: var( --g-surface );
+	border-radius: var( --g-radius-sm );
+}
+
+.hti-g__deadrow {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	font-weight: 600;
+	font-size: 12.5px;
+	color: var( --g-muted );
+}
+
+.hti-g__deadrow + .hti-g__deadrow { margin-top: 8px; }
+.hti-g__deadrow dd { margin: 0; color: var( --g-text ); }
+
+.hti-g__deadnote,
+.hti-g__deadtool {
+	margin: 12px 0 0;
+	font-size: 13px;
+	line-height: 1.6;
+	color: var( --g-text-2 );
+	text-wrap: pretty;
+}
+
+/* ---------------------------------------------------------------------------
+ * 9. Onboarding
+ * ------------------------------------------------------------------------- */
+
+.hti-ob {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 22px 18px 20px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border );
+	border-top: 0;
+	border-radius: 0 0 var( --g-radius ) var( --g-radius );
+}
+
+.hti-ob__dots {
+	margin: 0;
+	letter-spacing: 0.4em;
+	color: var( --g-brand );
+	font-size: 12px;
+}
+
+.hti-ob__title {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 26px;
+	line-height: 1.14;
+	letter-spacing: -0.02em;
+	color: var( --g-text );
+	text-wrap: balance;
+}
+
+.hti-ob__title:focus { outline: none; }
+
+.hti-ob__body {
+	margin: 0;
+	font-size: 14.5px;
+	line-height: 1.65;
+	color: var( --g-text-2 );
+	text-wrap: pretty;
+}
+
+.hti-g__check {
+	display: block;
+	margin: 0;
+	padding: 12px 14px;
+	background: var( --g-surface-2 );
+	border: 1px solid var( --g-border-2 );
+	border-radius: var( --g-radius-sm );
+	font-size: 12.5px;
+	line-height: 1.55;
+	color: var( --g-text-2 );
+}
+
+.hti-g__check label {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	cursor: pointer;
+}
+
+.hti-g__check input {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	margin: 1px 0 0;
+	accent-color: var( --g-brand );
+}
+
+.hti-g__err {
+	margin: 0;
+	min-height: 1em;
+	font-weight: 600;
+	font-size: 12.5px;
+	color: var( --g-down );
+}
+
+.hti-g__err.is-ok { color: var( --g-up ); }
+
+/* ---------------------------------------------------------------------------
+ * 10. Share dialog
+ * ------------------------------------------------------------------------- */
+
+.hti-g__overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	background: rgba( 20, 24, 31, 0.72 );
+}
+
+.hti-g__dialog {
+	width: 100%;
+	max-width: 360px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.hti-g__sharecard {
+	margin: 0;
+	padding: 20px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border-2 );
+	border-radius: var( --g-radius );
+	font-family: var( --g-body );
+	font-size: 13.5px;
+	line-height: 1.7;
+	color: var( --g-text );
+	white-space: pre-wrap;
+	overflow-x: auto;
+}
+
+.hti-g__sharecard:focus { outline: none; }
+
+/* ---------------------------------------------------------------------------
+ * 11. Forms
+ * ------------------------------------------------------------------------- */
+
+.hti-g__form {
+	margin: 18px 0 0;
+	padding: 16px 18px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border );
+	border-radius: var( --g-radius );
+}
+
+.hti-g__form--danger { border-color: var( --g-border-2 ); }
+
+.hti-g__field {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin: 10px 0 0;
+}
+
+.hti-g__input {
+	flex: 1 1 180px;
+	min-height: 52px;
+	padding: 12px 14px;
+	background: var( --g-surface-2 );
+	border: 1.5px solid var( --g-border-2 );
+	border-radius: var( --g-radius-sm );
+	font-family: var( --g-body );
+	font-weight: 600;
+	font-size: 15px;
+	color: var( --g-text );
+}
+
+.hti-g__field .hti-g__btn { flex: 0 0 auto; }
+
+/* ---------------------------------------------------------------------------
+ * 12. Hub
+ * ------------------------------------------------------------------------- */
+
+.hti-hub__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.hti-hub__chip {
+	padding: 6px 12px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border-2 );
+	border-radius: 999px;
+	font-weight: 600;
+	font-size: 12px;
+	color: var( --g-muted );
+}
+
+.hti-hub__cards {
+	display: grid;
+	gap: 12px;
+	margin: 16px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.hti-hub__card {
+	padding: 18px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border );
+	border-radius: var( --g-radius );
+}
+
+.hti-hub__name {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 20px;
+	letter-spacing: -0.02em;
+}
+
+.hti-hub__link { color: var( --g-text ); text-decoration: none; }
+.hti-hub__link:hover { text-decoration: underline; }
+
+.hti-hub__tag {
+	margin: 6px 0 0;
+	font-size: 13.5px;
+	line-height: 1.6;
+	color: var( --g-text-2 );
+	text-wrap: pretty;
+}
+
+.hti-hub__go {
+	margin: 10px 0 0;
+	font-weight: 700;
+	font-size: 13px;
+	color: var( --g-brand );
+}
+
+.hti-hub__promise {
+	margin: 14px 0 0;
+	font-size: 13px;
+	color: var( --g-muted );
+}
+
+@media ( min-width: 620px ) {
+	.hti-hub__cards { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------------------------------------------------------------------------
+ * 13. Leaderboard
+ * ------------------------------------------------------------------------- */
+
+.hti-board__tabs {
+	display: flex;
+	gap: 4px;
+	margin: 14px 0 0;
+	padding: 4px;
+	background: var( --g-surface-2 );
+	border: 1px solid var( --g-border );
+	border-radius: 999px;
+}
+
+.hti-board__tab {
+	flex: 1;
+	min-height: 44px;
+	padding: 10px 12px;
+	background: transparent;
+	border: 0;
+	border-radius: 999px;
+	font-weight: 700;
+	font-size: 13px;
+	color: var( --g-text-2 );
+	cursor: pointer;
+}
+
+.hti-board__tab.is-on { background: var( --g-brand ); color: var( --g-brand-ink ); }
+
+.hti-board__gtabs {
+	display: flex;
+	gap: 8px;
+	margin: 10px 0 0;
+	flex-wrap: wrap;
+}
+
+.hti-board__gtab {
+	min-height: 44px;
+	padding: 10px 16px;
+	background: var( --g-surface );
+	border: 1.5px solid var( --g-border-2 );
+	border-radius: 999px;
+	font-weight: 600;
+	font-size: 13px;
+	color: var( --g-text-2 );
+	cursor: pointer;
+}
+
+.hti-board__gtab.is-on { border-color: var( --g-brand ); color: var( --g-brand ); }
+.hti-board__gtab[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+.hti-board__panel {
+	margin: 14px 0 0;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border );
+	border-radius: var( --g-radius );
+	padding: 14px 16px;
+}
+
+.hti-board__panel:focus { outline: none; }
+
+.hti-board__head {
+	margin: 0 0 8px;
+	font-weight: 700;
+	font-size: 11px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var( --g-muted );
+}
+
+.hti-board__rows {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	counter-reset: none;
+}
+
+.hti-board__row {
+	display: grid;
+	grid-template-columns: 34px 1fr auto;
+	gap: 12px;
+	align-items: center;
+	padding: 11px 8px;
+	border-bottom: 1px solid var( --g-border );
+	font-size: 13.5px;
+}
+
+.hti-board__row--retry { display: block; }
+
+.hti-board__row.is-me {
+	background: var( --g-brand-soft );
+	border-radius: 10px;
+}
+
+.hti-board__rank {
+	font-family: var( --g-head );
+	font-weight: 700;
+	color: var( --g-muted );
+	text-align: center;
+}
+
+.hti-board__name {
+	font-weight: 700;
+	color: var( --g-text );
+	overflow-wrap: anywhere;
+}
+
+.hti-board__row.is-me .hti-board__name { color: var( --g-brand ); }
+
+.hti-board__value {
+	font-family: var( --g-head );
+	font-weight: 700;
+	color: var( --g-text );
+}
+
+.hti-board__value.is-up { color: var( --g-up ); }
+.hti-board__value.is-down { color: var( --g-down ); }
+
+.hti-board__streak { color: var( --g-muted ); font-weight: 600; }
+
+.hti-board__empty {
+	padding: 26px 18px;
+	text-align: center;
+}
+
+.hti-board__emptytitle {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 16px;
+	color: var( --g-text );
+}
+
+.hti-board__emptybody {
+	margin: 8px auto 14px;
+	max-width: 320px;
+	font-size: 13px;
+	color: var( --g-muted );
+	text-wrap: pretty;
+}
+
+.hti-board__me { margin-top: 12px; border-top: 1px solid var( --g-border-2 ); padding-top: 8px; }
+
+/* ---------------------------------------------------------------------------
+ * 14. Profile
+ * ------------------------------------------------------------------------- */
+
+.hti-profile__stats {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+	margin: 14px 0 0;
+}
+
+.hti-profile__stat {
+	padding: 14px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border );
+	border-radius: var( --g-radius-sm );
+}
+
+.hti-profile__stat dt {
+	font-weight: 600;
+	font-size: 10.5px;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var( --g-muted );
+}
+
+.hti-profile__stat dd {
+	margin: 2px 0 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 21px;
+	letter-spacing: -0.02em;
+	color: var( --g-text );
+}
+
+.hti-profile__statnote {
+	margin: 2px 0 0 !important;
+	font-family: var( --g-body ) !important;
+	font-weight: 500 !important;
+	font-size: 10.5px !important;
+	color: var( --g-muted ) !important;
+}
+
+.hti-profile__block {
+	margin: 18px 0 0;
+	padding: 16px 18px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border );
+	border-radius: var( --g-radius );
+}
+
+/* The learning metric. The one chart in the section, and the only number the
+   game is actually trying to move. */
+.hti-profile__bars {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+	height: 92px;
+	margin: 10px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.hti-profile__bar {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 5px;
+	height: 100%;
+}
+
+.hti-profile__barvalue {
+	font-weight: 700;
+	font-size: 10.5px;
+	color: var( --g-text-2 );
+}
+
+.hti-profile__barfill {
+	display: block;
+	width: 100%;
+	border-radius: 5px 5px 0 0;
+	background: var( --g-muted );
+}
+
+.hti-profile__barfill.is-up { background: var( --g-up ); }
+.hti-profile__barfill.is-brand { background: var( --g-brand ); }
+.hti-profile__barfill.is-warn { background: var( --g-warn ); }
+.hti-profile__barfill.is-down { background: var( --g-down ); }
+
+.hti-profile__barweek {
+	font-weight: 600;
+	font-size: 9.5px;
+	color: var( --g-muted );
+}
+
+.hti-profile__cal {
+	display: grid;
+	grid-template-columns: repeat( 7, 1fr );
+	gap: 6px;
+	margin: 10px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.hti-profile__cell {
+	aspect-ratio: 1;
+	border-radius: 7px;
+	background: var( --g-surface-3 );
+	border: 1px solid var( --g-border-2 );
+}
+
+.hti-profile__cell.is-won { background: var( --g-up-soft ); border-color: var( --g-up ); }
+.hti-profile__cell.is-lost { background: var( --g-down-soft ); border-color: var( --g-down ); }
+.hti-profile__cell.is-passed { background: var( --g-brand-soft ); border-color: var( --g-brand ); }
+.hti-profile__cell.is-flat { background: var( --g-surface-2 ); }
+
+.hti-profile__badges {
+	display: grid;
+	grid-template-columns: repeat( 3, 1fr );
+	gap: 10px;
+	margin: 10px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.hti-profile__badge {
+	padding: 12px 8px;
+	background: var( --g-surface-2 );
+	border: 1px solid var( --g-border-2 );
+	border-radius: var( --g-radius-sm );
+	text-align: center;
+	opacity: 0.5;
+}
+
+.hti-profile__badge.is-on { opacity: 1; border-color: var( --g-brand ); }
+
+.hti-profile__badgename {
+	display: block;
+	font-weight: 700;
+	font-size: 11px;
+	line-height: 1.3;
+	color: var( --g-text );
+}
+
+.hti-profile__badgeprog {
+	display: block;
+	margin-top: 4px;
+	font-size: 10.5px;
+	color: var( --g-muted );
+}

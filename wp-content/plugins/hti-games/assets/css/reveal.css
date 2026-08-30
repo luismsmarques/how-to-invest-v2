@@ -1,0 +1,361 @@
+/**
+ * The Reveal — the cream world.
+ *
+ * A light island rather than a takeover. The site header and footer stay
+ * exactly where they are, and the app's cream (#F7F4EC) sits close enough to
+ * the theme's own background (#FFF6F1) that the panel reads as a tinted card
+ * on the same site rather than as a second one.
+ *
+ * The palette is the dossier's: paper, ink, a teal that is the section's own
+ * accent, and the three tints a fundamental can carry (good / warn / bad).
+ * Those three are the only place a colour makes a judgement, and they are the
+ * editor's judgement, imported with the case — not this sheet's.
+ *
+ * @package HTI_Games
+ */
+
+.hti-rv {
+	--g-bg: #E7E2D8;
+	--g-surface: #F7F4EC;
+	--g-surface-2: #FFFDF7;
+	--g-surface-3: #F4F1E7;
+	--g-border: #D9D2C4;
+	--g-border-2: #E2DCCE;
+	--g-border-3: #C9C2B2;
+	--g-text: #14181F;
+	--g-text-2: #4A5261;
+	--g-muted: #6B7280;
+	--g-brand: #00776A;
+	--g-brand-ink: #FFFFFF;
+	--g-brand-soft: #E6F7F3;
+	--g-up: #1E7A55;
+	--g-up-soft: #E9F5EE;
+	--g-down: #B4402F;
+	--g-down-soft: #FFF5F3;
+	--g-warn: #B87514;
+	--g-warn-soft: #FDF3E0;
+	--g-radius: 14px;
+	--g-radius-sm: 12px;
+
+	max-width: 470px;
+	background: var( --g-surface );
+	border: 1px solid var( --g-border );
+	border-radius: var( --g-radius );
+	overflow: hidden;
+	color: var( --g-text );
+}
+
+.hti-rv .hti-g__hud,
+.hti-rv .hti-g__phases,
+.hti-rv .hti-ob {
+	border-radius: 0;
+	border-left: 0;
+	border-right: 0;
+}
+
+.hti-rv .hti-g__hud { border-top: 0; background: var( --g-surface-2 ); }
+.hti-rv .hti-g__phases { border-bottom: 0; background: var( --g-surface ); }
+.hti-rv .hti-g__meter--streak { background: var( --g-brand-soft ); border-color: #B6E5DB; }
+.hti-rv .hti-g__meter--streak dd { color: var( --g-brand ); }
+
+/* The buttons are squared here, not pill-shaped: the whole screen is a paper
+   file, and a rounded pill on it looks like it came from another app. */
+.hti-rv .hti-g__btn { border-radius: var( --g-radius-sm ); }
+
+/* ---------------------------------------------------------------------------
+ * The dossier
+ * ------------------------------------------------------------------------- */
+
+.hti-rv__file {
+	background: var( --g-surface-2 );
+	border: 1px solid var( --g-border );
+	border-radius: 4px;
+	box-shadow: 0 1px 0 #EFEADF, 0 10px 24px rgba( 20, 24, 31, 0.07 );
+	overflow: hidden;
+}
+
+.hti-rv__tape {
+	height: 6px;
+	background: repeating-linear-gradient( 90deg, #00C2A8 0 14px, #0E8C7C 14px 28px );
+}
+
+.hti-rv__filehead {
+	position: relative;
+	padding: 18px 20px 0;
+}
+
+.hti-rv__unnamed {
+	margin: 2px 0 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 21px;
+	letter-spacing: -0.01em;
+	color: var( --g-text );
+}
+
+.hti-rv__unnamed:focus { outline: none; }
+
+.hti-rv__stamp {
+	position: absolute;
+	top: 16px;
+	right: 18px;
+	margin: 0;
+	padding: 5px 8px;
+	border: 1.5px solid var( --g-down );
+	border-radius: 3px;
+	font-weight: 700;
+	font-size: 9.5px;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var( --g-down );
+	transform: rotate( -8deg );
+	opacity: 0.85;
+}
+
+.hti-rv__meta {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+	margin: 0;
+	padding: 14px 20px 0;
+}
+
+.hti-rv__metacell {
+	padding: 10px 12px;
+	background: var( --g-surface-3 );
+	border-radius: 6px;
+}
+
+.hti-rv__metacell dt {
+	font-weight: 600;
+	font-size: 9.5px;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var( --g-muted );
+}
+
+.hti-rv__metacell dd {
+	margin: 1px 0 0;
+	font-weight: 700;
+	font-size: 14px;
+	color: var( --g-text );
+}
+
+.hti-rv__sub {
+	margin: 16px 20px 0;
+	padding-bottom: 8px;
+	border-bottom: 1.5px solid var( --g-text );
+	font-family: var( --g-body );
+	font-weight: 700;
+	font-size: 11px;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var( --g-text );
+}
+
+.hti-rv__fund {
+	width: 100%;
+	margin: 0;
+	padding: 0 20px;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+
+.hti-rv__fund th,
+.hti-rv__fund td {
+	padding: 11px 0;
+	border-bottom: 1px solid #EDE8DC;
+	text-align: left;
+	vertical-align: baseline;
+	font-size: 12.5px;
+}
+
+.hti-rv__fund th {
+	font-weight: 500;
+	color: var( --g-text-2 );
+}
+
+.hti-rv__value {
+	width: 34%;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 14px;
+	text-align: right;
+	color: var( --g-text );
+}
+
+.hti-rv__avg {
+	width: 24%;
+	font-weight: 600;
+	font-size: 11.5px;
+	text-align: right;
+	color: var( --g-muted );
+}
+
+/* The three tints an imported fundamental can carry. Green and red keep their
+   one meaning: this figure is good news, this figure is bad news. */
+.hti-rv__fund tr.is-good .hti-rv__value { color: var( --g-up ); }
+.hti-rv__fund tr.is-warn .hti-rv__value { color: var( --g-warn ); }
+.hti-rv__fund tr.is-bad .hti-rv__value { color: var( --g-down ); }
+
+.hti-rv__heads {
+	margin: 0;
+	padding: 14px 20px 20px;
+	list-style: none;
+}
+
+.hti-rv__head + .hti-rv__head { margin-top: 9px; }
+
+.hti-rv__head blockquote {
+	margin: 0;
+	padding: 10px 13px;
+	background: var( --g-surface-3 );
+	border-left: 3px solid var( --g-border-3 );
+	border-radius: 0 6px 6px 0;
+	font-weight: 500;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var( --g-text-2 );
+	text-wrap: pretty;
+}
+
+/* ---------------------------------------------------------------------------
+ * Size
+ * ------------------------------------------------------------------------- */
+
+.hti-rv .hti-g__tiles { grid-template-columns: 1fr 1fr; }
+
+.hti-rv .hti-g__tile {
+	align-items: flex-start;
+	min-height: 64px;
+	padding: 14px;
+	background: var( --g-surface-2 );
+}
+
+.hti-rv .hti-g__tilelabel { font-size: 19px; }
+
+/* ---------------------------------------------------------------------------
+ * The reveal
+ * ------------------------------------------------------------------------- */
+
+.hti-rv__stage {
+	align-items: center;
+	text-align: center;
+	min-height: 260px;
+	justify-content: center;
+}
+
+.hti-rv__name {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 40px;
+	line-height: 1.05;
+	letter-spacing: -0.03em;
+	color: var( --g-text );
+	text-wrap: balance;
+}
+
+.hti-rv__year {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 26px;
+	color: var( --g-brand );
+	animation: hti-rv-stamp 0.5s ease;
+}
+
+.hti-rv__count {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 800;
+	font-size: 44px;
+	line-height: 1;
+	letter-spacing: -0.03em;
+	color: var( --g-text );
+}
+
+.hti-rv__count.is-up { color: var( --g-up ); }
+.hti-rv__count.is-down { color: var( --g-down ); }
+
+@keyframes hti-rv-stamp {
+	0% { opacity: 0; transform: scale( 1.5 ) rotate( -8deg ); }
+	60% { opacity: 1; transform: scale( 0.95 ) rotate( -8deg ); }
+	100% { transform: scale( 1 ) rotate( -8deg ); }
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.hti-rv__year { animation: none; transform: none; }
+}
+
+/* ---------------------------------------------------------------------------
+ * The three lines
+ * ------------------------------------------------------------------------- */
+
+.hti-rv__lines {
+	background: var( --g-surface-2 );
+	border: 1px solid var( --g-border );
+	border-radius: var( --g-radius-sm );
+	overflow: hidden;
+}
+
+.hti-rv__lines .hti-g__h3 {
+	margin: 0;
+	padding: 11px 16px;
+	background: var( --g-surface-3 );
+	border-bottom: 1px solid var( --g-border-2 );
+	font-family: var( --g-body );
+	font-size: 10.5px;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+
+.hti-rv__linerows { margin: 0; }
+
+.hti-rv__line {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 13px 16px;
+	border-bottom: 1px solid #EDE8DC;
+}
+
+.hti-rv__line:last-child { border-bottom: 0; }
+.hti-rv__line.is-pass { background: var( --g-surface-3 ); }
+
+.hti-rv__linelabel {
+	display: block;
+	font-weight: 700;
+	font-size: 13px;
+	color: var( --g-text );
+}
+
+.hti-rv__linenote {
+	display: block;
+	font-weight: 500;
+	font-size: 11px;
+	color: var( --g-muted );
+}
+
+.hti-rv__line dd {
+	margin: 0;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 16px;
+	color: var( --g-text );
+}
+
+.hti-rv__line dd.is-up { color: var( --g-up ); }
+.hti-rv__line dd.is-down { color: var( --g-down ); }
+
+.hti-rv .hti-g__lesson {
+	background: var( --g-brand-soft );
+	border-color: #B6E5DB;
+	border-left-color: var( --g-brand );
+}
+
+.hti-rv .hti-g__card--dead {
+	background: var( --g-down-soft );
+	border-color: #E4B3A9;
+}
