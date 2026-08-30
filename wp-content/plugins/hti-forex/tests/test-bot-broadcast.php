@@ -325,6 +325,21 @@ check( 'write-failed' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), '
 // knows what it objected to, and until now nothing carried its answer up.
 check( 'Disk full at option write' === ( Bot_Broadcast::log()['refused']['detail'] ?? '' ), 'e traz consigo o que a base de dados disse' );
 
+// The cause that actually happened, and the one worth naming: an emoji is four
+// bytes, and a column still on three-byte utf8 refuses the whole write.
+// WordPress calls that "invalid data", which reads like a fault in the message
+// rather than a limit of the table it is being written to.
+check( Bot_Broadcast::has_four_byte_characters( 'Abre conta 📊 hoje' ), 'um emoji é reconhecido como caractere de 4 bytes' );
+check( ! Bot_Broadcast::has_four_byte_characters( 'Abre conta hoje' ), 'texto simples não é' );
+check( ! Bot_Broadcast::has_four_byte_characters( 'acentuação, ç, €, ₹' ), 'nem acentos, o euro ou a rupia — esses cabem em três bytes' );
+
+$GLOBALS['__hti_options']      = array();
+$GLOBALS['__hti_refuse_write'] = Bot_Broadcast::OPTION;
+Bot_Broadcast::start( 'Abre conta 📊 hoje' );
+unset( $GLOBALS['__hti_refuse_write'] );
+
+check( 'emoji-unsupported' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'e a recusa diz que foi o emoji, não "problema de servidor"' );
+
 echo "\n=== O histórico ===\n";
 
 $GLOBALS['__hti_options'] = array();
