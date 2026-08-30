@@ -305,6 +305,24 @@ hti_games_check(
 );
 hti_games_check( array() === STC_Generator::batch( 0, 1 ), 'a library of nothing is empty rather than an error' );
 
+// addresses() is the same walk with the charts left out, and the installer
+// resumes a half-finished library through it — scenario 200 has to be
+// reachable without building the 199 before it. The two therefore have to
+// agree exactly, not nearly: a scenario's own rejection sampling runs on a
+// state derived from its seed and never touches the run state, which is what
+// makes drawing all the seeds up front the identical sequence of PRNG calls.
+$addresses = STC_Generator::addresses( 365, 20260830 );
+hti_games_check( count( $addresses ) === count( $library ), 'the address list is one entry per scenario' );
+hti_games_check(
+	array_map( fn( array $a ): int => (int) $a['seed'], $addresses ) === $seeds,
+	'and every address is the seed batch() drew for that position'
+);
+hti_games_check(
+	array_map( fn( array $a ): string => (string) $a['class'], $addresses ) === array_map( fn( array $s ): string => (string) $s['class'], $library ),
+	'with the same class, so a slice of a library is the same charts as the whole of it'
+);
+hti_games_check( array() === STC_Generator::addresses( 0, 1 ), 'and an empty library has no addresses' );
+
 echo "\nThe plan behind the mix\n";
 $state = STC_Generator::rng_state( 7 );
 $plan  = STC_Generator::plan( 100, $state );

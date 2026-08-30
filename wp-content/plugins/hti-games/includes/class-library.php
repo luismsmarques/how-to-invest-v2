@@ -257,6 +257,13 @@ class Library {
 		$real = count( $pool ) >= Config::REAL_CLAIM_MIN_POOL;
 
 		if ( $real && Config::GAME_STC === $game ) {
+			// One query for the whole pool's meta before the loop. The pool is
+			// ids only, so WP_Query never primed it, and a pool that is now a
+			// year long would otherwise cost 365 single-row reads every time
+			// this transient is rebuilt — which is on every write to a
+			// scenario, i.e. throughout an install.
+			update_meta_cache( 'post', $pool );
+
 			// Every scenario, not most: one generated chart in the pool makes
 			// "these are real charts" false on the day it is served.
 			foreach ( $pool as $id ) {

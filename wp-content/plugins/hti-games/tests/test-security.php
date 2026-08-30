@@ -342,6 +342,7 @@ $admin_files = array(
 	'includes/class-scenario-admin.php',
 	'includes/class-settings.php',
 	'includes/class-seeder.php',
+	'includes/class-installer.php',
 );
 $escapers = '/esc_html|esc_attr|esc_url|esc_textarea|esc_js|wp_kses|absint|\(int\)|intval|checked\(|selected\(|submit_button|settings_fields|wp_nonce_field|_e\(/';
 $raw_echo = array();
@@ -363,7 +364,11 @@ foreach ( $admin_files as $rel ) {
 }
 hti_games_check(
 	array() === $raw_echo,
-	'nothing is printed unescaped in the five admin files (' . ( $raw_echo ? implode( ', ', $raw_echo ) : 'clean' ) . ')'
+	sprintf(
+		'nothing is printed unescaped in the %d admin files (%s)',
+		count( $admin_files ),
+		$raw_echo ? implode( ', ', $raw_echo ) : 'clean'
+	)
 );
 // A checker that never fires is a checker nobody can trust.
 hti_games_check(

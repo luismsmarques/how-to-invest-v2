@@ -41,8 +41,11 @@
  *
  * Everything above the WP-CLI divider is pure: integers in, integers out, no
  * WordPress, no database, no clock. The WordPress half is the thin part at the
- * bottom, and it only ever creates DRAFTS — publishing a chart stays a human
- * act, exactly as it is for the importer. Nothing here runs on `init` and
+ * bottom, and this command only ever creates DRAFTS — a chart typed into a
+ * shell by a person is a chart a person is about to look at. create() takes a
+ * status because Installer, which installs the SHIPPED library from the admin
+ * screen, publishes: see the note there for why a generated chart is allowed
+ * to go live and a hand-run one is not. Nothing here runs on `init` and
  * nothing here runs on activation: a plugin that silently manufactures 365
  * posts because somebody clicked Activate is a plugin nobody trusts.
  *
@@ -382,6 +385,38 @@ class STC_Generator {
 	 * @return array<int,array<string,mixed>>
 	 */
 	public static function batch( int $count, int $seed ): array {
+		$out = array();
+
+		foreach ( self::addresses( $count, $seed ) as $address ) {
+			$out[] = self::scenario( $address['class'], $address['seed'] );
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Where every scenario in a library lives, without building any of them.
+	 *
+	 * The address list is the cheap half of batch(): the plan comes from
+	 * MIX_BP and each scenario seed is one draw off the run PRNG, so the
+	 * whole list costs a few hundred integer operations while the charts
+	 * themselves cost rejection sampling and two engine replays each.
+	 *
+	 * The split matters because the library is installed a slice at a time on
+	 * a shared host (see Installer): entry 200 of a 365-scenario library has
+	 * to be reachable in the fifteenth request without regenerating the first
+	 * 199 charts to get to it. It is exact rather than approximate — a
+	 * scenario's own rejection sampling runs on a state derived from its seed
+	 * and never touches the run state, so drawing all the seeds up front
+	 * makes precisely the same PRNG calls in precisely the same order as
+	 * drawing them one at a time. tests/test-generator.php holds the two
+	 * against each other.
+	 *
+	 * @param int $count How many scenarios.
+	 * @param int $seed  Run seed.
+	 * @return array<int,array{class:string,seed:int}>
+	 */
+	public static function addresses( int $count, int $seed ): array {
 		$count = max( 0, $count );
 		$state = self::rng_state( $seed );
 		$plan  = self::plan( $count, $state );
@@ -391,7 +426,10 @@ class STC_Generator {
 			// Drawn from the run PRNG rather than being the index, so that
 			// two libraries generated from different run seeds share no
 			// scenarios, and a scenario's seed says nothing about its date.
-			$out[] = self::scenario( $class, self::rng_next( $state ) );
+			$out[] = array(
+				'class' => $class,
+				'seed'  => self::rng_next( $state ),
+			);
 		}
 
 		return $out;
@@ -891,10 +929,15 @@ class STC_Generator {
 	 * Any status, like the importer's own dedupe: a scenario an editor
 	 * deliberately left unpublished is still a scenario we have.
 	 *
+	 * Public because the CLI is no longer the only caller — Installer runs
+	 * the same library from the admin screen, and a second dedupe written
+	 * over there is a second thing to keep in step with what "already have
+	 * this chart" means.
+	 *
 	 * @param int $seed Scenario seed.
 	 * @return bool
 	 */
-	private static function seed_exists( int $seed ): bool {
+	public static function seed_exists( int $seed ): bool {
 		$found = get_posts(
 			array(
 				'post_type'        => Config::CPT_SCENARIO,
@@ -912,20 +955,36 @@ class STC_Generator {
 	}
 
 	/**
-	 * Store one generated scenario as a draft.
+	 * Store one generated scenario.
+	 *
+	 * The one insert path. The CLI keeps its draft default — a chart typed
+	 * into a shell by a person is a chart a person is about to look at — and
+	 * Installer passes 'publish' for the shipped library, where the whole
+	 * point is that a deploy leaves a working game behind. Whatever the
+	 * status, `hti_stc_real` stays 0, so the landing copy goes on telling the
+	 * truth about where these charts came from.
 	 *
 	 * @param array<string,mixed> $scenario From scenario().
 	 * @param int                 $run_seed The seed the whole library came from.
 	 * @param int                 $lesson   Rotation index into the class's lessons.
+	 * @param string              $status   Post status to create with.
 	 * @return bool
 	 */
-	private static function create( array $scenario, int $run_seed, int $lesson ): bool {
+	public static function create( array $scenario, int $run_seed, int $lesson, string $status = 'draft' ): bool {
 		$class = (string) $scenario['class'];
+
+		// Loaded here rather than from the plugin's class map for the reason
+		// given at the foot of this file: a library of copy has no business
+		// being parsed on every page load. It IS needed on any request that
+		// stores a scenario, though, and this is the only one of those.
+		if ( ! class_exists( __NAMESPACE__ . '\\Lessons' ) ) {
+			require_once __DIR__ . '/class-lessons.php';
+		}
 
 		$post_id = wp_insert_post(
 			array(
 				'post_type'   => Config::CPT_SCENARIO,
-				'post_status' => 'draft',
+				'post_status' => in_array( $status, array( 'draft', 'publish' ), true ) ? $status : 'draft',
 				'post_title'  => sprintf( 'Generated · %s · #%s', $class, substr( (string) $scenario['checksum'], 0, 6 ) ),
 			),
 			true

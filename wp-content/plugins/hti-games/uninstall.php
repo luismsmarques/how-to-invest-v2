@@ -42,12 +42,18 @@ foreach ( array( 'hti_stc_scenario', 'hti_reveal_case' ) as $post_type ) {
 }
 
 // Options. Every one the plugin ever writes: the schema version (Store), the
-// settings row (Settings), and the seeder's signature and last report.
+// settings row (Settings), the seeder's signature and last report, and the
+// scenario library's install position (Installer).
 // tests/test-security.php reads the source for update_option() calls and fails
 // if one names an option this list does not.
-foreach ( array( 'hti_games_schema', 'hti_games_settings', 'hti_games_sync_sig', 'hti_games_last_sync' ) as $option ) {
+foreach ( array( 'hti_games_schema', 'hti_games_settings', 'hti_games_sync_sig', 'hti_games_last_sync', 'hti_games_library' ) as $option ) {
 	delete_option( $option );
 }
+
+// The one single event the installer may have queued to finish a run. It is
+// never recurring, but an uninstall halfway through a library would otherwise
+// leave a scheduled call to a class that no longer exists.
+wp_clear_scheduled_hook( 'hti_games_install_more' );
 
 // Transients: the pool caches and the leaderboard caches are keyed per game,
 // so they are cleared by prefix rather than by name.

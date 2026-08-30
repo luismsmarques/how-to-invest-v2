@@ -456,6 +456,22 @@ class Frontend {
 			return '<div class="hti-g hti-g--off"><p class="hti-g__empty">' . esc_html( Strings::get( 'st_no_content', $lang ) ) . '</p></div>';
 		}
 
+		// Nothing published to serve. /today answers 503 with this same
+		// sentence and the script paints it, but painting it means mounting a
+		// game first: an empty chart, a disabled row of buttons and an error
+		// where a challenge should be. On a site whose library has not been
+		// installed that is the FIRST thing a visitor sees, so it is said in
+		// the page itself, in the same block the kill-switch uses, and the
+		// game is never mounted at all. Same fact, told once, without dressing
+		// a missing library as a failure.
+		//
+		// Guarded on Library being loaded rather than assumed: the shortcode
+		// is exercised in the harness without it, and "cannot answer" must
+		// mean "render the game", not "claim the pool is empty".
+		if ( class_exists( __NAMESPACE__ . '\\Library' ) && array() === Library::published_ids( $game ) ) {
+			return '<div class="hti-g hti-g--off"><p class="hti-g__empty">' . esc_html( Strings::get( 'st_no_content', $lang ) ) . '</p></div>';
+		}
+
 		return Config::GAME_STC === $game ? self::shell_stc( $lang ) : self::shell_reveal( $lang );
 	}
 

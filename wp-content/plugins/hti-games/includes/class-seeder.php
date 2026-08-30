@@ -782,6 +782,19 @@ class Seeder {
 	 * The second sentence of the lede is the landing claim, and which of the
 	 * two it is comes from Library::is_real() — see the file docblock.
 	 *
+	 * The H2s are questions on purpose. Every one of them is a query somebody
+	 * actually types ("what is an ATR", "how much should I risk per trade"),
+	 * and an answering paragraph directly under a question heading is the one
+	 * shape both a featured snippet and an AI answer can lift whole. The
+	 * sections are written to survive that lifting: each answers its own
+	 * heading without the rest of the page around it.
+	 *
+	 * The runway list is the page's centre of gravity — the section that says
+	 * in six lines what the whole game is arguing — and every figure in it is
+	 * asked of STC_Engine rather than typed. The prototype had these numbers
+	 * hand-written and out by roughly a factor of four, on the one page whose
+	 * entire case is arithmetic.
+	 *
 	 * @param string $lang     'en' or 'pt'.
 	 * @param bool   $stc_real Whether the pool is entirely real market data.
 	 */
@@ -797,26 +810,104 @@ class Seeder {
 				)
 			)
 			. self::shortcode( '[hti_game name="' . Config::GAME_STC . '"]' )
-			. self::h2( self::c( 'h_teaches', $lang ) )
+			. self::h2( self::c( 'stc_h_teaches', $lang ) )
 			. self::p( esc_html( self::c( 'stc_teaches', $lang ) ) )
-			. self::h2( self::c( 'h_how_day', $lang ) )
+			. self::h2( self::c( 'stc_h_how', $lang ) )
 			. self::ol( self::steps( 'stc', $lang ) )
-			. self::h2( self::c( 'h_rules', $lang ) )
+			. self::h2( self::c( 'stc_h_rules', $lang ) )
 			. self::ul(
 				array(
 					esc_html( Strings::get( 'stc_ob2_r1', $lang ) ),
 					esc_html( Strings::get( 'stc_ob2_r2', $lang ) ),
+					esc_html( self::c( 'stc_rule_entry', $lang ) ),
+					esc_html( self::c( 'stc_rule_tie', $lang ) ),
 					esc_html( Strings::get( 'stc_ob2_r3', $lang ) ),
 					esc_html( Strings::get( 'stc_ob2_r4', $lang ) ),
 				)
 			)
+			. self::p( esc_html( self::c( 'stc_tie_why', $lang ) ) )
+			. self::h2( self::c( 'stc_h_size', $lang ) )
+			. self::p( esc_html( self::c( 'stc_size_1', $lang ) ) )
+			. self::p( esc_html( self::c( 'stc_size_2', $lang ) ) )
+			. self::h2( self::c( 'stc_h_runway', $lang ) )
+			. self::p( esc_html( self::c( 'stc_runway_lede', $lang ) ) )
+			. self::ul( self::runway_rows( $lang ) )
+			. self::p( esc_html( self::c( 'stc_runway_note', $lang ) ) )
 			. self::faq_section( 'stc', $lang, $stc_real )
+			. self::h2( self::c( 'h_not', $lang ) )
+			. self::p( esc_html( self::c( 'stc_not', $lang ) ) )
 			. self::disclaimer( $lang )
 			. self::p(
 				self::link( 'reveal', $lang, self::c( 'link_reveal', $lang ) ) . ' · '
 				. self::link( 'leaderboard', $lang, self::c( 'link_board', $lang ) ) . ' · '
 				. self::link( 'hub', $lang, self::c( 'link_hub', $lang ) )
 			);
+	}
+
+	/**
+	 * One line per risk tier: what it is, and how many losing trades in a row
+	 * the account absorbs at it before the floor.
+	 *
+	 * Both halves are derived. The tiers are Config::STC_RISK_BP, so adding or
+	 * removing one changes the page; the counts are STC_Engine::losses_to_ruin(),
+	 * the same function the tier button warns with, so the page and the game
+	 * cannot say different things about the same number.
+	 *
+	 * @param string $lang 'en' or 'pt'.
+	 * @return array<int,string> Escaped list items.
+	 */
+	private static function runway_rows( string $lang ): array {
+		$row = self::c( 'stc_runway_row', $lang );
+		$out = array();
+
+		foreach ( Config::STC_RISK_BP as $bp ) {
+			$out[] = esc_html( sprintf( $row, self::pct( $bp, $lang ), self::ruin( $bp ) ) );
+		}
+
+		return $out;
+	}
+
+	/**
+	 * How many losses in a row a tier survives, from the engine.
+	 *
+	 * The guarded require is for the pure-PHP test harness, which loads the
+	 * seeder on its own; in production STC_Engine is already loaded well
+	 * before this file by the plugin's class map, so the branch never runs.
+	 * Same pattern as class-stc-generator.php's CLI-only requires.
+	 *
+	 * @param int $risk_bp Risk tier in basis points.
+	 */
+	private static function ruin( int $risk_bp ): int {
+		if ( ! class_exists( __NAMESPACE__ . '\\STC_Engine' ) ) {
+			require_once __DIR__ . '/class-stc-engine.php';
+		}
+
+		return STC_Engine::losses_to_ruin( $risk_bp );
+	}
+
+	/**
+	 * A basis-point tier written as a percentage, the way each language writes
+	 * one — "0.5%" in English, "0,5%" in Portuguese, matching the tier labels
+	 * the game screen already shows.
+	 *
+	 * Integer arithmetic rather than a division, for the same reason the rest
+	 * of the plugin avoids floats: 50/100 is exact here and only approximately
+	 * exact in binary floating point.
+	 *
+	 * @param int    $bp   Tier in basis points.
+	 * @param string $lang 'en' or 'pt'.
+	 */
+	private static function pct( int $bp, string $lang ): string {
+		$whole = intdiv( $bp, 100 );
+		$frac  = $bp % 100;
+
+		if ( 0 === $frac ) {
+			return $whole . '%';
+		}
+
+		$text = rtrim( sprintf( '%d.%02d', $whole, $frac ), '0' );
+
+		return ( 'pt' === $lang ? str_replace( '.', ',', $text ) : $text ) . '%';
 	}
 
 	/**

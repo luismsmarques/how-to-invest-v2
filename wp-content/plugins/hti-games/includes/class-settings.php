@@ -251,6 +251,15 @@ class Settings {
 			),
 		);
 
+		// 2b. Whether the shipped library has ever been installed. Its own row
+		// rather than a footnote on the one above, because "0 scenarios" reads
+		// like a content backlog when it is actually a button nobody has
+		// pressed — and on a fresh deploy that button is the only thing
+		// between the site and a working game.
+		if ( class_exists( __NAMESPACE__ . '\\Installer' ) ) {
+			$rows[] = Installer::readiness_row( $stc );
+		}
+
 		$reveal = self::pool_size( Config::GAME_REVEAL );
 		$rows[] = array(
 			self::pool_status( $reveal ),
@@ -422,13 +431,24 @@ class Settings {
 	 * A loop over the pool with a meta read each — admin-only, at most a few
 	 * hundred rows, and the alternative is a meta_query whose result would
 	 * have to be cached and invalidated for a number nobody reads twice.
+	 *
+	 * The whole pool's meta is primed in one query first. The pool is ids
+	 * only, which skips WP_Query's own meta priming, so without this the loop
+	 * is one query per scenario — invisible while the pool held a dozen, and
+	 * 365 queries on an admin page load once the shipped library is installed.
 	 */
 	private static function generated_scenarios(): int {
 		if ( ! class_exists( __NAMESPACE__ . '\\Library' ) ) {
 			return 0;
 		}
+		$ids = Library::published_ids( Config::GAME_STC );
+		if ( array() === $ids ) {
+			return 0;
+		}
+		update_meta_cache( 'post', $ids );
+
 		$count = 0;
-		foreach ( Library::published_ids( Config::GAME_STC ) as $id ) {
+		foreach ( $ids as $id ) {
 			if ( '1' !== (string) get_post_meta( (int) $id, 'hti_stc_real', true ) ) {
 				++$count;
 			}

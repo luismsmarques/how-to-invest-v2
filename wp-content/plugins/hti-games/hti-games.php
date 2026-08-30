@@ -64,6 +64,7 @@ const CLASSES = array(
 	'class-rest'           => 'REST',
 	'class-privacy'        => 'Privacy',
 	'class-frontend'       => 'Frontend',
+	'class-installer'      => 'Installer',
 	'class-seeder'         => 'Seeder',
 	'class-schema'         => 'Schema',
 	'class-settings'       => 'Settings',

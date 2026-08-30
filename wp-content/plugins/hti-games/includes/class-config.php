@@ -117,6 +117,73 @@ class Config {
 	 */
 	public const REAL_CLAIM_MIN_POOL = 30;
 
+	/* ---------------------------------------------------------------------
+	 * The shipped scenario library.
+	 *
+	 * A deploy on this project is a file copy onto cPanel; there is no shell
+	 * step and the launch checklist must not assume one. So the plugin ships
+	 * a library — but as its ADDRESS, not its bytes. STC_Generator is
+	 * deterministic (mulberry32 in exact 32-bit arithmetic, verified against
+	 * the reference JavaScript), which means these three integers reproduce
+	 * the identical 365 charts on any host, in any PHP version, forever. The
+	 * alternative — 365 × 120 candles × 4 integers as a shipped JSON file —
+	 * is well over a megabyte copied on every single deploy to say the same
+	 * thing these three lines say.
+	 *
+	 * WHY THE ADDRESS IS (SEED, COUNT) AND NOT THE SEED ALONE.
+	 * STC_Generator::batch() draws the class plan from MIX_BP before it draws
+	 * a single scenario seed, so the count changes the plan, the plan changes
+	 * the shuffle, and the shuffle changes every draw after the first. A
+	 * 12-scenario library is therefore NOT the first twelve of a 365 one —
+	 * tests/test-generator.php asserts exactly that. Change either number and
+	 * you have addressed a different library, not a longer or shorter one.
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Run seed of the library the site installs unless an owner chooses
+	 * otherwise. Already regression-locked: tests/test-generator.php builds
+	 * this same library and asserts its mix and its ordering.
+	 */
+	public const LIBRARY_SEED = 20260830;
+
+	/**
+	 * How many scenarios that library holds.
+	 *
+	 * A year, because a daily game is played by people who come back and a
+	 * two-month library visibly wraps. Generation is free, so the reason to
+	 * build a year rather than two months is that there is no reason not to.
+	 */
+	public const LIBRARY_COUNT = 365;
+
+	/**
+	 * Which shipped library this is.
+	 *
+	 * Bumped only when the seed or the count above changes — i.e. when the
+	 * plugin starts shipping a DIFFERENT library. A site that already
+	 * installed version 1 keeps its charts (a scenario's seed is its identity
+	 * and nothing here ever rewrites one); the version is what lets the admin
+	 * screen say "a newer library is available" instead of silently meaning
+	 * two different things by "installed".
+	 */
+	public const LIBRARY_VERSION = 1;
+
+	/**
+	 * The shipped library's address, as one value.
+	 *
+	 * Callers that store or compare an address should use this rather than
+	 * the three constants separately, so a stored address and a live one are
+	 * always the same shape.
+	 *
+	 * @return array{seed:int,count:int,version:int}
+	 */
+	public static function library(): array {
+		return array(
+			'seed'    => self::LIBRARY_SEED,
+			'count'   => self::LIBRARY_COUNT,
+			'version' => self::LIBRARY_VERSION,
+		);
+	}
+
 	/**
 	 * The pages the seeder owns: key => [ en slug, pt slug, indexable ].
 	 *
