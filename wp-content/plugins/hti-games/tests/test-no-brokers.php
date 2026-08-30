@@ -77,17 +77,30 @@ foreach ( $outbound as $needle => $what ) {
 echo "\nNo broker is named in the shipped source\n";
 // The slugs of the brokers the editorial section carries. A game screen that
 // mentioned one would be marketing it, whether or not it linked anywhere.
+//
+// Matched on word boundaries, not as bare substrings: "xtb" is three letters
+// and lives inside "nextButtons", which is how this check first failed on
+// perfectly innocent event-handler code. A control that cries wolf gets
+// switched off, so it has to be right about what it is looking at.
 $brokers = array( 'xtb', 'etoro', 'degiro', 'trading212', 'interactive brokers', 'plus500', 'avatrade', 'exness', 'octafx', 'xm.com' );
 $named   = array();
 foreach ( $sources as $file ) {
 	$body = strtolower( (string) file_get_contents( $file ) );
 	foreach ( $brokers as $broker ) {
-		if ( str_contains( $body, $broker ) ) {
+		if ( preg_match( '/\b' . preg_quote( $broker, '/' ) . '\b/', $body ) ) {
 			$named[] = basename( $file ) . ': ' . $broker;
 		}
 	}
 }
 hti_games_check( array() === $named, 'no broker name appears (' . ( $named ? implode( '; ', $named ) : 'clean' ) . ')' );
+
+// And the check is actually capable of finding one — a boundary-matched
+// pattern that never fires is indistinguishable from a pattern that is wrong.
+hti_games_check(
+	1 === preg_match( '/\betoro\b/', strtolower( 'a review of eToro published today' ) )
+		&& 0 === preg_match( '/\bxtb\b/', 'var nextbuttons = root.queryselectorall();' ),
+	'the matcher finds a real mention and ignores a substring collision'
+);
 
 echo "\nNothing offers the player money\n";
 // "No prizes" is half of what keeps a scored trading game clear of the
