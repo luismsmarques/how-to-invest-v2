@@ -553,7 +553,8 @@ class Bot_Admin {
 			<h3><?php esc_html_e( 'Sends that failed', 'hti-forex' ); ?></h3>
 			<table class="widefat striped" style="max-width:860px;">
 				<tbody>
-				<?php foreach ( $log['errors'] as $err ) : ?>
+				<?php // Position means recency in the log, so the newest reads first here. ?>
+				<?php foreach ( array_reverse( $log['errors'], true ) as $err ) : ?>
 					<tr>
 						<td style="width:80px;"><code><?php echo esc_html( (string) $err['code'] ); ?></code></td>
 						<td><?php echo esc_html( (string) $err['description'] ); ?></td>
