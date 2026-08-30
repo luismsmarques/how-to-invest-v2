@@ -252,8 +252,10 @@ O retrato completo, com evidência por `ficheiro:linha`, e a cronologia de setem
 
 - **11 dos 34 eventos de métrica são gravados e nunca mostrados** — entre eles `forex_bot_start/calc/stop` e
   `forex_tool_use`, exatamente os que medem o bot. Um terço da instrumentação escreve para o vazio.
-- **O `/forex/` pode emitir um URL de afiliado em cru:** `cta_url` só valida `https://`, ao contrário dos URLs
-  do bot, que exigem o host próprio.
+- ~~**O `/forex/` pode emitir um URL de afiliado em cru**~~ — **resolvido** (hti-forex 0.13.8): o botão das
+  ferramentas aponta para `/forex/go/{ferramenta}/`, o redirector próprio, e o `cta_url` deixou de estar ao
+  alcance de quem desenha a página — o `cta_for()` devolve a *placement*, não o URL. Um teste falha se algum
+  ficheiro fora do ecrã de definições e do redirector voltar a ler `cta_url`.
 - **O mapa `cta` não tem teto de cardinalidade** e `POST /htinvest/v1/event` é público e aceita `location`
   arbitrário.
 - ~~**O bot falha em silêncio**~~ — **resolvido** (hti-forex 0.12.5): o painel mostra o @username do bot, se o

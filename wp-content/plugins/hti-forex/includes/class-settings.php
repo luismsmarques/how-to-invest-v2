@@ -125,9 +125,9 @@ class Settings {
 			$out[ $slot ] = $code;
 		}
 
-		// The bot's two partner destinations. Unlike cta_url these must be our
-		// OWN /go/ redirector, not the affiliate URL: the bot posts them into
-		// private inboxes, where a raw affiliate URL is neither disclosed nor
+		// The bot's two partner destinations. These are our OWN /go/
+		// redirector, not the affiliate URL: the bot posts them into private
+		// inboxes, where a raw affiliate URL is neither disclosed nor
 		// swappable. Requiring the site's own host makes that structural
 		// rather than a rule someone has to remember.
 		foreach ( array( 'bot_ad_demo_url', 'bot_ad_real_url' ) as $field ) {
@@ -143,6 +143,11 @@ class Settings {
 
 		// Affiliate URL: https only. Anything else is dropped (and reported),
 		// which also force-disables the CTA via cta_for()'s empty-URL check.
+		//
+		// This value is never printed. It is the DESTINATION the /forex/go/
+		// redirector resolves at click time; every link the site emits points
+		// at that own-host route instead (see cta_for()), so the deal can
+		// change without a single published URL going stale.
 		$url = trim( (string) ( $input['cta_url'] ?? '' ) );
 		if ( '' === $url ) {
 			$out['cta_url'] = '';
@@ -279,6 +284,29 @@ class Settings {
 	}
 
 	/**
+	 * Whether the affiliate URL points back at our own site. Pure
+	 * (unit-tested).
+	 *
+	 * Such a URL still redirects — /forex/go/ sends the click on happily — but
+	 * the second hop is a different redirector, and /go/{slug} forwards no
+	 * query string: the campaign id dies there and the partner's panel records
+	 * an unattributed click. That is invisible from the outside, which is
+	 * exactly why the settings screen says it out loud.
+	 *
+	 * Since cta_url stopped being printed anywhere (see cta_for()), hiding the
+	 * partner behind a second hop buys nothing it did not already have.
+	 *
+	 * @param string $url      Stored cta_url.
+	 * @param string $our_host Host of home_url().
+	 * @return bool
+	 */
+	public static function cta_url_is_local( string $url, string $our_host ): bool {
+		$host = strtolower( (string) wp_parse_url( trim( $url ), PHP_URL_HOST ) );
+		$ours = strtolower( trim( $our_host ) );
+		return '' !== $host && '' !== $ours && $host === $ours;
+	}
+
+	/**
 	 * A Telegram channel URL, or '' when the setting is unusable.
 	 *
 	 * Pure. Both the scheme and the host are checked: this URL is printed
@@ -367,9 +395,15 @@ class Settings {
 	 * action, which is what stops a 90-character label from stretching the
 	 * button past the edge of its card.
 	 *
+	 * Deliberately returns a placement SLOT and never the affiliate URL. The
+	 * caller renders /forex/go/{slot}, so the partner destination is resolved
+	 * server-side at click time and cta_url never reaches a page, a PDF or an
+	 * inbox. Handing the URL out here is what used to make that a rule someone
+	 * had to remember instead of something the code enforces.
+	 *
 	 * @param string                   $tool     Tool name (position_size|pip_value|sessions).
 	 * @param array<string,mixed>|null $settings Optional settings (defaults to stored).
-	 * @return array{url:string,label:string,headline:string,brand:string,logo:string}|null
+	 * @return array{slot:string,label:string,headline:string,brand:string,logo:string}|null
 	 */
 	public static function cta_for( string $tool, ?array $settings = null ): ?array {
 		$s = $settings ?? self::settings();
@@ -389,7 +423,7 @@ class Settings {
 		}
 
 		return array(
-			'url'      => (string) $s['cta_url'],
+			'slot'     => str_replace( '_', '-', $tool ),
 			'label'    => $label,
 			'headline' => $headline,
 			'brand'    => (string) ( $s['cta_brand'] ?? '' ),
@@ -432,6 +466,21 @@ class Settings {
 		foreach ( $result['errors'] as $i => $message ) {
 			add_settings_error( self::OPTION, 'hti_forex_' . $i, esc_html( $message ) );
 		}
+
+		// Not an error — the link works — but it is the one setting that can
+		// silently make paid traffic unattributable, so it is said out loud
+		// rather than left to be discovered in an affiliate panel with no
+		// sub-ids in it.
+		$our_host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+		if ( self::cta_url_is_local( (string) $result['value']['cta_url'], $our_host ) ) {
+			add_settings_error(
+				self::OPTION,
+				'hti_forex_cta_url_local',
+				esc_html( 'The affiliate URL points back at this site. It still redirects, but /go/ forwards no campaign id, so the partner sees every click unattributed. Put the partner\'s own affiliate URL here — it is never printed in a page.' ),
+				'warning'
+			);
+		}
+
 		return $result['value'];
 	}
 

@@ -81,9 +81,53 @@ check( '' === Go::destination( array_merge( $on, array( 'cta_url' => '' ) ), 'ch
 check( '' === Go::destination( array_merge( $on, array( 'cta_url' => 'http://partner.example.com/x' ) ), 'cheatsheet' ), 'plain-http destination is never followed' );
 check( 'https://partner.example.com/visit' === Go::destination( $on, '' ), 'an empty slot still redirects, without a sub-id' );
 
+// --- Campaign-id passthrough ------------------------------------------------
+// The tool pages used to write the campaign id straight onto the affiliate
+// href in the browser. Now it arrives here as `cid` and is re-attached
+// server-side, so the affiliate panel sees exactly what it saw before.
+check( 'abc-123_XY' === Go::cid( 'abc-123_XY' ), 'a clean campaign id survives' );
+check( 'drop' === Go::cid( 'dr op<>' ), 'anything outside [A-Za-z0-9_-] is stripped' );
+check( 64 === strlen( Go::cid( str_repeat( 'a', 200 ) ) ), 'a campaign id is capped at 64 characters' );
+check( '' === Go::cid( '' ), 'no campaign id stays empty' );
+
+check(
+	'https://partner.example.com/visit?clickid=camp42' === Go::destination( $on, 'position-size', 'camp42' ),
+	'a campaign id takes the sub-id ahead of the placement'
+);
+check(
+	'https://partner.example.com/visit?clickid=position-size' === Go::destination( $on, 'position-size', '' ),
+	'without a campaign id the placement is still attributed'
+);
+check( 'https://partner.example.com/visit' === Go::destination( $on, '', '' ), 'no slot and no campaign id means no sub-id at all' );
+check( '' === Go::destination( array_merge( $on, array( 'cta_enabled' => false ) ), 'position-size', 'camp42' ), 'the kill-switch beats a campaign id too' );
+
 // The whole point of the redirector: a printed link must never carry the
 // affiliate URL, so the destination is only ever resolved here, at click time.
 check( ! str_contains( (string) file_get_contents( __DIR__ . '/../assets/pdf/src/cheat-sheet.html' ), 'pipaffiliates' ), 'the PDF source carries no affiliate URL' );
+
+// --- Nothing else may reach cta_url -----------------------------------------
+// CLAUDE.md invariant 4: outbound affiliate links only via our own redirector.
+// cta_url is the destination this class resolves; a renderer that reads it
+// puts a raw affiliate URL back into the page source, which is exactly the
+// bug this route exists to prevent. So the setting is readable in precisely
+// two places — the screen that stores it, and the redirector that follows it.
+$readers = array();
+foreach ( (array) glob( __DIR__ . '/../includes/*.php' ) as $file ) {
+	if ( str_contains( (string) file_get_contents( $file ), "'cta_url'" ) ) {
+		$readers[] = basename( $file );
+	}
+}
+sort( $readers );
+check(
+	array( 'class-go.php', 'class-settings.php' ) === $readers,
+	'only the settings screen and the redirector read cta_url (found: ' . implode( ', ', $readers ) . ')'
+);
+
+$tools = (string) file_get_contents( __DIR__ . '/../includes/class-tools.php' );
+check( str_contains( $tools, 'Go::url( $cta[\'slot\'] )' ), 'the tool-page CTA links to our own /forex/go/ route' );
+
+$js = (string) file_get_contents( __DIR__ . '/../assets/js/forex.js' );
+check( ! str_contains( $js, 'cfg.subParam' ), 'the browser is never told the affiliate sub-id parameter' );
 
 echo "\n{$passes} passed, {$failures} failed\n";
 exit( $failures > 0 ? 1 : 0 );
