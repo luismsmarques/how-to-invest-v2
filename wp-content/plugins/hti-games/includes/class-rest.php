@@ -1371,9 +1371,11 @@ class REST {
 	 * That is the invariant: the answer is a function of the record, so it
 	 * cannot be served before the record exists.
 	 *
-	 * The crowd stat is here for the same reason. "68% of players went long
-	 * today" is a hint before a decision and a lesson after one, and the only
+	 * The crowd stat is here for the same reason. "68% of players lost on this
+	 * one" is a hint before a decision and a lesson after one, and the only
 	 * thing separating those two is which side of the INSERT it is served on.
+	 * Leaderboard::public_stats() withholds the same counts from the board,
+	 * which is the other way they could have reached a player mid-decision.
 	 *
 	 * @param string              $game Game id.
 	 * @param array<string,mixed> $run  The recorded run.
@@ -1382,8 +1384,9 @@ class REST {
 	 * @return array<string,mixed>
 	 */
 	private static function run_result( string $game, array $run, array $meta, string $lang ): array {
-		$day  = (string) $run['day_key'];
-		$lang = 'pt' === $lang ? 'pt' : 'en';
+		$day   = (string) $run['day_key'];
+		$lang  = 'pt' === $lang ? 'pt' : 'en';
+		$stats = Leaderboard::day_stats( $game, $day );
 
 		$base = array(
 			'game'        => $game,
@@ -1398,7 +1401,11 @@ class REST {
 			'died'        => (bool) (int) $run['died'],
 			'streak'      => (int) $run['streak_after'],
 			'board_score' => (int) $run['board_score'],
-			'crowd'       => Leaderboard::day_stats( $game, $day ),
+			// The counts, plus which of the four bilingual sentences goes over
+			// them and what percentage sits beside it. The choice is made here
+			// rather than in the browser because it is a rule about what the
+			// section is allowed to claim, and rules live on this side.
+			'crowd'       => $stats + Leaderboard::crowd( $stats, $game, (string) $run['decision'] ),
 			'reset_in'    => Day::seconds_until_reset(),
 		);
 

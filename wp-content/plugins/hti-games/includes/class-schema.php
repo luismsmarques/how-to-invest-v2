@@ -25,7 +25,12 @@
  * The FAQPage is built from Seeder::faqs(), which is the same array the page
  * copy is rendered from, so the visible answer and the structured one cannot
  * drift apart. Non-indexable pages (the player profile) emit nothing at all:
- * structured data for a page carrying `noindex` is work nobody reads.
+ * structured data for a page carrying `noindex` is work nobody reads. Nor does
+ * a game whose kill-switch is off — see should_emit().
+ *
+ * detect_page() is also what Seeder::robots() decides the noindex from, so the
+ * page a crawler is told about and the page the JSON-LD describes are settled
+ * by one function rather than by two that agree until one of them is edited.
  *
  * @package HTI_Games
  */
@@ -92,11 +97,24 @@ class Schema {
 	 * reads it, and a Game node on a per-visitor page is a small lie about
 	 * what is there.
 	 *
-	 * @param string $key Page key from detect_page().
+	 * A game whose kill-switch is off is the same lie in the other direction.
+	 * The page survives the switch on purpose — the editorial half is what
+	 * ranks, and it stays — but the shortcode renders "not available" where
+	 * the game was, and a `Game` node saying "free, playable, in a browser"
+	 * over that is a rich result promising something the visitor cannot do.
+	 * The flag is passed in rather than read here so this stays pure.
+	 *
+	 * @param string $key      Page key from detect_page().
+	 * @param bool   $playable Whether that game is switched on; ignored on
+	 *                         pages that carry no game.
 	 */
-	public static function should_emit( string $key ): bool {
+	public static function should_emit( string $key, bool $playable = true ): bool {
 		$pages = Config::pages();
-		return '' !== $key && isset( $pages[ $key ] ) && ! empty( $pages[ $key ]['index'] );
+		if ( '' === $key || ! isset( $pages[ $key ] ) || empty( $pages[ $key ]['index'] ) ) {
+			return false;
+		}
+
+		return ! Config::is_game( $key ) || $playable;
 	}
 
 	/**
@@ -110,12 +128,24 @@ class Schema {
 		if ( ! $post instanceof \WP_Post ) {
 			return;
 		}
-		$key = self::detect_page( $post );
-		if ( ! self::should_emit( $key ) ) {
+		$key      = self::detect_page( $post );
+		$settings = Settings::settings();
+		if ( ! self::should_emit( $key, Settings::game_enabled( $key, $settings ) ) ) {
 			return;
 		}
 
 		$lang = self::lang_of( (int) $post->ID );
+
+		// The hub's hasPart points at the Game nodes by @id, so it may only
+		// point at the ones that will actually be emitted: a reference to a
+		// node no page carries is a dangling @id, and it would reappear the
+		// moment a game is switched back on.
+		$parts = array();
+		foreach ( array( Config::GAME_STC, Config::GAME_REVEAL ) as $part_game ) {
+			if ( Settings::game_enabled( $part_game, $settings ) ) {
+				$parts[] = home_url( Seeder::url( $part_game, $lang ) );
+			}
+		}
 
 		$graph = self::graph(
 			array(
@@ -128,10 +158,7 @@ class Schema {
 				'home_url'    => home_url( '/' ),
 				'hub_url'     => home_url( Seeder::url( 'hub', $lang ) ),
 				'hub_title'   => Seeder::c( 'hub_title', $lang ),
-				'parts'       => array(
-					home_url( Seeder::url( Config::GAME_STC, $lang ) ),
-					home_url( Seeder::url( Config::GAME_REVEAL, $lang ) ),
-				),
+				'parts'       => $parts,
 				'home_title'  => 'pt' === $lang ? 'Início' : 'Home',
 				'org_id'      => self::org_id(),
 			)

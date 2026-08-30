@@ -72,16 +72,22 @@ $files = array(
 /**
  * The ceilings, with the measurements they were set from.
  *
- * At the time of writing: games.css 5.2, games-shared.js 11.2, stc.css 2.0,
- * stc-core.js 5.3, stc.js 9.1, reveal.css 2.2, reveal-core.js 2.8, reveal.js
- * 5.9 — 32.8 KB to play Survive the Charts and 27.3 KB to play The Reveal.
- * The headroom is deliberate: a ceiling that fails on a paragraph of comments
- * teaches people to delete comments.
+ * The ceilings were set from: games.css 5.2, games-shared.js 11.2, stc.css
+ * 2.0, stc-core.js 5.3, stc.js 9.1, reveal.css 2.2, reveal-core.js 2.8,
+ * reveal.js 5.9 — 32.8 KB to play Survive the Charts and 27.3 KB to play The
+ * Reveal. The headroom was deliberate: a ceiling that fails on a paragraph of
+ * comments teaches people to delete comments.
+ *
+ * MEASURED AT THE INTEGRATION PASS: games.css 6.0, games-shared.js 12.2,
+ * stc.css 2.1, stc-core.js 5.3, stc.js 9.9, reveal.css 2.7, reveal-core.js
+ * 2.8, reveal.js 6.6 — 35.6 KB for Survive the Charts against a 36.0 ceiling,
+ * and 47.6 KB in total against 48.0. That headroom is gone: the next feature
+ * on the chart game fails this file, and the fix is NOT to raise the number.
  *
  * games-shared.js is the biggest single file and the one to watch. It carries
  * the leaderboard and profile screens, which a game page downloads and never
- * runs; splitting them into a fourth file is the obvious move the day this
- * budget gets tight.
+ * runs; splitting them into a fourth file is the obvious move, and the budget
+ * is now tight enough that it is the next move.
  */
 
 /** No single file may exceed this, gzipped. */

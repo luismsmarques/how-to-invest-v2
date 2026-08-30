@@ -260,9 +260,17 @@ class Importer {
 	/**
 	 * Average true range, in ticks, over the last $period candles.
 	 *
-	 * Pass the length of the series to average the whole thing, which is what
-	 * screening wants; pass Config::STC_ATR_PERIOD for the trailing reading a
-	 * stop is sized from.
+	 * A SCREENING measure, and not the one a stop is sized from. This is the
+	 * textbook true range — each bar's high-low extended to swallow the gap
+	 * from the previous close — because screening a candidate window is asking
+	 * whether the instrument moves at all, and a gap is movement. The game's
+	 * ATR is STC_Engine::atr(): the plain mean of the high-low ranges, with no
+	 * reference to the previous close, so a player can verify it by eye on the
+	 * fourteen candles in front of them and the JavaScript port has nothing to
+	 * seed. The two return different numbers on the same series ON PURPOSE.
+	 * Nothing on the decision path may call this one.
+	 *
+	 * Callers pass the length of the series, to average the whole window.
 	 *
 	 * Integer arithmetic throughout, like everything else in the decision
 	 * path: intdiv, not a float division that PHP and JavaScript would round

@@ -1,13 +1,16 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9.** ~1.770 asserções verdes nas quatro suites). Anterior: 29 ago 2026 (bot de Telegram no hti-forex). Antes: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 30 ago 2026, fim do dia (secção **`/games/`** — plugin novo `hti-games` com dois jogos educativos, integração fechada e passagem de QA às costuras entre workstreams. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9 · HTI Games 0.1.0.** ~3.820 asserções verdes nas quatro suites. A secção `/games/` está **construída mas ainda não pode ir para o ar** — ver a secção própria mais abaixo). Anterior: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9.** ~1.770 asserções verdes nas quatro suites de então). Antes: 29 ago 2026 (bot de Telegram no hti-forex). Antes disso: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
 questionário → resultado (gráfico + disclaimer) → guardar perfil → dashboard;
 homepage com artigos; glossário; páginas; **secção editorial de corretoras**
 (CPT `broker`, ~26 páginas, redirector `/go/`); comparador de depósitos; hub de
-ferramentas; `/forex/` e o bot de Telegram. **~1.770 asserções** verdes.
+ferramentas; `/forex/` e o bot de Telegram. **~3.820 asserções** verdes.
+A secção **`/games/`** (plugin `hti-games`) está construída e testada mas **ainda
+não está em produção**: falta o deploy, o conteúdo dos dois jogos e a verificação
+editorial dos casos de The Reveal.
 
 WordPress 7.0 instalado em `/home/howtoinvest/howtoinvest.pro/`. Tema **HowToInvest**
 e plugin **HTI Engine** ativos. Conteúdo criado pelo seeder (glossário + 7 páginas + 8 artigos).
@@ -151,18 +154,20 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 
 ## Deploy
 - Branches: **`main`** = produção · **`develop`** = staging/integração · feature → PR para `develop` → release `develop → main`. Ver `CONTRIBUTING.md`.
-- cPanel Git: `Manage → Pull or Deploy → Update from Remote → Deploy HEAD Commit`. O `.cpanel.yml` (simples; destino fixo `howtoinvest.pro/wp-content`) copia **tema + hti-engine + hti-rss-ai + hti-social + hti-forex** (quatro plugins).
+- cPanel Git: `Manage → Pull or Deploy → Update from Remote → Deploy HEAD Commit`. O `.cpanel.yml` (simples; destino fixo `howtoinvest.pro/wp-content`) copia **tema + hti-engine + hti-rss-ai + hti-social + hti-forex + hti-games** (cinco plugins).
   ⚠️ O deploy faz `rm -rf` + `cp -R`, portanto **destrói o `vendor/`** e depende do `composer install` protegido
   por `|| true`: se falhar, o deploy fica verde e o **export PDF degrada silenciosamente para HTML**. O
   `DEPLOY.md §` que fala de rsync com `--exclude vendor/` está errado.
 - **Se o deploy do cPanel falhar/pendurar:** ver `DEPLOY.md §5.1` (deploy manual / File Manager copy a partir de `repositories/how-to-invest-v2/wp-content/...`).
 - **Bump de versão obrigatório** ao mexer em CSS/JS do tema/plugin (constante VERSION → `?ver=`), senão a cache serve assets antigos. Em template parts personalizadas no Site Editor, *Clear customizations* para o tema voltar a usar os ficheiros.
-- Suites (é o que a CI corre): `php wp-content/plugins/hti-engine/tests/run.php` (1.072) ·
-  `php wp-content/plugins/hti-forex/tests/run.php` (527 PHP + 83 Node) ·
-  `php wp-content/plugins/hti-rss-ai/tests/run.php` (60) ·
-  `node wp-content/plugins/hti-engine/tests/test-tools-core.mjs` (27).
-  ⚠️ A CI **não faz lint ao `hti-social`** nem corre as suites Node, e o `hti-social` **não tem testes** —
-  é o único artefacto deployado sem verificação nenhuma.
+- Suites (é o que a CI corre): `php wp-content/plugins/hti-engine/tests/run.php` (1.073) ·
+  `php wp-content/plugins/hti-forex/tests/run.php` (676 PHP + 83 Node) ·
+  `php wp-content/plugins/hti-rss-ai/tests/run.php` (67) ·
+  `php wp-content/plugins/hti-games/tests/run.php` (1.888 PHP + 37 Node) — **~3.820 no total**.
+  A CI faz `php -l` e `node --check` a **todos** os plugins e ao tema, corre as quatro suites e
+  volta a correr as três suites Node explicitamente (para que um `node` em falta seja um erro e não
+  uma linha "skipping" que ninguém lê).
+  ⚠️ O `hti-social` continua **sem testes próprios** — é lintado, mas nada verifica o que faz.
 
 ## O que falta para o GO-LIVE público (checklist completa: `docs/QA_Gate_Lancamento.md`)
 **Código (produto):** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
@@ -184,6 +189,9 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
       (preview/send), Settings → HTI NPS (send + resultados).
 - [ ] **Polylang**: atribuir idioma a todo o conteúdo + correr o seeder → confirmar ligações EN↔PT (e `hreflang` no sitemap)
 - [ ] **RSS AI Feed**: ativar o plugin em produção → *Settings* (confirmar `HTI_GEMINI_API_KEY` + acesso Imagen, modelo, intervalo) → adicionar feeds → *Fetch now* → *Group now* → gerar 1 grupo e **rever** (+ kit social) antes de publicar
+- [ ] **Jogos `/games/`**: ativar o `hti-games`, semear as páginas, gerar/importar os cenários e **deixar
+      The Reveal desligado** até um editor verificar os cinco casos. Checklist completa na secção
+      *Jogos educativos (`hti-games`)* mais abaixo.
 - [ ] Acessibilidade: contraste AA + teste com leitor de ecrã
 
 **Legal (⚠️ bloqueador antes de divulgar):**
@@ -245,6 +253,116 @@ o **comparador de depósitos é PT-first** (`class-deposits.php:169-173`).
   risco; as ferramentas em si são seguras) e configurar o URL de afiliado no
   admin. Sem configuração, as páginas são 100% educativas.
 
+## Jogos educativos (`hti-games`) — ago 2026
+
+Plugin novo e **isolado** para a secção `/games/` (`/pt/jogos/`), bilingue
+EN+PT, **selado da parte monetizada do site** (invariante 9 do `CLAUDE.md`:
+nenhum link de afiliado, banner, módulo de parceria ou menção a corretora em
+lado nenhum). Dois jogos diários sobre dinheiro virtual, indexáveis, que
+ensinam o que o questionário não ensina — o que o **tamanho da posição** faz a
+uma conta.
+
+- **Survive the Charts** — 80 velas, decidir compra/venda/passar e depois
+  escolher que fração de uma conta virtual de $10.000 pôr atrás da leitura.
+  Stop a 1×ATR, alvo a 1,5×ATR, seis níveis de risco (0,5% … 25%) e um
+  interruptor de "dobrar a aposta". A vela que contém os dois níveis resolve
+  sempre como stop — nada no OHLC diz qual dos preços veio primeiro, e o jogo
+  nunca pode favorecer a posição.
+- **The Reveal** — dossiê anonimizado de uma empresa real num ano real: setor,
+  seis fundamentais contra a média do setor, três manchetes do período.
+  Investir uma fatia da conta ou passar; só depois o nome, o ano e o retorno
+  real a 5 anos, ao lado do que o índice fez no mesmo período.
+- **Classificação e perfil:** duas tabelas (jogadores + corridas), board diário
+  ordenado por **pontuação normalizada pelo risco** (`Scoring::board_score()`,
+  o P&L a 1% de risco) e não pelo P&L cru — ordenar pelo lucro faria do topo
+  da tabela a lista de quem apostou mais, que é o inverso da lição. O perfil
+  mostra a **métrica de aprendizagem** (risco médio por semana), um calendário
+  de 28 dias e as medalhas.
+
+**Como está construído**
+
+- **As regras decidem, o cliente só anima.** Os dois motores existem duas vezes
+  — `class-stc-engine.php` / `class-reveal-engine.php` (decidem, no servidor) e
+  `assets/js/*-core.js` (animam) — em aritmética **inteira** de ponta a ponta
+  (preços em ticks, risco em pontos base, dinheiro em dólares inteiros).
+  `tests/fixtures/parity.json` é o contrato entre as duas portas: mudar a
+  matemática de um lado sem regenerar põe a outra suite a vermelho.
+- **Anti-batota:** `GET /today` é construído por **whitelist campo a campo** —
+  nem uma vela para lá da 80.ª, nem o nome da empresa, nem o ano, nem o
+  retorno, nem o `post_id` (o cliente recebe um HMAC do dia sob `wp_salt`).
+  Uma whitelist falha **fechada**: um campo novo no CPT simplesmente não sai.
+- **Uma decisão por dia, à prova de corrida:** `UNIQUE KEY one_per_day
+  (player_id, game, day_key)` **é** a regra, não uma verificação em PHP — o
+  segundo POST falha no índice e devolve o resultado já registado (409).
+- **Sessão anónima (RGPD):** cookie + tabela própria, **sem email e sem IP**;
+  ligar uma conta é um `user_id` e mais nada. Onboarding com acknowledgement
+  registado (`ack_at`/`ack_ver`), botão "esquece-me" na própria página de
+  perfil, e `uninstall.php` que larga as duas tabelas.
+- **Conteúdo:** CPTs privados `hti_stc_scenario` e `hti_reveal_case`; a rotação
+  é **calculada na leitura** a partir do índice do dia (o WP-Cron está
+  desligado em produção — um jogo que dependesse dele deixava de rodar).
+  Importador CSV/JSON no admin e gerador determinístico por CLI
+  (`wp hti-games generate --count=365 --seed=…`).
+- **SEO:** 5 páginas seedadas EN+PT a partir de **uma só tabela de slugs**
+  (`Config::pages()`) — hub, os dois jogos, classificação e perfil (este
+  `noindex`); JSON-LD `Game` + `WebApplication` + `FAQPage` + breadcrumbs, com
+  as FAQs vindas do mesmo array que a página mostra. A frase de aterragem do
+  Survive the Charts **deriva do conteúdo**, não de uma opção: enquanto o pool
+  tiver cenários gerados, a página diz que os gráficos são gerados.
+- **Testes:** suite própria (`php wp-content/plugins/hti-games/tests/run.php`)
+  — 1.888 asserções PHP + 37 Node, incluindo acessibilidade, segurança/RGPD,
+  anti-batota, orçamento de assets em gzip, e o `test-no-brokers.php`, que
+  agora **renderiza** as 30 páginas e shells da secção nas duas línguas e falha
+  se aparecer um `/go/`, um `rel="sponsored"`, um slug de corretora (com
+  fronteira de palavra — "xtb" vive dentro de "nextButtons") ou **qualquer link
+  para fora do site**.
+- **Fechado nesta passagem (30 ago):** a estatística da multidão passou a ter
+  query (contagem de corridas perdedoras e de passes no mesmo `day_stats()`,
+  mesmo transient de 60s) e as quatro strings que estavam mortas ficaram
+  ligadas — com supressão da percentagem abaixo de 20 jogadores, porque "67%
+  perderam" em três corridas é ruído; o `board_size` das definições passou a
+  chegar à query (era um 50 fixo enquanto o admin oferecia 3–100); o JSON-LD
+  deixou de anunciar como `Game` um jogo desligado pelo kill-switch; o
+  `wp_robots` e o JSON-LD passaram a usar **um só detetor** de página; e o
+  aviso do risco dobrado deixou de mostrar o número certo debaixo da frase
+  errada ("a 0,5%…" com a conta de 1%). Novo `tests/test-integration.php` com
+  as asserções que teriam apanhado cada uma destas.
+
+**Ainda não pode ir para o ar — é o que falta a um humano:**
+
+- [ ] **Deploy** para staging e depois produção (o `.cpanel.yml` e a CI já
+      incluem o plugin) e **ativar** o plugin.
+- [ ] **Semear as páginas**: Definições → HTI Games → *Seed / sync*. Sem isto
+      são cinco 404 com shortcodes a funcionar por trás.
+- [ ] **Polylang**: ativar tradução dos CPTs novos e confirmar as ligações
+      EN↔PT das cinco páginas.
+- [ ] **Conteúdo do Survive the Charts**: o pool está **vazio**. Ou
+      `wp hti-games generate --count=365 --seed=…`, ou importar séries reais
+      pelo importador. Abaixo de 30 cenários o mesmo gráfico volta depressa.
+- [ ] **The Reveal não pode abrir ainda.** Os cinco casos protótipo são
+      seedados **de propósito por acabar**: `draft`, `hti_rev_verified = 0`,
+      `hti_rev_source_url` **vazio** e **todos os números vazios** — os dois
+      retornos a 5 anos e o valor e média setorial de cada fundamental. Este
+      ambiente não tem rede e a memória do modelo **não é fonte publicável**
+      (skill `financial-analyst`); pré-preencher o URL da fonte seria forjar o
+      rasto de auditoria. Um editor tem de abrir o *filing* de cada empresa,
+      escrever os números, colar o URL e marcar *verified* — o gate de
+      publicação recusa os cinco até lá, e a query do pool recusa-os outra vez
+      mesmo que algum chegue a `publish`. **Até isso acontecer, deixar
+      `reveal_enabled` desligado nas definições.**
+- [ ] **Rever a cópia dos jogos** (EN+PT) com olhos editoriais antes de
+      divulgar, e ler o painel de prontidão em Definições → HTI Games, que diz
+      qual das duas frases de aterragem está viva e porquê.
+- [ ] **Acessibilidade:** o teste cobre a marcação (radiogroup, roving
+      tabindex, live regions, saída do replay animado); falta a passagem real
+      com leitor de ecrã e teclado no browser.
+
+⚠️ **Orçamento de assets quase esgotado:** 35,6 KB gzip para o Survive the
+Charts contra um teto de 36,0, e 47,6 KB no total contra 48,0. A próxima
+funcionalidade no jogo dos gráficos parte o `test-asset-budget.php`, e a
+correção **não é subir o número** — é partir o `games-shared.js` (que hoje leva
+os ecrãs de classificação e perfil para páginas que nunca os correm).
+
 ## Auditoria de 30 ago 2026 — o que ficou por fazer
 
 O retrato completo, com evidência por `ficheiro:linha`, e a cronologia de setembro estão em
@@ -286,3 +404,6 @@ O retrato completo, com evidência por `ficheiro:linha`, e a cronologia de setem
 4. Enviar textos legais ao jurista (L-D).
 5. Ativar o **HTI RSS AI Feed**, adicionar feeds e validar 1 geração ponta a ponta antes de a usar em produção.
 6. **MCP WordPress** (criar/editar conteúdo por comandos): plano e estado em `docs/MCP_WordPress.md` — bloqueado por egress (precisa de ambiente novo) + WAF.
+7. **`/games/` para staging**: deploy + ativar + semear + gerar cenários; validar um dia completo dos dois
+   jogos no browser (teclado e leitor de ecrã incluídos) antes de abrir o Survive the Charts. The Reveal
+   fica desligado até haver casos verificados.

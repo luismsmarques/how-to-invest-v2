@@ -439,7 +439,13 @@
 		var row = tier();
 		var warn = H.hook( root, 'risk-warn' );
 		if ( warn ) {
-			warn.textContent = H.fmt( H.t( row.warn ), state.double ? row.losses2 : row.losses );
+			// The per-tier sentences describe the tier — "0.5%", "the classic
+			// ceiling" — and every one of them is about the wrong position
+			// once the stake is doubled. So the doubled stake gets its own
+			// line, with the size it really is and the runway to match.
+			warn.textContent = state.double
+				? H.fmt( H.t( 'stc_warn_double' ), H.pct( row.bp * cfg.config.double ), row.losses2 )
+				: H.fmt( H.t( row.warn ), row.losses );
 			warn.className = 'hti-g__warn is-' + row.tone;
 		}
 
@@ -561,12 +567,14 @@
 	}
 
 	/**
-	 * The one crowd figure the API can actually answer.
+	 * How the rest of the day went, once this player's own day is recorded.
 	 *
-	 * Leaderboard::day_stats() reports how many played, what they risked on
-	 * average and how many blew up — not how many lost — so the row shows the
-	 * average risk taken today rather than a percentage nothing computes. It
-	 * is also the more useful number: this game is about position size.
+	 * The sentence and the percentage are both the server's — see
+	 * Leaderboard::crowd(), which picks which of the two comparisons is the
+	 * honest one for what this player actually did, and returns a null `pct`
+	 * on a day too small for a rate to mean anything. Nothing is computed
+	 * here, because the block only ever arrives on a result: the API does not
+	 * carry these counts before a decision, and it must not start.
 	 *
 	 * @param {Object} crowd The result's `crowd` block.
 	 */
@@ -575,13 +583,13 @@
 		if ( ! wrap ) {
 			return;
 		}
-		if ( ! crowd || ! crowd.players ) {
+		if ( ! crowd || ! crowd.players || ! crowd.key ) {
 			wrap.hidden = true;
 			return;
 		}
 		wrap.hidden = false;
-		set( 'crowd-label', H.t( 'stc_dead_avg' ) );
-		set( 'crowd-value', H.pct( crowd.avg_risk_bp ) );
+		set( 'crowd-label', H.t( crowd.key ) );
+		set( 'crowd-value', null === crowd.pct ? String( crowd.players ) : crowd.pct + '%' );
 	}
 
 	/**

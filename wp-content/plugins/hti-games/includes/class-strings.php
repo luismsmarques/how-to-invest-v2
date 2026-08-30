@@ -144,9 +144,13 @@ class Strings {
 				'en' => 'Record',
 				'pt' => 'Recorde',
 			),
-			'day_label'          => array(
-				'en' => 'Day %d',
-				'pt' => 'Dia %d',
+			// The crowd row on a quiet day. Leaderboard::crowd() shows this
+			// instead of a percentage below CROWD_MIN, with the number of
+			// players beside it: "67% lost" off three runs is noise printed
+			// as a fact, and this section is about not doing that.
+			'crowd_thin'         => array(
+				'en' => 'Players today so far — too few for a percentage to mean much',
+				'pt' => 'Jogadores hoje até agora — poucos para uma percentagem dizer muito',
 			),
 			'next_reset'         => array(
 				'en' => 'A new challenge in %s',
@@ -437,6 +441,18 @@ class Strings {
 				'en' => 'This is not trading. %d bad days end the account, and bad days are ordinary.',
 				'pt' => 'Isto não é operar. %d dias maus acabam com a conta, e dias maus são banais.',
 			),
+			// The tier warnings above name the tier in words — "0.5%", "the
+			// classic ceiling", "what professionals tend to use" — and every
+			// one of those descriptions becomes false when the multiplier is
+			// on, because the position is twice the tier the sentence is
+			// about. So the doubled stake gets its own line, and both of its
+			// numbers are the engine's: the size from the tier and the
+			// multiplier, the runway from losses_to_ruin() with the doubling
+			// applied.
+			'stc_warn_double'     => array(
+				'en' => 'Doubled, that is %s of the account on one chart: %d losses in a row ends it.',
+				'pt' => 'A dobrar, são %s da conta num só gráfico: %d perdas seguidas acabam com isto.',
+			),
 			'stc_res_target'      => array(
 				'en' => 'Target hit',
 				'pt' => 'Alvo atingido',
@@ -488,10 +504,6 @@ class Strings {
 			'stc_dead_days'       => array(
 				'en' => 'Days survived',
 				'pt' => 'Dias sobrevividos',
-			),
-			'stc_dead_cause'      => array(
-				'en' => 'What ended it',
-				'pt' => 'O que acabou com isto',
 			),
 			'stc_dead_avg'        => array(
 				'en' => 'Average risk per trade',
@@ -685,10 +697,6 @@ class Strings {
 				'en' => 'Average position',
 				'pt' => 'Posição média',
 			),
-			'rev_dead_traps'    => array(
-				'en' => 'Traps avoided',
-				'pt' => 'Armadilhas evitadas',
-			),
 			'rev_dead_index'    => array(
 				'en' => 'The index player',
 				'pt' => 'O jogador índice',
@@ -846,17 +854,9 @@ class Strings {
 				'en' => 'If that address can receive it, a link is on its way. It works for fifteen minutes.',
 				'pt' => 'Se esse endereço puder recebê-lo, vai um link a caminho. Funciona durante quinze minutos.',
 			),
-			'link_resend'     => array(
-				'en' => 'Send it again',
-				'pt' => 'Enviar outra vez',
-			),
 			'link_bad_email'  => array(
 				'en' => "That address does not look right — check it and try again.",
 				'pt' => 'Esse endereço não parece certo — verifica-o e tenta outra vez.',
-			),
-			'link_skip'       => array(
-				'en' => 'Keep playing without an account',
-				'pt' => 'Continuar a jogar sem conta',
 			),
 			'news_optin'      => array(
 				'en' => 'Also send me the HowToInvest newsletter. Separate from the link above, and you can leave at any time.',

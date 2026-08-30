@@ -11,10 +11,23 @@
  *
  *     day      string  'Y-m-d', the game day (see Day — the boundary is IST)
  *     decision string  'buy' | 'sell' | 'pass' | 'invest'
- *     outcome  string  'stop' | 'target' | 'open' | 'pass'
- *     risk_bp  int     risk tier in basis points; 0 for a pass or a Reveal row
+ *     risk_bp  int     Survive the Charts: the risk tier in basis points.
+ *                      The Reveal: the share committed, also in basis points
+ *                      (25% is 2500 either way). 0 for a pass in both.
  *     pnl      int     whole dollars, signed
  *     died     bool    whether this row blew the account
+ *
+ * The column names are the ones REST::recent_runs() hands over, which are the
+ * runs table's own except for `day` — the column is `day_key`, and the SELECT
+ * renames it. That rename is the whole bridge between this file and Store, so
+ * a query that stops doing it makes every date here an empty string and every
+ * streak zero, silently. tests/test-integration.php asserts it.
+ *
+ * `outcome` is deliberately NOT in the list. The two games do not share the
+ * vocabulary — Survive the Charts records stop|target|open|pass, The Reveal
+ * records up|down|flat|pass — so nothing here may branch on it. Won, lost and
+ * flat are read off the P&L instead, which means the same thing in both games
+ * and needs no translation between them.
  *
  * Every read goes through the accessors below, so a row missing a key gives a
  * neutral answer instead of a notice. Rows are assumed to be one player's, one

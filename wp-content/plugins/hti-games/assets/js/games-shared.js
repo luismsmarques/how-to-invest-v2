@@ -1223,11 +1223,16 @@
 		/**
 		 * The badges, but only the ones the copy table can name.
 		 *
-		 * Scoring::badges() returns keys; the names for them are not in
-		 * Strings yet. Rather than invent eight labels in a JavaScript file —
-		 * which is how a Portuguese page ends up with English badges — the
-		 * block stays hidden until the strings exist, and appears by itself
-		 * the day they land.
+		 * Scoring::badges() returns keys and Strings carries a `badge_<key>`
+		 * name for each of the eight, so in practice the filter keeps all of
+		 * them and the block is shown. It stays because the two lists are
+		 * maintained in different files: a ninth badge added to Scoring before
+		 * anybody writes its Portuguese name would otherwise render as a blank
+		 * chip, and no copy is ever invented in a JavaScript file.
+		 *
+		 * The one-line note each badge has in Strings (`badge_<key>_note`) is
+		 * not shown: the chip is a name and a progress figure, and the note
+		 * has no place in it that the design settled on.
 		 *
 		 * @param {Array} badges Scoring::badges() rows.
 		 */

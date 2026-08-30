@@ -295,11 +295,12 @@
 	}
 
 	/**
-	 * The one crowd figure the API can answer.
+	 * How the rest of the day went, once this player's own day is recorded.
 	 *
-	 * day_stats() reports players, average commitment and deaths — not how
-	 * many passed — so the row shows the average position taken today. Same
-	 * choice as Survive the Charts, and the more useful number of the two.
+	 * Same contract as Survive the Charts: Leaderboard::crowd() chooses the
+	 * sentence — how many stayed out, or how many put money behind it — from
+	 * what this player did, and returns a null `pct` on a day too small for a
+	 * rate to mean anything.
 	 *
 	 * @param {Object} crowd The result's `crowd` block.
 	 */
@@ -308,13 +309,13 @@
 		if ( ! wrap ) {
 			return;
 		}
-		if ( ! crowd || ! crowd.players ) {
+		if ( ! crowd || ! crowd.players || ! crowd.key ) {
 			wrap.hidden = true;
 			return;
 		}
 		wrap.hidden = false;
-		set( 'crowd-label', H.t( 'rev_dead_avg' ) );
-		set( 'crowd-value', H.pct( crowd.avg_risk_bp ) );
+		set( 'crowd-label', H.t( crowd.key ) );
+		set( 'crowd-value', null === crowd.pct ? String( crowd.players ) : crowd.pct + '%' );
 	}
 
 	/**

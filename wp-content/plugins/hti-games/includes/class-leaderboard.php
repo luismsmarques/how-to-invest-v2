@@ -28,11 +28,11 @@
  * A materialised board would need something to materialise it, and WP-Cron is
  * disabled in production: a board that depended on a schedule would be a board
  * that quietly stops updating. Both queries are single-index reads (`board`
- * covers the daily one, `stc_capital` orders the survival one) capped at 50
- * rows, wrapped in a 60-second transient. The visitor's own row is deliberately
- * NOT part of that cache — it is per-player, it is two tiny queries, and a
- * player who just decided must see their own result immediately even while the
- * top 50 is still a minute stale.
+ * covers the daily one, `stc_capital` orders the survival one) capped at the
+ * configured board size, wrapped in a 60-second transient. The visitor's own
+ * row is deliberately NOT part of that cache — it is per-player, it is two tiny
+ * queries, and a player who just decided must see their own result immediately
+ * even while the top of the board is still a minute stale.
  *
  * @package HTI_Games
  */
@@ -47,16 +47,26 @@ defined( 'ABSPATH' ) || exit;
 class Leaderboard {
 
 	/**
-	 * How many rows a board shows.
-	 */
-	public const SIZE = 50;
-
-	/**
 	 * Cache window. Short enough that the board feels live during the
 	 * evening rush, long enough that a thousand people opening it at the
 	 * reset is one query rather than a thousand.
 	 */
 	private const TTL = 60;
+
+	/**
+	 * How few players make a crowd percentage a lie.
+	 *
+	 * Two reasons for the floor, and either would be enough. Statistically,
+	 * one player either way moves a proportion out of twelve by eight points:
+	 * "67% lost today" off three runs is noise printed as a fact, on a page
+	 * whose whole subject is not mistaking noise for a signal. And on a small
+	 * day the same page carries a public board of nicknames, so a percentage
+	 * over a handful of runs is arithmetic somebody can invert into who lost.
+	 *
+	 * Below this the row still appears and still says something true — how
+	 * many have played — it just does not dress it as a rate.
+	 */
+	public const CROWD_MIN = 20;
 
 	/**
 	 * Board identifiers, as the REST layer accepts them.
@@ -74,7 +84,9 @@ class Leaderboard {
 	 * public leaderboard into a slow way of filling the options table, which is
 	 * the failure mode the security skill calls out for any map a stranger can
 	 * add a key to. Thirty days is more history than any screen asks for (the
-	 * client only ever requests today) and caps the key space at 124 rows.
+	 * client only ever requests today) and caps the key space at 124 rows. The
+	 * board size in the daily key does not multiply that: it is the site's own
+	 * setting, not something the caller chooses.
 	 */
 	public const MAX_BACK_DAYS = 30;
 
@@ -85,6 +97,27 @@ class Leaderboard {
 	 */
 	public static function is_board( string $board ): bool {
 		return self::BOARD_DAILY === $board || self::BOARD_SURVIVAL === $board;
+	}
+
+	/**
+	 * How many rows a board shows, as the owner configured it. Clamped. Pure.
+	 *
+	 * Clamped rather than trusted: `board_size` is normalised on the way into
+	 * the option, but an option row written by an older version — or by hand —
+	 * reaches the LIMIT of a public query, and a LIMIT is not a place to find
+	 * out that a stored value was never checked.
+	 *
+	 * @param mixed $stored The stored `board_size`.
+	 */
+	public static function clamp_size( $stored ): int {
+		return max( Settings::BOARD_MIN, min( Settings::BOARD_MAX, (int) $stored ) );
+	}
+
+	/**
+	 * How many rows this site's boards show.
+	 */
+	public static function size(): int {
+		return self::clamp_size( Settings::settings()['board_size'] );
 	}
 
 	/**
@@ -109,7 +142,7 @@ class Leaderboard {
 	/* ---------------------------------------------------------------- */
 
 	/**
-	 * The day's top 50 by risk-normalised score, plus the caller's own row.
+	 * The day's top rows by risk-normalised score, plus the caller's own row.
 	 *
 	 * @param string $game      Game id.
 	 * @param string $day_key   Day key, 'Y-m-d'.
@@ -117,22 +150,56 @@ class Leaderboard {
 	 * @return array{board:string,game:string,day:string,rows:array<int,array<string,mixed>>,me:array<string,mixed>|null,stats:array<string,int>}
 	 */
 	public static function daily( string $game, string $day_key, int $player_id = 0 ): array {
-		$cache = 'hti_games_lb_d_' . $game . '_' . $day_key;
+		$size = self::size();
+		// The size is part of the key: a board cached at a hundred rows must
+		// not keep being served after the owner cut it to twenty.
+		$cache = 'hti_games_lb_d_' . $game . '_' . $day_key . '_' . $size;
 		$rows  = get_transient( $cache );
 
 		if ( ! is_array( $rows ) ) {
-			$rows = self::query_daily( $game, $day_key );
+			$rows = self::query_daily( $game, $day_key, $size );
 			set_transient( $cache, $rows, self::TTL );
 		}
+
+		$me = self::me_daily( $game, $day_key, $player_id );
 
 		return array(
 			'board' => self::BOARD_DAILY,
 			'game'  => $game,
 			'day'   => $day_key,
 			'rows'  => $rows,
-			'me'    => self::me_daily( $game, $day_key, $player_id ),
-			'stats' => self::day_stats( $game, $day_key ),
+			'me'    => $me,
+			// A public board is served to people who have not decided yet, so
+			// it gets the stats without the crowd counts. See public_stats().
+			'stats' => self::public_stats( self::day_stats( $game, $day_key ), null !== $me ),
 		);
+	}
+
+	/**
+	 * The day's statistics as a board may publish them. Pure.
+	 *
+	 * "How many lost on this one" is a lesson after a decision and a hint
+	 * before one — the same number, and the only thing separating the two is
+	 * which side of the INSERT it is read on. `GET /leaderboard` is public,
+	 * unauthenticated and reachable from a second tab while the chart is still
+	 * open in the first, so the counts are withheld from anybody the runs
+	 * table does not already show as having played that day.
+	 *
+	 * The result screen does not go through here: it reads day_stats() whole,
+	 * and it only exists because a run row does.
+	 *
+	 * @param array<string,int> $stats   day_stats() output.
+	 * @param bool              $decided Whether the caller already has a run on this day.
+	 * @return array<string,int>
+	 */
+	public static function public_stats( array $stats, bool $decided ): array {
+		if ( $decided ) {
+			return $stats;
+		}
+
+		unset( $stats['lost'], $stats['passed'] );
+
+		return $stats;
 	}
 
 	/**
@@ -144,9 +211,10 @@ class Leaderboard {
 	 *
 	 * @param string $game    Game id.
 	 * @param string $day_key Day key.
+	 * @param int    $size    How many rows, already clamped.
 	 * @return array<int,array<string,mixed>>
 	 */
-	private static function query_daily( string $game, string $day_key ): array {
+	private static function query_daily( string $game, string $day_key, int $size ): array {
 		global $wpdb;
 
 		$runs    = Store::runs_table();
@@ -163,7 +231,7 @@ class Leaderboard {
 				 LIMIT %d",
 				Config::game_id( $game ),
 				$day_key,
-				self::SIZE
+				$size
 			),
 			ARRAY_A
 		);
@@ -268,11 +336,20 @@ class Leaderboard {
 	}
 
 	/**
-	 * How the day went for everybody: how many played and what they risked.
+	 * How the day went for everybody: how many played, what they risked, how
+	 * many lost and how many stayed out.
 	 *
 	 * This is the number the "average risk today" chart is drawn from, and the
 	 * reason the ranking above had to be risk-normalised before this could be
 	 * shown at all.
+	 *
+	 * Five aggregates, one row, one query, one transient. The two conditional
+	 * sums cost nothing that COUNT(*) was not already paying: the WHERE is the
+	 * same `board (game, day_key, board_score)` range scan either way, so the
+	 * work is bounded by one game-day of runs and not by the table. They are
+	 * counted here rather than derived on the client because "how many lost"
+	 * has to be a fact about rows nobody can see, not a number a browser could
+	 * be handed the ingredients for.
 	 *
 	 * @param string $game    Game id.
 	 * @param string $day_key Day key.
@@ -292,7 +369,9 @@ class Leaderboard {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- custom table, no core API; cached in the transient immediately below.
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT COUNT(*) AS players, AVG(risk_bp) AS avg_risk, SUM(died) AS deaths
+				"SELECT COUNT(*) AS players, AVG(risk_bp) AS avg_risk, SUM(died) AS deaths,
+				        SUM(CASE WHEN pnl < 0 THEN 1 ELSE 0 END) AS lost,
+				        SUM(CASE WHEN decision = 'pass' THEN 1 ELSE 0 END) AS passed
 				 FROM `{$runs}` WHERE game = %d AND day_key = %s",
 				Config::game_id( $game ),
 				$day_key
@@ -304,10 +383,92 @@ class Leaderboard {
 			'players'     => (int) ( $row['players'] ?? 0 ),
 			'avg_risk_bp' => (int) round( (float) ( $row['avg_risk'] ?? 0 ) ),
 			'deaths'      => (int) ( $row['deaths'] ?? 0 ),
+			// A losing run, not a losing player: a pass books zero and is
+			// neither a loss nor a win, which is the same distinction
+			// Scoring::calendar() draws between "lost" and "flat".
+			'lost'        => (int) ( $row['lost'] ?? 0 ),
+			'passed'      => (int) ( $row['passed'] ?? 0 ),
 		);
 
 		set_transient( $cache, $stats, self::TTL );
 		return $stats;
+	}
+
+	/**
+	 * The one crowd line a result screen shows: which sentence, and what
+	 * percentage goes next to it. Pure.
+	 *
+	 * Which of the four sentences it is depends on what the player themselves
+	 * did, because that is the only comparison that means anything to them. A
+	 * player who took the trade is measured against the people who also took
+	 * it — folding the people who passed into that denominator would report a
+	 * number about attendance and call it a hit rate. A player who passed is
+	 * measured against everybody, which is the honest answer to "was staying
+	 * out the odd thing to do today".
+	 *
+	 * Below CROWD_MIN there is no percentage at all: the key names the
+	 * small-sample sentence and `pct` is null, so the row says how many have
+	 * played and stops there. Saying nothing untrue is worth more than filling
+	 * the slot.
+	 *
+	 * @param array<string,int> $stats    day_stats() output.
+	 * @param string            $game     Game id.
+	 * @param string            $decision What the player did: 'pass' or anything else.
+	 * @return array{key:string,pct:int|null}
+	 */
+	public static function crowd( array $stats, string $game, string $decision ): array {
+		$players = max( 0, (int) ( $stats['players'] ?? 0 ) );
+		$lost    = max( 0, (int) ( $stats['lost'] ?? 0 ) );
+		$passed  = max( 0, (int) ( $stats['passed'] ?? 0 ) );
+		$entered = max( 0, $players - $passed );
+		$passing = 'pass' === $decision;
+
+		if ( $players < self::CROWD_MIN ) {
+			return array(
+				'key' => 'crowd_thin',
+				'pct' => null,
+			);
+		}
+
+		if ( Config::GAME_REVEAL === $game ) {
+			return array(
+				'key' => $passing ? 'rev_crowd_passed' : 'rev_crowd_in',
+				'pct' => self::share( $passing ? $passed : $entered, $players ),
+			);
+		}
+
+		// Everybody passing is not a state a board of twenty can reach without
+		// something being wrong, but a division by it would be, so the
+		// all-players sentence is the fallback rather than a blank row.
+		if ( $passing || $entered < 1 ) {
+			return array(
+				'key' => 'stc_crowd_lost',
+				'pct' => self::share( $lost, $players ),
+			);
+		}
+
+		return array(
+			'key' => 'stc_crowd_entered',
+			'pct' => self::share( $lost, $entered ),
+		);
+	}
+
+	/**
+	 * One count as a whole percentage of another. Pure.
+	 *
+	 * Rounded to a whole number and clamped to 0..100: a percentage on a
+	 * result screen is read, not computed with, and a decimal place on it
+	 * would be precision the sample does not have.
+	 *
+	 * @param int $part  Numerator.
+	 * @param int $whole Denominator.
+	 */
+	private static function share( int $part, int $whole ): int {
+		if ( $whole < 1 ) {
+			return 0;
+		}
+
+		return max( 0, min( 100, (int) round( ( $part * 100 ) / $whole ) ) );
 	}
 
 	/* ---------------------------------------------------------------- */
@@ -326,11 +487,12 @@ class Leaderboard {
 	 * @return array{board:string,rows:array<int,array<string,mixed>>,me:array<string,mixed>|null}
 	 */
 	public static function survival( int $player_id = 0 ): array {
-		$cache = 'hti_games_lb_s';
+		$size  = self::size();
+		$cache = 'hti_games_lb_s_' . $size;
 		$rows  = get_transient( $cache );
 
 		if ( ! is_array( $rows ) ) {
-			$rows = self::query_survival();
+			$rows = self::query_survival( $size );
 			set_transient( $cache, $rows, self::TTL );
 		}
 
@@ -345,9 +507,10 @@ class Leaderboard {
 	/**
 	 * The uncached survival read.
 	 *
+	 * @param int $size How many rows, already clamped.
 	 * @return array<int,array<string,mixed>>
 	 */
-	private static function query_survival(): array {
+	private static function query_survival( int $size ): array {
 		global $wpdb;
 
 		$players = Store::players_table();
@@ -360,7 +523,7 @@ class Leaderboard {
 				 WHERE nickname_key IS NOT NULL AND nickname <> ''
 				 ORDER BY stc_capital DESC, stc_streak DESC, id ASC
 				 LIMIT %d",
-				self::SIZE
+				$size
 			),
 			ARRAY_A
 		);

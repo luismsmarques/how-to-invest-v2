@@ -135,6 +135,12 @@ class Seeder {
 	 *
 	 * Same shape as HTI\Engine\Subscribe::robots() for the confirmation page.
 	 *
+	 * Which page this is comes from Schema::detect_page() and not from a
+	 * second reading of the meta here. The two used to differ: the schema
+	 * fell back to sniffing the shortcode when the meta was absent and this
+	 * did not, so a profile page an editor had rebuilt by hand correctly
+	 * emitted no JSON-LD and was indexed anyway. One detector, one answer.
+	 *
 	 * @param array<string,bool|string> $robots Robots directives.
 	 * @return array<string,bool|string>
 	 */
@@ -142,7 +148,11 @@ class Seeder {
 		if ( ! is_page() ) {
 			return $robots;
 		}
-		$page = (string) get_post_meta( get_queried_object_id(), Schema::PAGE_META, true );
+		$post = get_queried_object();
+		if ( ! $post instanceof \WP_Post ) {
+			return $robots;
+		}
+		$page = Schema::detect_page( $post );
 		$defs = Config::pages();
 		if ( '' === $page || ! isset( $defs[ $page ] ) || false !== $defs[ $page ]['index'] ) {
 			return $robots;
