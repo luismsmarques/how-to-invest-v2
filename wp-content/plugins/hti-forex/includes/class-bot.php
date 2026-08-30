@@ -141,9 +141,17 @@ class Bot {
 			// Count the campaign only for someone we have never seen. Opening
 			// the same ad twice is one person, and a number that says otherwise
 			// would flatter whichever creative people tap at more than once.
+			$source = Bot_Math::source_code( $rest );
 			if ( $is_new ) {
-				Bot_Store::count_source( Bot_Math::source_code( $rest ) );
+				Bot_Store::count_source( $source );
 			}
+
+			// Keep it on the row too, not just in the counter. The counter can
+			// say how many arrived from each campaign; only the row can travel
+			// with the click that leaves for the broker, which is what turns
+			// "454 people came from b2" into "b2 paid for this account".
+			// First touch wins — set_source() never overwrites.
+			Bot_Store::set_source( $chat_id, $source );
 			self::track( 'forex_bot_start' );
 			return self::send_illustrated( $chat_id, 'start', self::start_text() );
 		}
@@ -257,7 +265,7 @@ class Bot {
 
 		return Telegram::reply_message(
 			$chat_id,
-			self::reply_text( $picture, self::ad_line( (bool) $picture['tight'] ) ),
+			self::reply_text( $picture, self::ad_line( (bool) $picture['tight'], Bot_Store::source( $chat_id ) ) ),
 			self::keyboard( $picture )
 		);
 	}
@@ -387,10 +395,13 @@ class Bot {
 	 * get the live-account line. The two are counted separately, so which one
 	 * earns its place is a question the funnel answers rather than us.
 	 *
-	 * @param bool $tight Whether the smallest lot already risks more than 2%.
+	 * @param bool   $tight  Whether the smallest lot already risks more than 2%.
+	 * @param string $source Where this chat came from, or '' — carried to the
+	 *                       broker as the campaign id so a conversion can be
+	 *                       traced back to the ad that paid for the person.
 	 * @return string
 	 */
-	private static function ad_line( bool $tight ): string {
+	private static function ad_line( bool $tight, string $source = '' ): string {
 		$settings = Settings::settings();
 		if ( empty( $settings['cta_enabled'] ) || empty( $settings['bot_ad_enabled'] ) ) {
 			return '';
@@ -406,6 +417,13 @@ class Bot {
 		// Closed vocabulary, fixed in code: `loc` is echoed into a counter map
 		// and must never come from anything a visitor controls.
 		$url = add_query_arg( 'loc', $tight ? 'telegram_bot_demo' : 'telegram_bot_real', $url );
+
+		// And the campaign the person arrived on, which /go/ re-attaches as
+		// the network's sub-id. Without this the money spent bringing someone
+		// into the bot can never be matched to the account they open.
+		if ( '' !== $source ) {
+			$url = add_query_arg( 'cid', rawurlencode( $source ), $url );
+		}
 
 		// Bold inside the link: Telegram renders links blue and underlined
 		// already, and the weight is what pulls the eye down to it past the

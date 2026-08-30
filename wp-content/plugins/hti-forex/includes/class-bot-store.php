@@ -33,7 +33,7 @@ class Bot_Store {
 	/**
 	 * Bump to trigger a dbDelta upgrade of the table.
 	 */
-	private const SCHEMA = 1;
+	private const SCHEMA = 2;
 
 	private const OPTION_SCHEMA  = 'hti_forex_bot_schema';
 	private const OPTION_BUCKETS = 'hti_forex_bot_buckets';
@@ -81,6 +81,7 @@ class Bot_Store {
 				chat_id bigint(20) NOT NULL,
 				pair varchar(8) NOT NULL DEFAULT 'EURUSD',
 				leverage smallint(5) unsigned NOT NULL DEFAULT 500,
+				source varchar(32) NOT NULL DEFAULT '',
 				created_at datetime NOT NULL,
 				last_seen datetime NOT NULL,
 				PRIMARY KEY (id),
@@ -119,6 +120,53 @@ class Bot_Store {
 		// A repeat inside the same second reports 0 (nothing changed), which
 		// also correctly reads as "not new".
 		return 1 === (int) $wpdb->rows_affected;
+	}
+
+	/**
+	 * Remember where a chat came from — first touch only.
+	 *
+	 * First touch, not last: the campaign that paid to bring someone here is
+	 * the one that earned the account they open later. Someone who taps a
+	 * second ad, or re-opens the bot from the channel, does not retroactively
+	 * change who paid for them.
+	 *
+	 * Stored per chat because that is the only way the tag can travel with the
+	 * click that leaves for the broker — the aggregate counter in
+	 * OPTION_SOURCES can say how many arrived, never which one converted. It
+	 * is a campaign code and never anything the person typed:
+	 * Bot_Math::source_code() has already reduced it to [a-z0-9_-]{1,32} or
+	 * thrown it away.
+	 *
+	 * @param int    $chat_id Telegram chat id.
+	 * @param string $source  Normalized source code ('' does nothing).
+	 */
+	public static function set_source( int $chat_id, string $source ): void {
+		if ( '' === $source ) {
+			return;
+		}
+
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$wpdb->query(
+			$wpdb->prepare(
+				'UPDATE `' . self::table() . "` SET source = %s WHERE chat_id = %d AND source = ''",
+				$source,
+				$chat_id
+			)
+		);
+	}
+
+	/**
+	 * Where a chat came from, or '' when we never knew.
+	 *
+	 * @param int $chat_id Telegram chat id.
+	 */
+	public static function source( int $chat_id ): string {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		return (string) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT source FROM `' . self::table() . '` WHERE chat_id = %d', $chat_id )
+		);
 	}
 
 	/**
