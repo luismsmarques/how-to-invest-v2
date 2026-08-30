@@ -262,12 +262,20 @@ O retrato completo, com evidência por `ficheiro:linha`, e a cronologia de setem
   webhook registado no Telegram é o nosso, as atualizações à espera e **o último erro de entrega que o Telegram
   guardou**; mais o histórico das últimas dez difusões, a razão da última recusa, e as falhas de envio agrupadas
   por código.
-- **`hti-forex` não tem `uninstall.php`** — desinstalar deixa chat_ids na base de dados.
+- ~~**`hti-forex` não tem `uninstall.php`**~~ — **resolvido** (hti-forex 0.13.11, hti-engine 0.15.5, hti-social
+  0.10.0): os quatro plugins limpam-se. O forex larga a tabela dos subscritores, o segredo do webhook e os três
+  cron; o engine larga os `htinvest_profile` (em lotes, com orçamento de tempo), a tabela de feedback, o user
+  meta e os contadores — e **não toca** no `learn`/`glossary`/`news`/`broker`, que é conteúdo do site.
 - ~~**Acessibilidade:** o token de foco `#FF6B5E` dá 2,79:1…~~ — **resolvido** (tema 0.8.60, hti-engine 0.15.4,
   hti-forex 0.13.10): o anel de foco passou a ter token próprio (`--wp--custom--focus-ring` = `#D9432F`, ≥3,41:1
   em todas as superfícies da paleta), catorze `outline: none` saíram dos campos, o auto-avanço só dispara com
   toque ou rato — a seta do teclado deixou de saltar a pergunta — e o scroll respeita `prefers-reduced-motion`.
   `test-focus-contrast.php` recalcula os rácios a partir do `theme.json` a cada corrida.
+- ~~**Auditoria de segurança (30 ago)**~~ — seis achados, todos corrigidos: teto nos dois mapas de métricas que
+  um pedido anónimo podia fazer crescer; ffmpeg do `hti-social` verificado por SHA-256 e servido só da nossa
+  origem (deixou de haver `<script>` para um CDN sem integrity); `composer.lock` versionado e `composer audit`
+  na CI; `/tts` e `/caption` passam a exigir `publish_posts` e têm rate limit; HSTS de 5 minutos para 24 horas.
+  Superfícies limpas com prova no relatório: 37 handlers `admin_post`, 23 rotas REST, SQL, chaves, escape.
 - **A homepage diz "Seis perguntas curtas"** para um questionário de 8.
 - **~479 strings `__()` sem tradução PT**, e os ficheiros `pt_PT` podem nem carregar num site `pt_PT_ao90`.
 

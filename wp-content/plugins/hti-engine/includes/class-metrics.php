@@ -37,6 +37,17 @@ class Metrics {
 	private const MAX_PATHS_PER_DAY = 300;
 
 	/**
+	 * Highest questionnaire step index the beacon will record.
+	 *
+	 * The questionnaire has eight questions. This is deliberately generous —
+	 * it is a ceiling on the key space, not a schema — but it IS a ceiling:
+	 * without one the step map takes whatever integer the request sends, and
+	 * the beacon is public, unauthenticated and writes into a single option
+	 * row that every later beacon has to read and write whole.
+	 */
+	private const MAX_STEP = 32;
+
+	/**
 	 * Ordered latency histogram buckets (seconds) for /recommend timing, so a
 	 * p95 can be estimated from cumulative counts without storing samples.
 	 *
@@ -186,13 +197,24 @@ class Metrics {
 
 		$data[ $day ]['e'][ $event ] = ( $data[ $day ]['e'][ $event ] ?? 0 ) + 1;
 
+		// Both of these were the only maps an anonymous request could add an
+		// unbounded number of keys to. The others are capped by cardinality;
+		// these two have something better available — a known key space — so
+		// a value outside it is not counted at all rather than bucketed.
 		if ( 'quiz_step_complete' === $event && isset( $params['step_index'] ) ) {
-			$s = max( 0, (int) $params['step_index'] );
-			$data[ $day ]['step'][ $s ] = ( $data[ $day ]['step'][ $s ] ?? 0 ) + 1;
+			$s = (int) $params['step_index'];
+			if ( $s >= 0 && $s <= self::MAX_STEP ) {
+				$data[ $day ]['step'][ $s ] = ( $data[ $day ]['step'][ $s ] ?? 0 ) + 1;
+			}
 		}
 		if ( 'result_view' === $event && isset( $params['archetype'] ) ) {
 			$a = (int) $params['archetype'];
-			$data[ $day ]['arch'][ $a ] = ( $data[ $day ]['arch'][ $a ] ?? 0 ) + 1;
+			// The five curated archetypes are the whole key space; the admin
+			// screen already looks the label up in exactly this array, so an
+			// id it cannot name was never worth storing.
+			if ( isset( Config::archetypes()[ $a ] ) ) {
+				$data[ $day ]['arch'][ $a ] = ( $data[ $day ]['arch'][ $a ] ?? 0 ) + 1;
+			}
 		}
 		if ( 'cta_click' === $event && isset( $params['location'] ) ) {
 			$loc = (string) $params['location'];

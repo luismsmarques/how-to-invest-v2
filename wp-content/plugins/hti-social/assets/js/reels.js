@@ -277,11 +277,21 @@
 
 	var ffmpegReady = null;
 
+	// The mirrored URL for one asset, or a clear failure. There is deliberately
+	// no fallback to the CDN: falling back would quietly restore the thing the
+	// mirror exists to remove — third-party script running on our own admin
+	// pages with nothing checking what arrived.
+	function need( local, key ) {
+		if ( ! local || ! local[ key ] ) {
+			throw new Error( 'The mirrored ffmpeg file "' + key + '" is missing.' );
+		}
+		return local[ key ];
+	}
+
 	function getFfmpeg() {
 		if ( ffmpegReady ) {
 			return ffmpegReady;
 		}
-		var urls = CFG.ffmpeg || {};
 		logEvent( 'info', 'ffmpeg_init', 'Preparing the MP4 converter' );
 		// The worker, core and wasm must be same-origin (the browser blocks a
 		// cross-origin Worker and the worker's import of the core). Ask the
@@ -297,18 +307,18 @@
 					throw new Error( ( res.body && res.body.message ) || 'Could not prepare the local ffmpeg files.' );
 				}
 				var local = res.body; // { worker, core, wasm } same-origin URLs.
-				return loadScript( urls.ffmpeg )
+				return loadScript( need( local, 'ffmpeg' ) )
 					.then( function () {
-						return loadScript( urls.util );
+						return loadScript( need( local, 'util' ) );
 					} )
 					.then( function () {
 						var FFmpeg = window.FFmpegWASM && window.FFmpegWASM.FFmpeg;
 						var util = window.FFmpegUtil;
 						if ( ! FFmpeg ) {
-							throw new Error( 'FFmpegWASM global not found after loading ' + urls.ffmpeg );
+							throw new Error( 'FFmpegWASM global not found after loading ' + need( local, 'ffmpeg' ) );
 						}
 						if ( ! util || ! util.fetchFile ) {
-							throw new Error( 'FFmpegUtil global not found after loading ' + urls.util );
+							throw new Error( 'FFmpegUtil global not found after loading ' + need( local, 'util' ) );
 						}
 						var ff = new FFmpeg();
 						var cfg = { coreURL: local.core, wasmURL: local.wasm };

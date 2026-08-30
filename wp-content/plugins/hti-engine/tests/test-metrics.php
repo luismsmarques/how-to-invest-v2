@@ -33,6 +33,7 @@ if ( ! function_exists( 'get_option' ) ) {
 	}
 }
 
+require_once __DIR__ . '/../includes/class-config.php';
 require_once __DIR__ . '/../includes/class-metrics.php';
 
 use HTI\Engine\Metrics;
@@ -240,6 +241,31 @@ check( count( $t['cta'] ) <= $cap + 1, 'the CTA map stops growing at the cap' );
 check( count( $t['tool'] ) <= $cap + 1, 'so does the calculator map' );
 check( 50 === (int) ( $t['cta']['_other'] ?? 0 ), 'and the overflow is counted rather than dropped' );
 check( array_sum( $t['cta'] ) === $cap + 50, 'no click is lost to the cap' );
+
+// --- The two maps a public request could grow without limit -----------------
+// Every other breakdown is capped by cardinality. These two have something
+// better: a known key space. A value outside it is not counted at all, because
+// the beacon is anonymous and this option is read and written whole on every
+// single event.
+$GLOBALS['__hti_options'][ 'hti_metrics' ] = array();
+
+Metrics::bump( 'quiz_step_complete', array( 'step_index' => 3 ) );
+Metrics::bump( 'quiz_step_complete', array( 'step_index' => 999999 ) );
+Metrics::bump( 'quiz_step_complete', array( 'step_index' => -1 ) );
+$today = gmdate( 'Y-m-d' );
+$day   = $GLOBALS['__hti_options']['hti_metrics'][ $today ] ?? array();
+
+check( 1 === (int) ( $day['step'][3] ?? 0 ), 'a real step index is counted' );
+check( array( 3 ) === array_keys( $day['step'] ?? array() ), 'an out-of-range step never becomes a key' );
+
+Metrics::bump( 'result_view', array( 'archetype' => 3 ) );
+Metrics::bump( 'result_view', array( 'archetype' => 424242 ) );
+Metrics::bump( 'result_view', array( 'archetype' => -7 ) );
+$day = $GLOBALS['__hti_options']['hti_metrics'][ $today ] ?? array();
+
+check( 1 === (int) ( $day['arch'][3] ?? 0 ), 'a real archetype is counted' );
+check( array( 3 ) === array_keys( $day['arch'] ?? array() ), 'an archetype id the screen cannot name never becomes a key' );
+
 
 echo "\n";
 if ( $failures ) {
