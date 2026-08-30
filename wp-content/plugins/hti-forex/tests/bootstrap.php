@@ -189,6 +189,14 @@ require_once __DIR__ . '/../includes/class-config.php';
 // A Telegram that answers whatever the test says it answers. Queue bodies in
 // $GLOBALS['__hti_http'] as array('body' => array|string, 'code' => int); an
 // empty queue answers ok:true. Every request is recorded in __hti_http_log.
+// A $wpdb stand-in with just the field a failed write leaves its reason in.
+if ( ! isset( $GLOBALS['wpdb'] ) ) {
+	$GLOBALS['wpdb'] = new class() {
+		/** @var string */
+		public $last_error = '';
+	};
+}
+
 $GLOBALS['__hti_http']     = array();
 $GLOBALS['__hti_http_log'] = array();
 if ( ! function_exists( 'wp_remote_post' ) ) {
