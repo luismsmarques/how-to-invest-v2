@@ -43,7 +43,11 @@ hti_games_check( array() === $empty, 'no string is blank (' . ( $empty ? implode
 
 echo "\nNo Portuguese string is just the English one\n";
 // A handful of words are the same in both languages and that is not a bug.
-$same_ok = array();
+// Keep this list short and justified: it is the escape hatch that turns the
+// check above from a guarantee into a suggestion, one entry at a time.
+$same_ok = array(
+	'lbl_capital', // "Capital" is the same word in English and Portuguese.
+);
 $same    = array();
 foreach ( $all as $key => $pair ) {
 	if ( in_array( $key, $same_ok, true ) ) {

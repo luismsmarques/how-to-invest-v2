@@ -54,6 +54,8 @@ class Strings {
 			self::stc(),
 			self::reveal(),
 			self::social(),
+			self::badges(),
+			self::labels(),
 			self::account(),
 			self::states()
 		);
@@ -882,6 +884,147 @@ class Strings {
 			'st_no_content'   => array(
 				'en' => 'No challenge is published for today yet.',
 				'pt' => 'Ainda não há desafio publicado para hoje.',
+			),
+		);
+	}
+
+	/**
+	 * The eight badges.
+	 *
+	 * Every one of them rewards staying in the game rather than being right:
+	 * days survived, days passed, trades kept small, and the average risk
+	 * coming down week on week. There is deliberately no badge for a big win,
+	 * because a badge is a suggestion about what to do next.
+	 *
+	 * "Blown once" is here on purpose and is not framed as a failure. Nearly
+	 * every account dies; a game about survival that hid that would be teaching
+	 * the wrong thing on the day it matters most.
+	 *
+	 * The keys match Scoring::badges(); the front end renders only badges whose
+	 * name exists here, so a new badge stays invisible until it has words.
+	 *
+	 * @return array<string,array{en:string,pt:string}>
+	 */
+	private static function badges(): array {
+		return array(
+			'badge_first_chart'      => array(
+				'en' => 'First chart',
+				'pt' => 'Primeiro gráfico',
+			),
+			'badge_first_chart_note' => array(
+				'en' => 'You opened a day and made a call on it.',
+				'pt' => 'Abriste um dia e tomaste uma decisão sobre ele.',
+			),
+			'badge_week'             => array(
+				'en' => 'A week alive',
+				'pt' => 'Uma semana vivo',
+			),
+			'badge_week_note'        => array(
+				'en' => 'Seven days in a row with the account still open.',
+				'pt' => 'Sete dias seguidos com a conta ainda aberta.',
+			),
+			'badge_month'            => array(
+				'en' => 'A month alive',
+				'pt' => 'Um mês vivo',
+			),
+			'badge_month_note'       => array(
+				'en' => 'Twenty-eight days. Most accounts do not get here.',
+				'pt' => 'Vinte e oito dias. A maioria das contas não chega aqui.',
+			),
+			'badge_patience'         => array(
+				'en' => 'Sat it out',
+				'pt' => 'Ficaste de fora',
+			),
+			'badge_patience_note'    => array(
+				'en' => 'Passed often enough that passing is clearly a decision you make.',
+				'pt' => 'Passaste vezes suficientes para passar ser claramente uma decisão tua.',
+			),
+			'badge_small_size'       => array(
+				'en' => 'Small and steady',
+				'pt' => 'Pequeno e constante',
+			),
+			'badge_small_size_note'  => array(
+				'en' => 'A long run of decisions at one percent or under.',
+				'pt' => 'Uma série longa de decisões a um por cento ou menos.',
+			),
+			'badge_de_risked'        => array(
+				'en' => 'Sizing down',
+				'pt' => 'A reduzir',
+			),
+			'badge_de_risked_note'   => array(
+				'en' => 'Your average risk is lower than it was. This is the one that matters.',
+				'pt' => 'O teu risco médio está mais baixo do que estava. É este que interessa.',
+			),
+			'badge_blown'            => array(
+				'en' => 'Blown once',
+				'pt' => 'Rebentaste uma vez',
+			),
+			'badge_blown_note'       => array(
+				'en' => 'The account went. Almost every account does — what changes afterwards is the point.',
+				'pt' => 'A conta foi-se. Quase todas vão — o que muda depois é que interessa.',
+			),
+			'badge_survivor'         => array(
+				'en' => 'Still here',
+				'pt' => 'Ainda aqui',
+			),
+			'badge_survivor_note'    => array(
+				'en' => 'Above where you started, after a run long enough to mean something.',
+				'pt' => 'Acima de onde começaste, ao fim de uma corrida longa o suficiente para significar alguma coisa.',
+			),
+			'badge_locked'           => array(
+				'en' => 'Not yet',
+				'pt' => 'Ainda não',
+			),
+		);
+	}
+
+	/**
+	 * Structural labels: the no-JavaScript notice, the row headings of the
+	 * chart's text equivalent, and the leaderboard column names.
+	 *
+	 * The five `lbl_*` rows are what a screen reader reads instead of the
+	 * canvas, so they are part of the accessible result rather than decoration
+	 * — the same words a sighted player sees on the outcome card.
+	 *
+	 * @return array<string,array{en:string,pt:string}>
+	 */
+	private static function labels(): array {
+		return array(
+			'needs_js'     => array(
+				'en' => 'This game needs JavaScript to run. The rules, the lesson and the disclaimer are on this page either way — turn JavaScript on to play today\'s challenge.',
+				'pt' => 'Este jogo precisa de JavaScript para funcionar. As regras, a lição e o aviso estão nesta página de qualquer forma — ativa o JavaScript para jogar o desafio de hoje.',
+			),
+			'lbl_entry'    => array(
+				'en' => 'Entry',
+				'pt' => 'Entrada',
+			),
+			'lbl_stop'     => array(
+				'en' => 'Stop',
+				'pt' => 'Stop de perda',
+			),
+			'lbl_target'   => array(
+				'en' => 'Target',
+				'pt' => 'Alvo',
+			),
+			'lbl_outcome'  => array(
+				'en' => 'Outcome',
+				'pt' => 'Desfecho',
+			),
+			'lbl_pnl'      => array(
+				'en' => 'Result in dollars',
+				'pt' => 'Resultado em dólares',
+			),
+			'lbl_rank'     => array(
+				'en' => 'Position',
+				'pt' => 'Posição',
+			),
+			'lbl_player'   => array(
+				'en' => 'Player',
+				'pt' => 'Jogador',
+			),
+			'lbl_capital'  => array(
+				'en' => 'Capital',
+				'pt' => 'Capital',
 			),
 		);
 	}
