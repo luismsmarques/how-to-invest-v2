@@ -198,6 +198,10 @@ class Bot_Admin {
 					<td><strong><?php echo esc_html( number_format_i18n( $total ) ); ?></strong></td>
 				</tr>
 				<tr>
+					<td><?php esc_html_e( 'Plugin version running', 'hti-forex' ); ?></td>
+					<td><code><?php echo esc_html( VERSION ); ?></code></td>
+				</tr>
+				<tr>
 					<td><?php esc_html_e( 'Webhook URL', 'hti-forex' ); ?></td>
 					<td><code><?php echo esc_html( Telegram::webhook_url() ); ?></code></td>
 				</tr>
@@ -413,6 +417,9 @@ class Bot_Admin {
 					esc_html( human_time_diff( (int) $log['refused']['at'] ) )
 				);
 				?>
+				<?php if ( '' !== (string) ( $log['refused']['detail'] ?? '' ) ) : ?>
+					<br /><code><?php echo esc_html( (string) $log['refused']['detail'] ); ?></code>
+				<?php endif; ?>
 			</p></div>
 		<?php endif; ?>
 

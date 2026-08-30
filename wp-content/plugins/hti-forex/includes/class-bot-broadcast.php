@@ -135,6 +135,9 @@ class Bot_Broadcast {
 		return array(
 			'history' => isset( $log['history'] ) && is_array( $log['history'] ) ? $log['history'] : array(),
 			'refused' => isset( $log['refused'] ) && is_array( $log['refused'] ) ? $log['refused'] : array(),
+			// A refusal may carry what the database said; older records have no
+			// such field, so readers must not assume it.
+
 			'errors'  => isset( $log['errors'] ) && is_array( $log['errors'] ) ? $log['errors'] : array(),
 			// When a send was last accepted. The screen needs this to tell a
 			// real confirmation from a stale one: "queued" used to be drawn
@@ -185,15 +188,34 @@ class Bot_Broadcast {
 	 * @param string $reason Machine-readable reason.
 	 * @return false
 	 */
-	private static function refuse( string $reason ): bool {
+	private static function refuse( string $reason, string $detail = '' ): bool {
 		$log            = self::log();
 		$log['refused'] = array(
 			'reason' => $reason,
 			'at'     => time(),
+			'detail' => $detail,
 		);
 		update_option( self::OPTION_LOG, $log, false );
 
 		return false;
+	}
+
+	/**
+	 * Whatever the database last complained about, if anything.
+	 *
+	 * A failed write is reported by WordPress as a bare false, and the reason
+	 * MySQL gave is thrown away one layer down. Carrying it up is the
+	 * difference between "the database refused" and knowing why — which, when
+	 * a broadcast will not go out, is the whole question.
+	 */
+	private static function db_error(): string {
+		global $wpdb;
+
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+			return '';
+		}
+
+		return trim( (string) ( $wpdb->last_error ?? '' ) );
 	}
 
 	/**
@@ -362,7 +384,10 @@ class Bot_Broadcast {
 		// database really did refuse it — and a broadcast whose state was never
 		// stored has not been queued, however far the code got.
 		if ( ! $written ) {
-			return self::refuse( 'write-failed' );
+			// Ask the database what it objected to. Five guesses at this from
+			// the outside were five wrong ones; MySQL knows, and until now
+			// nothing carried its answer as far as the screen.
+			return self::refuse( 'write-failed', self::db_error() );
 		}
 
 		self::remember_start();
