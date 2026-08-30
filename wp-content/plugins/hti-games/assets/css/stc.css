@@ -28,6 +28,8 @@
 	--g-border: #1B222E;
 	--g-border-2: #242C3A;
 	--g-border-3: #2A3342;
+	/* See games.css. 3.02:1 on the fill it sits on. */
+	--g-field: #5C6779;
 	--g-text: #E8EDF5;
 	--g-text-2: #C2CAD8;
 	--g-muted: #8A94A6;
@@ -42,7 +44,11 @@
 	--g-warn-soft: #2A1A10;
 	--g-grid: #161C26;
 	--g-past-up: #2E7D5B;
-	--g-past-down: #8C3B44;
+	/* Muted on purpose, but #8C3B44 sat at 2.58:1 on the chart ground — under
+	   the 3:1 WCAG 1.4.11 asks of a graphic somebody has to read. 3.41:1 puts
+	   it beside --g-past-up (3.84:1) and still far behind the live --g-down
+	   (5.92:1), so past still reads as past. */
+	--g-past-down: #A64A54;
 	--g-radius: 18px;
 
 	max-width: 470px;

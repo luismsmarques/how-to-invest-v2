@@ -49,6 +49,12 @@ html.hti-game-active body { padding-bottom: 0; }
 	--g-border: var( --wp--preset--color--border, #F2E4DD );
 	--g-border-2: #E7D6CE;
 	--g-border-3: #DCC7BD;
+	/* The border of a text field, and only that. An empty input carries no
+	   label inside it, so its outline IS the control — WCAG 1.4.11 wants 3:1
+	   there, and the hairlines above sit at 1.4:1 because they divide rather
+	   than identify. Same warm taupe, darker: 3.45:1 on white, 3.17:1 on the
+	   field's own fill. */
+	--g-field: #9E857B;
 	--g-text: var( --wp--preset--color--contrast, #2A2438 );
 	--g-text-2: #4A4358;
 	--g-muted: var( --wp--preset--color--muted, #6E6680 );
@@ -206,6 +212,10 @@ html.hti-game-active body { padding-bottom: 0; }
 }
 
 .hti-g__rules > summary {
+	/* A disclosure triangle is a control; 22px of line box is not a target. */
+	min-height: 44px;
+	display: flex;
+	align-items: center;
 	cursor: pointer;
 	font-family: var( --g-head );
 	font-weight: 700;
@@ -567,7 +577,11 @@ html.hti-game-active body { padding-bottom: 0; }
 	color: var( --g-brand-ink );
 }
 
-.hti-g__btn--primary.is-grave { background: var( --g-down ); color: #FFFFFF; }
+/* The confirm button at a tier that can end the account — the one button
+   whose label has to be read. White ink on the dark world's #FF4D5E is
+   3.24:1 at 15px bold, under AA; --g-brand-ink is white in both light
+   palettes and near-black in the dark one, at 6:1 on the same red. */
+.hti-g__btn--primary.is-grave { background: var( --g-down ); color: var( --g-brand-ink ); }
 
 .hti-g__btn--ghost {
 	flex: none;
@@ -859,7 +873,7 @@ html.hti-game-active body { padding-bottom: 0; }
 	min-height: 52px;
 	padding: 12px 14px;
 	background: var( --g-surface-2 );
-	border: 1.5px solid var( --g-border-2 );
+	border: 1.5px solid var( --g-field );
 	border-radius: var( --g-radius-sm );
 	font-family: var( --g-body );
 	font-weight: 600;
@@ -1192,12 +1206,34 @@ html.hti-game-active body { padding-bottom: 0; }
 	list-style: none;
 }
 
+/* Twenty-eight cells that used to say "won" or "lost" in colour and nothing
+   else. The sign in the middle is the one signed() writes everywhere else,
+   and it is what makes the grid readable to somebody who cannot separate the
+   green from the red. */
 .hti-profile__cell {
+	position: relative;
 	aspect-ratio: 1;
 	border-radius: 7px;
 	background: var( --g-surface-3 );
 	border: 1px solid var( --g-border-2 );
 }
+
+.hti-profile__mark {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var( --g-head );
+	font-weight: 700;
+	font-size: 12px;
+	line-height: 1;
+	color: var( --g-text-2 );
+}
+
+.hti-profile__cell.is-won .hti-profile__mark { color: var( --g-up ); }
+.hti-profile__cell.is-lost .hti-profile__mark { color: var( --g-down ); }
+.hti-profile__cell.is-passed .hti-profile__mark { color: var( --g-brand ); }
 
 .hti-profile__cell.is-won { background: var( --g-up-soft ); border-color: var( --g-up ); }
 .hti-profile__cell.is-lost { background: var( --g-down-soft ); border-color: var( --g-down ); }
@@ -1213,16 +1249,18 @@ html.hti-game-active body { padding-bottom: 0; }
 	list-style: none;
 }
 
+/* Earned and not, told apart by border STYLE as well as colour — never by
+   opacity: 0.5 here put an 11px name at 3.01:1. */
 .hti-profile__badge {
 	padding: 12px 8px;
 	background: var( --g-surface-2 );
-	border: 1px solid var( --g-border-2 );
+	border: 1px dashed var( --g-border-3 );
 	border-radius: var( --g-radius-sm );
 	text-align: center;
-	opacity: 0.5;
 }
 
-.hti-profile__badge.is-on { opacity: 1; border-color: var( --g-brand ); }
+.hti-profile__badge:not( .is-on ) .hti-profile__badgename { color: var( --g-muted ); }
+.hti-profile__badge.is-on { border-style: solid; border-color: var( --g-brand ); }
 
 .hti-profile__badgename {
 	display: block;

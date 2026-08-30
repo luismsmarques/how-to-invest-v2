@@ -51,6 +51,8 @@
 	var timers = [];
 	var frame = 0;
 	var ticker = 0;
+	// See stc.js: the first phase arrives with GET /today, and takes no focus.
+	var entered = false;
 
 	/**
 	 * Write text into a `data-hti` hook.
@@ -132,10 +134,21 @@
 		var body = H.hook( root, 'fundamentals' );
 		if ( body ) {
 			body.textContent = '';
+			// The tint is the editor's judgement about the figure, and it used
+			// to live in the colour of the figure and nowhere else (WCAG
+			// 1.4.1). The mark carries it for the eye, the span for a screen
+			// reader, both keyed on the vocabulary REST already validates.
+			var marks = { good: '✓', warn: '~', bad: '!' };
 			( data.fundamentals || [] ).forEach( function ( row ) {
 				var tr = H.el( 'tr', { class: 'is-' + row.tint } );
 				tr.appendChild( H.el( 'th', { scope: 'row' }, row.label ) );
-				tr.appendChild( H.el( 'td', { class: 'hti-num hti-rv__value' }, row.value ) );
+				var value = H.el( 'td', { class: 'hti-num hti-rv__value' } );
+				if ( marks[ row.tint ] ) {
+					value.appendChild( H.el( 'span', { class: 'hti-rv__mark', 'aria-hidden': 'true' }, marks[ row.tint ] ) );
+					value.appendChild( H.sr( H.t( 'rev_tint_' + row.tint ) + ' — ' ) );
+				}
+				value.appendChild( document.createTextNode( row.value ) );
+				tr.appendChild( value );
 				var avg = H.el( 'td', { class: 'hti-num hti-rv__avg' } );
 				avg.appendChild( H.sr( H.t( 'rev_sector_avg' ) + ' ' ) );
 				avg.appendChild( document.createTextNode( row.sector_avg ) );
@@ -475,7 +488,8 @@
 	 * @param {string} name Phase name.
 	 */
 	function go( name ) {
-		H.phase( root, name, 'reveal' === name ? '[data-hti="skip"]' : null );
+		H.phase( root, name, 'reveal' === name ? '[data-hti="skip"]' : null, entered );
+		entered = true;
 
 		if ( store && ( 'dossier' === name || 'size' === name ) ) {
 			store.set( { phase: name, size: state.size } );
@@ -533,11 +547,22 @@
 	function landed( result ) {
 		state.result = result;
 
+		// One announcement carrying every figure the screen just changed: the
+		// verdict, what it was worth, and the three HUD numbers. WCAG 4.1.3 —
+		// nothing here is focused and nothing reloads the page.
 		H.say( region, H.t( titleKey( result ) ) + ' ' + H.signed( result.pnl )
 			+ '. ' + H.t( 'capital_label' ) + ' ' + H.money( result.cap_after )
-			+ '. ' + H.t( 'rev_index_label' ) + ' ' + H.money( result.idx_after ) );
+			+ '. ' + H.t( 'rev_index_label' ) + ' ' + H.money( result.idx_after )
+			+ '. ' + H.t( 'streak_label' ) + ' ' + result.streak + '.' );
 
 		H.track( 'game_result', GAME + '_' + result.outcome );
+
+		// Reduced motion removes the sequence, so it removes the stage rather
+		// than flashing an empty one and moving focus twice to leave it.
+		if ( H.reducedMotion() ) {
+			paintResult( result );
+			return;
+		}
 
 		go( 'reveal' );
 		sequence( result, function () {
@@ -553,6 +578,19 @@
 	function lockActions( locked ) {
 		var buttons = root.querySelectorAll( '[data-hti-decide], [data-hti="size-confirm"]' );
 		var i;
+		// Disabling the focused button hands focus to <body> until the answer
+		// lands. Park it on the phase heading; go() takes it from there.
+		if ( locked ) {
+			for ( i = 0; i < buttons.length; i++ ) {
+				if ( buttons[ i ] === document.activeElement ) {
+					var head = root.querySelector( '[data-hti-phase]:not([hidden]) [tabindex="-1"]' );
+					if ( head ) {
+						head.focus();
+					}
+					break;
+				}
+			}
+		}
 		for ( i = 0; i < buttons.length; i++ ) {
 			buttons[ i ].disabled = !! locked;
 		}

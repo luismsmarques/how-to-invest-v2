@@ -31,13 +31,10 @@
  * Everything a player reads comes from Strings, never from `__()`: the site
  * runs pt_PT_ao90 against pt_PT translation files and WordPress does not fall
  * back between them, so a missing `__()` translation renders silently in
- * English on a Portuguese page. The one exception is labels(), a nine-key
- * bilingual table at the bottom of this file for the accessibility furniture
- * the copy table does not yet carry (the screen-reader table's row headings,
- * the board's column names, and the no-JavaScript notice). They are written in
- * the same both-languages-side-by-side shape and belong in Strings the next
- * time that file is open; they live here so this file does not have to edit
- * one it does not own.
+ * English on a Portuguese page. That includes the accessibility furniture —
+ * the screen-reader table's row headings, the board's column names and the
+ * no-JavaScript notice — which labels() at the bottom of this file reads out
+ * of Strings::labels() rather than carrying a second copy of.
  *
  * @package HTI_Games
  */
@@ -480,8 +477,13 @@ class Frontend {
 			if ( ! Settings::game_enabled( $game, $settings ) ) {
 				continue;
 			}
+			// Not a heading. The page's own H1 is the hub title and the
+			// editorial half below already carries an H3 with each game's
+			// name, so an H3 here both skipped a level (H1 → H3, nothing at
+			// H2) and put the same two names in the heading list twice. The
+			// link is what a reader is navigating by, and it is still a link.
 			$cards .= sprintf(
-				'<li class="hti-hub__card hti-hub__card--%1$s"><h3 class="hti-hub__name"><a class="hti-hub__link" href="%2$s">%3$s</a></h3><p class="hti-hub__tag">%4$s</p><p class="hti-hub__go" aria-hidden="true">%5$s</p></li>',
+				'<li class="hti-hub__card hti-hub__card--%1$s"><p class="hti-hub__name"><a class="hti-hub__link" href="%2$s">%3$s</a></p><p class="hti-hub__tag">%4$s</p><p class="hti-hub__go" aria-hidden="true">%5$s</p></li>',
 				esc_attr( $game ),
 				esc_url( Seeder::url( $card[2], $lang ) ),
 				esc_html( Strings::get( $card[0], $lang ) ),
@@ -1196,60 +1198,26 @@ class Frontend {
 	}
 
 	/**
-	 * The nine accessibility labels the copy table does not carry yet.
+	 * The nine accessibility labels, from the one table that owns them.
 	 *
-	 * Both languages side by side, exactly as Strings does it, and for the
-	 * same reason: a gap shows up in the diff instead of at runtime. They are
-	 * here rather than in Strings so this file does not have to edit a file it
-	 * does not own; they belong there.
+	 * These used to be a second copy living in this file, and the two had
+	 * already drifted: the local table said "Stop" and "Resultado" in
+	 * Portuguese where Strings says "Stop de perda" and "Desfecho". Both are
+	 * read aloud — they are the row headings of the chart's text equivalent
+	 * and the column names of the board — so the drift was two different
+	 * screen-reader experiences of the same number depending on which file
+	 * rendered it. Strings::labels() carries all nine; this reads from there.
 	 *
 	 * @param string $lang 'en' or 'pt'.
 	 * @return array<string,string>
 	 */
 	public static function labels( string $lang ): array {
-		$table = array(
-			'needs_js'    => array(
-				'en' => 'This game needs JavaScript to run. The rules, the lesson and the disclaimer are on this page either way — turn JavaScript on to play today’s challenge.',
-				'pt' => 'Este jogo precisa de JavaScript para funcionar. As regras, a lição e o aviso estão nesta página de qualquer forma — ativa o JavaScript para jogar o desafio de hoje.',
-			),
-			'lbl_entry'   => array(
-				'en' => 'Entry',
-				'pt' => 'Entrada',
-			),
-			'lbl_stop'    => array(
-				'en' => 'Stop',
-				'pt' => 'Stop',
-			),
-			'lbl_target'  => array(
-				'en' => 'Target',
-				'pt' => 'Alvo',
-			),
-			'lbl_outcome' => array(
-				'en' => 'Outcome',
-				'pt' => 'Resultado',
-			),
-			'lbl_pnl'     => array(
-				'en' => 'Result in dollars',
-				'pt' => 'Resultado em dólares',
-			),
-			'lbl_rank'    => array(
-				'en' => 'Position',
-				'pt' => 'Posição',
-			),
-			'lbl_player'  => array(
-				'en' => 'Player',
-				'pt' => 'Jogador',
-			),
-			'lbl_capital' => array(
-				'en' => 'Capital',
-				'pt' => 'Capital',
-			),
-		);
+		$lang  = in_array( $lang, Strings::LANGS, true ) ? $lang : 'en';
+		$table = Strings::table( $lang );
+		$out   = array();
 
-		$lang = in_array( $lang, Strings::LANGS, true ) ? $lang : 'en';
-		$out  = array();
-		foreach ( $table as $key => $pair ) {
-			$out[ $key ] = $pair[ $lang ] ?? $pair['en'];
+		foreach ( array( 'needs_js', 'lbl_entry', 'lbl_stop', 'lbl_target', 'lbl_outcome', 'lbl_pnl', 'lbl_rank', 'lbl_player', 'lbl_capital' ) as $key ) {
+			$out[ $key ] = $table[ $key ] ?? '';
 		}
 
 		return $out;

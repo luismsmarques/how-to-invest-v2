@@ -392,8 +392,14 @@
 		if ( ! region ) {
 			return;
 		}
+		// One pending announcement per region: without this, a "loading"
+		// scheduled 60ms ago still lands after the result that replaced it.
+		if ( region.htiSayTimer ) {
+			window.clearTimeout( region.htiSayTimer );
+		}
 		region.textContent = '';
-		window.setTimeout( function () {
+		region.htiSayTimer = window.setTimeout( function () {
+			region.htiSayTimer = 0;
 			region.textContent = text;
 		}, 60 );
 	}
@@ -419,12 +425,19 @@
 	 * focus stayed on a button that no longer exists is returned to the top of
 	 * the document by the browser.
 	 *
+	 * `moveFocus: false` is how the FIRST phase is entered: that one happens
+	 * when GET /today answers, not because anybody asked, and a page that
+	 * yanks focus out of the header an unpredictable moment after load is one
+	 * you cannot use a keyboard on. The live region announces it instead.
+	 * Every later phase change is something the player did, and takes focus.
+	 *
 	 * @param {Element} root      The game section.
 	 * @param {string}  name      Phase name.
 	 * @param {string}  focusSel  Optional selector for what to focus.
+	 * @param {boolean} moveFocus Whether to move focus into the phase.
 	 * @return {Element|null} The phase that is now showing.
 	 */
-	function phase( root, name, focusSel ) {
+	function phase( root, name, focusSel, moveFocus ) {
 		var all = root.querySelectorAll( '[data-hti-phase]' );
 		var i;
 		for ( i = 0; i < all.length; i++ ) {
@@ -436,7 +449,9 @@
 			return null;
 		}
 
-		var focusable = focusSel ? target.querySelector( focusSel ) : target.querySelector( '[tabindex="-1"]' );
+		var focusable = false === moveFocus
+			? null
+			: ( focusSel ? target.querySelector( focusSel ) : target.querySelector( '[tabindex="-1"]' ) );
 		if ( focusable ) {
 			try {
 				focusable.focus( { preventScroll: true } );
@@ -689,7 +704,10 @@
 
 		paint();
 		root.insertBefore( panel, root.querySelector( '.hti-g__phases' ) );
-		title.focus();
+		// Announced, not focused: these cards arrive with GET /today, not at a
+		// moment the reader chose, and the panel is next in the tab order
+		// anyway. Turning a card IS their doing, and that moves focus.
+		say( hook( root, 'say' ), t( cards[ 0 ].kicker ) + '. ' + t( cards[ 0 ].title ) );
 
 		return panel;
 	}
@@ -868,10 +886,15 @@
 			} ).then( function ( data ) {
 				track( 'game_nickname_set', 'profile' );
 				input.value = data.nickname || input.value;
+				// A save that says nothing has not told anybody. Through the
+				// error paragraph, which is already role="alert".
+				err.classList.add( 'is-ok' );
+				err.textContent = t( 'nick_saved' );
 				if ( onChange ) {
 					onChange( data );
 				}
 			} ).catch( function ( error ) {
+				err.classList.remove( 'is-ok' );
 				err.textContent = errorText( error );
 				input.focus();
 			} );
@@ -1042,8 +1065,11 @@
 			me.hidden = true;
 
 			api( '/leaderboard', { query: { game: game, board: board, lang: cfg.lang } } ).then( function ( data ) {
-				status.textContent = '';
 				var list = data.rows || [];
+				// WCAG 4.1.3: a tab swaps every row with no page load and no
+				// focus move, so the panel has to say what arrived.
+				say( status, t( 'daily' === board ? 'board_today' : 'board_survival' )
+					+ ' — ' + ( list.length ? fmt( t( 'st_rows' ), list.length ) : t( 'board_empty' ) ) );
 				empty.hidden = list.length > 0;
 				list.forEach( function ( entry ) {
 					rows.appendChild( row( entry, false ) );
@@ -1056,7 +1082,7 @@
 				}
 				nicknameForm( root, data.me && data.me.nickname ? { nickname: data.me.nickname } : null, load );
 			} ).catch( function ( error ) {
-				status.textContent = t( 'st_offline' ) + ' — ' + errorText( error );
+				say( status, t( 'st_offline' ) + ' — ' + errorText( error ) );
 				empty.hidden = true;
 				var retry = el( 'button', { type: 'button', class: 'hti-g__btn hti-g__btn--ghost' }, t( 'st_retry' ) );
 				retry.addEventListener( 'click', load );
@@ -1173,6 +1199,11 @@
 		 */
 		function paintCalendar( days ) {
 			calBox.textContent = '';
+			// Green and red alone leave this grid unreadable to anybody who
+			// cannot separate them (WCAG 1.4.1), so each cell carries the
+			// same sign signed() writes everywhere else. aria-hidden: the
+			// cell already says its date and its figure in words.
+			var marks = { won: '+', lost: '−', passed: '·', flat: '=' };
 			( days || [] ).forEach( function ( day ) {
 				var cell = el( 'li', { class: 'hti-profile__cell is-' + day.state } );
 				var label = day.day;
@@ -1180,6 +1211,9 @@
 					label += ' — ' + t( 'stc_res_pass' );
 				} else if ( 'missed' !== day.state ) {
 					label += ' — ' + signed( day.pnl );
+				}
+				if ( marks[ day.state ] ) {
+					cell.appendChild( el( 'span', { class: 'hti-profile__mark', 'aria-hidden': 'true' }, marks[ day.state ] ) );
 				}
 				cell.appendChild( sr( label ) );
 				calBox.appendChild( cell );
@@ -1245,11 +1279,12 @@
 			status.textContent = t( 'st_loading' );
 
 			api( '/profile', { query: { lang: cfg.lang } } ).then( function ( data ) {
-				status.textContent = '';
 				paint( data );
 				nicknameForm( root, data.player, load );
+				// Same as the board: every figure here just changed.
+				say( status, t( 'profile_title' ) + ' — ' + t( 'st_updated' ) );
 			} ).catch( function ( error ) {
-				status.textContent = errorText( error );
+				say( status, errorText( error ) );
 			} );
 		}
 
@@ -1258,6 +1293,7 @@
 				game = tab.getAttribute( 'data-hti-pgame' );
 				if ( latest ) {
 					paint( latest );
+					say( status, tab.textContent + ' — ' + t( 'st_updated' ) );
 				}
 			} );
 		} );

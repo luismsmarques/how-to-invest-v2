@@ -562,6 +562,25 @@ class Strings {
 				'en' => 'sector average',
 				'pt' => 'média do setor',
 			),
+			// The three tints a fundamentals row can carry, as words. The
+			// dossier colours the figure green, amber or red and colour is
+			// never allowed to be the only channel (WCAG 1.4.1), so the same
+			// judgement is written here for a screen reader and drawn as a
+			// mark beside the figure for everybody else. They are the
+			// editor's judgement about the number, never a view on the
+			// company.
+			'rev_tint_good'     => array(
+				'en' => 'good sign',
+				'pt' => 'sinal positivo',
+			),
+			'rev_tint_warn'     => array(
+				'en' => 'mixed sign',
+				'pt' => 'sinal misto',
+			),
+			'rev_tint_bad'      => array(
+				'en' => 'warning sign',
+				'pt' => 'sinal de alerta',
+			),
 			'rev_headlines'     => array(
 				'en' => 'Headlines from the time',
 				'pt' => 'Manchetes da época',
@@ -795,6 +814,10 @@ class Strings {
 				'en' => 'Public on the boards. A handle, not your real name.',
 				'pt' => 'Público nas tabelas. Uma alcunha, não o teu nome real.',
 			),
+			'nick_saved'      => array(
+				'en' => 'Name saved',
+				'pt' => 'Nome guardado',
+			),
 			'nick_taken'      => array(
 				'en' => 'That one is taken. Try another.',
 				'pt' => 'Essa já está ocupada. Tenta outra.',
@@ -884,6 +907,19 @@ class Strings {
 			'st_no_content'   => array(
 				'en' => 'No challenge is published for today yet.',
 				'pt' => 'Ainda não há desafio publicado para hoje.',
+			),
+			// What the live regions say when something arrived. A board that
+			// swaps its rows and a profile that swaps its figures are status
+			// messages under WCAG 4.1.3: they change without a page load and
+			// without focus moving, so they have to be announced or they do
+			// not happen at all for a screen reader.
+			'st_rows'         => array(
+				'en' => '%d on the board',
+				'pt' => '%d na tabela',
+			),
+			'st_updated'      => array(
+				'en' => 'Updated',
+				'pt' => 'Atualizado',
 			),
 		);
 	}

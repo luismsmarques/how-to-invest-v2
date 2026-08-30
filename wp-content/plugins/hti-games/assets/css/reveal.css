@@ -22,9 +22,15 @@
 	--g-border: #D9D2C4;
 	--g-border-2: #E2DCCE;
 	--g-border-3: #C9C2B2;
+	/* See games.css. No form renders in this palette today; declared so the
+	   token can never be missing. */
+	--g-field: #948C7C;
 	--g-text: #14181F;
 	--g-text-2: #4A5261;
-	--g-muted: #6B7280;
+	/* #6B7280 measured 4.40:1 on this cream and 4.28:1 on the panel behind the
+	   dossier — under AA for the 9.5–12.5px it is used at. Same cool grey,
+	   4.96:1 in the worst case. */
+	--g-muted: #616875;
 	--g-brand: #00776A;
 	--g-brand-ink: #FFFFFF;
 	--g-brand-soft: #E6F7F3;
@@ -32,7 +38,9 @@
 	--g-up-soft: #E9F5EE;
 	--g-down: #B4402F;
 	--g-down-soft: #FFF5F3;
-	--g-warn: #B87514;
+	/* The middle tint of a fundamentals row, at 14px bold — small text, so
+	   4.5:1. #B87514 was 3.41:1 on its own soft ground; this is 4.61:1. */
+	--g-warn: #976110;
 	--g-warn-soft: #FDF3E0;
 	--g-radius: 14px;
 	--g-radius-sm: 12px;
@@ -109,7 +117,6 @@
 	text-transform: uppercase;
 	color: var( --g-down );
 	transform: rotate( -8deg );
-	opacity: 0.85;
 }
 
 .hti-rv__meta {
@@ -193,10 +200,28 @@
 }
 
 /* The three tints an imported fundamental can carry. Green and red keep their
-   one meaning: this figure is good news, this figure is bad news. */
+   one meaning: this figure is good news, this figure is bad news.
+   The mark beside the figure stops that meaning living in the colour alone:
+   reveal.js writes a check, a tilde or an exclamation into it and a word
+   into the screen-reader span beside it. */
 .hti-rv__fund tr.is-good .hti-rv__value { color: var( --g-up ); }
 .hti-rv__fund tr.is-warn .hti-rv__value { color: var( --g-warn ); }
 .hti-rv__fund tr.is-bad .hti-rv__value { color: var( --g-down ); }
+
+.hti-rv__mark {
+	display: inline-block;
+	min-width: 15px;
+	margin-right: 6px;
+	padding: 1px 0;
+	border: 1px solid currentColor;
+	border-radius: 3px;
+	font-family: var( --g-body );
+	font-weight: 700;
+	font-size: 10px;
+	line-height: 1.2;
+	text-align: center;
+	vertical-align: 1px;
+}
 
 .hti-rv__heads {
 	margin: 0;

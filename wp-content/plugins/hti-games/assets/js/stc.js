@@ -73,6 +73,9 @@
 	var ticker = 0;
 	var store = null;
 	var riskGroup = null;
+	// The first phase arrives with GET /today, not with a click, and does not
+	// take focus. See HTIGames.phase().
+	var entered = false;
 
 	/* ------------------------------------------------------------------ */
 	/* The chart                                                           */
@@ -99,7 +102,7 @@
 			up: token( '--g-up', '#22C77E' ),
 			down: token( '--g-down', '#FF4D5E' ),
 			pastUp: token( '--g-past-up', '#2E7D5B' ),
-			pastDown: token( '--g-past-down', '#8C3B44' ),
+			pastDown: token( '--g-past-down', '#A64A54' ),
 			brand: token( '--g-brand', '#FFB020' )
 		};
 	}
@@ -389,7 +392,8 @@
 		// replay is the one phase where focus goes to a button rather than to
 		// the heading: the first thing a keyboard user needs there is the way
 		// out of the animation.
-		H.phase( root, name, 'replay' === name ? '[data-hti="skip"]' : null );
+		H.phase( root, name, 'replay' === name ? '[data-hti="skip"]' : null, entered );
+		entered = true;
 
 		if ( store && ( 'decide' === name || 'risk' === name ) ) {
 			store.set( {
@@ -785,8 +789,12 @@
 		state.result = result;
 		state.outcome = result.outcome_candles || [];
 
+		// One announcement, in the order the screen reads it: what happened,
+		// what it was worth, and the two HUD figures it moved. Capital and
+		// streak change with no page load (WCAG 4.1.3) and are spoken here.
 		H.say( region, H.t( outcomeKey( result ) ) + ' — ' + H.t( titleKey( result ) )
-			+ ' ' + H.signed( result.pnl ) + '. ' + H.t( 'capital_label' ) + ' ' + H.money( result.cap_after ) );
+			+ ' ' + H.signed( result.pnl ) + '. ' + H.t( 'capital_label' ) + ' ' + H.money( result.cap_after )
+			+ '. ' + H.t( 'streak_label' ) + ' ' + result.streak + '.' );
 
 		H.track( 'game_result', GAME + '_' + result.outcome );
 
@@ -794,6 +802,18 @@
 			// A pass has no position to walk, so there is nothing to animate:
 			// the outcome is simply revealed.
 			state.reveal = state.outcome.length;
+			draw();
+			paintResult( result );
+			return;
+		}
+
+		// Reduced motion removes the replay, so it removes the replay PHASE
+		// too: entering it would focus a skip button for one frame and then
+		// move focus again — two focus moves to show nothing.
+		if ( H.reducedMotion() ) {
+			state.reveal = result.touch_idx > 0
+				? Math.min( result.touch_idx, state.outcome.length )
+				: state.outcome.length;
 			draw();
 			paintResult( result );
 			return;
@@ -815,6 +835,20 @@
 	function lockActions( locked ) {
 		var buttons = root.querySelectorAll( '[data-hti-decide], [data-hti="risk-confirm"]' );
 		var i;
+		// Disabling the button somebody just pressed drops focus to <body> for
+		// as long as the network takes. Park it on the phase heading; the next
+		// go() takes it from there.
+		if ( locked ) {
+			for ( i = 0; i < buttons.length; i++ ) {
+				if ( buttons[ i ] === document.activeElement ) {
+					var head = root.querySelector( '[data-hti-phase]:not([hidden]) [tabindex="-1"]' );
+					if ( head ) {
+						head.focus();
+					}
+					break;
+				}
+			}
+		}
 		for ( i = 0; i < buttons.length; i++ ) {
 			buttons[ i ].disabled = !! locked;
 		}
