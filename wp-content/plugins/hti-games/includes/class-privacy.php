@@ -24,8 +24,9 @@
  *      cookie and leave the row behind. It mirrors hti-engine's
  *      DELETE /learn-progress.
  *
- *   4. Retention — the same anonymous rows, pruned after 180 days idle,
- *      because data minimisation is not satisfied by "the visitor could have
+ *   4. Retention — the same anonymous rows, pruned once they have been idle
+ *      for the window configured on Settings → HTI Games, because data
+ *      minimisation is not satisfied by "the visitor could have
  *      deleted it". This hangs off hti-engine's ALREADY SCHEDULED
  *      `hti_prune_profiles` daily action and registers NO new schedule of its
  *      own: WP-Cron is disabled in production and driven externally, so a new
@@ -53,7 +54,9 @@ use WP_REST_Response;
 class Privacy {
 
 	/**
-	 * Anonymous rows idle longer than this are pruned.
+	 * The fallback retention window, in days, for the case where the settings
+	 * class is not loaded. The live value is Settings::settings()['retention_days'];
+	 * see retention_days() below.
 	 */
 	private const RETENTION_DAYS = 180;
 
@@ -139,7 +142,11 @@ class Privacy {
 				'text_version' => (string) $row['ack_ver'],
 				'meaning'      => 'Confirmed understanding that the games are an educational simulation with virtual money and no real trading. This is an acknowledgement, not a consent basis.',
 			),
-			'runs'            => self::runs_for_player( (int) $row['id'] ),
+			// Every row's runs, not just the primary one's, for the same reason
+			// erase_user() enumerates: a second row is rare, and an export that
+			// silently dropped its history would be an incomplete answer to a
+			// subject access request.
+			'runs'            => self::runs_for_user( (int) $user_id ),
 		);
 
 		return $data;
@@ -162,7 +169,14 @@ class Privacy {
 	}
 
 	/**
-	 * Delete the player row and every run belonging to a user id.
+	 * Delete EVERY player row, and every run, belonging to a user id.
+	 *
+	 * Player::ids_for_user() rather than Player::by_user(): the latter is
+	 * `LIMIT 1` and nothing in the schema forbids a second row for one account
+	 * (see the docblock there). An erasure that read one row would leave the
+	 * other behind, keyed to a user id that is about to stop existing — a
+	 * retained record of somebody who asked to be forgotten, which is the one
+	 * failure this whole file exists to prevent. Erasure enumerates.
 	 *
 	 * @param int $user_id User id.
 	 * @return bool Whether anything was removed.
@@ -172,12 +186,12 @@ class Privacy {
 			return false;
 		}
 
-		$row = Player::by_user( $user_id );
-		if ( ! $row ) {
-			return false;
+		$removed = false;
+		foreach ( Player::ids_for_user( $user_id ) as $id ) {
+			$removed = self::erase_player( $id ) || $removed;
 		}
 
-		return self::erase_player( (int) $row['id'] );
+		return $removed;
 	}
 
 	/**
@@ -398,9 +412,14 @@ class Privacy {
 		/**
 		 * Filter the anonymous player retention window, in days.
 		 *
+		 * The default is what the owner set on Settings → HTI Games, not the
+		 * constant: a retention control on an admin screen that nothing reads
+		 * is a data-minimisation promise the site does not keep. The constant
+		 * stays as the value used when the settings class is not loaded.
+		 *
 		 * @param int $days Retention days.
 		 */
-		$days = (int) apply_filters( 'hti_games_retention_days', self::RETENTION_DAYS );
+		$days = (int) apply_filters( 'hti_games_retention_days', self::retention_days() );
 		if ( $days < 1 ) {
 			return;
 		}
@@ -427,6 +446,39 @@ class Privacy {
 	/* ---------------------------------------------------------------- */
 	/* Shared                                                            */
 	/* ---------------------------------------------------------------- */
+
+	/**
+	 * The configured retention window, in days, clamped to its own bounds.
+	 *
+	 * Clamped rather than trusted: the option is normalised on save, but a row
+	 * written before the bounds existed — or by hand — must not be able to set
+	 * a window of zero (which would delete every anonymous row on the next
+	 * prune) or of a decade.
+	 */
+	private static function retention_days(): int {
+		if ( ! class_exists( __NAMESPACE__ . '\\Settings' ) ) {
+			return self::RETENTION_DAYS;
+		}
+
+		$days = (int) ( Settings::settings()['retention_days'] ?? self::RETENTION_DAYS );
+
+		return max( Settings::RETENTION_MIN, min( Settings::RETENTION_MAX, $days ) );
+	}
+
+	/**
+	 * Every run belonging to every player row of a user, oldest first.
+	 *
+	 * @param int $user_id User id.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function runs_for_user( int $user_id ): array {
+		$out = array();
+		foreach ( Player::ids_for_user( $user_id ) as $id ) {
+			$out = array_merge( $out, self::runs_for_player( $id ) );
+		}
+
+		return $out;
+	}
 
 	/**
 	 * Every run belonging to a player, oldest first, shaped for an export.

@@ -601,6 +601,9 @@ class REST {
 		if ( ! Config::is_game( $game ) ) {
 			return self::unknown_game();
 		}
+		if ( ! self::game_enabled( $game ) ) {
+			return self::switched_off( $lang );
+		}
 
 		$day        = Day::key();
 		$content_id = Library::for_day( $game, $day );
@@ -675,6 +678,9 @@ class REST {
 		$game = sanitize_key( (string) $request->get_param( 'game' ) );
 		if ( ! Config::is_game( $game ) ) {
 			return self::unknown_game();
+		}
+		if ( ! self::game_enabled( $game ) ) {
+			return self::switched_off( $lang );
 		}
 
 		// 1. Who is this. No session, no run — the row is what a run is
@@ -820,8 +826,18 @@ class REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function leaderboard( WP_REST_Request $request ) {
+		$lang = self::req_lang( $request );
+
 		if ( RateLimit::exceeded( 'game_board' ) ) {
-			return self::too_many( self::req_lang( $request ) );
+			return self::too_many( $lang );
+		}
+
+		// The kill-switch, server-side. The shortcode already refuses to render
+		// the board when it is off, but a public endpoint that keeps serving
+		// player-chosen nicknames after the owner switched the board off is a
+		// takedown that did not take anything down.
+		if ( ! self::board_enabled() ) {
+			return self::switched_off( $lang );
 		}
 
 		$board = sanitize_key( (string) $request->get_param( 'board' ) );
@@ -833,11 +849,13 @@ class REST {
 		$row       = Player::resolve( $request );
 		$player_id = $row ? (int) $row['id'] : 0;
 
-		// The day is only ever today's or a past one, and it is validated
-		// before it reaches a query — a board is public, so its parameters are
-		// as untrusted as any other.
+		// The day is only ever today's or a recent past one, and it is checked
+		// against a closed window before it reaches a query OR a cache key — a
+		// board is public, so its parameters are as untrusted as any other, and
+		// an unbounded day would let a stranger choose an unbounded number of
+		// transient keys. See Leaderboard::MAX_BACK_DAYS.
 		$day = sanitize_text_field( (string) $request->get_param( 'day' ) );
-		if ( '' === $day || ! Day::valid( $day ) || $day > Day::key() ) {
+		if ( ! Leaderboard::is_servable_day( $day, Day::key() ) ) {
 			$day = Day::key();
 		}
 
@@ -1580,6 +1598,44 @@ class REST {
 			'hti_rate_limited',
 			self::msg( 'st_rate_limited', $lang, __( 'Too many requests. Please wait a moment and try again.', 'hti-games' ) ),
 			array( 'status' => 429 )
+		);
+	}
+
+	/**
+	 * Whether a game is switched on, when the settings class is loaded.
+	 *
+	 * Fails OPEN on purpose, and only in the one case where open is right: if
+	 * Settings has not landed there is no switch to read and the games are on,
+	 * which is what a fresh install does. Every other path here fails closed.
+	 *
+	 * @param string $game Validated game id.
+	 */
+	private static function game_enabled( string $game ): bool {
+		return ! class_exists( __NAMESPACE__ . '\\Settings' ) || Settings::game_enabled( $game );
+	}
+
+	/**
+	 * Whether the public boards are switched on. See game_enabled().
+	 */
+	private static function board_enabled(): bool {
+		return ! class_exists( __NAMESPACE__ . '\\Settings' ) || ! empty( Settings::settings()['leaderboard_enabled'] );
+	}
+
+	/**
+	 * The answer a switched-off surface gives.
+	 *
+	 * Deliberately the same 503 and the same sentence a day with no published
+	 * content gets: from the player's side the two are the same fact — there is
+	 * nothing here today — and the shortcode already renders `st_no_content` for
+	 * exactly this state, so the API and the page say one thing.
+	 *
+	 * @param string $lang Request language.
+	 */
+	private static function switched_off( string $lang ): WP_Error {
+		return new WP_Error(
+			'hti_game_no_content',
+			self::msg( 'st_no_content', $lang, __( 'This part of the games section is paused.', 'hti-games' ) ),
+			array( 'status' => 503 )
 		);
 	}
 

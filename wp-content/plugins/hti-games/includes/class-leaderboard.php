@@ -65,12 +65,43 @@ class Leaderboard {
 	public const BOARD_SURVIVAL = 'survival';
 
 	/**
+	 * How far back a board may be asked for, in days.
+	 *
+	 * Not a gameplay rule — a cardinality cap. Each distinct day the endpoint
+	 * is asked for mints two transients, i.e. four rows in wp_options, and
+	 * `day` arrives from an anonymous GET whose only other check is "is this a
+	 * real calendar date". Left open, a script walking back to 1970 turns a
+	 * public leaderboard into a slow way of filling the options table, which is
+	 * the failure mode the security skill calls out for any map a stranger can
+	 * add a key to. Thirty days is more history than any screen asks for (the
+	 * client only ever requests today) and caps the key space at 124 rows.
+	 */
+	public const MAX_BACK_DAYS = 30;
+
+	/**
 	 * Whether a board id is one we serve. Pure.
 	 *
 	 * @param string $board Candidate.
 	 */
 	public static function is_board( string $board ): bool {
 		return self::BOARD_DAILY === $board || self::BOARD_SURVIVAL === $board;
+	}
+
+	/**
+	 * Whether a day key is one a board may be built and cached for. Pure.
+	 *
+	 * A well-formed date is not enough: it also has to be inside the window,
+	 * and never in the future. See MAX_BACK_DAYS.
+	 *
+	 * @param string $day   Candidate day key.
+	 * @param string $today Today's day key.
+	 */
+	public static function is_servable_day( string $day, string $today ): bool {
+		if ( ! Day::valid( $day ) || ! Day::valid( $today ) || $day > $today ) {
+			return false;
+		}
+
+		return Day::index( $today ) - Day::index( $day ) <= self::MAX_BACK_DAYS;
 	}
 
 	/* ---------------------------------------------------------------- */

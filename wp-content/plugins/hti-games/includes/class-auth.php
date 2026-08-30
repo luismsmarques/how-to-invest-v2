@@ -18,12 +18,25 @@
  * The email says nothing about whether the address has an account
  * ---------------------------------------------------------------------------
  *
- * /games/link answers identically in every branch: new address, existing
- * account, blocked by the rate limiter, caught by the honeypot. A response
- * that differed would turn a public endpoint into an account-enumeration
- * oracle — "is lm@example.com registered here?" answered a thousand times a
- * minute. The person learns the outcome in their inbox, which is the one place
- * only they can read.
+ * /games/link answers identically in every branch that DEPENDS ON THE ADDRESS:
+ * new address, existing account, caught by the honeypot. A response that
+ * differed would turn a public endpoint into an account-enumeration oracle —
+ * "is lm@example.com registered here?" answered a thousand times a minute. The
+ * person learns the outcome in their inbox, which is the one place only they
+ * can read.
+ *
+ * The two branches that do answer differently — 429 from the rate limiter, 503
+ * when the cross-device link is switched off — are properties of the site and
+ * of the caller's own IP, identical for every address, so neither says
+ * anything about whether an address has an account. Any NEW branch has to pass
+ * that test before it may differ.
+ *
+ * What this design cannot hide is that a first request for an unknown address
+ * creates the account, so the second one takes a measurably different path
+ * through wp_insert_user(). Closing that would mean holding the pending
+ * address somewhere until the link is confirmed, which trades an enumeration
+ * timing signal for a store of unverified email addresses — a worse position
+ * under minimisation. Noted rather than fixed; see the QA checklist.
  *
  * ---------------------------------------------------------------------------
  * Mail scanners burn single-use tokens. This is not hypothetical.
@@ -39,10 +52,19 @@
  * Two mitigations, both here:
  *   1. Requests announcing themselves as prefetches (`Sec-Purpose: prefetch`,
  *      the older `Purpose: prefetch`, and HEAD) are ignored outright — the
- *      token is not even looked at, let alone spent.
- *   2. The token is consumed only after a sign-in actually succeeds. Merely
- *      being seen never invalidates it, so a scanner that does not announce
- *      itself still leaves a working link behind.
+ *      token is not even looked at, let alone spent. The guard cannot itself
+ *      become a bypass: an attacker who sends those headers gets the early
+ *      return, which signs nobody in and changes nothing.
+ *   2. The token is consumed only after a sign-in actually succeeds — never on
+ *      a request that merely looked at it and failed. A guessed or expired
+ *      token therefore cannot be used to burn a real one.
+ *
+ * The residual case, stated plainly because a comment that overstates a
+ * control is worse than no comment: a scanner that announces nothing and
+ * follows the link with a GET is indistinguishable from the recipient, so it
+ * completes the sign-in and spends the token. Mitigation 2 does not save that
+ * link, and nothing here can without an interstitial the person has to click.
+ * It is on the staging QA list as a real-inbox test.
  *
  * @package HTI_Games
  */
@@ -112,6 +134,19 @@ class Auth {
 			200
 		);
 
+		// The kill-switch, server-side, before anything else — the settings
+		// screen promises that with the cross-device link off "no email address
+		// is ever collected by this section", and a route that keeps accepting
+		// addresses and minting WordPress users would make that untrue. Checked
+		// ahead of the limiter so a switched-off endpoint does no work at all.
+		if ( ! self::link_enabled() ) {
+			return new WP_Error(
+				'hti_game_link_disabled',
+				Strings::get( 'st_error', $lang ),
+				array( 'status' => 503 )
+			);
+		}
+
 		if ( RateLimit::exceeded( 'game_link' ) ) {
 			return new WP_Error(
 				'hti_rate_limited',
@@ -170,13 +205,36 @@ class Auth {
 		// single source of truth for subscriptions and no subscriber PII is
 		// stored on this site. `source` says which game brought them, which is
 		// what makes the first campaign make sense to them.
-		if ( true === rest_sanitize_boolean( $request->get_param( 'newsletter' ) ) ) {
+		// Gated on the setting as well as on the tick: an opt-in the owner has
+		// switched off is a consent surface that is not on offer, and a request
+		// carrying `newsletter: true` to a closed one — a stale tab, a replayed
+		// body, a script — must not subscribe anybody.
+		if ( self::newsletter_enabled() && true === rest_sanitize_boolean( $request->get_param( 'newsletter' ) ) ) {
 			self::forward_newsletter( $email, $lang, sanitize_key( (string) $request->get_param( 'game' ) ) );
 		}
 
 		self::bump( 'game_link_request', 'link_request' );
 
 		return $neutral;
+	}
+
+	/**
+	 * Whether the cross-device link is switched on.
+	 *
+	 * Fails OPEN only when the settings class is not loaded at all, which is a
+	 * fresh install with no stored option and every feature on by default.
+	 */
+	private static function link_enabled(): bool {
+		return ! class_exists( __NAMESPACE__ . '\\Settings' ) || ! empty( Settings::settings()['email_link_enabled'] );
+	}
+
+	/**
+	 * Whether the newsletter opt-in is on offer. Defaults to OFF, unlike the
+	 * link: a marketing surface is not something a missing settings class
+	 * should switch on.
+	 */
+	private static function newsletter_enabled(): bool {
+		return class_exists( __NAMESPACE__ . '\\Settings' ) && ! empty( Settings::settings()['newsletter_optin'] );
 	}
 
 	/**

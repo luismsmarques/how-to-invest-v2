@@ -563,7 +563,12 @@ class Importer {
 			wp_safe_redirect( $back );
 			exit;
 		}
-		if ( (int) ( $upload['size'] ?? 0 ) > self::MAX_UPLOAD ) {
+		// Measured on disk as well as from the multipart part: $_FILES['size']
+		// is PHP's own count of the bytes it wrote, but the value that decides
+		// how much is about to be read into memory should be the one taken from
+		// the file that is about to be read.
+		$bytes = max( (int) ( $upload['size'] ?? 0 ), (int) filesize( $upload['tmp_name'] ) );
+		if ( $bytes > self::MAX_UPLOAD ) {
 			self::report( array( 'errors' => array( 'the file is larger than ' . self::MAX_UPLOAD . ' bytes' ) ) );
 			wp_safe_redirect( $back );
 			exit;

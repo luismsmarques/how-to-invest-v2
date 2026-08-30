@@ -297,6 +297,37 @@ class Player {
 	}
 
 	/**
+	 * EVERY player row bound to a WordPress account, as row ids.
+	 *
+	 * There is deliberately no UNIQUE index on `user_id` — the column is 0 for
+	 * every anonymous row and MySQL would collapse them into one — so nothing
+	 * in the schema promises that one account owns exactly one row. In practice
+	 * it does: ensure() looks the account up before it inserts, and
+	 * claim_for_user() merges rather than duplicates. But both of those are
+	 * check-then-write, and two simultaneous requests can pass the check
+	 * together.
+	 *
+	 * That is a tolerable duplicate for a game and an intolerable one for an
+	 * erasure: Privacy::erase_user() reading a single row would leave the
+	 * second one — with its runs — behind, keyed to a user id that no longer
+	 * exists. So erasure asks for all of them, and gets a list.
+	 *
+	 * @param int $user_id User id.
+	 * @return array<int,int> Row ids, oldest first.
+	 */
+	public static function ids_for_user( int $user_id ): array {
+		if ( $user_id <= 0 ) {
+			return array();
+		}
+		global $wpdb;
+		$table = self::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom table, no core API; an erasure must read the live rows, never a cache.
+		$ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM `{$table}` WHERE user_id = %d ORDER BY id ASC", $user_id ) );
+
+		return array_map( 'intval', (array) $ids );
+	}
+
+	/**
 	 * The player behind the current request, without creating one.
 	 *
 	 * Cookie/header first because that is the identity that has been playing;
