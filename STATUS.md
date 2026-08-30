@@ -240,6 +240,14 @@ alterado.
 - **Nota de i18n:** o `/forex/` é EN-only por desenho, mas **não é a única exceção** ao invariante bilingue —
 o **comparador de depósitos é PT-first** (`class-deposits.php:169-173`).
 
+**Plano de expansão (Out–Dez 2026):** `docs/Forex_GEO_Ferramentas_Bot_Out2026.md` — o `/forex/`
+  passa de Índia/INR a **nove GEOs/moedas** (IN, NG, ZA, MY, AE, VN, TH, BR, ID), com matriz de
+  corretoras por país (**XM na Índia, Exness nas restantes**, decisão do dono de 30 ago), câmbios
+  a custo zero (peg do AED, override manual de NGN/VND), página por ferramenta × GEO (~107 no
+  estado final), e no bot: moeda, CTA por país, drip de 7 dias e **Telegram Mini App**. VN, ID e
+  TH nascem com o **CTA desligado** — têm restrições ao forex de retalho por confirmar na fonte
+  primária do regulador.
+
 **Antes de ligar o CTA em produção**: rever a exposição regulatória (Alert
   List RBI / FEMA — promover corretoras offshore a residentes indianos é o
   risco; as ferramentas em si são seguras) e configurar o URL de afiliado no
@@ -250,8 +258,11 @@ o **comparador de depósitos é PT-first** (`class-deposits.php:169-173`).
 O retrato completo, com evidência por `ficheiro:linha`, e a cronologia de setembro estão em
 **`docs/Estado_e_Cronologia_Set2026.md`**. Os achados que mais custam:
 
-- **11 dos 34 eventos de métrica são gravados e nunca mostrados** — entre eles `forex_bot_start/calc/stop` e
-  `forex_tool_use`, exatamente os que medem o bot. Um terço da instrumentação escreve para o vazio.
+- ~~**11 dos 34 eventos de métrica são gravados e nunca mostrados**~~ — **resolvido**: os quatro eventos do
+  forex têm ecrã próprio ("Forex bot & tools", `class-metrics.php:996-1011`), o `location` do `forex_tool_use`
+  tem desdobramento próprio no mapa `tool`, separado do `cta` (`:234-245`), e ambos os mapas têm teto
+  (`MAX_PATHS_PER_DAY = 300`, `:37`). **O que falta agora é outro:** nenhum dos mapas carrega a **GEO**, o que
+  é precondição da expansão multi-GEO — ver `docs/Forex_GEO_Ferramentas_Bot_Out2026.md §7`.
 - ~~**O `/forex/` pode emitir um URL de afiliado em cru**~~ — **resolvido** (hti-forex 0.13.8): o botão das
   ferramentas aponta para `/forex/go/{ferramenta}/`, o redirector próprio, e o `cta_url` deixou de estar ao
   alcance de quem desenha a página — o `cta_for()` devolve a *placement*, não o URL. Um teste falha se algum
