@@ -16,6 +16,11 @@
 	--fx-faint: #a89fb5;
 	--fx-border: var(--wp--preset--color--border, #f2e4dd);
 	--fx-coral: var(--wp--preset--color--primary, #ff6b5e);
+	/* Focus ring. Not the coral: at 2.79:1 on white and 2.25:1 against the
+	   field border it fails WCAG 1.4.11, and these are the pages paid traffic
+	   lands on. This tone clears 3:1 on the cream, the white, the border grey
+	   and the dark cards alike, so one ring works everywhere on the section. */
+	--fx-focus: var( --wp--custom--focus-ring, #D9432F );
 	--fx-coral-hover: var(--wp--preset--color--primary-hover, #ff5544);
 	--fx-coral-soft: var(--wp--preset--color--primary-soft, #ffede9);
 	--fx-accent: var(--wp--preset--color--accent, #7c5cfc);
@@ -105,7 +110,8 @@
 
 .hti-fx-field input:focus-visible,
 .hti-fx-field select:focus-visible {
-	outline: none;
+	outline: 2.5px solid var(--fx-focus);
+	outline-offset: 2px;
 	background: var(--fx-white);
 	border-color: var(--fx-coral);
 	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.18);
@@ -525,7 +531,7 @@
 }
 
 .hti-fx-tg__btn:focus-visible {
-	outline: 2.5px solid var(--fx-coral);
+	outline: 2.5px solid var(--fx-focus);
 	outline-offset: 2px;
 }
 
@@ -600,7 +606,8 @@
 }
 
 .hti-fx-email__form input[type='email']:focus-visible {
-	outline: none;
+	outline: 2.5px solid var(--fx-focus);
+	outline-offset: 2px;
 	background: var(--fx-white);
 	border-color: var(--fx-coral);
 	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.18);
@@ -904,7 +911,7 @@
 }
 
 .hti-fx-toolcard:focus-visible {
-	outline: 2.5px solid var(--fx-coral);
+	outline: 2.5px solid var(--fx-focus);
 	outline-offset: 2px;
 }
 
@@ -972,7 +979,7 @@
 }
 
 .hti-fx-minicard:focus-visible {
-	outline: 2.5px solid var(--fx-coral);
+	outline: 2.5px solid var(--fx-focus);
 	outline-offset: 2px;
 }
 
@@ -1067,7 +1074,7 @@
 }
 
 .hti-fx-faq__item summary:focus-visible {
-	outline: 2.5px solid var(--fx-coral);
+	outline: 2.5px solid var(--fx-focus);
 	outline-offset: 2px;
 	border-radius: 6px;
 }

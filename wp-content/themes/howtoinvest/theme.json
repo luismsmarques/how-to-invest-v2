@@ -162,28 +162,36 @@
 							"fontWeight": "400",
 							"fontStyle": "normal",
 							"fontDisplay": "swap",
-							"src": [ "file:./assets/fonts/plus-jakarta-sans-400.woff2" ]
+							"src": [
+								"file:./assets/fonts/plus-jakarta-sans-400.woff2"
+							]
 						},
 						{
 							"fontFamily": "Plus Jakarta Sans",
 							"fontWeight": "500",
 							"fontStyle": "normal",
 							"fontDisplay": "swap",
-							"src": [ "file:./assets/fonts/plus-jakarta-sans-500.woff2" ]
+							"src": [
+								"file:./assets/fonts/plus-jakarta-sans-500.woff2"
+							]
 						},
 						{
 							"fontFamily": "Plus Jakarta Sans",
 							"fontWeight": "600",
 							"fontStyle": "normal",
 							"fontDisplay": "swap",
-							"src": [ "file:./assets/fonts/plus-jakarta-sans-600.woff2" ]
+							"src": [
+								"file:./assets/fonts/plus-jakarta-sans-600.woff2"
+							]
 						},
 						{
 							"fontFamily": "Plus Jakarta Sans",
 							"fontWeight": "700",
 							"fontStyle": "normal",
 							"fontDisplay": "swap",
-							"src": [ "file:./assets/fonts/plus-jakarta-sans-700.woff2" ]
+							"src": [
+								"file:./assets/fonts/plus-jakarta-sans-700.woff2"
+							]
 						}
 					]
 				},
@@ -197,35 +205,45 @@
 							"fontWeight": "400",
 							"fontStyle": "normal",
 							"fontDisplay": "swap",
-							"src": [ "file:./assets/fonts/poppins-400.woff2" ]
+							"src": [
+								"file:./assets/fonts/poppins-400.woff2"
+							]
 						},
 						{
 							"fontFamily": "Poppins",
 							"fontWeight": "500",
 							"fontStyle": "normal",
 							"fontDisplay": "swap",
-							"src": [ "file:./assets/fonts/poppins-500.woff2" ]
+							"src": [
+								"file:./assets/fonts/poppins-500.woff2"
+							]
 						},
 						{
 							"fontFamily": "Poppins",
 							"fontWeight": "600",
 							"fontStyle": "normal",
 							"fontDisplay": "swap",
-							"src": [ "file:./assets/fonts/poppins-600.woff2" ]
+							"src": [
+								"file:./assets/fonts/poppins-600.woff2"
+							]
 						},
 						{
 							"fontFamily": "Poppins",
 							"fontWeight": "700",
 							"fontStyle": "normal",
 							"fontDisplay": "swap",
-							"src": [ "file:./assets/fonts/poppins-700.woff2" ]
+							"src": [
+								"file:./assets/fonts/poppins-700.woff2"
+							]
 						},
 						{
 							"fontFamily": "Poppins",
 							"fontWeight": "800",
 							"fontStyle": "normal",
 							"fontDisplay": "swap",
-							"src": [ "file:./assets/fonts/poppins-800.woff2" ]
+							"src": [
+								"file:./assets/fonts/poppins-800.woff2"
+							]
 						}
 					]
 				}
@@ -287,7 +305,14 @@
 		"spacing": {
 			"defaultSpacingSizes": false,
 			"customSpacingSize": true,
-			"units": [ "px", "em", "rem", "vh", "vw", "%" ],
+			"units": [
+				"px",
+				"em",
+				"rem",
+				"vh",
+				"vw",
+				"%"
+			],
 			"spacingSizes": [
 				{
 					"slug": "20",
@@ -329,6 +354,9 @@
 		},
 		"dimensions": {
 			"minHeight": true
+		},
+		"custom": {
+			"focusRing": "#D9432F"
 		}
 	},
 	"styles": {
@@ -463,27 +491,37 @@
 		{
 			"name": "page-no-sidebar",
 			"title": "Page (full width, no header padding)",
-			"postTypes": [ "page" ]
+			"postTypes": [
+				"page"
+			]
 		},
 		{
 			"name": "page-about",
 			"title": "About page",
-			"postTypes": [ "page" ]
+			"postTypes": [
+				"page"
+			]
 		},
 		{
 			"name": "page-ebook",
 			"title": "Ebook landing",
-			"postTypes": [ "page" ]
+			"postTypes": [
+				"page"
+			]
 		},
 		{
 			"name": "page-confirmation",
 			"title": "Confirmation page",
-			"postTypes": [ "page" ]
+			"postTypes": [
+				"page"
+			]
 		},
 		{
 			"name": "page-tools",
 			"title": "Tools hub (wide)",
-			"postTypes": [ "page" ]
+			"postTypes": [
+				"page"
+			]
 		}
 	]
 }

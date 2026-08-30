@@ -7,6 +7,12 @@
 
 .hti-app {
 	--hti-primary: var( --wp--preset--color--primary-strong, #C9362C );
+	/* Focus is not decoration: this is the only colour in the palette that
+	   clears WCAG 1.4.11's 3:1 against every surface we paint on — cream,
+	   white, the border grey, the navy cards and the dark forex cards. The
+	   brand coral does not (2.79:1 on white), and primary-strong fails on the
+	   dark cards (2.87:1), so the ring gets a token of its own. */
+	--hti-focus: var( --wp--custom--focus-ring, #D9432F );
 	--hti-primary-hover: var( --wp--preset--color--primary-hover, #FF5544 );
 	--hti-primary-soft: var( --wp--preset--color--primary-soft, #FFEDE9 );
 	--hti-text: var( --wp--preset--color--contrast, #2A2438 );
@@ -78,7 +84,7 @@ html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 }
 
 .hti-app *:focus-visible {
-	outline: 2.5px solid var( --hti-primary );
+	outline: 2.5px solid var( --hti-focus );
 	outline-offset: 2px;
 	border-radius: 6px;
 }
@@ -315,6 +321,9 @@ html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 }
 
 /* --- Result --- */
+/* Focused in JS so a screen reader announces the new page, never reachable by
+   Tab (tabindex=-1): a ring here would mark something the keyboard cannot
+   land on. Every real keyboard stop is covered by .hti-app *:focus-visible. */
 .hti-result:focus {
 	outline: none;
 }
@@ -747,7 +756,8 @@ html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 	font: inherit;
 	background: var( --hti-white );
 }
-.hti-recover__input:focus { outline: none; border-color: var( --hti-primary ); }
+.hti-recover__input:focus { border-color: var( --hti-primary ); }
+.hti-recover__input:focus-visible { outline: 2.5px solid var( --hti-focus ); outline-offset: 2px; }
 .hti-recover__send { margin-top: 0.75rem; width: 100%; text-align: center; }
 .hti-recover__status { margin: 0.6rem 0 0; font-weight: 600; color: var( --hti-muted ); }
 .hti-recover__check {
@@ -841,7 +851,8 @@ html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 	color: var( --hti-text );
 	margin: 6px 0 16px;
 }
-.hti-auth input:focus { outline: none; border-color: var( --wp--preset--color--primary, #FF6B5E ); }
+.hti-auth input:focus { border-color: var( --wp--preset--color--primary, #FF6B5E ); }
+.hti-auth input:focus-visible { outline: 2.5px solid var( --hti-focus ); outline-offset: 2px; }
 .hti-auth-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .hti-auth-actions .hti-btn { width: 100%; border-radius: 14px; padding: 16px; font: 600 16px var( --hti-font-body ); }
 .hti-auth-forgot { text-align: right; margin: -10px 0 0; }
@@ -1082,8 +1093,11 @@ html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 .hti-del__x { color: #C0392B; flex: none; font-weight: 700; }
 .hti-del__confirm-lbl { font: 500 14px var( --hti-font-body ); color: var( --hti-muted ); margin: 0 0 8px; }
 .hti-del__confirm-lbl strong { color: var( --hti-text ); letter-spacing: 0.05em; }
-.hti-del__input { width: 100%; box-sizing: border-box; background: #fff; border: 1.5px solid #F0E2DC; border-radius: 12px; padding: 14px 15px; font: 600 16px var( --hti-font-body ); color: var( --hti-text ); outline: none; letter-spacing: 0.05em; margin-bottom: 22px; }
+.hti-del__input { width: 100%; box-sizing: border-box; background: #fff; border: 1.5px solid #F0E2DC; border-radius: 12px; padding: 14px 15px; font: 600 16px var( --hti-font-body ); color: var( --hti-text ); letter-spacing: 0.05em; margin-bottom: 22px; }
 .hti-del__input:focus { border-color: #C0392B; }
+/* The field you type DELETE into. A border tint is not a focus indicator —
+   least of all here, where the next keystroke is irreversible. */
+.hti-del__input:focus-visible { outline: 2.5px solid var( --hti-focus ); outline-offset: 2px; }
 .hti-del__acts { display: flex; gap: 12px; flex-wrap: wrap; }
 .hti-del__go { flex: 1; min-width: 200px; background: #C0392B; color: #fff; border: none; cursor: pointer; border-radius: 14px; padding: 15px; font: 600 16px var( --hti-font-body ); }
 .hti-del__go:hover { background: #A52F22; }
@@ -1143,8 +1157,9 @@ html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 .hti-onb__opt { background: #fff; color: #5A5270; border: 1.5px solid var( --hti-border ); cursor: pointer; border-radius: 12px; padding: 0 20px; min-height: 48px; font: 600 15px var( --hti-font-body ); }
 .hti-onb__opt:hover { border-color: var( --hti-accent-border ); background: #FBF7FF; }
 .hti-onb__opt[aria-pressed="true"] { background: var( --hti-text ); border-color: var( --hti-text ); color: #fff; }
-.hti-onb__textarea { width: 100%; box-sizing: border-box; background: #FFFDFC; border: 1.5px solid #F0E2DC; border-radius: 12px; padding: 14px 15px; font: 400 16px var( --hti-font-body ); color: var( --hti-text ); outline: none; resize: vertical; line-height: 1.5; }
+.hti-onb__textarea { width: 100%; box-sizing: border-box; background: #FFFDFC; border: 1.5px solid #F0E2DC; border-radius: 12px; padding: 14px 15px; font: 400 16px var( --hti-font-body ); color: var( --hti-text ); resize: vertical; line-height: 1.5; }
 .hti-onb__textarea:focus { border-color: #FF6B5E; }
+.hti-onb__textarea:focus-visible { outline: 2.5px solid var( --hti-focus ); outline-offset: 2px; }
 .hti-onb__acts { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
 .hti-onb__finish { padding: 16px 30px; font-size: 16px; min-height: 50px; }
 .hti-onb__skip { background: none; border: none; cursor: pointer; color: var( --hti-muted-light ); font: 500 15px var( --hti-font-body ); padding: 8px; min-height: 44px; }

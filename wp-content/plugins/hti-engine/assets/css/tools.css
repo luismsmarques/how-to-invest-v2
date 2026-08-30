@@ -22,6 +22,9 @@
 	--t-faint: #a89fb5;
 	--t-border: var(--wp--preset--color--border, #f2e4dd);
 	--t-coral: var(--wp--preset--color--primary, #ff6b5e);
+	/* The coral is 2.79:1 on white — it can colour a border, never a focus
+	   ring. This is the palette's only colour above 3:1 on every surface. */
+	--t-focus: var( --wp--custom--focus-ring, #D9432F );
 	--t-coral-hover: var(--wp--preset--color--primary-hover, #ff5544);
 	--t-coral-soft: var(--wp--preset--color--primary-soft, #ffede9);
 	--t-accent: var(--wp--preset--color--accent, #7c5cfc);
@@ -113,7 +116,8 @@
 }
 
 .hti-field input:focus-visible {
-	outline: none;
+	outline: 2.5px solid var(--t-focus);
+	outline-offset: 2px;
 	background: var(--t-white);
 	border-color: var(--t-coral);
 	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.18);
@@ -275,8 +279,8 @@
 }
 
 .hti-alloc__tab:focus-visible {
-	outline: none;
-	box-shadow: 0 0 0 3px rgba(255, 107, 94, 0.22);
+	outline: 2.5px solid var(--t-focus);
+	outline-offset: 2px;
 }
 
 .hti-alloc__view {

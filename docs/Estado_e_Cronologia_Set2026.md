@@ -204,8 +204,13 @@ por **custo por utilizador do bot**; calendário 14–18 Set.
 
 - CI: lint do `hti-social` e suites Node.
 - Validador de invariantes no output do Gemini do `hti-social`.
-- Acessibilidade: trocar o token do foco, remover os 4 `outline:none`,
-  condicionar auto-avanço e `scrollIntoView`.
+- ✅ Acessibilidade (feito, tema 0.8.60 / hti-engine 0.15.4 / hti-forex
+  0.13.10): o anel de foco tem token próprio (`--wp--custom--focus-ring`,
+  `#D9432F`, ≥3,41:1 nas sete superfícies), catorze `outline: none` saíram dos
+  campos de formulário, o auto-avanço só dispara com toque ou rato, e o
+  `scrollIntoView` respeita `prefers-reduced-motion`. Um teste novo
+  (`test-focus-contrast.php`) recalcula os rácios a partir do `theme.json` e
+  falha se alguma regra `:focus-visible` voltar a apagar o contorno.
 - Correções de credibilidade: "6 perguntas" → 8; link de privacidade por idioma;
   registar `key-terms` em `glossary_topics()`.
 - Matriz do motor: ESG para dentro do array (11 → 12 cenários).
