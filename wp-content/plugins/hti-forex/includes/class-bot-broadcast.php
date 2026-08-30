@@ -313,9 +313,12 @@ class Bot_Broadcast {
 			self::remember_end( $previous, 'stalled' );
 		}
 
-		self::remember_start();
-
-		update_option(
+		// The state is written first and the acceptance recorded second. The
+		// other way round — which is how this shipped — leaves a note saying a
+		// broadcast began when none exists, and the screen then reports a send
+		// that is not there. That is not a cosmetic ordering: `just_started()`
+		// is what the confirmation is checked against.
+		$written = update_option(
 			self::OPTION,
 			array(
 				'text'     => $text,
@@ -331,7 +334,17 @@ class Bot_Broadcast {
 			false
 		);
 
+		// update_option returns false when the write did not happen. The value
+		// here is always new, so false means the database refused it — and a
+		// broadcast whose state was never stored has not been queued, however
+		// far the code got.
+		if ( ! $written ) {
+			return self::refuse( 'write-failed' );
+		}
+
+		self::remember_start();
 		self::schedule( 0 );
+
 		return true;
 	}
 

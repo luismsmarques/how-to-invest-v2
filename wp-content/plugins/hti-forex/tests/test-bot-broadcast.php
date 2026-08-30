@@ -251,6 +251,33 @@ check( false === Bot_Broadcast::start( '' ), 'uma recusa continua a ser recusa' 
 check( ! Bot_Broadcast::just_started(), 'e não deixa nada que pareça um envio aceite' );
 check( 'empty' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'com a razão registada' );
 
+echo "\n=== A ordem: estado primeiro, confirmação depois ===\n";
+
+// This shipped the other way round. remember_start() ran before the state was
+// written, so a failed write left a note saying a broadcast had begun when none
+// existed — and just_started(), which the confirmation on screen is checked
+// against, believed it. The confirmation moved one step earlier instead of
+// becoming true.
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+$GLOBALS['__hti_subs']    = array( 8001 );
+
+$GLOBALS['__hti_refuse_write'] = Bot_Broadcast::OPTION;
+$ok = Bot_Broadcast::start( 'esta não devia passar' );
+unset( $GLOBALS['__hti_refuse_write'] );
+
+check( false === $ok, 'uma gravação recusada faz o start() falhar' );
+check( ! Bot_Broadcast::just_started(), 'e não deixa nada a dizer que uma difusão começou' );
+check( 'write-failed' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'com a razão registada, para o ecrã a poder dizer' );
+check( 0 === Bot_Broadcast::status()['started'], 'e o estado continua sem difusão' );
+check( ! Bot_Broadcast::running(), 'logo o compositor continua disponível' );
+
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+check( true === Bot_Broadcast::start( 'esta passa' ), 'uma gravação que resulta devolve true' );
+check( Bot_Broadcast::just_started(), 'e só então fica registada como começada' );
+check( Bot_Broadcast::status()['started'] > 0, 'com o estado gravado' );
+
 echo "\n=== O histórico ===\n";
 
 $GLOBALS['__hti_options'] = array();
