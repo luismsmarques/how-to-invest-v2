@@ -128,7 +128,9 @@ class Tools {
 				'ratesDate'    => $rates['date'],
 				'ratesStale'   => $rates['stale'],
 				'ratesSource'  => $rates['source'],
-				'subParam'     => (string) $settings['sub_param'],
+				// sub_param is deliberately NOT exposed: the browser hands the
+				// campaign id to our own redirector as `cid`, and the partner's
+				// sub-id parameter is applied server-side in Go::destination().
 				'subSources'   => array_values( (array) $settings['sub_sources'] ),
 				'subscribeUrl' => rest_url( 'htinvest/v1/subscribe' ),
 				'nonce'        => wp_create_nonce( 'wp_rest' ),
@@ -709,8 +711,13 @@ class Tools {
 			$out .= '<p class="hti-fx-cta__headline">' . esc_html( $cta['headline'] ) . '</p>';
 		}
 
-		$out .= '<a class="hti-fx-cta__btn" href="' . esc_url( $cta['url'] ) . '" target="_blank" rel="sponsored nofollow noopener"'
-			. ' data-hti-track="cta_click" data-htip-location="forex_' . esc_attr( $tool ) . '" data-hti-fx-cta>'
+		// The href is OUR redirector, never the affiliate URL: /forex/go/{slot}
+		// resolves the partner server-side at click time, so the page source
+		// carries no affiliate link and the click is counted there (which is
+		// also why this anchor no longer carries data-hti-track — Go::maybe_redirect()
+		// bumps cta_click as forex_go_{slot}, and two taggers would double-count).
+		$out .= '<a class="hti-fx-cta__btn" href="' . esc_url( Go::url( $cta['slot'] ) ) . '" target="_blank" rel="sponsored nofollow noopener"'
+			. ' data-hti-fx-cta>'
 			. esc_html( $cta['label'] )
 			. '</a>';
 

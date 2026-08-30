@@ -92,14 +92,33 @@ $on = array_merge(
 check( null !== Settings::cta_for( 'position_size', $on ), 'CTA renders when enabled + URL + tool toggle on' );
 check(
 	array(
-		'url'      => 'https://partner.example.com/x',
+		'slot'     => 'pip-value',
 		'label'    => 'Demo',
 		'headline' => '',
 		'brand'    => '',
 		'logo'     => '',
 	) === Settings::cta_for( 'pip_value', $on ),
-	'cta_for returns url, label, headline, brand and logo'
+	'cta_for returns the placement slot, label, headline, brand and logo'
 );
+check( 'position-size' === Settings::cta_for( 'position_size', $on )['slot'], 'the slot is the tool name with hyphens' );
+
+// The point of the slot: a renderer cannot print the affiliate URL because it
+// is never handed one. Regressing this would put a raw affiliate link back in
+// the page source (CLAUDE.md invariant 4 — outbound links only via /go/).
+foreach ( Settings::TOOLS as $tool ) {
+	$cta = Settings::cta_for( $tool, $on );
+	check(
+		is_array( $cta ) && ! str_contains( implode( '|', $cta ), 'partner.example.com' ),
+		"cta_for( '{$tool}' ) never hands out the affiliate URL"
+	);
+}
+
+// --- A cta_url on our own host loses the sub-id at the second hop ----------
+check( Settings::cta_url_is_local( 'https://howtoinvest.pro/go/open-xm/', 'howtoinvest.pro' ), 'an own-host affiliate URL is spotted' );
+check( Settings::cta_url_is_local( 'https://HowToInvest.pro/go/open-xm/', 'howtoinvest.pro' ), 'the host comparison ignores case' );
+check( ! Settings::cta_url_is_local( 'https://partner.example.com/x', 'howtoinvest.pro' ), 'a partner URL is not local' );
+check( ! Settings::cta_url_is_local( '', 'howtoinvest.pro' ), 'an empty URL is not local' );
+check( ! Settings::cta_url_is_local( 'https://partner.example.com/x', '' ), 'without our own host nothing is claimed' );
 
 $off = array_merge( $on, array( 'cta_enabled' => false ) );
 check( null === Settings::cta_for( 'position_size', $off ), 'global kill-switch beats everything' );

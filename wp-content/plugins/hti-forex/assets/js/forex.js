@@ -396,12 +396,14 @@
 	}
 
 	/* -------------------------------------------------------------------
-	 * Affiliate sub-id passthrough
+	 * Campaign-id passthrough
 	 *
 	 * Reads the campaign id from the landing URL (first configured param
-	 * that is present) and appends it to every affiliate CTA href. Purely
+	 * that is present) and hands it to our own /forex/go/ redirector, which
+	 * re-attaches it to the partner destination server-side. Purely
 	 * client-side and storage-free: nothing is persisted, no third-party
-	 * request happens until the user clicks the clearly-labelled link.
+	 * request happens until the user clicks the clearly-labelled link, and
+	 * the affiliate URL is never in the page to begin with.
 	 * ----------------------------------------------------------------- */
 
 	function initSubid() {
@@ -429,7 +431,7 @@
 		ctas.forEach( function ( a ) {
 			try {
 				var u = new URL( a.href );
-				u.searchParams.set( cfg.subParam || 'clickid', value );
+				u.searchParams.set( 'cid', value );
 				a.href = u.toString();
 			} catch ( e ) {
 				// Malformed href — leave it untouched.
