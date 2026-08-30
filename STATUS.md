@@ -301,8 +301,11 @@ uma conta.
 - **Conteúdo:** CPTs privados `hti_stc_scenario` e `hti_reveal_case`; a rotação
   é **calculada na leitura** a partir do índice do dia (o WP-Cron está
   desligado em produção — um jogo que dependesse dele deixava de rodar).
-  Importador CSV/JSON no admin e gerador determinístico por CLI
-  (`wp hti-games generate --count=365 --seed=…`).
+  Importador CSV/JSON no admin, gerador determinístico (CLI
+  `wp hti-games generate`) e, o que faz o jogo funcionar logo a seguir a um
+  deploy, uma **biblioteca de 365 cenários que o plugin traz como semente e
+  não como ficheiro de dados** — instalada por botão no admin, por lotes e
+  retomável, sem SSH (`Config::LIBRARY_SEED`/`LIBRARY_COUNT`, `Installer`).
 - **SEO:** 5 páginas seedadas EN+PT a partir de **uma só tabela de slugs**
   (`Config::pages()`) — hub, os dois jogos, classificação e perfil (este
   `noindex`); JSON-LD `Game` + `WebApplication` + `FAQPage` + breadcrumbs, com
@@ -336,9 +339,14 @@ uma conta.
       são cinco 404 com shortcodes a funcionar por trás.
 - [ ] **Polylang**: ativar tradução dos CPTs novos e confirmar as ligações
       EN↔PT das cinco páginas.
-- [ ] **Conteúdo do Survive the Charts**: o pool está **vazio**. Ou
-      `wp hti-games generate --count=365 --seed=…`, ou importar séries reais
-      pelo importador. Abaixo de 30 cenários o mesmo gráfico volta depressa.
+- [ ] **Conteúdo do Survive the Charts**: Definições → HTI Games → *Instalar a
+      biblioteca de cenários*, e carregar até dizer feito (instala por lotes,
+      ~100 por clique, e retoma onde parou). Publica os 365 gráficos da
+      biblioteca que o plugin traz — que é uma **semente**, não um ficheiro de
+      dados: `Config::LIBRARY_SEED` + `LIBRARY_COUNT` reproduzem sempre a mesma
+      biblioteca. **Sem SSH e sem CLI.** Continua a haver
+      `wp hti-games generate` para quem tem shell e quer outra semente, e o
+      importador para séries reais.
 - [ ] **The Reveal não pode abrir ainda.** Os cinco casos protótipo são
       seedados **de propósito por acabar**: `draft`, `hti_rev_verified = 0`,
       `hti_rev_source_url` **vazio** e **todos os números vazios** — os dois

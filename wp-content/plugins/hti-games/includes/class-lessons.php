@@ -424,7 +424,7 @@ class Lessons {
 				'id'   => 'stc_lesson_ambiguous_07',
 				'risk' => array( 200 ),
 				'en'   => 'Two percent a trade leaves room for %d losses in a row, and a day like this spends a sliver of that room whichever way it drifted. The room is the account; the tier is the rate you spend it at.',
-				'pt'   => 'Dois por cento por operação deixa espaço para %d perdas seguidas, e um dia destes gasta uma lasca desse espaço para o lado para que tenha derivado. O espaço é a conta; o escalão é o ritmo a que o gastas.',
+				'pt'   => 'Dois por cento por operação deixa espaço para %d perdas seguidas, e um dia destes gasta uma lasca desse espaço, tenha derivado para o lado que tiver. O espaço é a conta; o escalão é o ritmo a que o gastas.',
 			),
 			array(
 				'id'   => 'stc_lesson_ambiguous_08',
@@ -453,8 +453,8 @@ class Lessons {
 			array(
 				'id'   => 'stc_lesson_ambiguous_12',
 				'risk' => array(),
-				'en'   => 'Doubling the stake does not double the damage. It halves the number of losses the account can take before the floor, which is a different and much worse thing. The tier row is a scale of runway, not of enthusiasm.',
-				'pt'   => 'Duplicar a aposta não duplica o estrago. Corta para metade o número de perdas que a conta aguenta antes do chão, o que é coisa diferente e bastante pior. A fila de escalões é uma escala de margem, não de entusiasmo.',
+				'en'   => 'Doubling the stake does not double the damage. It roughly halves the number of losses the account can take before the floor, which is a different and much worse thing. The tier row is a scale of runway, not of enthusiasm.',
+				'pt'   => 'Duplicar a aposta não duplica o estrago. Corta mais ou menos para metade o número de perdas que a conta aguenta antes do chão, o que é coisa diferente e bastante pior. A fila de escalões é uma escala de margem, não de entusiasmo.',
 			),
 			array(
 				'id'   => 'stc_lesson_ambiguous_13',
@@ -628,7 +628,7 @@ class Lessons {
 				'id'   => 'stc_lesson_trap_17',
 				'risk' => array(),
 				'en'   => 'The doubled stake is the same decision taken twice at once. On a day that whipsaws it changes nothing about what the chart did — only how much of the account was standing in front of it.',
-				'pt'   => 'A aposta dobrada é a mesma decisão tomada duas vezes de uma só vez. Num dia que chicoteia não muda nada do que o gráfico fez — muda só quanto da conta estava à frente dele.',
+				'pt'   => 'A aposta dobrada é a mesma decisão tomada duas vezes de uma só vez. Num dia de idas e voltas não muda nada do que o gráfico fez — muda só quanto da conta estava à frente dele.',
 			),
 			array(
 				'id'   => 'stc_lesson_trap_18',

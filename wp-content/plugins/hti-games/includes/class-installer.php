@@ -31,8 +31,10 @@
  * a human must sign off — "this chart is real market data" — is exactly the
  * thing this path can never assert.
  *
- * WHY IT IS SLICED. 365 posts is ~4,400 inserts of post and meta rows. That is
- * comfortably past a cPanel PHP process budget, and a job that dies at
+ * WHY IT IS SLICED. The library is 365 posts and ~4,400 meta rows, which is
+ * some 11,000 queries. Generating the charts is not the cost — the whole year
+ * takes 57 ms — the database is, and 11,000 queries is comfortably past a
+ * cPanel PHP process budget. A job that dies at
  * scenario 210 with no memory of having got there is a job that can only ever
  * be started, never finished. So the run is bounded twice — by a count and by
  * a wall clock read off the host's own max_execution_time — and its position
@@ -92,9 +94,14 @@ class Installer {
 	/**
 	 * Hard ceiling on one slice, whatever the clock says.
 	 *
-	 * A count as well as a deadline because the two bound different failures:
-	 * the clock catches a slow host, and this catches a fast one that would
-	 * otherwise hold several thousand generated candles in memory at once.
+	 * A count as well as a deadline, because the two bound different things.
+	 * Generating a scenario costs about a sixth of a millisecond, so the
+	 * clock here is measuring the database and nothing else — and a shared
+	 * host meters queries and CPU seconds per process, not only wall time.
+	 * One slice is roughly 3,000 queries (a post plus twelve meta rows each,
+	 * and update_post_meta reads before it writes); that is a reasonable
+	 * thing to ask of one request, and the whole library's ~11,000 is not,
+	 * however fast the clock says the first hundred were.
 	 */
 	public const BATCH_MAX = 100;
 
@@ -357,6 +364,15 @@ class Installer {
 			}
 		}
 
+		// The address list is exhausted, whatever the stored count said. Said
+		// explicitly rather than left to the arithmetic, because the one way
+		// this loop could fail to terminate is a run whose count outruns its
+		// addresses: every slice would walk nothing, never reach complete,
+		// and queue another event to walk nothing again.
+		if ( ! isset( $addresses[ (int) $state['done'] ] ) ) {
+			$state['done'] = (int) $state['count'];
+		}
+
 		$state['updated'] = gmdate( 'Y-m-d H:i' );
 		update_option( self::OPTION, $state, false );
 
@@ -555,6 +571,20 @@ class Installer {
 				</strong>
 			</p>
 			<p class="description"><?php esc_html_e( 'Each press installs as much as this host allows in one request and remembers where it stopped, so pressing Continue until it says done is all there is to it. A background continuation is queued too, but WP-Cron on this site is driven from outside and may be slow or off — the button is the part that always works.', 'hti-games' ); ?></p>
+		<?php elseif ( $retry ) : ?>
+			<p>
+				<strong>
+					<?php
+					printf(
+						/* translators: 1: scenarios that failed, 2: library size, 3: scenarios created. */
+						esc_html__( 'Finished with %1$s of %2$s missing: %3$s were created, the rest could not be built. The library is short of the year it claims until they are.', 'hti-games' ),
+						esc_html( (string) (int) $state['failed'] ),
+						esc_html( (string) (int) $state['count'] ),
+						esc_html( (string) (int) $state['created'] )
+					);
+					?>
+				</strong>
+			</p>
 		<?php elseif ( $complete ) : ?>
 			<p>
 				<strong>
@@ -615,8 +645,6 @@ class Installer {
 			</form>
 			<?php
 		endif;
-		?>
-		<?php
 	}
 
 	/**

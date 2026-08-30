@@ -1375,41 +1375,120 @@ class Seeder {
 	/**
 	 * Survive the Charts.
 	 *
+	 * The page has to do two jobs at once and the copy is shaped by both.
+	 *
+	 * For a reader: explain a game whose whole argument is arithmetic, without
+	 * ever telling anybody what to do with money. Everything here is written
+	 * about the account rather than at the player — "an account that risks a
+	 * quarter of itself", never "you should risk one percent" — which is both
+	 * the house voice and the line that keeps an educational page educational.
+	 *
+	 * For a search engine and an answer engine: be liftable. Question-form
+	 * H2s, one self-contained answer under each, the runway figures as a list
+	 * rather than buried in a paragraph, and an FAQ deep enough to answer the
+	 * things people actually ask about a trading game — is it real data, is it
+	 * real money, can I lose more than the account, what is an ATR. The FAQ
+	 * array is the same one the FAQPage JSON-LD is built from.
+	 *
+	 * The Portuguese is written, not translated. The intent differs: an
+	 * English searcher looks for "free trading simulator" and "position
+	 * sizing"; a Portuguese one looks for "simulador de trading grátis",
+	 * "jogo da bolsa" and "gestão de risco", and says "tamanho da posição"
+	 * where the English says position sizing. The titles and the description
+	 * are built around those terms rather than around a translation of the
+	 * English ones.
+	 *
 	 * @return array<string,array{en:string,pt:string}>
 	 */
 	private static function copy_stc(): array {
 		return array(
 			'stc_title'            => array(
-				'en' => 'Survive the Charts: the daily position-size game',
-				'pt' => 'Sobreviver aos Gráficos: o jogo diário da posição',
+				'en' => 'Survive the Charts: the daily position sizing game',
+				'pt' => 'Sobreviver aos Gráficos: jogo diário de gestão de risco',
 			),
 			'stc_seo_title'        => array(
-				'en' => 'Survive the Charts — Free Daily Trading Game',
-				'pt' => 'Sobreviver aos Gráficos — Jogo Diário Grátis',
+				'en' => 'Survive the Charts — Free Daily Trading Simulator',
+				'pt' => 'Sobreviver aos Gráficos — Simulador de Trading Grátis',
 			),
 			'stc_seo_desc'         => array(
-				'en' => 'A free daily candlestick game: buy, sell or pass, then choose how much of a $10,000 virtual account to risk. The lesson is position size. No sign-up.',
-				'pt' => 'Um jogo diário grátis de velas: comprar, vender ou passar, e escolher quanto arriscar de uma conta virtual. A lição é o tamanho da posição.',
+				'en' => 'Free daily trading game: buy, sell or pass on a hidden chart, then pick how much of a $10,000 virtual account to risk. Position size is the lesson.',
+				'pt' => 'Jogo diário grátis: comprar, vender ou passar num gráfico anónimo e escolher quanto arriscar de uma conta virtual. A lição é o tamanho da posição.',
+			),
+			'stc_h_teaches'        => array(
+				'en' => 'What does Survive the Charts teach?',
+				'pt' => 'O que ensina o Sobreviver aos Gráficos?',
+			),
+			'stc_h_how'            => array(
+				'en' => 'How does a day work?',
+				'pt' => 'Como funciona um dia?',
+			),
+			'stc_h_rules'          => array(
+				'en' => 'What are the rules?',
+				'pt' => 'Quais são as regras?',
+			),
+			'stc_h_size'           => array(
+				'en' => 'Why is position size the whole game?',
+				'pt' => 'Porque é o tamanho da posição o jogo todo?',
+			),
+			'stc_h_runway'         => array(
+				'en' => 'How many losing trades in a row does each level of risk survive?',
+				'pt' => 'Quantas perdas seguidas aguenta cada nível de risco?',
 			),
 			'stc_teaches'          => array(
-				'en' => 'That being right about direction is not what keeps an account alive. The stop and the target are the same distance every day, so the only thing you actually control is the size of the position — and the game is built so that a run of ordinary bad luck at 10% a trade ends the account long before the same run at 1% is even noticeable. Most players find that out by blowing up once, which is cheaper here than anywhere else.',
-				'pt' => 'Que acertar na direção não é o que mantém uma conta viva. O stop e o alvo ficam à mesma distância todos os dias, por isso a única coisa que controlas mesmo é o tamanho da posição — e o jogo está feito para que uma série de azar banal a 10% por operação acabe com a conta muito antes de a mesma série a 1% ser sequer notada. A maioria descobre isso rebentando uma vez, o que aqui sai mais barato do que em qualquer outro sítio.',
+				'en' => 'That being right about direction is not what keeps an account alive. The stop and the target sit the same distance away every single day, so the one thing genuinely under your control is how much of the account stands behind the call. A run of ordinary bad luck at 10% a trade ends the account while the same run at 1% barely shows on the balance — and what separates those two players is not judgement, skill or the chart. It is one number, chosen before the candles moved. Most people learn this by blowing an account up once; here that costs a fortnight of two-minute sessions instead of savings.',
+				'pt' => 'Que acertar na direção não é o que mantém uma conta viva. O stop e o alvo ficam exatamente à mesma distância todos os dias, por isso a única coisa que está mesmo sob o teu controlo é quanto da conta fica atrás da leitura. Uma série de azar banal a 10% por operação acaba com a conta, enquanto a mesma série a 1% quase não se vê no saldo — e o que separa esses dois jogadores não é juízo, nem perícia, nem o gráfico. É um número, escolhido antes de as velas se mexerem. A maioria das pessoas aprende isto rebentando uma conta uma vez; aqui isso custa uma quinzena de sessões de dois minutos em vez de poupanças.',
 			),
 			'stc_step1'            => array(
-				'en' => 'You are shown 80 candles of a market whose name is hidden, and there is no way to look it up.',
-				'pt' => 'Vês 80 velas de um mercado cujo nome está tapado, e não há forma de o ir procurar.',
+				'en' => 'You are shown 80 candles of a market whose name is hidden, and there is no way to look it up. The last close is the price you would be entering at.',
+				'pt' => 'Vês 80 velas de um mercado cujo nome está tapado, e não há forma de o ir procurar. O último fecho é o preço a que entrarias.',
 			),
 			'stc_step2'            => array(
 				'en' => 'Buy, sell, or pass. Passing costs nothing and never breaks the streak — on some days it is the whole answer.',
 				'pt' => 'Comprar, vender, ou passar. Passar não custa nada e nunca quebra a série — há dias em que é essa a resposta toda.',
 			),
 			'stc_step3'            => array(
-				'en' => 'If you take the trade, choose how much of the account to risk. The consequence of that number is spelled out before you confirm, not after.',
-				'pt' => 'Se entrares, escolhe quanto da conta arriscar. A consequência desse número é explicada antes de confirmares, não depois.',
+				'en' => 'If you take the trade, choose how much of the account to risk: 0.5%, 1%, 2%, 5%, 10% or 25%, with an optional doubled stake. The dollars that puts at stake, and how many losses in a row the tier would survive, are on the screen before you confirm rather than after.',
+				'pt' => 'Se entrares, escolhe quanto da conta arriscar: 0,5%, 1%, 2%, 5%, 10% ou 25%, com a opção de dobrar a aposta. Os dólares que isso põe em jogo, e quantas perdas seguidas o escalão aguentaria, estão no ecrã antes de confirmares e não depois.',
 			),
 			'stc_step4'            => array(
-				'en' => 'The next candles play out against a stop one ATR away and a target one and a half, and the balance moves by exactly what you put behind the call.',
-				'pt' => 'As velas seguintes desenrolam-se contra um stop a um ATR e um alvo a um e meio, e o saldo move-se exatamente pelo que puseste atrás da leitura.',
+				'en' => 'The next 40 candles play out against a stop one ATR away and a target one and a half, and the balance moves by exactly what you put behind the call — then the day tells you what the size, rather than the reading, did to the account.',
+				'pt' => 'As 40 velas seguintes desenrolam-se contra um stop a um ATR e um alvo a um e meio, e o saldo move-se exatamente pelo que puseste atrás da leitura — e depois o dia diz-te o que o tamanho, e não a leitura, fez à conta.',
+			),
+			'stc_rule_entry'       => array(
+				'en' => 'The entry is the close of the last visible candle, and the ATR is measured over the 14 candles before it. Nothing from the hidden window sets a level, so you are never stopped out by a number you could not have worked out yourself.',
+				'pt' => 'A entrada é o fecho da última vela visível, e o ATR é medido sobre as 14 velas anteriores. Nada da janela escondida define um nível, por isso nunca levas stop por causa de um número que não pudesses ter calculado sozinho.',
+			),
+			'stc_rule_tie'         => array(
+				'en' => 'A candle that reaches both the stop and the target is booked as a stop. The tie goes to the loss, every time.',
+				'pt' => 'Uma vela que chega ao stop e ao alvo é registada como stop. O empate fica para a perda, sempre.',
+			),
+			'stc_tie_why'          => array(
+				'en' => 'The tie rule is the one that needs explaining. A candle records an open, a high, a low and a close, and nothing in it says which of those prices came first — so a bar whose range contains both levels could honestly have been either outcome. The game reads it pessimistically and books the loss. That is the honest reading rather than the harsh one: it never flatters a position, it is the same rule for everybody, and it settles an argument about a chart you are looking at, which the generous reading would leave open forever.',
+				'pt' => 'A regra do empate é a que precisa de explicação. Uma vela regista uma abertura, um máximo, um mínimo e um fecho, e nada nela diz qual desses preços veio primeiro — por isso uma barra cuja amplitude contém os dois níveis podia honestamente ter sido qualquer um dos dois resultados. O jogo lê-a de forma pessimista e regista a perda. É a leitura honesta e não a dura: nunca favorece uma posição, é a mesma regra para toda a gente, e fecha uma discussão sobre um gráfico que tens à frente, coisa que a leitura generosa deixaria aberta para sempre.',
+			),
+			'stc_size_1'           => array(
+				'en' => 'Two players can make the same call on the same chart and finish the month in different worlds. The one who was right slightly more often and risked a quarter of the account each time is out of the game; the one who was wrong slightly more often and risked one percent is still playing, and still learning. Direction is the part everybody argues about. Size is the part that decides who is still around to argue.',
+				'pt' => 'Dois jogadores podem fazer a mesma leitura no mesmo gráfico e acabar o mês em mundos diferentes. Quem acertou um pouco mais vezes e arriscou um quarto da conta de cada vez está fora do jogo; quem errou um pouco mais vezes e arriscou um por cento continua a jogar, e continua a aprender. A direção é a parte sobre a qual toda a gente discute. O tamanho é a parte que decide quem ainda cá está para discutir.',
+			),
+			'stc_size_2'           => array(
+				'en' => 'A losing streak is not a punishment for reading a chart badly. It is the ordinary texture of any long sequence of uncertain decisions, and six losses in a row will find every player who stays long enough to meet them. What separates the accounts that walk through a streak like that from the accounts that end there is a single number, chosen calmly, before there was anything to feel about it.',
+				'pt' => 'Uma série de perdas não é um castigo por se ler mal um gráfico. É a textura normal de qualquer sequência longa de decisões incertas, e seis perdas seguidas encontram todos os jogadores que fiquem tempo suficiente para as apanhar. O que separa as contas que atravessam uma série dessas das contas que acabam ali é um único número, escolhido com calma, antes de haver alguma coisa a sentir sobre ele.',
+			),
+			'stc_runway_lede'      => array(
+				'en' => 'Each tier answers one question: how many losing trades in a row can the account take before it reaches the floor and the run ends? Every loss is a percentage of what is left, so the balance shrinks more slowly the further it falls — which is why the numbers below are larger than they feel. They are computed by the game engine, not written by hand, so the page and the tier buttons cannot drift apart.',
+				'pt' => 'Cada escalão responde a uma pergunta: quantas operações perdedoras seguidas aguenta a conta antes de chegar ao chão e a corrida acabar? Cada perda é uma percentagem do que resta, por isso o saldo encolhe mais devagar quanto mais cai — e é por isso que os números abaixo são maiores do que parecem. São calculados pelo motor do jogo e não escritos à mão, para que a página e os botões dos escalões não se afastem um do outro.',
+			),
+			'stc_runway_row'       => array(
+				'en' => '%1$s a trade — %2$d losing trades in a row before the floor.',
+				'pt' => '%1$s por operação — %2$d operações perdedoras seguidas antes do chão.',
+			),
+			'stc_runway_note'      => array(
+				'en' => 'None of that is a recommendation about how much to risk anywhere. It is arithmetic, it holds whether the reading was good or bad, and it is the reason the heavy tiers are on the screen at all: a player can find out in two minutes what they cost, on money that is not real. Doubling a tier roughly halves the row it sits on, which is the part most people are surprised by.',
+				'pt' => 'Nada disto é uma recomendação sobre quanto arriscar seja onde for. É aritmética, vale seja a leitura boa ou má, e é a razão por que os escalões pesados estão sequer no ecrã: um jogador descobre em dois minutos o que custam, com dinheiro que não é real. Duplicar um escalão corta mais ou menos para metade a linha em que ele está, e é essa a parte que surpreende a maioria das pessoas.',
+			),
+			'stc_not'              => array(
+				'en' => 'It is not advice, and it is not a signal service: nothing here says what to do with money outside the game, and no chart in it is a market anybody could act on. It is not a broker, an account, or a demo of one — there is nothing to deposit, nothing to pay for, nothing to win, and no company is promoted anywhere in this section. And it is not a measure of talent. Two months of it teaches what a sequence of decisions does to a balance, which is a different and rather more useful thing than finding out whether you can call a chart.',
+				'pt' => 'Não é aconselhamento, nem é um serviço de sinais: nada aqui diz o que fazer com dinheiro fora do jogo, e nenhum gráfico dele é um mercado onde alguém pudesse agir. Não é uma corretora, uma conta, nem a demonstração de uma — não há nada para depositar, nada para pagar, nada a ganhar, e não há nenhuma empresa promovida em lado nenhum desta secção. E não é uma medida de talento. Dois meses disto ensinam o que uma sequência de decisões faz a um saldo, que é coisa diferente e bastante mais útil do que descobrir se sabes ler um gráfico.',
 			),
 			'stc_faq_real_q'       => array(
 				'en' => 'Are the charts real market data?',
@@ -1561,12 +1640,42 @@ class Seeder {
 			'stc'         => array(
 				array(
 					'q' => array(
-						'en' => 'Why only one challenge a day?',
-						'pt' => 'Porquê só um desafio por dia?',
+						'en' => 'Is any real money involved?',
+						'pt' => 'Há dinheiro real envolvido?',
 					),
 					'a' => array(
-						'en' => 'Because the lesson is what a sequence of decisions does to an account, and a sequence needs decisions that cost something. Unlimited retries would turn the same screen into a machine you pull until it pays, which teaches the opposite of the thing being taught.',
-						'pt' => 'Porque a lição é o que uma sequência de decisões faz a uma conta, e uma sequência precisa de decisões que custem alguma coisa. Repetições sem limite transformavam o mesmo ecrã numa máquina que se puxa até pagar, o que ensina o contrário do que está a ser ensinado.',
+						'en' => 'No real money at any point. The $10,000 is virtual, no order is placed anywhere, there is nothing to pay for and nothing to be won. Survive the Charts is a simulation of the decision, not a route to a market — the account exists so that a bad habit can cost something without costing anybody anything.',
+						'pt' => 'Sem dinheiro real em momento nenhum. Os 10 000 $ são virtuais, não é colocada nenhuma ordem em lado nenhum, não há nada a pagar nem nada a ganhar. O Sobreviver aos Gráficos é uma simulação da decisão e não um caminho para um mercado — a conta existe para que um mau hábito custe alguma coisa sem custar nada a ninguém.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Do I need an account to play?',
+						'pt' => 'Preciso de conta para jogar?',
+					),
+					'a' => array(
+						'en' => 'No. The game opens and plays straight away, and your run is kept on your device. Giving an email address is optional and buys exactly one thing: carrying the same run to another browser or another device. There is no password to choose and no name to give.',
+						'pt' => 'Não. O jogo abre e joga-se de imediato, e a tua corrida fica guardada no teu dispositivo. Dar um endereço de email é opcional e serve exatamente para uma coisa: levar a mesma corrida para outro navegador ou outro dispositivo. Não há palavra-passe para escolher nem nome para dar.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'What is an ATR, and why does it set the stop?',
+						'pt' => 'O que é o ATR, e porque é ele que define o stop?',
+					),
+					'a' => array(
+						'en' => 'The ATR — average true range — is how far this market has been travelling between its high and its low, averaged over the last 14 candles you can see. The stop sits one ATR from the entry and the target one and a half, so a quiet market gets a tight stop and a violent one gets a wide stop. That is what lets every day risk the same share of the account whatever the chart is doing, and it is why the size, and not the market, is the variable.',
+						'pt' => 'O ATR — amplitude média real — é a distância que este mercado tem percorrido entre o máximo e o mínimo, em média, ao longo das últimas 14 velas que consegues ver. O stop fica a um ATR da entrada e o alvo a um e meio, por isso um mercado calmo leva um stop apertado e um mercado violento leva um stop largo. É isso que permite que todos os dias arrisquem a mesma parte da conta faça o gráfico o que fizer, e é por isso que a variável é o tamanho e não o mercado.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Can I lose more than the account?',
+						'pt' => 'Posso perder mais do que a conta?',
+					),
+					'a' => array(
+						'en' => 'No. A losing day costs exactly the tier you chose — a share of the balance, doubled if you took the doubled stake — and never a cent more. There is no borrowing, no margin call and no debt: the balance cannot go below zero, and the run ends at the $1,000 floor long before it could get near it.',
+						'pt' => 'Não. Um dia perdedor custa exatamente o escalão que escolheste — uma parte do saldo, a dobrar se tiveres dobrado a aposta — e nunca mais um cêntimo. Não há empréstimo, não há chamada de margem e não há dívida: o saldo não pode descer abaixo de zero, e a corrida acaba no chão dos 1 000 $ muito antes de lá chegar perto.',
 					),
 				),
 				array(
@@ -1587,6 +1696,46 @@ class Seeder {
 					'a' => array(
 						'en' => 'No, and that is deliberate. Passing never breaks the streak and never costs capital. A game that punished sitting out would be teaching people to trade when there is nothing to trade, which is a habit that empties accounts in the real world too.',
 						'pt' => 'Não, e isso é de propósito. Passar nunca quebra a série nem custa capital. Um jogo que castigasse ficar de fora estava a ensinar a operar quando não há nada para operar, que é um hábito que também esvazia contas no mundo real.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Why only one challenge a day?',
+						'pt' => 'Porquê só um desafio por dia?',
+					),
+					'a' => array(
+						'en' => 'Because the lesson is what a sequence of decisions does to an account, and a sequence needs decisions that cost something. Unlimited retries would turn the same screen into a machine you pull until it pays, which teaches the opposite of the thing being taught.',
+						'pt' => 'Porque a lição é o que uma sequência de decisões faz a uma conta, e uma sequência precisa de decisões que custem alguma coisa. Repetições sem limite transformavam o mesmo ecrã numa máquina que se puxa até pagar, o que ensina o contrário do que está a ser ensinado.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Do the same charts come back?',
+						'pt' => 'Os mesmos gráficos voltam a aparecer?',
+					),
+					'a' => array(
+						'en' => 'Not for a very long time. The rotation walks the entire published pool in a fixed order before it returns to the beginning, and the pool holds about a year of charts. A day already answered cannot be replayed either: the decision is recorded once and the outcome is shown once, which is what stops the game becoming a thing you retry until it pays.',
+						'pt' => 'Só ao fim de muito tempo. A rotação percorre todo o conjunto publicado por uma ordem fixa antes de voltar ao início, e o conjunto tem cerca de um ano de gráficos. Um dia já respondido também não se repete: a decisão é registada uma vez e o resultado é mostrado uma vez, e é isso que impede o jogo de se tornar uma coisa que se repete até pagar.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'What happens to my email address if I give one?',
+						'pt' => 'O que acontece ao meu email se eu der um?',
+					),
+					'a' => array(
+						'en' => 'It is used to send you a sign-in link, and that is the whole of it. The games tables hold no email address and no IP address; the address itself lives in the ordinary WordPress user record, so deleting the account deletes it. You can also remove everything — the run, the results and the nickname — from the profile page at any time, without asking anybody.',
+						'pt' => 'Serve para te enviar uma ligação de entrada, e é só isso. As tabelas dos jogos não guardam nenhum endereço de email nem nenhum endereço IP; o endereço em si vive no registo normal de utilizador do WordPress, por isso apagar a conta apaga-o. Também podes remover tudo — a corrida, os resultados e a alcunha — na página do perfil, quando quiseres e sem pedir nada a ninguém.',
+					),
+				),
+				array(
+					'q' => array(
+						'en' => 'Why does the leaderboard rank by risk-adjusted result instead of profit?',
+						'pt' => 'Porque é a classificação por resultado ajustado ao risco e não por lucro?',
+					),
+					'a' => array(
+						'en' => 'Because the biggest gain on any given day belongs to whoever risked the most, so a board ranked by profit would put "bet a quarter of the account" at the top of a public list — the exact habit the game exists to argue against. Instead every decision is scored as though it had been taken at 1% of the account, whatever tier was actually used. Two players who read the same chart the same way score the same, and a larger position buys nothing on the board except the drawdown that comes with it.',
+						'pt' => 'Porque o maior ganho de um dia qualquer é de quem arriscou mais, e uma tabela ordenada por lucro punha "apostar um quarto da conta" no topo de uma lista pública — exatamente o hábito contra o qual o jogo existe. Em vez disso, cada decisão é pontuada como se tivesse sido tomada a 1% da conta, seja qual for o escalão usado. Dois jogadores que leem o mesmo gráfico da mesma maneira pontuam igual, e uma posição maior não compra nada na tabela a não ser a queda que vem com ela.',
 					),
 				),
 			),

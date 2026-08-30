@@ -212,6 +212,18 @@ class CPT {
 			'hti_rev_sector_pt'          => array( 'string', 'san_text' ),
 			'hti_rev_revenue_band_en'    => array( 'string', 'san_text' ),
 			'hti_rev_revenue_band_pt'    => array( 'string', 'san_text' ),
+			// Which SHAPE of dossier this is — 'fraud', 'cyclical_peak',
+			// 'boring_compounder' and the rest of Reveal_Lessons::patterns().
+			// It is what hangs a ready-written, company-free lesson on a case,
+			// and it is a hypothesis for the editor to test against the filing
+			// rather than a verdict on anybody.
+			'hti_rev_pattern'            => array( 'string', 'san_key' ),
+			// The editor-facing research brief: which document to open, which
+			// line item feeds which of the six labels, where the sector
+			// comparison comes from. Bilingual in one field, admin-only, and
+			// never emitted to a player. Longer than san_block allows because
+			// it carries both languages and six line-item mappings.
+			'hti_rev_brief'              => array( 'string', 'san_brief' ),
 			// Six rows of {key,label,value,sector average,tint} in both
 			// languages — the dossier the player actually reads.
 			'hti_rev_fundamentals'       => array( 'string', 'san_fundamentals' ),
@@ -295,6 +307,37 @@ class CPT {
 	 */
 	public static function san_block( $value ): string {
 		return substr( sanitize_textarea_field( (string) $value ), 0, 2000 );
+	}
+
+	/**
+	 * An editorial brief: several paragraphs of instructions, both languages.
+	 *
+	 * Its own ceiling rather than san_block's, because a brief carries the
+	 * English and the Portuguese of the same instructions plus one line per
+	 * fundamental, and a brief silently cut in half at 2000 characters would
+	 * lose the Portuguese entirely — with nothing to tell the editor that the
+	 * missing half ever existed. Still bounded: a meta row is not a document
+	 * store.
+	 *
+	 * @param mixed $value Raw value.
+	 */
+	public static function san_brief( $value ): string {
+		return substr( sanitize_textarea_field( (string) $value ), 0, 12000 );
+	}
+
+	/**
+	 * A machine key: lowercase, identifier-shaped, or empty.
+	 *
+	 * Not validated against the list of patterns it usually holds, because
+	 * that list lives in Reveal_Lessons — a copy library this file has no
+	 * business loading on every page view. The list is enforced where it
+	 * belongs: tests/test-seed-cases.php fails if a seeded case names a
+	 * pattern the lesson library does not know.
+	 *
+	 * @param mixed $value Raw value.
+	 */
+	public static function san_key( $value ): string {
+		return substr( sanitize_key( (string) $value ), 0, 40 );
 	}
 
 	/**

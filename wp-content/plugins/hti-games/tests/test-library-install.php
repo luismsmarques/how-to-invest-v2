@@ -226,7 +226,10 @@ hti_games_check( 15 === Installer::budget( 30 ), 'the usual 30-second limit buys
 hti_games_check( Installer::BUDGET_MAX === Installer::budget( 600 ), 'a generous limit is still capped' );
 hti_games_check( Installer::budget( 3 ) >= 1, 'and a hostile one never budgets zero seconds, which would be a button that does nothing' );
 hti_games_check( Installer::budget( 10 ) < Installer::budget( 30 ), 'a tighter host gets a shorter slice' );
-hti_games_check( Installer::BATCH_MAX > 0 && Installer::BATCH_MAX <= Config::LIBRARY_COUNT, 'and a slice is bounded by a count as well, so a fast host cannot hold the whole year in memory at once' );
+hti_games_check(
+	Installer::BATCH_MAX > 0 && Installer::BATCH_MAX < Config::LIBRARY_COUNT,
+	'and by a count as well as a clock, so no single request is asked for the whole library’s worth of database writes — the two bound different limits a shared host enforces'
+);
 
 echo "\nThe install publishes, and says what it published\n";
 hti_games_check( 'publish' === Installer::STATUS, 'the shipped library goes live: 365 drafts nobody publishes is the same empty pool with extra steps' );

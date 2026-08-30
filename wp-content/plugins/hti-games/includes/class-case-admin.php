@@ -837,6 +837,754 @@ class Case_Admin {
 	}
 
 	/* ---------------------------------------------------------------------
+	 * The workflow panels on the case editor.
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * The research brief for this case, read-only, above everything else.
+	 *
+	 * Read-only on purpose. The brief is the instruction — which company, which
+	 * filing, which six figures — and an instruction that can be edited from
+	 * inside the task it describes stops being one. It is shown here so that
+	 * the document to open is on the same screen as the boxes the numbers go
+	 * into, which is the whole reason an editor would otherwise have three tabs
+	 * and a lost place.
+	 *
+	 * @param array<string,mixed> $meta Case meta.
+	 */
+	private static function render_brief( array $meta ): void {
+		$key = self::optional_key( self::BRIEF_KEYS );
+		if ( '' === $key ) {
+			// The field has not landed yet. A panel about a field that does
+			// not exist is worse than no panel.
+			return;
+		}
+
+		$brief = trim( (string) ( $meta[ $key ] ?? '' ) );
+
+		echo '<div class="hti-cw hti-cw--brief">';
+		echo '<h4 class="hti-cw__h">' . esc_html__( 'Research brief', 'hti-games' ) . '</h4>';
+
+		if ( '' === $brief ) {
+			echo '<p class="description">' . esc_html__( 'No brief recorded for this case. Whoever plans it should say which document the figures come out of before anybody starts typing numbers into the boxes below.', 'hti-games' ) . '</p>';
+		} else {
+			echo '<div class="hti-cw__brief">' . wp_kses_post( wpautop( esc_html( $brief ) ) ) . '</div>';
+		}
+
+		echo '</div>';
+	}
+
+	/**
+	 * What is still open on this case, and what finishing each thing means.
+	 *
+	 * Shown before an editor tries to publish, rather than as the refusal
+	 * afterwards: notice() explains a blocked publish, and by then the person
+	 * has already been told no by a form that never told them what it wanted.
+	 *
+	 * @param array<string,mixed> $meta    Case meta.
+	 * @param int                 $post_id Post id, for the preview links.
+	 */
+	private static function render_checklist( array $meta, int $post_id ): void {
+		$list     = self::checklist( $meta );
+		$progress = self::progress( $list );
+
+		echo '<div class="hti-cw hti-cw--check">';
+		echo '<h4 class="hti-cw__h">' . esc_html__( 'What is left on this case', 'hti-games' ) . '</h4>';
+
+		if ( 0 === $progress['blocking'] ) {
+			printf(
+				'<p class="hti-cw__state is-ready">%s</p>',
+				esc_html__( 'Nothing blocks publication. Publishing puts this case into the daily rotation.', 'hti-games' )
+			);
+		} else {
+			printf(
+				'<p class="hti-cw__state is-blocked">%s</p>',
+				esc_html(
+					sprintf(
+						/* translators: %d: number of unmet requirements. */
+						_n(
+							'Not publishable yet — %d requirement is unmet. Pressing Publish saves this as a draft and names it.',
+							'Not publishable yet — %d requirements are unmet. Pressing Publish saves this as a draft and names them.',
+							$progress['blocking'],
+							'hti-games'
+						),
+						$progress['blocking']
+					)
+				)
+			);
+		}
+
+		$blocking = array();
+		$rest     = array();
+		foreach ( $list as $row ) {
+			if ( ! empty( $row['blocking'] ) ) {
+				$blocking[] = $row;
+			} else {
+				$rest[] = $row;
+			}
+		}
+
+		self::render_checklist_group( __( 'Required before this case can be published', 'hti-games' ), $blocking );
+		self::render_checklist_group( __( 'Required before the dossier reads properly', 'hti-games' ), $rest );
+
+		echo '<p class="hti-cw__foot">' . esc_html__( 'The four requirements above the line are what the publish gate checks, and the same four are checked again by the query that picks the day — so a case that reaches Publish by any other route is still not served.', 'hti-games' ) . '</p>';
+
+		if ( $post_id > 0 ) {
+			printf(
+				'<p class="hti-cw__foot"><a href="%1$s">%2$s</a> · <a href="%3$s">%4$s</a></p>',
+				esc_url( self::preview_url( $post_id, 'en' ) ),
+				esc_html__( 'Preview it as an English player sees it', 'hti-games' ),
+				esc_url( self::preview_url( $post_id, 'pt' ) ),
+				esc_html__( 'and as a Portuguese one does', 'hti-games' )
+			);
+		}
+
+		echo '</div>';
+	}
+
+	/**
+	 * One group of checklist rows.
+	 *
+	 * @param string                         $heading Group heading.
+	 * @param array<int,array<string,mixed>> $rows    Checklist rows.
+	 */
+	private static function render_checklist_group( string $heading, array $rows ): void {
+		if ( array() === $rows ) {
+			return;
+		}
+
+		$labels = self::checklist_labels();
+
+		echo '<p class="hti-cw__group">' . esc_html( $heading ) . '</p>';
+		echo '<ul class="hti-cw__list">';
+
+		foreach ( $rows as $row ) {
+			$key   = (string) $row['key'];
+			$done  = ! empty( $row['done'] );
+			$label = $labels[ $key ] ?? array( $key, '' );
+
+			// "3 of 6" only where the row has parts. On a one-part row the
+			// count is noise, and the tick already says everything.
+			$count = (int) $row['need'] > 1
+				? sprintf(
+					/* translators: 1: parts done, 2: parts needed. */
+					__( '%1$d of %2$d', 'hti-games' ),
+					(int) $row['have'],
+					(int) $row['need']
+				)
+				: '';
+
+			printf(
+				'<li class="hti-cw__item %1$s"><span class="hti-cw__mark" aria-hidden="true">%2$s</span><span class="hti-cw__body"><strong>%3$s</strong> <span class="hti-cw__count">%4$s</span><span class="screen-reader-text">%5$s</span><span class="hti-cw__done">%6$s</span></span></li>',
+				esc_attr( ( $done ? 'is-done' : 'is-todo' ) . ( empty( $row['blocking'] ) ? ' is-optional' : ' is-blocking' ) ),
+				$done ? '&#10003;' : '&#8226;',
+				esc_html( (string) $label[0] ),
+				esc_html( $count ),
+				esc_html( $done ? __( '— done', 'hti-games' ) : __( '— still to do', 'hti-games' ) ),
+				esc_html( (string) ( $label[1] ?? '' ) )
+			);
+		}
+
+		echo '</ul>';
+	}
+
+	/**
+	 * The verification block: who said so, when, and about which numbers.
+	 *
+	 * The decay rule is invisible until it fires, and an editor who watches a
+	 * tick disappear without being told why concludes the software is broken
+	 * and re-ticks it without re-checking anything — which is worse than no
+	 * decay at all. So the block names the three numbers the tick is a
+	 * statement about, shows their current values, and says out loud that
+	 * editing one withdraws it.
+	 *
+	 * @param array<string,mixed> $meta Case meta.
+	 */
+	private static function render_verification( array $meta ): void {
+		$verified = '1' === (string) ( $meta['hti_rev_verified'] ?? '' );
+		$by       = trim( (string) ( $meta['hti_rev_verified_by'] ?? '' ) );
+		$at       = trim( (string) ( $meta['hti_rev_verified_at'] ?? '' ) );
+
+		printf( '<div class="%s">', esc_attr( $verified ? 'hti-cw hti-cw--verify is-verified' : 'hti-cw hti-cw--verify' ) );
+		echo '<h4 class="hti-cw__h">' . esc_html__( 'Verification', 'hti-games' ) . '</h4>';
+
+		printf(
+			'<p class="hti-cw__tick"><label><input type="checkbox" name="hti_rev_verified" value="1" %1$s /> <strong>%2$s</strong></label></p>',
+			checked( $verified, true, false ),
+			esc_html__( 'Verified against the source', 'hti-games' )
+		);
+
+		if ( $verified && '' !== $at ) {
+			printf(
+				'<p class="hti-cw__who">%s</p>',
+				esc_html(
+					sprintf(
+						/* translators: 1: user login, 2: UTC timestamp. */
+						__( 'Verified by %1$s on %2$s UTC.', 'hti-games' ),
+						'' !== $by ? $by : __( 'an unrecorded user', 'hti-games' ),
+						$at
+					)
+				)
+			);
+		} elseif ( $verified ) {
+			printf(
+				'<p class="hti-cw__who">%s</p>',
+				esc_html__( 'Ticked but not yet saved — the name and the time are recorded when this case is saved.', 'hti-games' )
+			);
+		} else {
+			printf(
+				'<p class="hti-cw__who">%s</p>',
+				esc_html__( 'Not verified. Nothing is served without this: the publish gate refuses it, and so does the query that picks the day.', 'hti-games' )
+			);
+		}
+
+		echo '<p class="hti-cw__means">' . esc_html__( 'The tick is a statement about these three numbers and about nothing else. Change any one of them — anybody, including whoever ticked it — and it is withdrawn when the case is saved:', 'hti-games' ) . '</p>';
+
+		$names = array(
+			'hti_rev_year'               => __( 'Year', 'hti-games' ),
+			'hti_rev_return_5y_bp'       => __( 'Five-year return (bp)', 'hti-games' ),
+			'hti_rev_index_return_5y_bp' => __( 'Index five-year return (bp)', 'hti-games' ),
+		);
+
+		echo '<ul class="hti-cw__three">';
+		foreach ( self::VERIFIED_FIELDS as $field ) {
+			$value = trim( (string) ( $meta[ $field ] ?? '' ) );
+			printf(
+				'<li><strong>%1$s</strong> <span class="hti-cw__count">%2$s</span></li>',
+				esc_html( $names[ $field ] ?? $field ),
+				esc_html( '' !== $value ? $value : __( 'empty', 'hti-games' ) )
+			);
+		}
+		echo '</ul>';
+
+		echo '<p class="description">' . esc_html__( 'Renaming the company, rewriting the lesson or fixing a headline does not withdraw it — none of those is what was checked.', 'hti-games' ) . '</p>';
+		echo '</div>';
+	}
+
+	/* ---------------------------------------------------------------------
+	 * The queue: every unfinished case, on the settings screen.
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Every case that exists, as queue rows, closest to launchable first.
+	 *
+	 * One meta read per case on an admin screen. The alternative is a
+	 * meta_query that would have to be cached and invalidated to answer a
+	 * question nobody asks twice a minute, and a stale queue is a queue that
+	 * sends somebody to re-check a case that was finished an hour ago.
+	 *
+	 * @param int $limit Most cases to inspect.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function queue( int $limit = 200 ): array {
+		$ids = get_posts(
+			array(
+				'post_type'              => Config::CPT_CASE,
+				'post_status'            => array( 'draft', 'pending', 'future', 'publish' ),
+				'numberposts'            => $limit,
+				'fields'                 => 'ids',
+				'orderby'                => 'ID',
+				'order'                  => 'ASC',
+				'no_found_rows'          => true,
+				'update_post_term_cache' => false,
+				// One case carries both languages in its meta, so Polylang
+				// must not filter the queue down to half of it.
+				'suppress_filters'       => true,
+			)
+		);
+
+		$rows = array();
+		foreach ( (array) $ids as $id ) {
+			$id   = (int) $id;
+			$meta = self::stored_meta( $id );
+			$rows[] = self::queue_row(
+				$id,
+				(string) get_the_title( $id ),
+				(string) get_post_status( $id ),
+				self::pattern_of( $meta ),
+				$meta
+			);
+		}
+
+		return self::sort_queue( $rows );
+	}
+
+	/**
+	 * The verification queue, on Settings → HTI Games.
+	 *
+	 * The readiness panel above it reports a count. A count tells an editorial
+	 * lead that there is work; it does not tell them what the work is, which
+	 * case is one field from being served, or where to click. This does.
+	 */
+	public static function render_panel(): void {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		$rows    = self::queue();
+		$labels  = self::checklist_labels();
+		$live    = 0;
+		$waiting = array();
+
+		foreach ( $rows as $row ) {
+			if ( ! empty( $row['live'] ) ) {
+				++$live;
+				continue;
+			}
+			$waiting[] = $row;
+		}
+
+		echo '<h2>' . esc_html__( 'The Reveal — case queue', 'hti-games' ) . '</h2>';
+
+		printf(
+			'<p>%s</p>',
+			esc_html(
+				sprintf(
+					/* translators: 1: cases being served, 2: cases in total. */
+					__( '%1$d of %2$d cases are published, verified and in the rotation. The rest are below, closest to launchable first.', 'hti-games' ),
+					$live,
+					count( $rows )
+				)
+			)
+		);
+
+		if ( array() === $waiting ) {
+			echo '<p>' . esc_html__( 'Nothing is waiting on anybody.', 'hti-games' ) . '</p>';
+			return;
+		}
+
+		echo '<table class="widefat striped hti-cq"><thead><tr>';
+		foreach ( array(
+			__( 'Case', 'hti-games' ),
+			__( 'Pattern', 'hti-games' ),
+			__( 'Status', 'hti-games' ),
+			__( 'What is missing', 'hti-games' ),
+		) as $head ) {
+			printf( '<th scope="col">%s</th>', esc_html( $head ) );
+		}
+		echo '</tr></thead><tbody>';
+
+		foreach ( $waiting as $row ) {
+			self::render_queue_row( $row, $labels );
+		}
+
+		echo '</tbody></table>';
+	}
+
+	/**
+	 * One row of the queue table.
+	 *
+	 * @param array<string,mixed>                    $row    A queue_row().
+	 * @param array<string,array{0:string,1:string}> $labels checklist_labels().
+	 */
+	private static function render_queue_row( array $row, array $labels ): void {
+		$id    = (int) $row['id'];
+		$title = trim( (string) $row['title'] );
+		$edit  = (string) get_edit_post_link( $id );
+
+		echo '<tr>';
+
+		printf(
+			'<td><strong><a href="%1$s">%2$s</a></strong><div class="row-actions"><span><a href="%3$s">%4$s</a></span> | <span><a href="%5$s">%6$s</a></span></div></td>',
+			esc_url( $edit ),
+			esc_html( '' !== $title ? $title : sprintf( '#%d', $id ) ),
+			esc_url( $edit ),
+			esc_html__( 'Edit', 'hti-games' ),
+			esc_url( self::preview_url( $id, 'en' ) ),
+			esc_html__( 'Preview', 'hti-games' )
+		);
+
+		printf( '<td>%s</td>', esc_html( '' !== trim( (string) $row['pattern'] ) ? (string) $row['pattern'] : '—' ) );
+
+		// Publishable-but-draft is its own state and the most actionable one on
+		// the screen: the work is done and one click is left.
+		$state = ! empty( $row['publishable'] )
+			? __( 'Ready to publish', 'hti-games' )
+			: (string) $row['status'];
+		printf( '<td>%s</td>', esc_html( $state ) );
+
+		$open = array();
+		foreach ( (array) $row['open_blocking'] as $key ) {
+			$open[] = (string) ( $labels[ (string) $key ][0] ?? $key );
+		}
+		$soft = count( (array) $row['open'] ) - count( (array) $row['open_blocking'] );
+		if ( $soft > 0 ) {
+			$open[] = sprintf(
+				/* translators: %d: number of non-blocking gaps. */
+				_n( '%d more to write before it reads properly', '%d more to write before it reads properly', $soft, 'hti-games' ),
+				$soft
+			);
+		}
+
+		printf( '<td>%s</td>', esc_html( array() === $open ? __( 'Nothing — publish it', 'hti-games' ) : implode( ' · ', $open ) ) );
+
+		echo '</tr>';
+	}
+
+	/* ---------------------------------------------------------------------
+	 * The one-case preview.
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * Register the preview screen under the Reveal cases menu.
+	 */
+	public static function add_preview_page(): void {
+		self::$preview_hook = (string) add_submenu_page(
+			'edit.php?post_type=' . Config::CPT_CASE,
+			__( 'Preview a case', 'hti-games' ),
+			__( 'Preview', 'hti-games' ),
+			'edit_posts',
+			self::PREVIEW_PAGE,
+			array( __CLASS__, 'render_preview' )
+		);
+	}
+
+	/**
+	 * The preview screen's URL for one case in one language.
+	 *
+	 * @param int    $id   Case post id.
+	 * @param string $lang 'en' or 'pt'.
+	 */
+	public static function preview_url( int $id, string $lang = 'en' ): string {
+		return add_query_arg(
+			array(
+				'post_type' => Config::CPT_CASE,
+				'page'      => self::PREVIEW_PAGE,
+				'case'      => $id,
+				'lang'      => 'pt' === $lang ? 'pt' : 'en',
+			),
+			admin_url( 'edit.php' )
+		);
+	}
+
+	/**
+	 * One case, as a player meets it.
+	 *
+	 * Read-only, and a GET with no side effect, so the capability is the whole
+	 * control: `edit_posts` for the screen and `edit_post` for the case, which
+	 * is the same pair that guards the editor this previews.
+	 */
+	public static function render_preview(): void {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a read-only screen that changes nothing; the capability checks below are the control.
+		$id = isset( $_GET['case'] ) ? absint( wp_unslash( $_GET['case'] ) ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- as above.
+		$lang = isset( $_GET['lang'] ) && 'pt' === sanitize_key( wp_unslash( $_GET['lang'] ) ) ? 'pt' : 'en';
+
+		echo '<div class="wrap hti-cp">';
+		echo '<h1>' . esc_html__( 'Preview a case', 'hti-games' ) . '</h1>';
+
+		$post = $id > 0 ? get_post( $id ) : null;
+
+		if ( ! $post instanceof \WP_Post || Config::CPT_CASE !== $post->post_type || ! current_user_can( 'edit_post', $id ) ) {
+			if ( $id > 0 ) {
+				echo '<div class="notice notice-error"><p>' . esc_html__( 'That case does not exist, or it is not yours to edit.', 'hti-games' ) . '</p></div>';
+			}
+			self::render_preview_picker();
+			echo '</div>';
+			return;
+		}
+
+		$meta = self::stored_meta( $id );
+
+		printf(
+			'<p><strong>%1$s</strong> — <a href="%2$s">%3$s</a> · <a href="%4$s">%5$s</a> · <a href="%6$s">%7$s</a></p>',
+			esc_html( (string) get_the_title( $post ) ),
+			esc_url( (string) get_edit_post_link( $id ) ),
+			esc_html__( 'Edit this case', 'hti-games' ),
+			esc_url( self::preview_url( $id, 'en' ) ),
+			esc_html__( 'English', 'hti-games' ),
+			esc_url( self::preview_url( $id, 'pt' ) ),
+			esc_html__( 'Portuguese', 'hti-games' )
+		);
+
+		$missing = self::missing( $meta );
+		printf(
+			'<div class="notice %1$s inline"><p>%2$s</p></div>',
+			esc_attr( array() === $missing ? 'notice-success' : 'notice-warning' ),
+			esc_html(
+				array() === $missing
+					? __( 'This case is publishable. What follows is what a player would see.', 'hti-games' )
+					: __( 'This case cannot be published yet, so a player would never reach this screen. It is drawn from what is stored right now — empty boxes appear as they would render.', 'hti-games' )
+			)
+		);
+
+		echo '<div class="hti-cp__stage">';
+		self::render_preview_dossier( $meta, $lang );
+		echo '</div>';
+
+		self::render_preview_answer( $meta, $lang );
+		echo '</div>';
+	}
+
+	/**
+	 * The picker shown when the screen is opened without a case.
+	 */
+	private static function render_preview_picker(): void {
+		$rows = self::queue( 40 );
+		if ( array() === $rows ) {
+			echo '<p>' . esc_html__( 'There are no cases to preview yet.', 'hti-games' ) . '</p>';
+			return;
+		}
+
+		echo '<p>' . esc_html__( 'Pick a case to see it as a player would:', 'hti-games' ) . '</p><ul>';
+		foreach ( $rows as $row ) {
+			printf(
+				'<li><a href="%1$s">%2$s</a></li>',
+				esc_url( self::preview_url( (int) $row['id'], 'en' ) ),
+				esc_html( '' !== trim( (string) $row['title'] ) ? (string) $row['title'] : sprintf( '#%d', (int) $row['id'] ) )
+			);
+		}
+		echo '</ul>';
+	}
+
+	/**
+	 * The dossier, as the player is served it.
+	 *
+	 * WHAT THIS REUSES, AND THE ONE THING IT CANNOT.
+	 *
+	 * The values are REST::public_challenge_reveal() — the same whitelist, in
+	 * the same language, that the game's own /today response is built from. So
+	 * the preview shows what SURVIVES the boundary rather than what is stored:
+	 * a fundamentals row whose key is empty is dropped here exactly as it is
+	 * dropped on the way to a browser, and an editor finds that out on this
+	 * screen instead of on the day the case is served. The wording is
+	 * Strings::get(), the same table the shell reads.
+	 *
+	 * The MARKUP is the part that could not be reused, and it is worth saying
+	 * why rather than pretending otherwise: on the front end the dossier is
+	 * painted by assets/js/reveal.js into the empty shell
+	 * Frontend::shell_reveal() prints, from a payload fetched over REST. There
+	 * is no server-side renderer of a filled dossier to call — building one for
+	 * the front end would mean serving the answer's neighbours in the HTML of a
+	 * cacheable page, which is the thing the whole anti-cheat design exists to
+	 * prevent. So this method mirrors paintDossier(), and
+	 * tests/test-case-workflow.php pins every class name and every tint mark it
+	 * emits to the ones reveal.js and reveal.css actually use, so the two
+	 * cannot drift apart quietly.
+	 *
+	 * @param array<string,mixed> $meta Case meta.
+	 * @param string              $lang 'en' or 'pt'.
+	 */
+	private static function render_preview_dossier( array $meta, string $lang ): void {
+		$data  = REST::public_challenge_reveal( $meta, array( 'lang' => $lang ) );
+		$dash  = '—';
+		$marks = array(
+			'good' => '&#10003;',
+			'warn' => '~',
+			'bad'  => '!',
+		);
+
+		echo '<section class="hti-g hti-rv"><div class="hti-g__phases"><div class="hti-g__phase">';
+		echo '<article class="hti-rv__file">';
+		echo '<div class="hti-rv__tape" aria-hidden="true"></div>';
+		echo '<div class="hti-rv__filehead">';
+
+		printf(
+			'<p class="hti-g__kicker hti-num">%s</p>',
+			esc_html( sprintf( Strings::get( 'rev_dossier', $lang ), strtoupper( substr( (string) ( $data['ref'] ?? '' ), 0, 6 ) ) ) )
+		);
+		printf( '<h2 class="hti-rv__unnamed">%s</h2>', esc_html( Strings::get( 'rev_unnamed', $lang ) ) );
+		printf( '<p class="hti-rv__stamp" aria-hidden="true">%s</p>', esc_html( Strings::get( 'rev_confidential', $lang ) ) );
+		echo '</div>';
+
+		echo '<dl class="hti-rv__meta">';
+		printf(
+			'<div class="hti-rv__metacell"><dt>%1$s</dt><dd>%2$s</dd></div>',
+			esc_html( Strings::get( 'rev_sector', $lang ) ),
+			esc_html( '' !== (string) $data['sector'] ? (string) $data['sector'] : $dash )
+		);
+		printf(
+			'<div class="hti-rv__metacell"><dt>%1$s</dt><dd>%2$s</dd></div>',
+			esc_html( Strings::get( 'rev_revenue', $lang ) ),
+			esc_html( '' !== (string) $data['revenue_band'] ? (string) $data['revenue_band'] : $dash )
+		);
+		echo '</dl>';
+
+		printf( '<h3 class="hti-rv__sub">%s</h3>', esc_html( Strings::get( 'rev_fundamentals', $lang ) ) );
+		echo '<table class="hti-rv__fund"><tbody>';
+		foreach ( (array) $data['fundamentals'] as $row ) {
+			$tint = (string) ( $row['tint'] ?? 'warn' );
+			printf(
+				'<tr class="%1$s"><th scope="row">%2$s</th><td class="hti-num hti-rv__value"><span class="hti-rv__mark" aria-hidden="true">%3$s</span><span class="hti-g__sr">%4$s</span>%5$s</td><td class="hti-num hti-rv__avg"><span class="hti-g__sr">%6$s</span>%7$s</td></tr>',
+				esc_attr( 'is-' . $tint ),
+				esc_html( (string) ( $row['label'] ?? '' ) ),
+				esc_html( $marks[ $tint ] ?? '' ),
+				esc_html( Strings::get( 'rev_tint_' . $tint, $lang ) . ' — ' ),
+				esc_html( (string) ( $row['value'] ?? '' ) ),
+				esc_html( Strings::get( 'rev_sector_avg', $lang ) . ' ' ),
+				esc_html( (string) ( $row['sector_avg'] ?? '' ) )
+			);
+		}
+		echo '</tbody></table>';
+
+		printf( '<h3 class="hti-rv__sub">%s</h3>', esc_html( Strings::get( 'rev_headlines', $lang ) ) );
+		echo '<ul class="hti-rv__heads">';
+		foreach ( (array) $data['headlines'] as $line ) {
+			printf( '<li class="hti-rv__head"><blockquote>%s</blockquote></li>', esc_html( (string) $line ) );
+		}
+		echo '</ul>';
+
+		echo '</article>';
+		echo '<div class="hti-g__sides">';
+		printf( '<button type="button" class="hti-g__choice hti-g__choice--pass" disabled>%s</button>', esc_html( Strings::get( 'rev_pass', $lang ) ) );
+		printf( '<button type="button" class="hti-g__choice hti-g__choice--invest" disabled>%s</button>', esc_html( Strings::get( 'rev_invest', $lang ) ) );
+		echo '</div>';
+		echo '</div></div></section>';
+	}
+
+	/**
+	 * Everything the player only sees after deciding.
+	 *
+	 * Plainly laid out rather than staged: the reveal screen's theatre is
+	 * animation over values, and what an editor needs to check is the values —
+	 * that the name and year are right, that both returns carry the sign they
+	 * should, that the Portuguese half exists, and that the source is a link
+	 * somebody could actually follow.
+	 *
+	 * @param array<string,mixed> $meta Case meta.
+	 * @param string              $lang 'en' or 'pt'.
+	 */
+	private static function render_preview_answer( array $meta, string $lang ): void {
+		$company = trim( (string) ( $meta['hti_rev_company'] ?? '' ) );
+		$year    = (int) ( $meta['hti_rev_year'] ?? 0 );
+
+		echo '<h2>' . esc_html__( 'After the decision', 'hti-games' ) . '</h2>';
+
+		printf(
+			'<p class="hti-cp__answer">%s</p>',
+			esc_html( '' !== $company && $year > 0 ? $company . ' · ' . $year : __( 'No company or year recorded — the reveal screen would have nothing to reveal.', 'hti-games' ) )
+		);
+
+		echo '<table class="widefat striped hti-cp__rows"><tbody>';
+
+		self::preview_row(
+			Strings::get( 'rev_line_you', $lang ),
+			self::bp_label( (string) ( $meta['hti_rev_return_5y_bp'] ?? '' ) )
+		);
+		self::preview_row(
+			Strings::get( 'rev_line_index', $lang ),
+			self::bp_label( (string) ( $meta['hti_rev_index_return_5y_bp'] ?? '' ) )
+		);
+		self::preview_row( __( 'What happened next', 'hti-games' ), self::preview_block( $meta, 'hti_rev_context_', $lang ) );
+		self::preview_row( __( 'Lesson', 'hti-games' ), self::preview_block( $meta, 'hti_rev_lesson_', $lang ) );
+
+		$url   = trim( (string) ( $meta['hti_rev_source_url'] ?? '' ) );
+		$label = trim( (string) ( $meta['hti_rev_source_label'] ?? '' ) );
+		$when  = trim( (string) ( $meta['hti_rev_source_accessed'] ?? '' ) );
+
+		$source = '' === $url
+			? __( 'No source — the case cannot be published, and the reveal screen would credit nothing.', 'hti-games' )
+			: ( '' !== $label ? $label : $url ) . ( '' !== $when ? ' · ' . sprintf( Strings::get( 'rev_source_note', $lang ), $when ) : '' );
+
+		self::preview_row( Strings::get( 'rev_source', $lang ), $source );
+
+		echo '</tbody></table>';
+		echo '<p class="description">' . esc_html( Strings::get( 'rev_historical', $lang ) ) . '</p>';
+	}
+
+	/**
+	 * One label/value row of the answer table.
+	 *
+	 * @param string $label Row label.
+	 * @param string $value Row value.
+	 */
+	private static function preview_row( string $label, string $value ): void {
+		printf(
+			'<tr><th scope="row">%1$s</th><td>%2$s</td></tr>',
+			esc_html( $label ),
+			esc_html( '' !== trim( $value ) ? $value : '—' )
+		);
+	}
+
+	/**
+	 * A bilingual block as the player would get it, saying so when the
+	 * Portuguese half is missing.
+	 *
+	 * REST::block() falls back to English rather than serving a blank, which is
+	 * the right call at runtime and a trap at review time: the Portuguese page
+	 * looks finished because it is quietly showing English. Here it is named.
+	 *
+	 * @param array<string,mixed> $meta   Case meta.
+	 * @param string              $prefix Meta key prefix, with its trailing underscore.
+	 * @param string              $lang   'en' or 'pt'.
+	 */
+	private static function preview_block( array $meta, string $prefix, string $lang ): string {
+		$text = trim( (string) ( $meta[ $prefix . $lang ] ?? '' ) );
+		if ( '' !== $text ) {
+			return $text;
+		}
+
+		$english = trim( (string) ( $meta[ $prefix . 'en' ] ?? '' ) );
+		if ( 'pt' === $lang && '' !== $english ) {
+			return sprintf(
+				/* translators: %s: the English text a Portuguese player would be served instead. */
+				__( 'Portuguese missing — a Portuguese player is served the English: %s', 'hti-games' ),
+				$english
+			);
+		}
+
+		return '';
+	}
+
+	/**
+	 * A basis-point figure as both the stored integer and the percentage it
+	 * means, because one of the two is what an editor read in the filing and
+	 * the other is what they typed.
+	 *
+	 * @param string $bp Stored value.
+	 */
+	private static function bp_label( string $bp ): string {
+		$bp = trim( $bp );
+		if ( '' === $bp || 1 !== preg_match( '/^-?\d+$/', $bp ) ) {
+			return '';
+		}
+
+		return sprintf( '%s bp (%+.2f%%)', $bp, (int) $bp / 100 );
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Assets. Admin only, and only on the three screens that use them.
+	 * ------------------------------------------------------------------- */
+
+	/**
+	 * The admin sheet, and — on the preview only — the player's own two.
+	 *
+	 * Nothing here is ever enqueued on the front end: the front-end budget is
+	 * measured in tests/test-asset-budget.php and this file adds nothing to it.
+	 *
+	 * @param string $hook Current admin page hook suffix.
+	 */
+	public static function enqueue( $hook ): void {
+		$hook   = (string) $hook;
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		$editor  = in_array( $hook, array( 'post.php', 'post-new.php' ), true )
+			&& $screen instanceof \WP_Screen
+			&& Config::CPT_CASE === $screen->post_type;
+		$preview = '' !== self::$preview_hook && $hook === self::$preview_hook;
+		$panel   = 'settings_page_' . Settings::PAGE === $hook;
+
+		if ( ! $editor && ! $preview && ! $panel ) {
+			return;
+		}
+
+		wp_enqueue_style( 'hti-games-admin-case', HTI_GAMES_URL . 'assets/css/admin-case.css', array(), VERSION );
+
+		if ( $preview ) {
+			// The player's own sheets, on the one admin screen that renders the
+			// player's own markup. Both are scoped to .hti-g / .hti-rv, and the
+			// two page-level rules games.css carries are keyed to a body class
+			// no admin screen has — so neither can reach wp-admin's layout.
+			wp_enqueue_style( 'hti-games', HTI_GAMES_URL . 'assets/css/games.css', array(), VERSION );
+			wp_enqueue_style( 'hti-games-reveal', HTI_GAMES_URL . 'assets/css/reveal.css', array( 'hti-games' ), VERSION );
+		}
+	}
+
+	/* ---------------------------------------------------------------------
 	 * Persistence.
 	 * ------------------------------------------------------------------- */
 
