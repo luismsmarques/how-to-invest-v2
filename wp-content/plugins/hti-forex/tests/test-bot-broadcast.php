@@ -221,6 +221,36 @@ wp_schedule_single_event( time() + 1, Bot_Broadcast::HOOK );
 check( false === Bot_Broadcast::start( 'outra' ), 'uma segunda difusão em cima de outra é recusada' );
 check( 'already-running' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'e diz que já havia uma a correr' );
 
+echo "\n=== Uma confirmação que não se pode falsificar ===\n";
+
+// "Broadcast queued" used to be drawn from a URL parameter, so a restored tab
+// or a back button claimed a send had been queued when none had. The screen now
+// checks this instead.
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+$GLOBALS['__hti_subs']    = array( 7001 );
+
+check( ! Bot_Broadcast::just_started(), 'sem envios, não há nada para confirmar' );
+
+Bot_Broadcast::start( 'a valer' );
+check( Bot_Broadcast::just_started(), 'um envio aceite fica registado como acabado de começar' );
+
+Bot_Broadcast::cancel();
+check( Bot_Broadcast::just_started(), 'e cancelar não apaga o facto de ter começado' );
+
+// Age it past the window: the same record stops standing as confirmation,
+// because a confirmation is about what was just done, not about yesterday.
+$log            = get_option( Bot_Broadcast::OPTION_LOG );
+$log['started'] = time() - 3600;
+update_option( Bot_Broadcast::OPTION_LOG, $log );
+
+check( ! Bot_Broadcast::just_started(), 'um arranque antigo deixa de valer como confirmação' );
+
+$GLOBALS['__hti_options'] = array();
+check( false === Bot_Broadcast::start( '' ), 'uma recusa continua a ser recusa' );
+check( ! Bot_Broadcast::just_started(), 'e não deixa nada que pareça um envio aceite' );
+check( 'empty' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'com a razão registada' );
+
 echo "\n=== O histórico ===\n";
 
 $GLOBALS['__hti_options'] = array();
