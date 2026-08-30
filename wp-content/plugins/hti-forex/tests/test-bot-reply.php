@@ -279,6 +279,9 @@ $fresh = Bot_Broadcast::status();
 check( 0 === $fresh['started'] && 0 === $fresh['sent'], 'sem difusão, o estado vem a zeros' );
 check( false === Bot_Broadcast::running(), 'e nada está a correr' );
 
+// A live send: started, not finished, and with a recent sign of life. The
+// heartbeat matters — without it this fixture is indistinguishable from a
+// send whose batch died, which is what `stalled()` exists to tell apart.
 update_option(
 	Bot_Broadcast::OPTION,
 	array(
@@ -287,7 +290,8 @@ update_option(
 		'sent'     => 40,
 		'dropped'  => 2,
 		'total'    => 160,
-		'started'  => 1000,
+		'started'  => time() - 60,
+		'updated'  => time(),
 		'finished' => 0,
 	)
 );

@@ -4,20 +4,26 @@
 
 ## O que é este repositório
 
-Especificação completa + esqueleto do **HowToInvest v2**: reconstrução em WordPress (full-WP) de uma plataforma educativa de perfis de investimento. O objetivo de negócio é **SEO/conteúdo**. Toda a visão, requisitos e regras estão em `/docs` (7 documentos). O mapa está no `README.md`. As regras de ouro estão no `CLAUDE.md`.
+O **HowToInvest v2**: uma plataforma educativa de perfis de investimento em WordPress (full-WP). O objetivo de negócio é **SEO/conteúdo**. Toda a visão, requisitos e regras estão em `/docs` (16 documentos). O mapa está no `README.md`. As regras de ouro estão no `CLAUDE.md`.
 
 ## Estado atual
 
-- ✅ Especificação completa (7 documentos em `/docs`)
-- ✅ Skills de desenvolvimento (`.claude/skills/`)
-- ✅ Estrutura de pastas (tema + plugin, ainda vazios)
-- ⬜ Código: **nada construído ainda** — começamos pela Fase 1
+**O produto está LIVE em produção** (`howtoinvest.pro`) e é grande: tema FSE +
+quatro plugins (`hti-engine`, `hti-forex`, `hti-rss-ai`, `hti-social`), ~1.770
+asserções de teste verdes, secção editorial de corretoras, hub de ferramentas,
+`/forex/` e um bot de Telegram com ~915 subscritores.
+
+Este ficheiro é uma porta de entrada, não um retrato. Os dois que valem:
+
+- **`STATUS.md`** — o que existe, onde vive, e o que falta configurar.
+- **`docs/Estado_e_Cronologia_Set2026.md`** — a auditoria de 30 ago 2026 (com
+  evidência por `ficheiro:linha`) e a cronologia do mês em curso.
 
 ## Ordem de leitura (primeira sessão)
 
 1. `CLAUDE.md` — regras de ouro, stack, invariantes, convenções. **Obrigatório.**
-2. `README.md` — mapa do projeto.
-3. `docs/PRD_HowToInvest_WordPress_MVP.md` — visão e requisitos (lê pelo menos §0, §6, §9, §11).
+2. `STATUS.md` — o estado real do que está construído.
+3. `docs/Estado_e_Cronologia_Set2026.md` — o que está partido e o que vem a seguir.
 4. O documento de spec específico da tarefa que vais fazer.
 
 ## Plano de Fase 1 (Fundação SEO) — começa aqui
