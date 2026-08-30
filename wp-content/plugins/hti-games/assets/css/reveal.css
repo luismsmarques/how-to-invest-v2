@@ -15,7 +15,10 @@
  */
 
 .hti-rv {
-	--g-bg: #E7E2D8;
+	/* No --g-bg: this world is an island, not a takeover. The panel paints
+	   --g-surface and the site's own background is what shows around it, so a
+	   ground colour declared here would be one nothing ever paints — and the
+	   muted grey was being measured against it. */
 	--g-surface: #F7F4EC;
 	--g-surface-2: #FFFDF7;
 	--g-surface-3: #F4F1E7;

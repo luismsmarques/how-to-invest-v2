@@ -45,7 +45,10 @@ html.hti-game-active body { padding-bottom: 0; }
 	--g-bg: var( --wp--preset--color--background, #FFF6F1 );
 	--g-surface: var( --wp--preset--color--white, #FFFFFF );
 	--g-surface-2: #FBF4F0;
-	--g-surface-3: #F6EDE8;
+	/* #F6EDE8 put the brand red on the streak chip at 4.4959:1 — under AA by
+	   four thousandths, which is exactly the kind of number nobody catches by
+	   looking. Two steps lighter and it is 4.61:1. */
+	--g-surface-3: #F8F0EC;
 	--g-border: var( --wp--preset--color--border, #F2E4DD );
 	--g-border-2: #E7D6CE;
 	--g-border-3: #DCC7BD;
