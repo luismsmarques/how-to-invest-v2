@@ -147,7 +147,6 @@ label.hti-fb__legend {
 	background: #fbfafd;
 }
 .hti-fb__textarea:focus {
-	outline: none;
 	border-color: #e8552b;
 	background: #fff;
 }
@@ -309,4 +308,12 @@ label.hti-fb__legend {
    reachable from the drawer menu — so hide the floating button there. */
 @media (max-width: 782px) {
 	.hti-fb-fab { display: none; }
+}
+
+/* Focus — WCAG 1.4.11. See app.css for why the ring is its own token. */
+.hti-fb__textarea:focus-visible,
+.hti-fb button:focus-visible,
+.hti-fb a:focus-visible {
+	outline: 2.5px solid var( --wp--custom--focus-ring, #D9432F );
+	outline-offset: 2px;
 }

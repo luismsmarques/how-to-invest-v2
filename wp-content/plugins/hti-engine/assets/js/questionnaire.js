@@ -25,6 +25,12 @@
 	var step = parseInt( load( 'hti_step', 0 ), 10 ) || 0;
 	var processingTimer = null;
 	var advanceTimer = null;
+	// Whether the answer about to arrive came from a tap or a click.
+	// Arrowing through a radio group fires `change` on every option it passes,
+	// so auto-advancing on `change` alone moves the page while a keyboard user
+	// is still reading the choices — WCAG 3.2.2, and a trap in practice,
+	// because the option they land on is never the one they meant to pick.
+	var pointerChoice = false;
 	if ( step > total - 1 ) {
 		step = total - 1;
 	}
@@ -142,6 +148,19 @@
 			if ( String( current ) === String( opt.value ) ) {
 				input.checked = true;
 			}
+			// Set on the way in, before `change` fires; a keydown clears it, so
+			// the radio group behaves like a radio group for the keyboard and
+			// like a one-tap answer for the thumb.
+			input.addEventListener( 'pointerdown', function () {
+				pointerChoice = true;
+			} );
+			input.addEventListener( 'keydown', function () {
+				pointerChoice = false;
+			} );
+			wrap.addEventListener( 'pointerdown', function () {
+				pointerChoice = true;
+			} );
+
 			input.addEventListener( 'change', function () {
 				answers[ q.id ] = opt.value;
 				save( 'hti_answers', answers );
@@ -150,10 +169,12 @@
 				setNextEnabled( true );
 				// Auto-advance after a brief beat so the choice registers — except
 				// for the "I'm not sure" option, which shows an explanatory note
-				// the user should read before moving on.
+				// the user should read before moving on, and except when the
+				// answer arrived from the keyboard, where the next arrow key is
+				// still part of choosing. Those users move on with Next.
 				clearAdvance();
 				var showsNote = q.unknown_info && String( opt.value ) === 'unknown';
-				if ( ! showsNote ) {
+				if ( ! showsNote && pointerChoice ) {
 					advanceTimer = setTimeout( function () {
 						advanceTimer = null;
 						if ( step === total - 1 ) {
@@ -234,10 +255,22 @@
 
 	function go( to ) {
 		clearAdvance();
+		pointerChoice = false;
 		step = to;
 		save( 'hti_step', step );
 		renderStep();
-		mount.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+		// Smooth scrolling is motion the user may have asked the system not to
+		// produce; renderStep() has already moved focus, so the jump is not
+		// lost, only instant.
+		mount.scrollIntoView( { behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' } );
+	}
+
+	function reducedMotion() {
+		try {
+			return window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+		} catch ( e ) {
+			return false;
+		}
 	}
 
 	function analyticsConsent() {
