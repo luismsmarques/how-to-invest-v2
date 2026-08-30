@@ -278,6 +278,36 @@ check( true === Bot_Broadcast::start( 'esta passa' ), 'uma gravação que result
 check( Bot_Broadcast::just_started(), 'e só então fica registada como começada' );
 check( Bot_Broadcast::status()['started'] > 0, 'com o estado gravado' );
 
+echo "\n=== Uma cache velha não pode travar isto para sempre ===\n";
+
+// add_option() asks whether the option exists; a stale object cache answers yes
+// with a value the database no longer holds, and it refuses — not once, but
+// every time. One retry with the entry dropped is what tells that apart from a
+// database that genuinely will not take the write.
+$GLOBALS['__hti_options']       = array();
+$GLOBALS['__hti_cron']          = array();
+$GLOBALS['__hti_subs']          = array( 9001 );
+$GLOBALS['__hti_cache_deleted'] = array();
+
+$GLOBALS['__hti_refuse_until_flush'] = Bot_Broadcast::OPTION;
+$ok = Bot_Broadcast::start( 'esta passa à segunda' );
+
+check( true === $ok, 'uma escrita recusada é tentada outra vez e passa' );
+check( in_array( Bot_Broadcast::OPTION, $GLOBALS['__hti_cache_deleted'], true ), 'depois de a entrada em cache ser largada' );
+check( Bot_Broadcast::status()['started'] > 0, 'e o estado fica mesmo gravado' );
+check( Bot_Broadcast::running(), 'logo a difusão conta como a correr' );
+check( array() === Bot_Broadcast::log()['refused'], 'e não fica registada recusa nenhuma' );
+
+// A database that refuses regardless is still reported, not retried for ever.
+$GLOBALS['__hti_options']      = array();
+$GLOBALS['__hti_cron']         = array();
+$GLOBALS['__hti_refuse_write'] = Bot_Broadcast::OPTION;
+$ok = Bot_Broadcast::start( 'esta não passa de todo' );
+unset( $GLOBALS['__hti_refuse_write'] );
+
+check( false === $ok, 'uma recusa que persiste continua a falhar' );
+check( 'write-failed' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'e é reportada, não escondida pela repetição' );
+
 echo "\n=== O histórico ===\n";
 
 $GLOBALS['__hti_options'] = array();

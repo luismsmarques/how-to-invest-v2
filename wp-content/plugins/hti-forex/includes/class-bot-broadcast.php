@@ -318,26 +318,33 @@ class Bot_Broadcast {
 		// broadcast began when none exists, and the screen then reports a send
 		// that is not there. That is not a cosmetic ordering: `just_started()`
 		// is what the confirmation is checked against.
-		$written = update_option(
-			self::OPTION,
-			array(
-				'text'     => $text,
-				'image'    => Bot_Images::exists( $image ) ? $image : '',
-				'cursor'   => 0,
-				'sent'     => 0,
-				'dropped'  => 0,
-				'total'    => Bot_Store::total(),
-				'started'  => time(),
-				'updated'  => time(),
-				'finished' => 0,
-			),
-			false
+		$state = array(
+			'text'     => $text,
+			'image'    => Bot_Images::exists( $image ) ? $image : '',
+			'cursor'   => 0,
+			'sent'     => 0,
+			'dropped'  => 0,
+			'total'    => Bot_Store::total(),
+			'started'  => time(),
+			'updated'  => time(),
+			'finished' => 0,
 		);
 
-		// update_option returns false when the write did not happen. The value
-		// here is always new, so false means the database refused it — and a
-		// broadcast whose state was never stored has not been queued, however
-		// far the code got.
+		$written = update_option( self::OPTION, $state, false );
+
+		if ( ! $written ) {
+			// A stale object cache is a known way for this to fail permanently
+			// rather than once: `add_option()` asks whether the option exists,
+			// the cache answers yes with a value the database no longer holds,
+			// and it refuses — every time, for ever. Dropping the cached entry
+			// and trying once more costs nothing and rules that out.
+			wp_cache_delete( self::OPTION, 'options' );
+			$written = update_option( self::OPTION, $state, false );
+		}
+
+		// The value written here is always new, so a second failure means the
+		// database really did refuse it — and a broadcast whose state was never
+		// stored has not been queued, however far the code got.
 		if ( ! $written ) {
 			return self::refuse( 'write-failed' );
 		}
