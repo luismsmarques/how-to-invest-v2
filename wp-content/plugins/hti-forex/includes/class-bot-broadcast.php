@@ -28,6 +28,22 @@ class Bot_Broadcast {
 	public const OPTION = 'hti_forex_bot_broadcast';
 
 	/**
+	 * The memory the state itself does not keep.
+	 *
+	 * `OPTION` holds one broadcast, and every new one writes over it. That is
+	 * fine for running a send and useless for answering the question anybody
+	 * actually asks afterwards — "did my message go out, or am I looking at
+	 * last night's test?". This option keeps what happened.
+	 */
+	public const OPTION_LOG = 'hti_forex_bot_broadcast_log';
+
+	/**
+	 * How many past broadcasts to remember, and how many distinct send errors.
+	 */
+	private const KEEP_HISTORY = 10;
+	private const KEEP_ERRORS  = 10;
+
+	/**
 	 * Recipients per cron tick.
 	 */
 	private const BATCH = 25;
@@ -91,6 +107,112 @@ class Bot_Broadcast {
 	}
 
 	/**
+	 * What has happened to broadcasts, and what went wrong.
+	 *
+	 * @return array{history:array<int,array<string,mixed>>,refused:array<string,mixed>,errors:array<int,array<string,mixed>>}
+	 */
+	public static function log(): array {
+		$log = get_option( self::OPTION_LOG, array() );
+		$log = is_array( $log ) ? $log : array();
+
+		return array(
+			'history' => isset( $log['history'] ) && is_array( $log['history'] ) ? $log['history'] : array(),
+			'refused' => isset( $log['refused'] ) && is_array( $log['refused'] ) ? $log['refused'] : array(),
+			'errors'  => isset( $log['errors'] ) && is_array( $log['errors'] ) ? $log['errors'] : array(),
+		);
+	}
+
+	/**
+	 * File a finished broadcast, newest first.
+	 *
+	 * @param array<string,mixed> $state The state as it ended.
+	 * @param string              $how   'finished' | 'cancelled' | 'stalled'.
+	 */
+	private static function remember_end( array $state, string $how ): void {
+		$log = self::log();
+
+		array_unshift(
+			$log['history'],
+			array(
+				'started'  => (int) ( $state['started'] ?? 0 ),
+				'ended'    => time(),
+				'how'      => $how,
+				'sent'     => (int) ( $state['sent'] ?? 0 ),
+				'dropped'  => (int) ( $state['dropped'] ?? 0 ),
+				'total'    => (int) ( $state['total'] ?? 0 ),
+				'image'    => (string) ( $state['image'] ?? '' ),
+				// Enough of the message to recognise which one it was, which is
+				// the entire point of keeping the row.
+				'excerpt'  => mb_substr( wp_strip_all_tags( (string) ( $state['text'] ?? '' ) ), 0, 80 ),
+			)
+		);
+
+		$log['history'] = array_slice( $log['history'], 0, self::KEEP_HISTORY );
+
+		update_option( self::OPTION_LOG, $log, false );
+	}
+
+	/**
+	 * Record why a broadcast was refused, and say no.
+	 *
+	 * The reason used to live only in an admin notice, which is gone on the
+	 * next page load — so someone who did not read it in time was left with a
+	 * screen that looked exactly as it had before they pressed send.
+	 *
+	 * @param string $reason Machine-readable reason.
+	 * @return false
+	 */
+	private static function refuse( string $reason ): bool {
+		$log            = self::log();
+		$log['refused'] = array(
+			'reason' => $reason,
+			'at'     => time(),
+		);
+		update_option( self::OPTION_LOG, $log, false );
+
+		return false;
+	}
+
+	/**
+	 * Record a send that failed for a reason we can neither retry nor explain
+	 * away, grouped by API error code so one bad message cannot fill the log.
+	 *
+	 * @param int    $code        Telegram error code.
+	 * @param string $description What Telegram said.
+	 */
+	private static function note_failure( int $code, string $description ): void {
+		$log = self::log();
+		$key = (string) $code;
+
+		if ( isset( $log['errors'][ $key ] ) && is_array( $log['errors'][ $key ] ) ) {
+			$log['errors'][ $key ]['count'] = (int) $log['errors'][ $key ]['count'] + 1;
+			$log['errors'][ $key ]['at']    = time();
+			$log['errors'][ $key ]['description'] = $description;
+		} else {
+			if ( count( $log['errors'] ) >= self::KEEP_ERRORS ) {
+				array_shift( $log['errors'] );
+			}
+			$log['errors'][ $key ] = array(
+				'code'        => $code,
+				'description' => $description,
+				'count'       => 1,
+				'at'          => time(),
+			);
+		}
+
+		update_option( self::OPTION_LOG, $log, false );
+	}
+
+	/**
+	 * Forget the recorded refusal, once a broadcast has actually started.
+	 */
+	private static function clear_refusal(): void {
+		$log            = self::log();
+		$log['refused'] = array();
+		update_option( self::OPTION_LOG, $log, false );
+	}
+
+	/**
 	 * A send that died mid-flight and is never coming back.
 	 *
 	 * `run()` re-arms the cron at the end of every batch, so a send that is
@@ -132,13 +254,31 @@ class Bot_Broadcast {
 	 * @return bool Whether it was queued.
 	 */
 	public static function start( string $text, string $image = '' ): bool {
-		if ( '' === trim( $text ) || self::running() || ! Telegram::configured() ) {
-			return false;
+		if ( ! Telegram::configured() ) {
+			return self::refuse( 'no-token' );
+		}
+
+		if ( '' === trim( $text ) ) {
+			return self::refuse( 'empty' );
+		}
+
+		if ( self::running() ) {
+			return self::refuse( 'already-running' );
 		}
 
 		if ( '' !== $image && ! self::fits_caption( $text, $image ) ) {
-			return false;
+			return self::refuse( 'caption-too-long' );
 		}
+
+		// Whatever is in the state now is about to be overwritten. If it never
+		// reached an ending it died mid-flight, and this is the last moment it
+		// can be written down.
+		$previous = self::status();
+		if ( $previous['started'] > 0 && 0 === $previous['finished'] ) {
+			self::remember_end( $previous, 'stalled' );
+		}
+
+		self::clear_refusal();
 
 		update_option(
 			self::OPTION,
@@ -191,6 +331,7 @@ class Bot_Broadcast {
 		$state['finished'] = time();
 		update_option( self::OPTION, $state, false );
 		wp_clear_scheduled_hook( self::HOOK );
+		self::remember_end( $state, 'cancelled' );
 	}
 
 	/**
@@ -220,6 +361,7 @@ class Bot_Broadcast {
 			$state['updated']  = time();
 			$state['finished'] = time();
 			update_option( self::OPTION, $state, false );
+			self::remember_end( $state, 'finished' );
 			return;
 		}
 
@@ -257,6 +399,14 @@ class Bot_Broadcast {
 				++$state['dropped'];
 			} elseif ( 'sent' === $result['status'] ) {
 				++$state['sent'];
+			} elseif ( 'failed' === $result['status'] ) {
+				// Neither a dead chat nor a rate limit: a rejected HTML tag, a
+				// revoked token, Telegram being down. Counted nowhere and, until
+				// now, reported nowhere either — the cursor simply moved on.
+				self::note_failure(
+					(int) ( $result['code'] ?? 0 ),
+					(string) ( $result['description'] ?? '' )
+				);
 			}
 
 			usleep( self::GAP_US );

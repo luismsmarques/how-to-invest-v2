@@ -120,6 +120,13 @@ class Bot_Admin {
 		$status     = Bot_Broadcast::status();
 		$running    = Bot_Broadcast::running();
 		$stalled    = Bot_Broadcast::stalled();
+		$log        = Bot_Broadcast::log();
+		$health     = $configured ? Telegram::health() : array(
+			'username' => '',
+			'webhook'  => array( 'ok' => false, 'url' => '', 'pending' => 0, 'error' => '', 'error_at' => 0, 'description' => '' ),
+			'ours'     => false,
+			'checked'  => 0,
+		);
 		$total      = $configured ? Bot_Store::total() : 0;
 		$answered   = Bot_Store::answered();
 		$notice     = isset( $_GET['hti_forex_bot'] ) ? sanitize_key( wp_unslash( $_GET['hti_forex_bot'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -167,8 +174,62 @@ class Bot_Admin {
 					<td><?php esc_html_e( 'Webhook URL', 'hti-forex' ); ?></td>
 					<td><code><?php echo esc_html( Telegram::webhook_url() ); ?></code></td>
 				</tr>
+				<tr>
+					<td><?php esc_html_e( 'Bot', 'hti-forex' ); ?></td>
+					<td>
+						<?php if ( '' !== $health['username'] ) : ?>
+							<strong>@<?php echo esc_html( $health['username'] ); ?></strong>
+						<?php else : ?>
+							<span style="color:#b32d2e;"><?php esc_html_e( 'Telegram does not recognise this token.', 'hti-forex' ); ?></span>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<td><?php esc_html_e( 'Webhook registered with Telegram', 'hti-forex' ); ?></td>
+					<td>
+						<?php
+						if ( ! $health['webhook']['ok'] ) {
+							echo '<span style="color:#b32d2e;">' . esc_html( $health['webhook']['description'] ) . '</span>';
+						} elseif ( '' === $health['webhook']['url'] ) {
+							echo '<span style="color:#b32d2e;">' . esc_html__( 'None. Telegram is not sending anything here — register it below.', 'hti-forex' ) . '</span>';
+						} elseif ( $health['ours'] ) {
+							echo '<strong style="color:#008a20;">' . esc_html__( 'Yes, and it points here.', 'hti-forex' ) . '</strong>';
+						} else {
+							// One webhook per bot: whoever registered last is
+							// receiving the messages this site thinks it answers.
+							echo '<span style="color:#b32d2e;">' . esc_html__( 'Another site holds it:', 'hti-forex' ) . ' <code>' . esc_html( $health['webhook']['url'] ) . '</code></span>';
+						}
+						?>
+					</td>
+				</tr>
+				<?php if ( $health['webhook']['ok'] ) : ?>
+					<tr>
+						<td><?php esc_html_e( 'Updates waiting', 'hti-forex' ); ?></td>
+						<td><?php echo esc_html( number_format_i18n( $health['webhook']['pending'] ) ); ?></td>
+					</tr>
+					<tr>
+						<td><?php esc_html_e( 'Last delivery error', 'hti-forex' ); ?></td>
+						<td>
+							<?php
+							if ( '' === $health['webhook']['error'] ) {
+								esc_html_e( 'None reported.', 'hti-forex' );
+							} else {
+								printf(
+									/* translators: 1: error text from Telegram, 2: human-readable time difference. */
+									esc_html__( '%1$s — %2$s ago', 'hti-forex' ),
+									'<span style="color:#b32d2e;">' . esc_html( $health['webhook']['error'] ) . '</span>',
+									esc_html( human_time_diff( $health['webhook']['error_at'] ) )
+								);
+							}
+							?>
+						</td>
+					</tr>
+				<?php endif; ?>
 			</tbody>
 		</table>
+		<p class="description">
+			<?php esc_html_e( 'The bot line and the webhook state come from Telegram itself, cached for five minutes. The last delivery error is the one thing this site cannot know on its own: if our endpoint fails, updates just stop arriving.', 'hti-forex' ); ?>
+		</p>
 
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:1em 0;">
 			<?php wp_nonce_field( 'hti_forex_bot_webhook' ); ?>
@@ -306,6 +367,33 @@ class Bot_Admin {
 
 		<h3><?php esc_html_e( 'Send a message to everyone', 'hti-forex' ); ?></h3>
 
+		<?php if ( array() !== $log['refused'] ) : ?>
+			<?php
+			$why = array(
+				'no-token'         => __( 'there is no bot token', 'hti-forex' ),
+				'empty'            => __( 'the message was empty', 'hti-forex' ),
+				'already-running'  => __( 'another broadcast was already running', 'hti-forex' ),
+				'caption-too-long' => __( 'the message was too long to send as an image caption', 'hti-forex' ),
+			);
+			?>
+			<div class="notice notice-warning inline"><p>
+				<?php
+				printf(
+					/* translators: 1: reason, 2: human-readable time difference. */
+					esc_html__( 'The last attempt to send was refused %2$s ago because %1$s. Nothing was queued and nobody received anything.', 'hti-forex' ),
+					esc_html( $why[ (string) $log['refused']['reason'] ] ?? (string) $log['refused']['reason'] ),
+					esc_html( human_time_diff( (int) $log['refused']['at'] ) )
+				);
+				?>
+			</p></div>
+		<?php endif; ?>
+
+		<?php if ( $running && false === wp_next_scheduled( Bot_Broadcast::HOOK ) ) : ?>
+			<div class="notice notice-info inline"><p>
+				<?php esc_html_e( 'No batch is queued right now. Sending runs on WP-Cron, which only fires when somebody visits the site — on a quiet site a broadcast waits, and that is normal. Opening the site in another tab moves it along.', 'hti-forex' ); ?>
+			</p></div>
+		<?php endif; ?>
+
 		<?php if ( $stalled ) : ?>
 			<div class="notice notice-error inline"><p>
 				<?php
@@ -337,6 +425,7 @@ class Bot_Admin {
 				<button type="submit" name="cancel" value="1" class="button"><?php esc_html_e( 'Stop this broadcast', 'hti-forex' ); ?></button>
 			</form>
 			<?php
+			self::render_log( $log );
 			return;
 		endif;
 
@@ -392,6 +481,106 @@ class Bot_Admin {
 			</p>
 			<p class="description"><?php esc_html_e( 'Goes out in batches over a few minutes and continues after you close the page. Anyone who has blocked the bot is removed automatically as it goes.', 'hti-forex' ); ?></p>
 		</form>
+
+		self::render_log( $log );
+		<?php
+	}
+
+	/**
+	 * What already happened: past broadcasts, and sends that failed.
+	 *
+	 * Rendered from both branches of the panel — a broadcast in flight returns
+	 * early, and that is the moment someone most wants to know whether the last
+	 * one worked.
+	 *
+	 * @param array<string,mixed> $log Bot_Broadcast::log().
+	 */
+	private static function render_log( array $log ): void {
+		?>
+		<?php if ( array() !== $log['history'] ) : ?>
+			<h3><?php esc_html_e( 'Broadcasts already sent', 'hti-forex' ); ?></h3>
+			<table class="widefat striped" style="max-width:860px;">
+				<thead><tr>
+					<th><?php esc_html_e( 'When', 'hti-forex' ); ?></th>
+					<th><?php esc_html_e( 'Message', 'hti-forex' ); ?></th>
+					<th style="text-align:right;"><?php esc_html_e( 'Delivered', 'hti-forex' ); ?></th>
+					<th><?php esc_html_e( 'How it ended', 'hti-forex' ); ?></th>
+				</tr></thead>
+				<tbody>
+				<?php
+				$endings = array(
+					'finished'  => __( 'reached everyone', 'hti-forex' ),
+					'cancelled' => __( 'stopped by hand', 'hti-forex' ),
+					'stalled'   => __( 'died part-way', 'hti-forex' ),
+				);
+				foreach ( $log['history'] as $row ) :
+					?>
+					<tr>
+						<td>
+							<?php
+							printf(
+								/* translators: %s: human-readable time difference. */
+								esc_html__( '%s ago', 'hti-forex' ),
+								esc_html( human_time_diff( (int) $row['ended'] ) )
+							);
+							?>
+						</td>
+						<td>
+							<?php echo esc_html( (string) $row['excerpt'] ); ?>
+							<?php if ( '' !== (string) $row['image'] ) : ?>
+								<code><?php echo esc_html( (string) $row['image'] ); ?></code>
+							<?php endif; ?>
+						</td>
+						<td style="text-align:right;font-variant-numeric:tabular-nums;">
+							<?php
+							printf(
+								/* translators: 1: delivered count, 2: recipients at the time. */
+								esc_html__( '%1$s of %2$s', 'hti-forex' ),
+								esc_html( number_format_i18n( (int) $row['sent'] ) ),
+								esc_html( number_format_i18n( (int) $row['total'] ) )
+							);
+							?>
+						</td>
+						<td><?php echo esc_html( $endings[ (string) $row['how'] ] ?? (string) $row['how'] ); ?></td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p class="description"><?php esc_html_e( 'The last ten. Without this the screen showed one broadcast at a time, so a message sent today and a test sent last night looked identical.', 'hti-forex' ); ?></p>
+		<?php endif; ?>
+
+		<?php if ( array() !== $log['errors'] ) : ?>
+			<h3><?php esc_html_e( 'Sends that failed', 'hti-forex' ); ?></h3>
+			<table class="widefat striped" style="max-width:860px;">
+				<tbody>
+				<?php foreach ( $log['errors'] as $err ) : ?>
+					<tr>
+						<td style="width:80px;"><code><?php echo esc_html( (string) $err['code'] ); ?></code></td>
+						<td><?php echo esc_html( (string) $err['description'] ); ?></td>
+						<td style="width:120px;text-align:right;">
+							<?php
+							printf(
+								/* translators: %s: number of times this error happened. */
+								esc_html( _n( '%s time', '%s times', (int) $err['count'], 'hti-forex' ) ),
+								esc_html( number_format_i18n( (int) $err['count'] ) )
+							);
+							?>
+						</td>
+						<td style="width:140px;text-align:right;">
+							<?php
+							printf(
+								/* translators: %s: human-readable time difference. */
+								esc_html__( '%s ago', 'hti-forex' ),
+								esc_html( human_time_diff( (int) $err['at'] ) )
+							);
+							?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p class="description"><?php esc_html_e( 'Recipients who blocked the bot are not errors and are not listed — they are removed as the send goes. These are the rest: a rejected tag, a revoked token, Telegram refusing. They used to leave no trace at all.', 'hti-forex' ); ?></p>
+		<?php endif; ?>
 		<?php
 	}
 }

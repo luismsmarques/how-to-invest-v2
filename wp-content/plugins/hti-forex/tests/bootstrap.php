@@ -176,6 +176,129 @@ require_once __DIR__ . '/../includes/class-config.php';
 
 // Cron shims: the broadcast state machine schedules and clears events, and the
 // harness only needs them to be callable and observable.
+// A Telegram that answers whatever the test says it answers. Queue bodies in
+// $GLOBALS['__hti_http'] as array('body' => array|string, 'code' => int); an
+// empty queue answers ok:true. Every request is recorded in __hti_http_log.
+$GLOBALS['__hti_http']     = array();
+$GLOBALS['__hti_http_log'] = array();
+if ( ! function_exists( 'wp_remote_post' ) ) {
+	/**
+	 * @param string               $url  URL.
+	 * @param array<string,mixed>  $args Args.
+	 * @return array<string,mixed>|WP_Error
+	 */
+	function wp_remote_post( $url, $args = array() ) {
+		$GLOBALS['__hti_http_log'][] = array(
+			'url'  => $url,
+			'body' => json_decode( (string) ( $args['body'] ?? '' ), true ),
+		);
+
+		$next = array_shift( $GLOBALS['__hti_http'] );
+		if ( null === $next ) {
+			$next = array( 'body' => array( 'ok' => true, 'result' => array() ), 'code' => 200 );
+		}
+		if ( $next instanceof WP_Error ) {
+			return $next;
+		}
+
+		return array(
+			'body' => is_array( $next['body'] ) ? json_encode( $next['body'] ) : (string) $next['body'],
+			'code' => (int) ( $next['code'] ?? 200 ),
+		);
+	}
+	/**
+	 * @param array<string,mixed>|WP_Error $response Response.
+	 * @return string
+	 */
+	function wp_remote_retrieve_body( $response ) {
+		return is_array( $response ) ? (string) $response['body'] : '';
+	}
+	/**
+	 * @param array<string,mixed>|WP_Error $response Response.
+	 * @return int
+	 */
+	function wp_remote_retrieve_response_code( $response ) {
+		return is_array( $response ) ? (int) $response['code'] : 0;
+	}
+}
+
+if ( ! class_exists( 'WP_Error' ) ) {
+	/**
+	 * The bit of WP_Error the transport actually uses.
+	 */
+	class WP_Error {
+
+		/**
+		 * @var string
+		 */
+		private $message;
+
+		/**
+		 * @param string $code    Code.
+		 * @param string $message Message.
+		 */
+		public function __construct( $code = '', $message = '' ) {
+			$this->message = (string) $message;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function get_error_message() {
+			return $this->message;
+		}
+	}
+}
+
+if ( ! function_exists( 'is_wp_error' ) ) {
+	/**
+	 * @param mixed $thing Thing.
+	 * @return bool
+	 */
+	function is_wp_error( $thing ) {
+		return $thing instanceof WP_Error;
+	}
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	/**
+	 * @param string $text Text.
+	 * @return string
+	 */
+	function wp_strip_all_tags( $text ) {
+		return trim( (string) preg_replace( '/<[^>]*>/', '', (string) $text ) );
+	}
+}
+
+$GLOBALS['__hti_transients'] = array();
+if ( ! function_exists( 'get_transient' ) ) {
+	/**
+	 * @param string $key Key.
+	 * @return mixed
+	 */
+	function get_transient( $key ) {
+		return $GLOBALS['__hti_transients'][ $key ] ?? false;
+	}
+	/**
+	 * @param string $key     Key.
+	 * @param mixed  $value   Value.
+	 * @param int    $expires Seconds.
+	 * @return bool
+	 */
+	function set_transient( $key, $value, $expires = 0 ) {
+		$GLOBALS['__hti_transients'][ $key ] = $value;
+		return true;
+	}
+	/**
+	 * @param string $key Key.
+	 * @return bool
+	 */
+	function delete_transient( $key ) {
+		unset( $GLOBALS['__hti_transients'][ $key ] );
+		return true;
+	}
+}
+
 $GLOBALS['__hti_cron'] = array();
 if ( ! function_exists( 'wp_next_scheduled' ) ) {
 	/**
