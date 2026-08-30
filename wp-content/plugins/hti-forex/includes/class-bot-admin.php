@@ -401,6 +401,7 @@ class Bot_Admin {
 		<?php if ( array() !== $log['refused'] ) : ?>
 			<?php
 			$why = array(
+				'emoji-unsupported' => __( 'the message contains an emoji and this database cannot store one — the table is still on three-byte utf8, where four-byte characters are refused. Nobody received anything. Remove the emoji and it sends; converting the table to utf8mb4 fixes it for good, and for the rest of the site too', 'hti-forex' ),
 				'write-failed'     => __( 'the database refused to store it — nobody received anything, and this is a server problem rather than a problem with the message', 'hti-forex' ),
 				'no-token'         => __( 'there is no bot token', 'hti-forex' ),
 				'empty'            => __( 'the message was empty', 'hti-forex' ),
