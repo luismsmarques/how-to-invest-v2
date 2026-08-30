@@ -284,6 +284,29 @@ class Settings {
 	}
 
 	/**
+	 * Whether the affiliate URL points back at our own site. Pure
+	 * (unit-tested).
+	 *
+	 * Such a URL still redirects — /forex/go/ sends the click on happily — but
+	 * the second hop is a different redirector, and /go/{slug} forwards no
+	 * query string: the campaign id dies there and the partner's panel records
+	 * an unattributed click. That is invisible from the outside, which is
+	 * exactly why the settings screen says it out loud.
+	 *
+	 * Since cta_url stopped being printed anywhere (see cta_for()), hiding the
+	 * partner behind a second hop buys nothing it did not already have.
+	 *
+	 * @param string $url      Stored cta_url.
+	 * @param string $our_host Host of home_url().
+	 * @return bool
+	 */
+	public static function cta_url_is_local( string $url, string $our_host ): bool {
+		$host = strtolower( (string) wp_parse_url( trim( $url ), PHP_URL_HOST ) );
+		$ours = strtolower( trim( $our_host ) );
+		return '' !== $host && '' !== $ours && $host === $ours;
+	}
+
+	/**
 	 * A Telegram channel URL, or '' when the setting is unusable.
 	 *
 	 * Pure. Both the scheme and the host are checked: this URL is printed
@@ -443,6 +466,21 @@ class Settings {
 		foreach ( $result['errors'] as $i => $message ) {
 			add_settings_error( self::OPTION, 'hti_forex_' . $i, esc_html( $message ) );
 		}
+
+		// Not an error — the link works — but it is the one setting that can
+		// silently make paid traffic unattributable, so it is said out loud
+		// rather than left to be discovered in an affiliate panel with no
+		// sub-ids in it.
+		$our_host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+		if ( self::cta_url_is_local( (string) $result['value']['cta_url'], $our_host ) ) {
+			add_settings_error(
+				self::OPTION,
+				'hti_forex_cta_url_local',
+				esc_html( 'The affiliate URL points back at this site. It still redirects, but /go/ forwards no campaign id, so the partner sees every click unattributed. Put the partner\'s own affiliate URL here — it is never printed in a page.' ),
+				'warning'
+			);
+		}
+
 		return $result['value'];
 	}
 

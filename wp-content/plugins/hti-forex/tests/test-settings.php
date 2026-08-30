@@ -113,6 +113,13 @@ foreach ( Settings::TOOLS as $tool ) {
 	);
 }
 
+// --- A cta_url on our own host loses the sub-id at the second hop ----------
+check( Settings::cta_url_is_local( 'https://howtoinvest.pro/go/open-xm/', 'howtoinvest.pro' ), 'an own-host affiliate URL is spotted' );
+check( Settings::cta_url_is_local( 'https://HowToInvest.pro/go/open-xm/', 'howtoinvest.pro' ), 'the host comparison ignores case' );
+check( ! Settings::cta_url_is_local( 'https://partner.example.com/x', 'howtoinvest.pro' ), 'a partner URL is not local' );
+check( ! Settings::cta_url_is_local( '', 'howtoinvest.pro' ), 'an empty URL is not local' );
+check( ! Settings::cta_url_is_local( 'https://partner.example.com/x', '' ), 'without our own host nothing is claimed' );
+
 $off = array_merge( $on, array( 'cta_enabled' => false ) );
 check( null === Settings::cta_for( 'position_size', $off ), 'global kill-switch beats everything' );
 
