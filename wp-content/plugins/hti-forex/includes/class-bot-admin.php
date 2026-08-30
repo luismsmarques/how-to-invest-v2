@@ -169,6 +169,7 @@ class Bot_Admin {
 					'cancelled'    => __( 'Broadcast stopped where it was.', 'hti-forex' ),
 					'too-long'     => __( 'Too long to send with an image attached. A caption is capped at 1,024 characters including the /stop footer — shorten it, or send it without the image.', 'hti-forex' ),
 					'unconfirmed'  => __( 'Nothing was sent — the confirmation box under the message was not ticked.', 'hti-forex' ),
+					'queue-fail-write' => __( 'Nothing was sent — the database refused to store the broadcast. Nobody received anything. This is a server problem, not a problem with the message.', 'hti-forex' ),
 				);
 				echo esc_html( $messages[ $notice ] ?? '' );
 				?>
@@ -396,6 +397,7 @@ class Bot_Admin {
 		<?php if ( array() !== $log['refused'] ) : ?>
 			<?php
 			$why = array(
+				'write-failed'     => __( 'the database refused to store it — nobody received anything, and this is a server problem rather than a problem with the message', 'hti-forex' ),
 				'no-token'         => __( 'there is no bot token', 'hti-forex' ),
 				'empty'            => __( 'the message was empty', 'hti-forex' ),
 				'already-running'  => __( 'another broadcast was already running', 'hti-forex' ),

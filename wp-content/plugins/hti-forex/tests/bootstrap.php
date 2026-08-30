@@ -45,6 +45,11 @@ if ( ! function_exists( 'get_option' ) ) {
 	 * @return bool
 	 */
 	function update_option( $key, $value ) {
+		// Let a test stand in for a database that refuses a write, which is the
+		// one failure the caller has to notice and could not be reproduced.
+		if ( isset( $GLOBALS['__hti_refuse_write'] ) && $GLOBALS['__hti_refuse_write'] === $key ) {
+			return false;
+		}
 		$GLOBALS['__hti_options'][ $key ] = $value;
 		return true;
 	}
