@@ -29,7 +29,7 @@ registo de afiliado. Metade da proposta já está construída e em produção.
 | Páginas por ativo (ouro primeiro) | ✅ parcial: `xauusd-lot-size-calculator` (`:333`) |
 | Localização por moeda/GEO | ❌ **é o âmago deste plano** — por seletor, não por página (§6.1) |
 | Bot de Telegram com CTA de afiliado | ✅ ~915 subscritores; CTA global, não por país |
-| Telegram Mini App | ❌ |
+| Telegram Mini App | ❌ **fora de âmbito** (decisão de 30 ago — ver §2.2) |
 | Nurturing de 7 dias | ❌ existe difusão manual (`class-bot-broadcast.php`), não sequência |
 | Calendário económico | ❌ fora de âmbito (ver §4) |
 
@@ -56,7 +56,7 @@ Decisões do dono, tomadas em 30 ago 2026. Ficam aqui como decisões, não como 
 | **Idiomas** | EN + vi, th, id, pt-BR |
 | **Câmbios** | Custo zero: grátis onde existe, peg e override manual onde não existe |
 | **URLs** | **Uma página por ferramenta, com seletor de moeda** — nenhuma página por GEO (§6.1) |
-| **Bot** | Moeda + CTA por país + nurturing de 7 dias + Telegram Mini App |
+| **Bot** | Moeda + CTA por país + nurturing de 7 dias. **Sem Mini App** (§2.2) |
 | **Calendário** | Out–Dez 2026 |
 
 ### 2.1 Duas leituras do documento de origem
@@ -71,7 +71,23 @@ fase 2 fora deste plano.
 §2. Fica registada como a candidata mais barata a uma décima GEO — anglófona, e o PHP não
 acrescenta custo de câmbios — mas fora do âmbito deste plano.
 
-### 2.2 As nove GEOs
+### 2.2 Mini App: fora de âmbito
+
+**Decisão do dono, 30 ago 2026: o Telegram Mini App sai do plano.** O `.docx` §5.1 e §5.4
+pedem-no — a calculadora a correr dentro do chat — e continua a ser a peça de maior fricção
+removida do funil. Sai na mesma, e com ela sai a única exceção de segurança que o plano
+tinha (um `<script>` de terceiros vindo de `telegram.org`, sem alternativa técnica).
+
+**O que isto não afeta:** o formato **Telegram Mini Apps Ads** da PropellerAds, que
+`Propeller_Campanhas_Bot_Telegram.md §4.1` marca como prioridade máxima. É uma *colocação
+dentro de mini-apps de terceiros*, com destino `t.me/bot?start=código` — não exige que
+tenhamos um Mini App nosso. O canal de anúncios fica intacto.
+
+**O que se perde:** quem vem de um anúncio dentro do Telegram continua a sair para o
+browser se quiser a calculadora completa. O bot responde no chat, que é o essencial;
+o Mini App era a diferença entre responder e deixar mexer.
+
+### 2.3 As nove GEOs
 
 | GEO | Moeda | Corretora | Fonte de câmbio | Fuso | Idioma | CTA à nascença |
 |---|---|---|---|---|---|---|
@@ -182,7 +198,7 @@ curl -s https://api.frankfurter.dev/v1/currencies
 ```
 
 O desenho é robusto ao resultado: qualquer moeda ausente da lista cai em `manual` sem
-alterar mais nada. A tabela do §2.2 assume INR, ZAR, MYR, THB, BRL e IDR disponíveis e
+alterar mais nada. A tabela do §2.3 assume INR, ZAR, MYR, THB, BRL e IDR disponíveis e
 NGN, AED e VND ausentes — **é uma expectativa, não um facto verificado.**
 
 ### 4.5 Calendário económico: fora
@@ -336,10 +352,38 @@ O `cta_url` único (`class-settings.php:57`) e o `sub_param` único (`:78`) dão
 tabelas:
 
 ```
-brokers:    xm     => { label, url, sub_param, active }
-            exness => { label, url, sub_param, active }
+brokers:    xm     => { label, url, sub_param, active,
+                        logo_url, ad_top, ad_top_mobile, ad_inline,
+                        bot_demo_url, bot_demo_text,
+                        bot_real_url, bot_real_text }
+            exness => { … os mesmos campos }
 geo_broker: in => xm | ng => exness | za => exness | …
 ```
+
+**A linha da corretora carrega os criativos, não só o link** — é o que permite acrescentar a
+Exness sem deploy. Quase tudo isto já existe hoje, mas com um valor só para toda a secção;
+o trabalho é passá-lo a por-corretora:
+
+| Peça | Onde está hoje | Passa a |
+|---|---|---|
+| Link de afiliado | `cta_url` (`class-settings.php:57`) | `brokers[x].url` |
+| Sub-id da rede | `sub_param` (`:78`) | `brokers[x].sub_param` |
+| Logo do parceiro | `cta_logo_url` (`:60`), com wordmark de recurso e alt | `brokers[x].logo_url` |
+| Banner topo desktop 600×90 | slot de tag de anúncio (`:584`) | `brokers[x].ad_top` |
+| Banner topo mobile 320×100/50 | slot (`:591`) | `brokers[x].ad_top_mobile` |
+| Banner sob a ferramenta 468×60 / 300×250 | slot (`:601`) | `brokers[x].ad_inline` |
+| Anúncio do bot — demo e conta real | `bot_ad_*_url` / `_text` (`:70-73`) | `brokers[x].bot_*` |
+| Interruptor dos banners | `ads_enabled` (`:111`) | mantém-se global, mais o por-GEO |
+
+Os slots aceitam **a tag de banner da rede** (iframe ou script do painel do parceiro),
+limitada a 10.000 caracteres com a mensagem de erro que já existe (`:123`) — colar uma tag,
+não uma página. O logo é um URL de imagem https, validado como já é (`:178-185`).
+
+**Uma exceção que continua a exigir reconstrução:** o banner do cheat sheet em PDF vive em
+`assets/pdf/src/xm-600x90.png` e é injetado no marcador `<!--XM_BANNER-->` pelo `build.sh`.
+Um PDF fica no disco do leitor para sempre, por isso a imagem não pode vir de uma definição.
+Acrescentar a Exness aqui é trocar o ficheiro e correr o `build.sh` — a única parte da
+monetização que não é um clique no admin.
 
 **A GEO nunca vem de geolocalização por IP.** Vem do **seletor de moeda** (no site) e da
 linha do subscritor (no bot). Zero PII nova, zero problema de cache, zero dependência de um
@@ -425,17 +469,13 @@ alguém tem de se lembrar de aplicar.
 recorrente, e — o que decide — dados pessoais de 915 pessoas fora do nosso lado, com o RGPD
 por cima.
 
-**Mini App** (`/forex/app/`, noindex). O `forex-core.js` já é UMD, sem DOM e testado em Node
-— a matemática é literalmente a mesma dentro e fora do chat, que é a regra que o `.docx` §5.1
-impõe ("um motor de cálculo único"). Nova rota REST que **valida o `initData` server-side**:
-HMAC-SHA256 com chave `HMAC("WebAppData", bot_token)`, comparação com `hash_equals`, e
-verificação de frescura do `auth_date`. É lógica pura, logo entra na suite existente.
-
-> ⚠️ **Exceção de segurança, registada.** O Mini App obriga a carregar
-> `https://telegram.org/js/telegram-web-app.js` — script de terceiros, sem alternativa
-> técnica (a SDK tem de vir do domínio do Telegram). Contraria a postura fixada na auditoria
-> de 30 ago 2026, que retirou do `hti-social` um `<script>` para CDN sem `integrity`. Âmbito
-> da exceção: uma página, `noindex`, sem outro conteúdo. Não se estende a mais lado nenhum.
+**O anúncio do bot passa a ser por corretora.** Existem hoje dois slots — o de demo e o de
+conta real — cada um com URL e texto próprios (`class-settings.php:70-73`), ambos com
+default para `/go/xm-demo/` e `/go/open-account-xm/`. Continuam a ser **obrigatoriamente
+links do nosso host**: uma mensagem privada não carrega divulgação e não se corrige depois
+de enviada, por isso exigir o `/go/` é estrutural e não uma regra a lembrar. O que muda é
+que os quatro valores passam a viver na linha da corretora (§6.4), resolvidos pela GEO da
+pessoa.
 
 ---
 
@@ -505,9 +545,13 @@ aspiracional do `.docx` §1. **3 páginas**, cada uma multi-moeda à nascença.
 
 ### F3 · Bot
 
-CTA por país, drip de 7 dias, Mini App. É a fase que fecha o funil que o `.docx` §5.2
+CTA e anúncio por país, drip de 7 dias. É a fase que fecha o funil que o `.docx` §5.2
 desenha — e a que mais depende de F0, porque sem GEO nas métricas não se sabe qual país
 paga o bot.
+
+**Sem Mini App** (§2.2), o que torna esta fase substancialmente mais curta: cai a rota de
+validação de `initData`, cai a página `/forex/app/`, e cai a única exceção de segurança que
+o plano tinha.
 
 ### F4 · Idiomas
 
@@ -539,7 +583,7 @@ PHP e 83 Node, verdes.
 | `test-geo.php` (novo) | Toda a GEO tem as chaves todas; toda a moeda tem fonte declarada; toda a GEO aponta a uma corretora que existe **e que não a exclui** (§5.3); VN/ID/TH têm o CTA desligado (§5.1) |
 | `test-rates.php` (estender) | Precedência por moeda; flag de stale por moeda; o peg AED é constante; uma moeda em falta no payload não invalida as outras |
 | `test-bot-math.php` (estender) | Agrupamento indiano vs ocidental; moedas sem casas decimais (VND, IDR); parser por locale; escalões derivados de USD |
-| `test-miniapp.php` (novo) | `initData` válido, adulterado, expirado, sem `hash`; `hash_equals` e não `==` |
+| `test-settings.php` (estender) | Cada corretora tem URL https, `sub_param` e slots de criativo válidos; o logo e os banners rejeitam `http` e HTML acima do teto; os dois URLs do bot continuam a exigir o host próprio |
 | `test-drip.php` (novo) | Avanço de dia; `/stop` interrompe; 403 larga a linha; 429 recua |
 | `test-selector.php` (novo) | O `?c=` é validado contra a allowlist e um valor inválido cai no default; o `?g=` do redirector idem; o default vem das definições e não do IP; as oito páginas atuais mantêm os slugs |
 | `test-go.php` (estender) | `/forex/go/{slot}/?g={geo}` resolve a corretora certa por GEO; um `g` fora da tabela usa o default e nunca 404; o `cta_url` continua a não sair do ecrã de definições e do redirector |
@@ -563,7 +607,9 @@ A regra do projeto mantém-se: as suites correm antes de cada commit.
    financeira nas quatro línguas. É o maior custo de conteúdo que resta e deve ser decidido
    depois de F1, não antes. A alternativa honesta é publicar VN/TH/ID/BR só em inglês.
 4. **Desatualização do NGN** (§4.3). Mitigado por três camadas; vigiar.
-5. **Script de terceiros no Mini App** (§6.6). Contido a uma página `noindex`.
+5. **Criativos por corretora desatualizados** (§6.4). Um banner ou logo que o parceiro retira
+   deixa um buraco na página. Mitigado por o slot vazio não renderizar nada e pelo
+   kill-switch `ads_enabled`; o PDF é a exceção, porque exige reconstrução.
 6. **A revisão jurídica (L-D) continua por fazer** e a `Estado_e_Cronologia_Set2026.md`
    marca-a como bloqueador de divulgação, com o gate "Corretoras & afiliados" a 0/9 e a
    secção em produção. Este plano multiplica por nove os mercados que ela teria de cobrir —
