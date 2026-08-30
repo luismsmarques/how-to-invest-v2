@@ -25,6 +25,70 @@ class Rest {
 	 */
 	public static function init(): void {
 		add_action( 'rest_api_init', array( __CLASS__, 'routes' ) );
+		add_filter( 'hti_rate_limits', array( __CLASS__, 'rate_limits' ) );
+	}
+
+	/**
+	 * Who may use the local ffmpeg mirror: anyone who edits content here.
+	 *
+	 * Cheap and local — it prepares files already on this server.
+	 */
+	public static function may_edit(): bool {
+		return current_user_can( 'edit_posts' );
+	}
+
+	/**
+	 * Who may spend money.
+	 *
+	 * /tts and /caption each call Gemini, so the capability is the budget.
+	 * `edit_posts` includes Contributors — people trusted to draft, not to
+	 * spend — so the AI routes ask for `publish_posts` instead. It is the
+	 * smallest change that stops a single drafting account (or one whose
+	 * password leaked) from emptying the quota unattended.
+	 */
+	public static function may_spend(): bool {
+		return current_user_can( 'publish_posts' );
+	}
+
+	/**
+	 * Stop one account from looping a paid endpoint.
+	 *
+	 * A capability answers "should this person do it at all"; nothing answered
+	 * "how often". Uses hti-engine's limiter when it is around, and does not
+	 * invent one when it is not — hti-social is useless without hti-engine
+	 * anyway, and a second half-limiter would be worse than none.
+	 *
+	 * @param string $bucket Rate-limit bucket name.
+	 * @return \WP_Error|null Error when the caller must slow down.
+	 */
+	private static function slow_down( string $bucket ): ?\WP_Error {
+		if ( ! class_exists( '\\HTI\\Engine\\RateLimit' ) ) {
+			return null;
+		}
+		if ( ! \HTI\Engine\RateLimit::exceeded( $bucket ) ) {
+			return null;
+		}
+		return new \WP_Error(
+			'hti_social_rate_limited',
+			__( 'Too many AI requests in a short window. Wait a minute and try again.', 'hti-social' ),
+			array( 'status' => 429 )
+		);
+	}
+
+	/**
+	 * Budgets for the two paid routes.
+	 *
+	 * Generous enough for a real editing session, small enough that a loop
+	 * costs pennies before it is stopped. TTS is per line of script, so it
+	 * legitimately fires far more often than a caption.
+	 *
+	 * @param array<string,array{0:int,1:int}> $limits Existing buckets.
+	 * @return array<string,array{0:int,1:int}>
+	 */
+	public static function rate_limits( array $limits ): array {
+		$limits['hti_social_tts']     = array( 120, 3600 );
+		$limits['hti_social_caption'] = array( 40, 3600 );
+		return $limits;
 	}
 
 	/**
@@ -37,9 +101,7 @@ class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'ffmpeg_assets' ),
-				'permission_callback' => static function () {
-					return current_user_can( 'edit_posts' );
-				},
+				'permission_callback' => array( __CLASS__, 'may_edit' ),
 			)
 		);
 
@@ -49,9 +111,7 @@ class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'log_event' ),
-				'permission_callback' => static function () {
-					return current_user_can( 'edit_posts' );
-				},
+				'permission_callback' => array( __CLASS__, 'may_edit' ),
 			)
 		);
 
@@ -61,9 +121,7 @@ class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'tts' ),
-				'permission_callback' => static function () {
-					return current_user_can( 'edit_posts' );
-				},
+				'permission_callback' => array( __CLASS__, 'may_spend' ),
 				'args'                => array(
 					'text'  => array(
 						'type'              => 'string',
@@ -85,9 +143,7 @@ class Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'caption' ),
-				'permission_callback' => static function () {
-					return current_user_can( 'edit_posts' );
-				},
+				'permission_callback' => array( __CLASS__, 'may_spend' ),
 				'args'                => array(
 					'brief' => array(
 						'type'              => 'string',
@@ -145,6 +201,11 @@ class Rest {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public static function caption( \WP_REST_Request $request ) {
+		$slow = self::slow_down( 'hti_social_caption' );
+		if ( $slow ) {
+			return $slow;
+		}
+
 		$brief = trim( (string) $request->get_param( 'brief' ) );
 		$pt    = 'pt' === $request->get_param( 'lang' );
 
@@ -189,6 +250,11 @@ class Rest {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public static function tts( \WP_REST_Request $request ) {
+		$slow = self::slow_down( 'hti_social_tts' );
+		if ( $slow ) {
+			return $slow;
+		}
+
 		$text = trim( (string) $request->get_param( 'text' ) );
 		if ( '' === $text ) {
 			return new \WP_Error( 'hti_social_tts_text', __( 'Nothing to narrate.', 'hti-social' ), array( 'status' => 400 ) );
