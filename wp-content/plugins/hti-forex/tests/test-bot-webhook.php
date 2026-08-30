@@ -240,6 +240,42 @@ $stolen = Telegram::health();
 check( false === $stolen['ours'], 'um webhook roubado por outro site é detetado' );
 check( str_contains( $stolen['webhook']['url'], 'staging' ), 'e diz-se quem o tem' );
 
+echo "\n=== Do anúncio à conta: a etiqueta atravessa o bot ===\n";
+
+// A prova ponta a ponta do que os anúncios pagaram: alguém entra por um
+// deep-link de campanha, pergunta um saldo dias depois, e o link que sai para
+// a corretora ainda leva a campanha colada.
+// /start desenha uma imagem, e Bot_Images resolve o caminho do plugin.
+if ( ! defined( 'HTI_FOREX_PATH' ) ) {
+	define( 'HTI_FOREX_PATH', dirname( __DIR__ ) . '/' );
+}
+if ( ! defined( 'HTI_FOREX_URL' ) ) {
+	define( 'HTI_FOREX_URL', 'https://howtoinvest.pro/wp-content/plugins/hti-forex/' );
+}
+
+$GLOBALS['__hti_chat_sources'] = array();
+$GLOBALS['__hti_options'][ HTI\Forex\Settings::OPTION ] = array_merge(
+	HTI\Forex\Settings::defaults(),
+	array(
+		'cta_enabled'    => true,
+		'bot_ad_enabled' => true,
+	)
+);
+
+say( 90001, '/start b2' );
+check( 'b2' === HTI\Forex\Bot_Store::source( 90001 ), 'o /start com campanha fica gravado na linha do chat' );
+
+say( 90001, '/start c1' );
+check( 'b2' === HTI\Forex\Bot_Store::source( 90001 ), 'um segundo anúncio não rouba a atribuição ao primeiro' );
+
+$answer = say( 90001, '50000' );
+check( str_contains( (string) ( $answer['text'] ?? '' ), 'cid=b2' ), 'e a resposta seguinte leva a campanha no link do parceiro' );
+
+say( 90002, '/start' );
+check( '' === HTI\Forex\Bot_Store::source( 90002 ), 'quem entra sem campanha não ganha etiqueta nenhuma' );
+$plain = say( 90002, '50000' );
+check( ! str_contains( (string) ( $plain['text'] ?? '' ), 'cid=' ), 'e o seu link sai sem etiqueta' );
+
 echo "\n=== Mexer no webhook limpa o que estava em cache ===\n";
 
 $GLOBALS['__hti_http'] = array( array( 'body' => array( 'ok' => true, 'result' => true ), 'code' => 200 ) );

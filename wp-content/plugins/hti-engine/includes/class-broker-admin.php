@@ -158,6 +158,12 @@ class Broker_Admin {
 			esc_html__( 'Switches /go/ to the affiliate URL, adds rel="sponsored" and the "Partner · Ad" label.', 'hti-engine' )
 		);
 
+		$text(
+			'affiliate_sub_param',
+			__( 'Sub-id parameter name', 'hti-engine' ),
+			__( 'What THIS network calls its tracking field (clickid, sub1, tag…) — copy the name from their panel. /go/ appends it to the affiliate URL, carrying the ?cid= that the click arrived with, so the network can tell you which campaign produced an account. Leave empty and no sub-id is sent.', 'hti-engine' )
+		);
+
 		$network = self::get( $post->ID, 'affiliate_network' );
 		echo '<p><label for="hti_broker_affiliate_network"><strong>' . esc_html__( 'Affiliate network', 'hti-engine' ) . '</strong></label><br /><select id="hti_broker_affiliate_network" name="hti_broker_affiliate_network">';
 		foreach ( self::NETWORKS as $n ) {
@@ -208,6 +214,11 @@ class Broker_Admin {
 		self::put( $post_id, 'official_url', self::https_url( (string) wp_unslash( $_POST['hti_broker_official_url'] ?? '' ) ) );
 		self::put( $post_id, 'affiliate_url', self::https_url( (string) wp_unslash( $_POST['hti_broker_affiliate_url'] ?? '' ) ) );
 		self::put( $post_id, 'affiliate_active', isset( $_POST['hti_broker_affiliate_active'] ) ? '1' : '' );
+
+		// A query-parameter name: sanitize_key is exactly the right shape, and
+		// the cap keeps a paste accident out of every outbound URL.
+		$sub_param = sanitize_key( (string) wp_unslash( $_POST['hti_broker_affiliate_sub_param'] ?? '' ) );
+		self::put( $post_id, 'affiliate_sub_param', substr( $sub_param, 0, 32 ) );
 
 		$network = sanitize_key( wp_unslash( $_POST['hti_broker_affiliate_network'] ?? 'none' ) );
 		self::put( $post_id, 'affiliate_network', in_array( $network, self::NETWORKS, true ) ? $network : 'none' );

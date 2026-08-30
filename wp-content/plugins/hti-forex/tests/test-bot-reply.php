@@ -153,9 +153,10 @@ require_once __DIR__ . '/../includes/class-settings.php';
  *
  * @param float                $balance  Balance.
  * @param array<string,mixed>  $settings Settings overrides.
+ * @param string               $source   Where the chat came from, or ''.
  * @return string
  */
-function answer_with( float $balance, array $settings ): string {
+function answer_with( float $balance, array $settings, string $source = '' ): string {
 	$GLOBALS['__hti_options'][ HTI\Forex\Settings::OPTION ] = array_merge(
 		HTI\Forex\Settings::defaults(),
 		$settings
@@ -172,7 +173,7 @@ function answer_with( float $balance, array $settings ): string {
 	$ref = new ReflectionMethod( Bot::class, 'ad_line' );
 	$ref->setAccessible( true );
 
-	return Bot::reply_text( $p, $ref->invoke( null, (bool) $p['tight'] ) );
+	return Bot::reply_text( $p, $ref->invoke( null, (bool) $p['tight'], $source ) );
 }
 
 $on = array(
@@ -216,6 +217,19 @@ foreach ( array( 'demo' => $ad_small, 'real' => $ad_big ) as $seg => $t ) {
 		sprintf( '%s: o link vem depois de toda a resposta pedida', $seg )
 	);
 }
+
+echo "\n=== A campanha viaja com o clique ===\n";
+
+// Sem isto, os anúncios que trouxeram alguém para o bot não se ligam à conta
+// que essa pessoa abre. O /go/ é que reencaminha o `cid` como sub-id da rede;
+// aqui só se verifica que ele sai daqui.
+$tagged_small = answer_with( 5000, $on, 'b2' );
+$tagged_big   = answer_with( 500000, $on, 'b2' );
+
+check( str_contains( $tagged_small, 'cid=b2' ), 'a origem do chat sai no link de demo' );
+check( str_contains( $tagged_big, 'cid=b2' ), 'e no link de conta real' );
+check( str_contains( $tagged_small, 'loc=telegram_bot_demo' ), 'sem tirar o `loc`, que conta do nosso lado' );
+check( ! str_contains( $ad_small, 'cid=' ), 'sem origem conhecida, não se inventa etiqueta nenhuma' );
 
 echo "\n=== Os interruptores ===\n";
 

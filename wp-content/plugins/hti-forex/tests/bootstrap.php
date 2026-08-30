@@ -153,6 +153,22 @@ if ( ! function_exists( 'esc_url_raw' ) ) {
 		return htmlspecialchars( (string) $url, ENT_QUOTES, 'UTF-8' );
 	}
 }
+if ( ! function_exists( 'add_query_arg' ) ) {
+	/**
+	 * Just the three-argument form the plugin uses, with the same escaping
+	 * WordPress applies. Enough to assert on the URLs we build.
+	 *
+	 * @param string $key   Parameter name.
+	 * @param string $value Parameter value.
+	 * @param string $url   URL to append to.
+	 * @return string
+	 */
+	function add_query_arg( $key, $value, $url ) {
+		$glue = str_contains( (string) $url, '?' ) ? '&' : '?';
+		return $url . $glue . rawurlencode( (string) $key ) . '=' . rawurlencode( (string) $value );
+	}
+}
+
 if ( ! function_exists( 'wp_parse_url' ) ) {
 	/**
 	 * @param string $url       URL.
