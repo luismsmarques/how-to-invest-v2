@@ -201,6 +201,18 @@ class Bot_Broadcast {
 	}
 
 	/**
+	 * Whether the text carries anything outside the Basic Multilingual Plane.
+	 *
+	 * Emoji live there, at four bytes each, and a column on three-byte `utf8`
+	 * refuses the whole write rather than the character.
+	 *
+	 * @param string $text Message body.
+	 */
+	public static function has_four_byte_characters( string $text ): bool {
+		return 1 === preg_match( '/[\x{10000}-\x{10FFFF}]/u', $text );
+	}
+
+	/**
 	 * Whatever the database last complained about, if anything.
 	 *
 	 * A failed write is reported by WordPress as a bare false, and the reason
@@ -387,7 +399,18 @@ class Bot_Broadcast {
 			// Ask the database what it objected to. Five guesses at this from
 			// the outside were five wrong ones; MySQL knows, and until now
 			// nothing carried its answer as far as the screen.
-			return self::refuse( 'write-failed', self::db_error() );
+			$error = self::db_error();
+
+			// One cause is common enough, and specific enough to act on, that
+			// it deserves its own answer: an emoji is four bytes, and a column
+			// still on three-byte utf8 cannot hold one. WordPress reports that
+			// as "invalid data", which reads like a fault in the message rather
+			// than a limit of the table it is being written to.
+			if ( self::has_four_byte_characters( $text ) ) {
+				return self::refuse( 'emoji-unsupported', $error );
+			}
+
+			return self::refuse( 'write-failed', $error );
 		}
 
 		self::remember_start();
