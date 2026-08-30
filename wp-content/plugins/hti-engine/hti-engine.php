@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Engine
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       The HowToInvest product: educational recommendation engine plus the public content types (glossary, news) that power SEO. Decisions are deterministic; the LLM only explains.
- * Version:           0.15.4
+ * Version:           0.15.5
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.15.4';
+const VERSION = '0.15.5';
 
 define( 'HTI_ENGINE_FILE', __FILE__ );
 define( 'HTI_ENGINE_PATH', plugin_dir_path( __FILE__ ) );
@@ -268,18 +268,28 @@ add_action( 'send_headers', __NAMESPACE__ . '\\send_security_headers' );
 /**
  * HSTS rollout — staged and reversible.
  *
- * Phase A (current): enabled with a short 5-minute max-age and apex only (no
- * includeSubDomains), so any HTTPS problem self-heals within minutes instead of
- * locking browsers for months.
+ * Phase A (done): 5 minutes, apex only — long enough to prove the header is
+ * served, short enough that an HTTPS mistake self-heals before anyone notices.
+ * It sat here for months, which is the failure mode of a staged rollout nobody
+ * advances: five minutes of protection is, for practical purposes, none. A
+ * visitor arriving on a network that strips TLS is protected only if they
+ * happened to visit within the last five minutes.
  *
- * Phase B (later, once the header is confirmed live and EVERY subdomain —
- * including staging — serves valid HTTPS): raise `hti_hsts_max_age` to
- * 15552000 (180 days) and set `hti_hsts_include_subdomains` to true.
+ * Phase B (current): one day. Real protection for anyone who visits more than
+ * once, and a mistake still clears itself within 24 hours without anybody
+ * having to reach browsers they cannot reach.
  *
- * To roll back before Phase B, remove the three filters below.
+ * Phase C (after a week of Phase B with no certificate trouble): raise to
+ * 15552000 (180 days). Only then consider `hti_hsts_include_subdomains`, and
+ * only once EVERY subdomain — staging included — serves valid HTTPS, because
+ * that flag is what turns a certificate lapse on a forgotten subdomain into an
+ * outage nobody can click through.
+ *
+ * To roll back, remove the three filters below; browsers keep the last
+ * max-age they were told until it expires, which is why it grows slowly.
  */
 add_filter( 'hti_enable_hsts', '__return_true' );
-add_filter( 'hti_hsts_max_age', static function (): int { return 300; } );
+add_filter( 'hti_hsts_max_age', static function (): int { return 86400; } );
 add_filter( 'hti_hsts_include_subdomains', '__return_false' );
 
 /**

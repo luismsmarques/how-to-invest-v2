@@ -384,16 +384,26 @@
 			document.head.appendChild( s );
 		} );
 	}
+	// The mirrored URL for one asset, or a clear failure. There is deliberately
+	// no fallback to the CDN: falling back would quietly restore the thing the
+	// mirror exists to remove — third-party script running on our own admin
+	// pages with nothing checking what arrived.
+	function need( local, key ) {
+		if ( ! local || ! local[ key ] ) {
+			throw new Error( 'The mirrored ffmpeg file "' + key + '" is missing.' );
+		}
+		return local[ key ];
+	}
+
 	function getFfmpeg() {
 		if ( ffmpegReady ) { return ffmpegReady; }
-		var urls = CFG.ffmpeg || {};
 		var p = fetch( CFG.restFfmpeg, { method: 'POST', headers: { 'X-WP-Nonce': CFG.nonce } } )
 			.then( function ( r ) { return r.json().then( function ( j ) { return { ok: r.ok, body: j }; } ); } )
 			.then( function ( res ) {
 				if ( ! res.ok || ! res.body || ! res.body.core ) { throw new Error( ( res.body && res.body.message ) || 'ffmpeg assets failed' ); }
 				var local = res.body; // { worker, core, wasm } same-origin URLs.
-				return loadScript( urls.ffmpeg )
-					.then( function () { return loadScript( urls.util ); } )
+				return loadScript( need( local, 'ffmpeg' ) )
+					.then( function () { return loadScript( need( local, 'util' ) ); } )
 					.then( function () {
 						var FFmpeg = window.FFmpegWASM && window.FFmpegWASM.FFmpeg;
 						var util = window.FFmpegUtil;

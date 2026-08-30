@@ -114,7 +114,10 @@ class Assets {
 			'restLog'     => esc_url_raw( rest_url( 'hti-social/v1/log' ) ),
 			'nonce'       => wp_create_nonce( 'wp_rest' ),
 			'aiEnabled'   => Gemini::is_configured(),
-			'ffmpeg'      => self::ffmpeg_urls(),
+			// The CDN URLs are NOT sent to the browser: the page loads the
+			// mirrored, checksum-gated copies that /ffmpeg-assets returns.
+			// Handing the raw CDN URLs to the client is what let a <script>
+			// tag point straight at a third party with no integrity check.
 			'restFfmpeg'  => esc_url_raw( rest_url( 'hti-social/v1/ffmpeg-assets' ) ),
 			'logoSvg'     => Brand::logo_svg(),
 			'illoShip'    => Brand::ship_svg(),
