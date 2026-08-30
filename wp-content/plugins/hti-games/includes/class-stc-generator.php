@@ -369,6 +369,13 @@ class STC_Generator {
 	/**
 	 * A library of scenarios honouring MIX_BP, from one run seed.
 	 *
+	 * A library's address is the seed AND the count, not the seed alone: the
+	 * class counts come from the mix, so asking for 400 reshuffles the plan and
+	 * every draw after the first differs. Re-running with a different --count
+	 * therefore builds an entirely new library rather than extending the old
+	 * one, which is why the CLI dedupes on the scenario seed and reports how
+	 * many it skipped.
+	 *
 	 * @param int $count How many scenarios.
 	 * @param int $seed  Run seed; every scenario's own seed is derived from it.
 	 * @throws \RuntimeException Propagated from scenario().
@@ -584,7 +591,7 @@ class STC_Generator {
 
 		for ( $i = 0; $i < Config::STC_VISIBLE; $i++ ) {
 			// Pull 18% of the way home each candle, then step.
-			$price   = $base + intdiv( ( $price - $base ) * 82, 100 ) + self::rng_int( $state, -$sigma, $sigma );
+			$price    = $base + intdiv( ( $price - $base ) * 82, 100 ) + self::rng_int( $state, -$sigma, $sigma );
 			$closes[] = $price;
 		}
 
@@ -596,8 +603,8 @@ class STC_Generator {
 	 *
 	 * A walk with real pullbacks rather than a ramp to the target: a ramp
 	 * would pass validation every single time, which would make the validator
-	 * decorative. Roughly one candidate in six still stops out on the way and
-	 * is thrown away, which is the point.
+	 * decorative. About one candidate in twenty is still stopped out on the way
+	 * and thrown away, which is the point.
 	 *
 	 * @param int $state PRNG state, advanced in place.
 	 * @param int $entry Entry price in ticks.
@@ -642,7 +649,7 @@ class STC_Generator {
 
 		$down = self::rng_int( $state, 2, self::TRAP_MAX_CANDLE - 1 );
 		$up   = self::rng_int( $state, 5, 14 );
-		$wick = max( 1, intdiv( $atr, 10 ) );
+		$wick = max( 1, intdiv( $atr, 8 ) );
 		$jit  = max( 1, intdiv( $atr, 4 ) );
 
 		$closes = array();
@@ -689,17 +696,17 @@ class STC_Generator {
 	 * @return array<int,array{o:int,h:int,l:int,c:int}>
 	 */
 	private static function outcome_chop( int &$state, int $entry, int $atr ): array {
-		$noise = max( 1, intdiv( $atr * 36, 100 ) );
+		$noise = max( 1, intdiv( $atr * 32, 100 ) );
 
 		$closes = array();
 		$price  = $entry;
 
 		for ( $i = 0; $i < Config::STC_OUTCOME; $i++ ) {
-			$price   = $entry + intdiv( ( $price - $entry ) * 74, 100 ) + self::rng_int( $state, -$noise, $noise );
+			$price    = $entry + intdiv( ( $price - $entry ) * 74, 100 ) + self::rng_int( $state, -$noise, $noise );
 			$closes[] = $price;
 		}
 
-		return self::candles( $state, $closes, $entry, max( 1, intdiv( $atr, 6 ) ) );
+		return self::candles( $state, $closes, $entry, max( 1, intdiv( $atr, 4 ) ) );
 	}
 
 	/**
