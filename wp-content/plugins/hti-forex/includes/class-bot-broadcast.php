@@ -184,21 +184,28 @@ class Bot_Broadcast {
 		$log = self::log();
 		$key = (string) $code;
 
-		if ( isset( $log['errors'][ $key ] ) && is_array( $log['errors'][ $key ] ) ) {
-			$log['errors'][ $key ]['count'] = (int) $log['errors'][ $key ]['count'] + 1;
-			$log['errors'][ $key ]['at']    = time();
-			$log['errors'][ $key ]['description'] = $description;
-		} else {
-			if ( count( $log['errors'] ) >= self::KEEP_ERRORS ) {
-				array_shift( $log['errors'] );
-			}
-			$log['errors'][ $key ] = array(
-				'code'        => $code,
-				'description' => $description,
-				'count'       => 1,
-				'at'          => time(),
-			);
+		$seen  = isset( $log['errors'][ $key ] ) && is_array( $log['errors'][ $key ] );
+		$count = $seen ? (int) $log['errors'][ $key ]['count'] + 1 : 1;
+
+		// Position means recency, so a code that fires again moves to the end
+		// rather than staying where it first appeared. Timestamps cannot carry
+		// this on their own: a batch fails many times within one second, and
+		// sorting on equal values evicts arbitrarily.
+		unset( $log['errors'][ $key ] );
+
+		if ( count( $log['errors'] ) >= self::KEEP_ERRORS ) {
+			// Keep the most recent, from the end. `array_shift` would renumber
+			// the keys — an error code is a numeric key and PHP reindexes those
+			// — quietly destroying the grouping this structure exists for.
+			$log['errors'] = array_slice( $log['errors'], 1 - self::KEEP_ERRORS, null, true );
 		}
+
+		$log['errors'][ $key ] = array(
+			'code'        => $code,
+			'description' => $description,
+			'count'       => $count,
+			'at'          => time(),
+		);
 
 		update_option( self::OPTION_LOG, $log, false );
 	}

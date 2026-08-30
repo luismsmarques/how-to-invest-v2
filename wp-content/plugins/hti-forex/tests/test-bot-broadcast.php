@@ -358,6 +358,38 @@ check( isset( $errors['401'] ), 'a falha fica registada pelo código do Telegram
 check( 'Unauthorized' === ( $errors['401']['description'] ?? '' ), 'com o que o Telegram disse' );
 check( 2 === ( $errors['401']['count'] ?? 0 ), 'e a mesma falha é contada, não repetida' );
 
+// An error code is a numeric key, and PHP reindexes those — so evicting the
+// oldest with array_shift would renumber every code and silently destroy the
+// grouping the log exists for.
+$GLOBALS['__hti_options'] = array();
+$GLOBALS['__hti_cron']    = array();
+$GLOBALS['__hti_subs']    = array( 6001 );
+
+for ( $code = 500; $code < 512; $code++ ) {
+	$GLOBALS['__hti_http'] = array(
+		array( 'body' => array( 'ok' => false, 'error_code' => $code, 'description' => "erro {$code}" ), 'code' => $code ),
+	);
+	Bot_Broadcast::start( "falha {$code}" );
+	Bot_Broadcast::run();
+	Bot_Broadcast::cancel();
+}
+
+$errors = Bot_Broadcast::log()['errors'];
+
+check( 10 === count( $errors ), 'o registo de falhas pára nas dez' );
+check( isset( $errors['511'] ), 'a mais recente está lá, pelo seu código' );
+check( 511 === ( $errors['511']['code'] ?? 0 ), 'com o código intacto' );
+check( ! isset( $errors['500'] ), 'e a mais antiga saiu' );
+
+$keys = array_keys( $errors );
+$ok   = true;
+foreach ( $keys as $k ) {
+	if ( (int) $k !== (int) ( $errors[ $k ]['code'] ?? -1 ) ) {
+		$ok = false;
+	}
+}
+check( $ok, 'nenhuma chave foi renumerada — cada uma continua a ser o seu código' );
+
 echo "\n=== Quando o Telegram manda abrandar ===\n";
 
 $GLOBALS['__hti_options'] = array();
