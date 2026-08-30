@@ -112,6 +112,40 @@ cd "$WPCONTENT/plugins/hti-engine" && composer install --no-dev --no-interaction
   na mesma (PDF cai para HTML imprimível).
 - Log dos deploys do cPanel: `~/.cpanel/logs/` (ou o painel mostra-o).
 
+## 5.2 Tirar o WP-Cron dos pedidos dos visitantes — obrigatório
+
+Por omissão o WordPress não tem cron nenhum: corre as tarefas agendadas **em cima
+do pedido de um visitante**. Enquanto uma tarefa lenta decorre, cada visita nova
+gera outro `wp-cron.php`; o bloqueio interno do WordPress expira aos 60 segundos,
+por isso um trabalho mais demorado do que isso deixa entrar a corrida seguinte, e
+a seguinte.
+
+Num alojamento partilhado isto esgota o limite de processos em simultâneo da
+conta. Foi o que aconteceu a 30 ago 2026: **1149 faltas de entry processes em 24
+horas** com o tecto em 20, CPU limitado, e o Telegram a receber **508** do
+webhook do bot — que é a página de limite de recursos do LiteSpeed. Cada `/start`
+que apanha um 508 é um clique pago que não deu utilizador.
+
+**1. No `wp-config.php` do servidor**, antes do `/* That's all, stop editing! */`:
+
+```php
+define( 'DISABLE_WP_CRON', true );
+```
+
+**2. Em cPanel → Cron Jobs**, de 5 em 5 minutos (`*/5 * * * *`):
+
+```
+cd /home/howtoinvest/howtoinvest.pro && /usr/local/bin/php wp-cron.php >/dev/null 2>&1
+```
+
+Passa a haver **um** processo, uma vez, em vez de um por visitante. As tarefas
+agendadas continuam a correr na mesma — só deixam de competir com quem está a ler
+o site.
+
+**Como confirmar:** cPanel → Resource Usage no dia seguinte. Os picos de *entry
+processes* têm de desaparecer. E em Definições → HTI Forex, o "Last delivery
+error" do bot tem de deixar de acumular.
+
 ## 6. Notas
 
 - **Nunca** versionar `wp-config.php` nem chaves — usa `define()` no `wp-config.php`
@@ -121,7 +155,10 @@ cd "$WPCONTENT/plugins/hti-engine" && composer install --no-dev --no-interaction
   O Telegram só admite **um webhook por bot** — apontar o staging ao bot real
   rouba-lhe as mensagens sem avisar. Usa um segundo bot de teste no staging.
 - `vendor/` (Dompdf) **não** está no repo; o `composer install` do deploy é que o
-  cria. O rsync preserva-o entre deploys (`--exclude vendor/`).
+  cria. ⚠️ O `.cpanel.yml` faz `rm -rf` + `cp -R`, portanto **destrói o `vendor/`
+  em cada deploy** e depende do `composer install` da última linha, que está
+  protegida por `timeout 180` e `|| true`: se falhar, o deploy fica verde e o
+  **export PDF degrada em silêncio para HTML**. Confirma o PDF depois de um deploy.
 - Testa sempre em **staging** (`develop`) antes de promover para `main`.
 - **Limpa a cache depois de cada deploy, por esta ordem.** A stack é WP Fastest
   Cache no servidor e Cloudflare à frente:
