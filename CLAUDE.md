@@ -21,12 +21,26 @@ Lê `/docs` para a especificação completa. Lê `README.md` para o mapa.
 
 1. As **regras determinísticas decidem** (arquétipo + alocação). O **LLM só explica**. Se o output do LLM tentar mudar números → rejeitar via schema → fallback.
 2. Output do motor/LLM **sempre por classes de ativos** (global_equity, bonds, cash, reits_alt, crypto). **Nunca** instrumentos, tickers, fundos, corretoras ou empresas nomeadas (o validator bloqueia e força fallback).
+   *Exceção única e delimitada — o jogo "The Reveal" (`hti-games`):* pode nomear empresas reais
+   **apenas** dentro do CPT `hti_reveal_case`, **apenas** para períodos históricos com pelo menos
+   5 anos, **apenas** com fonte verificada registada no caso, e **nunca** como afirmação
+   prospetiva ou sugestão de compra. Um caso sem fonte ou por verificar não é servido — a barreira
+   está no código, não numa convenção. O ecrã das "três linhas" (a tua decisão / se tivesses
+   passado / o índice) é o que mantém o caso educativo e não é dispensável. O output do motor e do
+   LLM continua sem nomear empresas, sem exceção nenhuma.
+   *Survive the Charts não precisa de exceção:* o par de moedas nunca sai do servidor.
 3. Linguagem **condicional e ilustrativa**, nunca imperativa ("um perfil como este costuma…", nunca "deves comprar").
 4. **Disclaimer contextual** em todos os resultados. O resultado do motor, o PDF e os emails são 100% educativos — **nunca** contêm CTA de execução nem corretoras. Conteúdo sobre corretoras vive **apenas na secção editorial de corretoras** (comparador, reviews, guias de abertura de conta e o módulo "Passar à prática" a seguir ao resultado), sempre rotulado **"Parceria · Publicidade"**, com divulgação de afiliação **na própria página**, linguagem factual/condicional (nunca captação/imperativos), links de saída só via `/go/{slug}` com `rel="sponsored nofollow"` quando há afiliação ativa, e aviso de risco CFD quando a corretora oferece CFDs. Regras completas: `.claude/skills/broker-affiliate/SKILL.md`.
 5. Sem criar conta → só sessão **anónima**, nenhum dado identificado retido.
 6. **Export e delete** de conta (RGPD) são P0.
 7. Chave do Gemini **nunca** no HTML/JS do cliente. Guardar via `wp-config.php`/env.
 8. Alocação **soma 100%** e está dentro dos intervalos curados do arquétipo.
+9. **Jogos educacionais (`/games/`, plugin `hti-games`) não levam corretoras.** Nenhum link de
+   afiliado, banner, módulo de parceria ou menção a corretora em qualquer página de jogo, no
+   resultado, nos cartões de partilha ou nos emails do jogo. A exceção do `/forex/` **não se
+   estende por analogia** — a ESMA proíbe incentivos ligados a CFD retalhistas, e um ranking que
+   premeia risco ao lado de um CTA de corretora seria exatamente isso. Há um teste que faz grep
+   ao HTML das páginas de jogo à procura de `/go/` e dos slugs de corretora.
 
 ## Convenções de código
 
@@ -75,3 +89,7 @@ Ver `docs/Stack_Concreta_HowToInvest_MVP.md §4`. Resumo:
 - Não nomear instrumentos financeiros em lado nenhum do output do motor/LLM.
 - Não misturar corretoras no resultado do motor, no PDF ou nos emails; corretoras só na secção editorial rotulada "Parceria · Publicidade" com disclosure na página (skill `broker-affiliate`).
 - Não publicar link de afiliado fora do redirector `/go/{slug}` nem sem `rel="sponsored nofollow"`.
+- Não pôr corretoras, afiliados ou prémios em nenhuma superfície dos jogos educacionais.
+- Não ordenar o ranking diário por P&L bruto: isso ensina "aumenta a posição para subir", que é o
+  contrário da lição do jogo. Ordena por resultado normalizado ao risco.
+- Não servir um caso do The Reveal sem `hti_rev_source_url` e sem verificação registada.

@@ -61,41 +61,54 @@ class Metrics {
 	 * @return array<int,string>
 	 */
 	public static function events(): array {
-		return array(
-			'page_view',
-			'quiz_start',
-			'quiz_step_complete',
-			'quiz_submit',
-			'result_view',
-			'result_pdf_export',
-			'result_email_request',
-			'result_retake',
-			'save_profile_start',
-			'save_profile',
-			'sign_up',
-			'login',
-			'onboarding_complete',
-			'newsletter_subscribe_submit',
-			'newsletter_confirmed',
-			'newsletter_unsubscribe',
-			'ebook_lead',
-			'contact_submit',
-			'forex_bot_start',
-			'forex_bot_calc',
-			'forex_bot_stop',
-			'account_delete_request',
-			'cta_click',
-			'forex_tool_use',
-			'feedback_widget_open',
-			'feedback_submitted',
-			'feedback_invite_click',
-			'data_export',
-			'preferred_source_click',
-			'broker_click',
-			'broker_compare_view',
-			'broker_review_view',
-			'broker_guide_view',
-			'result_broker_view',
+		/**
+		 * Filter the countable-event allowlist.
+		 *
+		 * Sibling plugins own their own vocabulary: hti-games adds the game
+		 * events here rather than editing this array, so a section can be
+		 * removed by deactivating one plugin. Names are always fixed in code
+		 * and never derived from anything a visitor types.
+		 *
+		 * @param array<int,string> $events Countable event names.
+		 */
+		return (array) apply_filters(
+			'hti_metrics_events',
+			array(
+				'page_view',
+				'quiz_start',
+				'quiz_step_complete',
+				'quiz_submit',
+				'result_view',
+				'result_pdf_export',
+				'result_email_request',
+				'result_retake',
+				'save_profile_start',
+				'save_profile',
+				'sign_up',
+				'login',
+				'onboarding_complete',
+				'newsletter_subscribe_submit',
+				'newsletter_confirmed',
+				'newsletter_unsubscribe',
+				'ebook_lead',
+				'contact_submit',
+				'forex_bot_start',
+				'forex_bot_calc',
+				'forex_bot_stop',
+				'account_delete_request',
+				'cta_click',
+				'forex_tool_use',
+				'feedback_widget_open',
+				'feedback_submitted',
+				'feedback_invite_click',
+				'data_export',
+				'preferred_source_click',
+				'broker_click',
+				'broker_compare_view',
+				'broker_review_view',
+				'broker_guide_view',
+				'result_broker_view',
+			)
 		);
 	}
 
@@ -243,6 +256,21 @@ class Metrics {
 				$data[ $day ]['tool'][ $tool ] = ( $data[ $day ]['tool'][ $tool ] ?? 0 ) + 1;
 			} else {
 				$data[ $day ]['tool']['_other'] = ( $data[ $day ]['tool']['_other'] ?? 0 ) + 1;
+			}
+		}
+		if ( str_starts_with( $event, 'game_' ) && isset( $params['location'] ) ) {
+			$g = (string) $params['location'];
+			if ( ! isset( $data[ $day ]['game'] ) || ! is_array( $data[ $day ]['game'] ) ) {
+				$data[ $day ]['game'] = array();
+			}
+			// One map for both games: the location already carries the game
+			// ("stc_risk_200", "reveal_size_50"), so a second dimension would
+			// only split the same rows in two. Bounded like the rest — the
+			// beacon is public, so this value arrives from the open web.
+			if ( isset( $data[ $day ]['game'][ $g ] ) || count( $data[ $day ]['game'] ) < self::MAX_PATHS_PER_DAY ) {
+				$data[ $day ]['game'][ $g ] = ( $data[ $day ]['game'][ $g ] ?? 0 ) + 1;
+			} else {
+				$data[ $day ]['game']['_other'] = ( $data[ $day ]['game']['_other'] ?? 0 ) + 1;
 			}
 		}
 		if ( 'broker_click' === $event ) {

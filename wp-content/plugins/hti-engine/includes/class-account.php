@@ -784,6 +784,19 @@ class Account {
 		self::forget_questions( $user_id );
 		NPS::forget( $user_id );
 
+		/**
+		 * Last call for anything a sibling plugin keeps outside wp_users.
+		 *
+		 * Fired BEFORE wp_delete_user() so subscribers can still read the
+		 * user's meta and posts. Rows in a plugin's own table are keyed by
+		 * user id and would otherwise survive the account they belong to,
+		 * which is the whole failure this hook exists to prevent.
+		 *
+		 * @param int    $user_id User being erased.
+		 * @param string $email   Their email, already read (empty if the user was gone).
+		 */
+		do_action( 'hti_account_hard_delete', $user_id, $email );
+
 		wp_delete_user( $user_id );
 	}
 
