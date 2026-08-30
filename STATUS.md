@@ -1,11 +1,13 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 29 ago 2026 (bot de Telegram no hti-forex: manda um saldo, recebe o retrato do risco em rupias; difusão manual do wp-admin; distribuição de saldos agregada como estudo de audiência. Mais um mês de conteúdo escrito para o canal em `docs/Telegram_Canal_Conteudo_Set2026.md`. HTI Forex v0.9.0). Anterior: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9.** ~1.770 asserções verdes nas quatro suites). Anterior: 29 ago 2026 (bot de Telegram no hti-forex). Antes: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
 questionário → resultado (gráfico + disclaimer) → guardar perfil → dashboard;
-homepage com artigos; glossário; páginas. **167 testes** verdes.
+homepage com artigos; glossário; páginas; **secção editorial de corretoras**
+(CPT `broker`, ~26 páginas, redirector `/go/`); comparador de depósitos; hub de
+ferramentas; `/forex/` e o bot de Telegram. **~1.770 asserções** verdes.
 
 WordPress 7.0 instalado em `/home/howtoinvest/howtoinvest.pro/`. Tema **HowToInvest**
 e plugin **HTI Engine** ativos. Conteúdo criado pelo seeder (glossário + 7 páginas + 8 artigos).
@@ -45,8 +47,10 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
     `news` (`/financial-news/`, `news_category`), e **`learn`** (`/learn/`, taxonomia `learn_topic`) — os
     **artigos educativos** são agora um CPT dedicado (não posts), com base própria e categorias.
   - **Conteúdo SEO seedado** (`class-seeder`, bilingue EN+PT, idempotente):
-    - **Glossário**: 42 termos em **10 tópicos** (`glossary_topic_of`); SEO title/desc (RankMath+Yoast).
-    - **Learn**: 8 artigos em **4 categorias** (`learn_topic`: Começar / Conceitos / Comportamento / Planeamento);
+    - **Glossário**: **58 termos** (pipeline `content/glossary/*.md`); SEO title/desc (RankMath+Yoast).
+      ⚠️ 53 dos `.md` declaram `topic: key-terms`, que **não existe** em `glossary_topics()` — 16 termos
+      ficam fora de todos os arquivos de tópico.
+    - **Learn**: **35 capítulos** (30 em `content/learn/*.md` + 5 legados), espinha em `learn-plan.csv`;
       o seeder **migra** artigos legados (`post` → `learn`), atribui categoria, e liga "Artigos relacionados".
     - **Páginas de Arquétipos** (5, tabela de alocação ilustrativa do `Config`) + **Classes de ativos** (5
       "explained") + hubs (Perfis / Classes de ativos / Tools).
@@ -147,12 +151,18 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 
 ## Deploy
 - Branches: **`main`** = produção · **`develop`** = staging/integração · feature → PR para `develop` → release `develop → main`. Ver `CONTRIBUTING.md`.
-- cPanel Git: `Manage → Pull or Deploy → Update from Remote → Deploy HEAD Commit`. O `.cpanel.yml` (simples; destino fixo `howtoinvest.pro/wp-content`) copia **tema + hti-engine + hti-rss-ai**.
+- cPanel Git: `Manage → Pull or Deploy → Update from Remote → Deploy HEAD Commit`. O `.cpanel.yml` (simples; destino fixo `howtoinvest.pro/wp-content`) copia **tema + hti-engine + hti-rss-ai + hti-social + hti-forex** (quatro plugins).
+  ⚠️ O deploy faz `rm -rf` + `cp -R`, portanto **destrói o `vendor/`** e depende do `composer install` protegido
+  por `|| true`: se falhar, o deploy fica verde e o **export PDF degrada silenciosamente para HTML**. O
+  `DEPLOY.md §` que fala de rsync com `--exclude vendor/` está errado.
 - **Se o deploy do cPanel falhar/pendurar:** ver `DEPLOY.md §5.1` (deploy manual / File Manager copy a partir de `repositories/how-to-invest-v2/wp-content/...`).
 - **Bump de versão obrigatório** ao mexer em CSS/JS do tema/plugin (constante VERSION → `?ver=`), senão a cache serve assets antigos. Em template parts personalizadas no Site Editor, *Clear customizations* para o tema voltar a usar os ficheiros.
-- Testes engine (157 verdes): `for t in engine settings explainer prompt ratelimit cron mailer google llm; do php wp-content/plugins/hti-engine/tests/test-$t.php; done`
-- Testes calculadoras (Node, 14 verdes): `node wp-content/plugins/hti-engine/tests/test-tools-core.mjs`
-- Testes RSS AI (24 verdes): `for t in extract-json validator grouping image-client; do php wp-content/plugins/hti-rss-ai/tests/test-$t.php; done`
+- Suites (é o que a CI corre): `php wp-content/plugins/hti-engine/tests/run.php` (1.072) ·
+  `php wp-content/plugins/hti-forex/tests/run.php` (527 PHP + 83 Node) ·
+  `php wp-content/plugins/hti-rss-ai/tests/run.php` (60) ·
+  `node wp-content/plugins/hti-engine/tests/test-tools-core.mjs` (27).
+  ⚠️ A CI **não faz lint ao `hti-social`** nem corre as suites Node, e o `hti-social` **não tem testes** —
+  é o único artefacto deployado sem verificação nenhuma.
 
 ## O que falta para o GO-LIVE público (checklist completa: `docs/QA_Gate_Lancamento.md`)
 **Código (produto):** ✅ tudo (lacunas L-A/L-B/L-C fechadas).
@@ -165,7 +175,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 **Operacional (teu, no servidor):**
 - [ ] **Deploy para produção** da última `main` (foto AI de destaque + kit social) via cPanel.
 - [ ] HTTPS forçado (redirect http→https em todo o site)
-- [ ] Verificar os 8 redirects 301 do Base44 (ex.: `/About` → `/about/`)
+- [ ] Verificar os redirects 301 (19 entradas Base44 em `class-redirects.php:63-88`, mais PT e tools)
 - [ ] Backups externos automáticos **e restauro testado**
 - [ ] Cache (LiteSpeed/WP) + CDN (Cloudflare) + Core Web Vitals
 - [ ] **RankMath**: instalar/ativar → sitemap inclui `glossary`/`news` → submeter ao Search Console
@@ -177,7 +187,11 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - [ ] Acessibilidade: contraste AA + teste com leitor de ecrã
 
 **Legal (⚠️ bloqueador antes de divulgar):**
-- [ ] **L-D — Revisão jurídica** dos disclaimers + páginas privacidade/termos (são placeholders; mencionar o GA na política de privacidade).
+- [ ] **L-D — Revisão jurídica.** As páginas legais **já não são placeholders** (a política de privacidade é
+      substantiva e descreve o GA4 em detalhe); faltam os marcadores `[●]` (morada, jurisdição) e a revisão em si.
+      ⚠️ O âmbito é maior do que este documento assumia: cobre também a **camada de afiliação** (o gate
+      "Corretoras & afiliados" está **0/9** com a secção já em produção), o `ads.txt` com publisher id real, e a
+      exposição RBI/FEMA do `/forex/`. E já se está a divulgar — há campanhas pagas a correr.
 
 ## Forex tools Índia (`hti-forex`) — ago 2026
 
@@ -223,10 +237,32 @@ alterado.
   permite lead magnets por plugin: opt-ins `forex-*` recebem o **INR lot
   size cheat sheet** (PDF de 2 páginas, commitado, fonte HTML regenerável
   via Chromium). Comportamento do ebook intacto; suites verdes.
-- **Antes de ligar o CTA em produção**: rever a exposição regulatória (Alert
+- **Nota de i18n:** o `/forex/` é EN-only por desenho, mas **não é a única exceção** ao invariante bilingue —
+o **comparador de depósitos é PT-first** (`class-deposits.php:169-173`).
+
+**Antes de ligar o CTA em produção**: rever a exposição regulatória (Alert
   List RBI / FEMA — promover corretoras offshore a residentes indianos é o
   risco; as ferramentas em si são seguras) e configurar o URL de afiliado no
   admin. Sem configuração, as páginas são 100% educativas.
+
+## Auditoria de 30 ago 2026 — o que ficou por fazer
+
+O retrato completo, com evidência por `ficheiro:linha`, e a cronologia de setembro estão em
+**`docs/Estado_e_Cronologia_Set2026.md`**. Os achados que mais custam:
+
+- **11 dos 34 eventos de métrica são gravados e nunca mostrados** — entre eles `forex_bot_start/calc/stop` e
+  `forex_tool_use`, exatamente os que medem o bot. Um terço da instrumentação escreve para o vazio.
+- **O `/forex/` pode emitir um URL de afiliado em cru:** `cta_url` só valida `https://`, ao contrário dos URLs
+  do bot, que exigem o host próprio.
+- **O mapa `cta` não tem teto de cardinalidade** e `POST /htinvest/v1/event` é público e aceita `location`
+  arbitrário.
+- **O bot falha em silêncio:** zero `error_log`, retorno de `Telegram::send()` descartado, e nenhum sinal no
+  wp-admin se o token for revogado.
+- **`hti-forex` não tem `uninstall.php`** — desinstalar deixa chat_ids na base de dados.
+- **Acessibilidade:** o token de foco `#FF6B5E` dá 2,79:1 (falha WCAG 1.4.11) em todo o site; o auto-avanço do
+  questionário parte a navegação por teclado; `outline:none` em 4 inputs.
+- **A homepage diz "Seis perguntas curtas"** para um questionário de 8.
+- **~479 strings `__()` sem tradução PT**, e os ficheiros `pt_PT` podem nem carregar num site `pt_PT_ao90`.
 
 ## Próximos passos sugeridos
 1. Configurar RankMath (sitemap + schema + Search Console).
