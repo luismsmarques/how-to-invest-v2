@@ -64,6 +64,12 @@ class Activator {
 	 * Deactivation: clear scheduled events (tables are kept).
 	 */
 	public static function deactivate(): void {
+		// The two one-off hooks are cleared wholesale: a single event queued
+		// seconds before deactivation would otherwise survive and fire into a
+		// plugin that is no longer there.
+		wp_clear_scheduled_hook( GROUP_HOOK );
+		wp_clear_scheduled_hook( FETCH_MORE_HOOK );
+
 		foreach ( array( CRON_HOOK, CLEANUP_HOOK ) as $hook ) {
 			$timestamp = wp_next_scheduled( $hook );
 			if ( $timestamp ) {

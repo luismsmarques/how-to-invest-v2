@@ -34,6 +34,36 @@ class Feeds {
 	}
 
 	/**
+	 * The active feeds most overdue a visit, least recent first.
+	 *
+	 * A fetch used to walk every feed in one cron tick, which on fifteen feeds
+	 * means fifteen blocking network calls inside one PHP process. Ordering by
+	 * how long each has waited turns that into a round robin: every feed is
+	 * still reached, just across several ticks instead of one long one.
+	 *
+	 * A feed never fetched sorts first, so a newly added one is not made to
+	 * wait behind the rotation.
+	 *
+	 * @param int $limit How many to return.
+	 * @return array<int,object>
+	 */
+	public static function due( int $limit ): array {
+		global $wpdb;
+		$table = self::table();
+
+		// $table is an internal, non-user value; the limit is bound.
+		return (array) $wpdb->get_results( // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare(
+				"SELECT * FROM `$table`
+				 WHERE status = 1
+				 ORDER BY last_fetched IS NULL DESC, last_fetched ASC, id ASC
+				 LIMIT %d",
+				max( 1, $limit )
+			)
+		);
+	}
+
+	/**
 	 * One feed by id.
 	 *
 	 * @param int $id Feed id.
