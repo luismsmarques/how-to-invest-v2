@@ -36,9 +36,9 @@ class STC_Engine {
 	/**
 	 * One hundred percent, in basis points.
 	 *
-	 * Both the risk tier and the R multiple are carried in basis points, so
-	 * the payout divides by this twice — which is exactly why it is a named
-	 * constant and not a literal 100000000 sitting in an expression.
+	 * The risk tier and the R multiple are both carried in basis points, so a
+	 * payout divides by this once on the way to the dollars at stake and once
+	 * on the way from there to the result.
 	 */
 	public const BP = 10000;
 
@@ -294,15 +294,43 @@ class STC_Engine {
 	}
 
 	/**
-	 * What an R multiple is worth, in whole dollars.
+	 * The dollars a tier actually puts at risk — the "At risk −$X" figure.
 	 *
-	 * The one place a number leaves the integers. Every input is an integer
-	 * and the numerator is formed before the single division, so the PHP and
-	 * the JavaScript hand identical doubles to identical rounding — which is
-	 * the whole reason the risk tier and R are both carried in basis points.
+	 * Truncating rather than rounding, so the amount at stake is never a cent
+	 * more than the tier the player chose, and exact in both languages
+	 * (intdiv here, Math.trunc there).
 	 *
 	 * A negative tier would turn a loss into a gain, so it floors at zero
 	 * rather than trusting whatever arrived.
+	 *
+	 * @param int $capital    Capital before the decision, in dollars.
+	 * @param int $risk_bp    Risk tier in basis points of capital.
+	 * @param int $multiplier Stake multiplier, 1 or Config::STC_DOUBLE.
+	 * @return int Whole dollars at risk.
+	 */
+	public static function at_risk( int $capital, int $risk_bp, int $multiplier ): int {
+		return intdiv( $capital * max( 0, $risk_bp ), self::BP ) * $multiplier;
+	}
+
+	/**
+	 * What an R multiple is worth, in whole dollars.
+	 *
+	 * Two steps, not one, and the split is load-bearing in both directions.
+	 *
+	 * Arithmetically: forming capital × risk_bp × multiplier × r_bp before
+	 * dividing needs an intermediate near 7.5e15 once a run compounds its way
+	 * to a capital around 1e8 — which a fortnight of maximum-tier wins does.
+	 * PHP's 64-bit integers stay exact there; a JavaScript double does not,
+	 * past Number.MAX_SAFE_INTEGER. The server would book one number and the
+	 * replay would animate another, silently, in the one region the fixture
+	 * does not sample. Splitting caps the intermediate at capital × 2 × 15000,
+	 * which is still exact at a capital of a billion.
+	 *
+	 * Semantically: at_risk() is precisely the "At risk −$X" figure the tier
+	 * screen already showed the player before they committed. The engine now
+	 * pays out on the number the interface promised rather than on an
+	 * algebraically equivalent one, so a stop is exactly the amount the button
+	 * said it would be — not that amount plus or minus a rounding.
 	 *
 	 * @param int $capital    Capital before the decision, in dollars.
 	 * @param int $risk_bp    Risk tier in basis points of capital.
@@ -311,9 +339,7 @@ class STC_Engine {
 	 * @return int Whole dollars, signed.
 	 */
 	public static function cash( int $capital, int $risk_bp, int $multiplier, int $r_bp ): int {
-		$risk_bp = max( 0, $risk_bp );
-
-		return self::round_half_away_from_zero( ( $capital * $risk_bp * $multiplier * $r_bp ) / ( self::BP * self::BP ) );
+		return self::round_half_away_from_zero( ( self::at_risk( $capital, $risk_bp, $multiplier ) * $r_bp ) / self::BP );
 	}
 
 	/**

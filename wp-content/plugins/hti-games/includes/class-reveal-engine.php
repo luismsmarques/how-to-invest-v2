@@ -38,12 +38,29 @@ class Reveal_Engine {
 	public const PCT = 100;
 
 	/**
+	 * The dollars a decision actually puts on the table.
+	 *
+	 * Truncating, so a commitment is never a dollar more than the share the
+	 * player chose, and exact in both languages.
+	 *
+	 * @param int $capital  Capital before the decision, in dollars.
+	 * @param int $size_pct Share of the account committed, in percent.
+	 * @return int Whole dollars.
+	 */
+	public static function committed( int $capital, int $size_pct ): int {
+		return intdiv( $capital * max( 0, $size_pct ), self::PCT );
+	}
+
+	/**
 	 * What a decision made or lost, in whole dollars.
 	 *
-	 * The committed amount is never computed and then multiplied: the whole
-	 * numerator is formed first and divided once, so a $2,500 stake at +182%
-	 * does not drift by a dollar from rounding twice. Both ports do it in this
-	 * order for the same reason.
+	 * Computed from committed() rather than from capital × size × return in
+	 * one product, for both of the reasons STC_Engine::cash() splits: the
+	 * single product needs an intermediate a compounding account eventually
+	 * pushes past Number.MAX_SAFE_INTEGER, where PHP stays exact and
+	 * JavaScript does not; and the return is applied to exactly the figure the
+	 * screen told the player they were committing, so "you put in $2,500" and
+	 * the P&L are the same $2,500.
 	 *
 	 * @param int $capital  Capital before the decision, in dollars.
 	 * @param int $size_pct Share of the account committed, in percent.
@@ -51,25 +68,7 @@ class Reveal_Engine {
 	 * @return int Whole dollars, signed.
 	 */
 	public static function pnl( int $capital, int $size_pct, int $r_bp ): int {
-		$size_pct = max( 0, $size_pct );
-
-		return STC_Engine::round_half_away_from_zero( ( $capital * $size_pct * $r_bp ) / ( self::PCT * self::BP ) );
-	}
-
-	/**
-	 * The dollars a decision actually puts on the table.
-	 *
-	 * Reported so the result can say "you committed $2,500" without the front
-	 * end recomputing a percentage and landing a dollar away from the server.
-	 *
-	 * @param int $capital  Capital before the decision, in dollars.
-	 * @param int $size_pct Share of the account committed, in percent.
-	 * @return int Whole dollars.
-	 */
-	public static function committed( int $capital, int $size_pct ): int {
-		$size_pct = max( 0, $size_pct );
-
-		return STC_Engine::round_half_away_from_zero( ( $capital * $size_pct ) / self::PCT );
+		return STC_Engine::round_half_away_from_zero( ( self::committed( $capital, $size_pct ) * $r_bp ) / self::BP );
 	}
 
 	/**
@@ -100,9 +99,13 @@ class Reveal_Engine {
 	 * @return int Whole dollars, signed.
 	 */
 	public static function index_pnl( int $index_cap, int $r_idx_bp ): int {
-		return STC_Engine::round_half_away_from_zero(
-			( $index_cap * Config::REVEAL_INDEX_STEP_BP * $r_idx_bp ) / ( self::BP * self::BP )
-		);
+		// Split for the same reason as the player's P&L: one product of four
+		// integers overflows a JavaScript double long before it overflows a
+		// PHP int, and a silent disagreement between the two is the one bug
+		// this whole harness exists to prevent.
+		$exposure = intdiv( $index_cap * Config::REVEAL_INDEX_STEP_BP, self::BP );
+
+		return STC_Engine::round_half_away_from_zero( ( $exposure * $r_idx_bp ) / self::BP );
 	}
 
 	/**
