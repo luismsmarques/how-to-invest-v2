@@ -81,12 +81,53 @@ class Consent {
 			array(
 				'cookie'     => self::COOKIE,
 				'expiryDays' => 180,
-				'privacyUrl' => esc_url( home_url( '/privacy-policy/' ) ),
+				'privacyUrl' => esc_url( self::privacy_url( $pt ) ),
 				'strings'    => self::strings( $pt ),
 			)
 		);
 
 		wp_enqueue_script( 'hti-consent' );
+	}
+
+	/**
+	 * The privacy policy, in the language the banner is speaking.
+	 *
+	 * The banner is where someone decides whether to be measured, so the link
+	 * it offers has to be readable by the person deciding. It was hard-coded to
+	 * the English page, which meant a visitor reading the Portuguese banner was
+	 * sent to a policy in a language they had not chosen.
+	 *
+	 * Polylang holds the translation when it is installed; the slug is the
+	 * fallback, and the English page is the last resort, because a link to the
+	 * wrong language still beats no link at all.
+	 *
+	 * @param bool $pt Whether the banner is rendering in Portuguese.
+	 * @return string
+	 */
+	private static function privacy_url( bool $pt ): string {
+		$en = home_url( '/privacy-policy/' );
+
+		if ( ! $pt ) {
+			return $en;
+		}
+
+		$page = get_page_by_path( 'privacy-policy' );
+		if ( $page instanceof \WP_Post && function_exists( 'pll_get_post' ) ) {
+			$translated = pll_get_post( (int) $page->ID, 'pt' );
+			if ( $translated ) {
+				$maybe = get_post( (int) $translated );
+				if ( $maybe instanceof \WP_Post && 'publish' === $maybe->post_status ) {
+					return (string) get_permalink( $maybe );
+				}
+			}
+		}
+
+		$pt_page = get_page_by_path( 'politica-de-privacidade' );
+		if ( $pt_page instanceof \WP_Post && 'publish' === $pt_page->post_status ) {
+			return (string) get_permalink( $pt_page );
+		}
+
+		return $en;
 	}
 
 	/**
