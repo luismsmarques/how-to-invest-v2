@@ -1480,12 +1480,16 @@ class Case_Admin {
 
 		echo '<table class="widefat striped hti-cp__rows"><tbody>';
 
+		// Admin wording for the two returns, not the player's. On the result
+		// screen `rev_line_you` labels what the PLAYER made, which is this
+		// figure multiplied by what they committed; borrowing that label here
+		// would put the right number under the wrong sentence.
 		self::preview_row(
-			Strings::get( 'rev_line_you', $lang ),
+			__( 'What the company returned over the next five years', 'hti-games' ),
 			self::bp_label( (string) ( $meta['hti_rev_return_5y_bp'] ?? '' ) )
 		);
 		self::preview_row(
-			Strings::get( 'rev_line_index', $lang ),
+			__( 'What the index did over the same five years', 'hti-games' ),
 			self::bp_label( (string) ( $meta['hti_rev_index_return_5y_bp'] ?? '' ) )
 		);
 		self::preview_row( __( 'What happened next', 'hti-games' ), self::preview_block( $meta, 'hti_rev_context_', $lang ) );
