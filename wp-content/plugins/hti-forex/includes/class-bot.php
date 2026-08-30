@@ -390,7 +390,11 @@ class Bot {
 		// and must never come from anything a visitor controls.
 		$url = add_query_arg( 'loc', $tight ? 'telegram_bot_demo' : 'telegram_bot_real', $url );
 
-		return '<a href="' . esc_url( $url ) . '">' . esc_html( $text ) . '</a>';
+		// Bold inside the link: Telegram renders links blue and underlined
+		// already, and the weight is what pulls the eye down to it past the
+		// table. The emoji lives in the editable text rather than here, so the
+		// whole visible line is one field somebody can tune without a deploy.
+		return '<a href="' . esc_url( $url ) . '"><b>' . esc_html( $text ) . '</b></a>';
 	}
 
 	/**

@@ -47,6 +47,13 @@ class Bot_Broadcast {
 	private const GAP_US = 40000;
 
 	/**
+	 * How long a send may go without a tick before it counts as dead. Longer
+	 * than the worst case for one batch (25 recipients against a Telegram that
+	 * is timing out), short enough that nobody waits a day to send again.
+	 */
+	private const STALL_SECONDS = 900;
+
+	/**
 	 * Hook the batch runner.
 	 */
 	public static function init(): void {
@@ -56,21 +63,57 @@ class Bot_Broadcast {
 	/**
 	 * Current state, with defaults so callers never have to guard.
 	 *
-	 * @return array{text:string,cursor:int,sent:int,dropped:int,total:int,started:int,finished:int}
+	 * Every key `run()` reads has to be listed here. It reads the whole state
+	 * through this method, so a key missing from this array is not a default —
+	 * it is a fatal, one row into the first batch.
+	 *
+	 * @return array{text:string,image:string,cursor:int,sent:int,dropped:int,total:int,started:int,updated:int,finished:int}
 	 */
 	public static function status(): array {
 		$state = get_option( self::OPTION, array() );
 		$state = is_array( $state ) ? $state : array();
+		$started = (int) ( $state['started'] ?? 0 );
 
 		return array(
 			'text'     => (string) ( $state['text'] ?? '' ),
+			'image'    => (string) ( $state['image'] ?? '' ),
 			'cursor'   => (int) ( $state['cursor'] ?? 0 ),
 			'sent'     => (int) ( $state['sent'] ?? 0 ),
 			'dropped'  => (int) ( $state['dropped'] ?? 0 ),
 			'total'    => (int) ( $state['total'] ?? 0 ),
-			'started'  => (int) ( $state['started'] ?? 0 ),
+			'started'  => $started,
+			// Older states predate the heartbeat; treating the start as the
+			// last sign of life is what lets one of them be recognised as
+			// stalled instead of holding the composer hostage for ever.
+			'updated'  => (int) ( $state['updated'] ?? $started ),
 			'finished' => (int) ( $state['finished'] ?? 0 ),
 		);
+	}
+
+	/**
+	 * A send that died mid-flight and is never coming back.
+	 *
+	 * `run()` re-arms the cron at the end of every batch, so a send that is
+	 * alive always has a tick waiting. No tick and no ending means the batch
+	 * died — a fatal, a killed worker, a site moved mid-send. Without this the
+	 * state would read as "sending" for ever and `start()` would refuse every
+	 * later broadcast, with nothing on screen saying why.
+	 *
+	 * The grace period is what separates a dead send from the ordinary gap
+	 * while a batch is between its cron firing and its next scheduling.
+	 */
+	public static function stalled(): bool {
+		$state = self::status();
+
+		if ( 0 === $state['started'] || $state['finished'] > 0 ) {
+			return false;
+		}
+
+		if ( wp_next_scheduled( self::HOOK ) ) {
+			return false;
+		}
+
+		return ( time() - $state['updated'] ) > self::STALL_SECONDS;
 	}
 
 	/**
@@ -78,7 +121,7 @@ class Bot_Broadcast {
 	 */
 	public static function running(): bool {
 		$state = self::status();
-		return $state['started'] > 0 && 0 === $state['finished'];
+		return $state['started'] > 0 && 0 === $state['finished'] && ! self::stalled();
 	}
 
 	/**
@@ -107,6 +150,7 @@ class Bot_Broadcast {
 				'dropped'  => 0,
 				'total'    => Bot_Store::total(),
 				'started'  => time(),
+				'updated'  => time(),
 				'finished' => 0,
 			),
 			false
@@ -143,6 +187,7 @@ class Bot_Broadcast {
 			return;
 		}
 
+		$state['updated']  = time();
 		$state['finished'] = time();
 		update_option( self::OPTION, $state, false );
 		wp_clear_scheduled_hook( self::HOOK );
@@ -172,6 +217,7 @@ class Bot_Broadcast {
 		$rows = Bot_Store::page( $state['cursor'], self::BATCH );
 
 		if ( array() === $rows ) {
+			$state['updated']  = time();
 			$state['finished'] = time();
 			update_option( self::OPTION, $state, false );
 			return;
@@ -216,6 +262,7 @@ class Bot_Broadcast {
 			usleep( self::GAP_US );
 		}
 
+		$state['updated'] = time();
 		update_option( self::OPTION, $state, false );
 		self::schedule( $backoff > 0 ? $backoff : 1 );
 	}

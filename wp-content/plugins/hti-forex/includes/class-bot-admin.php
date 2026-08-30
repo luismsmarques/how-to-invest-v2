@@ -119,6 +119,7 @@ class Bot_Admin {
 		$configured = Telegram::configured();
 		$status     = Bot_Broadcast::status();
 		$running    = Bot_Broadcast::running();
+		$stalled    = Bot_Broadcast::stalled();
 		$total      = $configured ? Bot_Store::total() : 0;
 		$answered   = Bot_Store::answered();
 		$notice     = isset( $_GET['hti_forex_bot'] ) ? sanitize_key( wp_unslash( $_GET['hti_forex_bot'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -304,6 +305,19 @@ class Bot_Admin {
 		<?php endif; ?>
 
 		<h3><?php esc_html_e( 'Send a message to everyone', 'hti-forex' ); ?></h3>
+
+		<?php if ( $stalled ) : ?>
+			<div class="notice notice-error inline"><p>
+				<?php
+				printf(
+					/* translators: 1: sent count, 2: total recipients. */
+					esc_html__( 'The last broadcast stopped before it finished: %1$s of %2$s delivered. Whatever it was in the middle of, it is not coming back — nothing more will be sent from it. You can compose a new one below; everyone it never reached will get that.', 'hti-forex' ),
+					esc_html( number_format_i18n( $status['sent'] ) ),
+					esc_html( number_format_i18n( $status['total'] ) )
+				);
+				?>
+			</p></div>
+		<?php endif; ?>
 
 		<?php if ( $running ) : ?>
 			<p>
