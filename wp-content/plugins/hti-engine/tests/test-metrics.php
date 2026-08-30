@@ -177,6 +177,70 @@ check( '' === $norm_date->invoke( null, '2026-02-31' ), 'an impossible calendar 
 check( '' === $norm_date->invoke( null, '2026-2-8' ), 'a malformed date is rejected' );
 check( '' === $norm_date->invoke( null, "2026-01-01' OR 1=1" ), 'an injection attempt is rejected' );
 
+// --- Every countable event reaches a screen ------------------------------
+//
+// Eleven events were counted for months without one screen showing them,
+// because adding an event and surfacing it were two separate acts of
+// remembering. The funnel now builds its table from events(), and this is what
+// holds that: the rows have to cover the allowlist exactly, no more, no less.
+
+$rows   = Metrics::event_rows( array( 'forex_bot_calc' => 7, 'page_view' => 3 ) );
+$listed = array_column( $rows, 0 );
+$all    = Metrics::events();
+
+check( count( $rows ) === count( $all ), 'the funnel lists exactly as many rows as there are countable events' );
+check( array() === array_diff( $all, $listed ), 'no countable event is missing from the funnel' );
+check( array() === array_diff( $listed, $all ), 'the funnel invents no event that cannot be counted' );
+
+check( array( 'forex_bot_calc', 7 ) === $rows[0], 'the busiest event comes first' );
+check( array( 'page_view', 3 ) === $rows[1], 'then the next busiest' );
+
+$zeros = array_values( array_filter( $rows, static fn( $r ) => 0 === $r[1] ) );
+check( count( $zeros ) === count( $all ) - 2, 'an event with nothing to show still gets a row' );
+
+$names = array_column( $zeros, 0 );
+check( $names === array_values( array_unique( $names ) ), 'and no event appears twice' );
+
+foreach ( array( 'forex_bot_start', 'forex_bot_stop', 'forex_tool_use' ) as $key ) {
+	check( in_array( $key, $listed, true ), "'{$key}' — the campaign's own KPI — is on screen" );
+}
+
+// --- Using a calculator is not clicking a CTA ----------------------------
+
+$GLOBALS['__hti_options'] = array();
+
+Metrics::bump( 'forex_tool_use', array( 'location' => 'forex_position_size' ) );
+Metrics::bump( 'forex_tool_use', array( 'location' => 'forex_position_size' ) );
+Metrics::bump( 'cta_click', array( 'location' => 'forex_telegram_hub' ) );
+
+$t = Metrics::totals( 2 );
+
+check( 2 === (int) ( $t['tool']['forex_position_size'] ?? 0 ), 'a calculator use is counted against the calculator' );
+check( ! isset( $t['cta']['forex_position_size'] ), 'and never lands in the CTA table' );
+check( 1 === (int) ( $t['cta']['forex_telegram_hub'] ?? 0 ), 'a CTA click still lands in the CTA table' );
+check( ! isset( $t['tool']['forex_telegram_hub'] ), 'and never lands in the calculator table' );
+check( 2 === (int) ( $t['e']['forex_tool_use'] ?? 0 ), 'the event itself is counted either way' );
+
+// --- The public beacon cannot grow the option without bound --------------
+//
+// `location` arrives from an unauthenticated endpoint, so both maps have to
+// be capped. The CTA map was the exception for a long time on the reasoning
+// that we write the locations ourselves; the beacon is public, so we do not.
+
+$GLOBALS['__hti_options'] = array();
+
+$cap = ( new ReflectionClass( 'HTI\\Engine\\Metrics' ) )->getConstant( 'MAX_PATHS_PER_DAY' );
+for ( $i = 0; $i < $cap + 50; $i++ ) {
+	Metrics::bump( 'cta_click', array( 'location' => 'junk_' . $i ) );
+	Metrics::bump( 'forex_tool_use', array( 'location' => 'junk_' . $i ) );
+}
+$t = Metrics::totals( 2 );
+
+check( count( $t['cta'] ) <= $cap + 1, 'the CTA map stops growing at the cap' );
+check( count( $t['tool'] ) <= $cap + 1, 'so does the calculator map' );
+check( 50 === (int) ( $t['cta']['_other'] ?? 0 ), 'and the overflow is counted rather than dropped' );
+check( array_sum( $t['cta'] ) === $cap + 50, 'no click is lost to the cap' );
+
 echo "\n";
 if ( $failures ) {
 	echo "\033[31mFAILED\033[0m {$passes} passed, {$failures} failed\n";
