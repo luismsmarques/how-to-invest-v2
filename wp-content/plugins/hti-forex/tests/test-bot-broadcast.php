@@ -313,11 +313,17 @@ check( array() === Bot_Broadcast::log()['refused'], 'e não fica registada recus
 $GLOBALS['__hti_options']      = array();
 $GLOBALS['__hti_cron']         = array();
 $GLOBALS['__hti_refuse_write'] = Bot_Broadcast::OPTION;
+$GLOBALS['wpdb']->last_error   = 'Disk full at option write';
 $ok = Bot_Broadcast::start( 'esta não passa de todo' );
 unset( $GLOBALS['__hti_refuse_write'] );
+$GLOBALS['wpdb']->last_error = '';
 
 check( false === $ok, 'uma recusa que persiste continua a falhar' );
 check( 'write-failed' === ( Bot_Broadcast::log()['refused']['reason'] ?? '' ), 'e é reportada, não escondida pela repetição' );
+
+// Five guesses at this failure from the outside were five wrong ones. MySQL
+// knows what it objected to, and until now nothing carried its answer up.
+check( 'Disk full at option write' === ( Bot_Broadcast::log()['refused']['detail'] ?? '' ), 'e traz consigo o que a base de dados disse' );
 
 echo "\n=== O histórico ===\n";
 
