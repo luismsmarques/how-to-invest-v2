@@ -562,14 +562,48 @@ e a que menos se justifica sozinha. Vale a pena tratá-la como decisão à parte
 depois de F1 dizer se aquelas quatro GEOs têm procura no seletor. Se não tiverem, esta fase
 não deve acontecer.
 
-Duas questões por resolver antes de começar, ambas fora do que o código decide:
+**Quem revê copy financeira em quatro línguas que ninguém no projeto lê** é o risco desta
+fase e não tem solução técnica. A alternativa honesta, se não houver revisor, é publicar
+VN/TH/ID/BR só em inglês e aceitar perder o long-tail local.
 
-- **Como é que o Polylang trata `pt-BR` ao lado do `pt_PT_ao90`** que o site já corre. É uma
-  variante de língua nova num site que hoje tem duas, com implicações em `hreflang`, slugs e
-  na tabela `strings()` do tema. Ver `.claude/skills/i18n-polylang`.
-- **Quem revê copy financeira em quatro línguas que ninguém no projeto lê.** É o risco desta
-  fase e não tem solução técnica. A alternativa honesta, se não houver revisor, é publicar
-  VN/TH/ID/BR só em inglês e aceitar perder o long-tail local.
+#### O Polylang gere línguas, não GEOs
+
+**Decisão, 30 ago 2026: não se criam línguas por GEO no Polylang.** A tentação é registar
+`en-IN`, `en-NG`, `en-ZA`, `en-AE`, `en-MY` "para organizar". Seria um erro em três frentes:
+
+1. **O Polylang resolve a língua pelo prefixo do URL.** Registar cinco variantes de inglês
+   traz de volta `/ng/`, `/za/`, `/ae/` — exatamente os URLs por GEO que a decisão do §6.1
+   removeu, e com eles a contagem de páginas.
+2. **O switcher e o `hreflang` exigem a página em cada árvore de língua.** Não é arrumação:
+   é cinco cópias de cada página, com texto quase igual em cinco URLs, das quais o Google
+   indexa uma.
+3. **`current_lang()` é binário** (`functions.php:344-353`, devolve `'en'|'pt'`) e alimenta
+   o chrome inteiro do tema. Cada locale acrescentado é uma alteração em cada sítio que o
+   chama.
+
+**A estrutura organizadora é o `class-geo.php`** (§3.1), não o Polylang: uma linha por GEO,
+fonte única para páginas, bot, schema e definições. A GEO é estado de execução — o seletor —
+e não conteúdo. São eixos diferentes e devem continuar a sê-lo.
+
+#### ⚠️ Um bloqueador a corrigir antes desta fase
+
+`SEO::post_lang()` (`class-seo.php:668-677`) é uma função de **dois valores**:
+
+```php
+return str_starts_with( strtolower( $slug ), 'pt' ) ? 'pt-PT' : 'en-US';
+```
+
+Colapsa qualquer língua num dos dois. Com a F4, uma página **vi, th ou id** declararia
+`inLanguage: en-US` no grafo de schema, e uma página **pt-BR** declararia `pt-PT`. Toda a
+página traduzida mentiria sobre a própria língua.
+
+É um sítio só e a correção é uma função — mas tem de vir antes de existir a primeira página
+traduzida, não depois. Os dois ramos que o consomem (`:299` no `faq_page()` e `:594` no
+bloco do Quiz) estão corretos **dado** o normalizador; corrigir `post_lang()` obriga a
+revisitá-los, porque deixam de poder assumir que só há duas respostas possíveis.
+
+Acresce que o seeder do forex fixa `pll_set_post_language( $id, 'en' )`
+(`class-seeder.php:228-229`) — passa a receber a língua como parâmetro.
 
 ---
 
@@ -588,6 +622,7 @@ PHP e 83 Node, verdes.
 | `test-selector.php` (novo) | O `?c=` é validado contra a allowlist e um valor inválido cai no default; o `?g=` do redirector idem; o default vem das definições e não do IP; as oito páginas atuais mantêm os slugs |
 | `test-go.php` (estender) | `/forex/go/{slot}/?g={geo}` resolve a corretora certa por GEO; um `g` fora da tabela usa o default e nunca 404; o `cta_url` continua a não sair do ecrã de definições e do redirector |
 | `test-forex-core.mjs` (estender) | Paridade PHP↔JS para as moedas novas |
+| `test-post-lang.php` no hti-engine (novo, **antes da F4**) | `post_lang()` devolve a etiqueta BCP-47 de cada língua registada e não colapsa vi/th/id em `en-US` nem pt-BR em `pt-PT`; os consumidores em `class-seo.php:299,594` continuam corretos com mais de duas respostas |
 
 A regra do projeto mantém-se: as suites correm antes de cada commit.
 
