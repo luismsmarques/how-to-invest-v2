@@ -133,6 +133,23 @@ class Bot_Admin {
 		?>
 		<h2><?php esc_html_e( 'Telegram bot', 'hti-forex' ); ?></h2>
 
+		<?php
+		// A notice drawn from the address bar is not evidence. `?hti_forex_bot=
+		// queued` survives a restored tab, a back button and a pasted link, and
+		// said "Broadcast queued" on every one of them — which is exactly how a
+		// send that never happened was believed to have happened. The parameter
+		// now only says which button was pressed; whether there is anything true
+		// to report is decided by the state.
+		$claims = array(
+			'queued'    => Bot_Broadcast::running() || Bot_Broadcast::just_started(),
+			'cancelled' => $status['finished'] > 0 && ( time() - $status['finished'] ) <= 120,
+			'webhook-ok' => '' !== $health['username'],
+		);
+		if ( isset( $claims[ $notice ] ) && ! $claims[ $notice ] ) {
+			$notice = '';
+		}
+		?>
+
 		<?php if ( '' !== $notice ) : ?>
 			<div class="notice notice-<?php echo in_array( $notice, array( 'webhook-ok', 'queued', 'cancelled' ), true ) ? 'success' : 'warning'; ?>"><p>
 				<?php
@@ -480,6 +497,10 @@ class Bot_Admin {
 				</button>
 			</p>
 			<p class="description"><?php esc_html_e( 'Goes out in batches over a few minutes and continues after you close the page. Anyone who has blocked the bot is removed automatically as it goes.', 'hti-forex' ); ?></p>
+			<p class="description">
+				<strong><?php esc_html_e( 'How to know it went in:', 'hti-forex' ); ?></strong>
+				<?php esc_html_e( 'this box disappears and a progress line takes its place. That is the confirmation to trust — it is drawn from the send itself. If the box is still here, nothing was queued, whatever any message at the top of the page says.', 'hti-forex' ); ?>
+			</p>
 		</form>
 
 		self::render_log( $log );
@@ -497,8 +518,13 @@ class Bot_Admin {
 	 */
 	private static function render_log( array $log ): void {
 		?>
-		<?php if ( array() !== $log['history'] ) : ?>
-			<h3><?php esc_html_e( 'Broadcasts already sent', 'hti-forex' ); ?></h3>
+		<h3><?php esc_html_e( 'Broadcasts already sent', 'hti-forex' ); ?></h3>
+
+		<?php if ( array() === $log['history'] ) : ?>
+			<p class="description">
+				<?php esc_html_e( 'None yet. A broadcast appears here once it ends, whether it reached everyone or stopped early. An empty table is worth as much as a full one: it means nothing has gone out, which is not something a screen that draws nothing can tell you.', 'hti-forex' ); ?>
+			</p>
+		<?php else : ?>
 			<table class="widefat striped" style="max-width:860px;">
 				<thead><tr>
 					<th><?php esc_html_e( 'When', 'hti-forex' ); ?></th>
@@ -549,8 +575,13 @@ class Bot_Admin {
 			<p class="description"><?php esc_html_e( 'The last ten. Without this the screen showed one broadcast at a time, so a message sent today and a test sent last night looked identical.', 'hti-forex' ); ?></p>
 		<?php endif; ?>
 
-		<?php if ( array() !== $log['errors'] ) : ?>
-			<h3><?php esc_html_e( 'Sends that failed', 'hti-forex' ); ?></h3>
+		<h3><?php esc_html_e( 'Sends that failed', 'hti-forex' ); ?></h3>
+
+		<?php if ( array() === $log['errors'] ) : ?>
+			<p class="description">
+				<?php esc_html_e( 'None recorded. Recipients who blocked the bot are not errors and never appear here — they are removed as a send goes.', 'hti-forex' ); ?>
+			</p>
+		<?php else : ?>
 			<table class="widefat striped" style="max-width:860px;">
 				<tbody>
 				<?php // Position means recency in the log, so the newest reads first here. ?>

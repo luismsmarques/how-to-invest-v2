@@ -44,6 +44,11 @@ class Bot_Broadcast {
 	private const KEEP_ERRORS  = 10;
 
 	/**
+	 * How recent an acceptance has to be to still be worth confirming on screen.
+	 */
+	private const FRESH_SECONDS = 120;
+
+	/**
 	 * Recipients per cron tick.
 	 */
 	private const BATCH = 25;
@@ -119,6 +124,12 @@ class Bot_Broadcast {
 			'history' => isset( $log['history'] ) && is_array( $log['history'] ) ? $log['history'] : array(),
 			'refused' => isset( $log['refused'] ) && is_array( $log['refused'] ) ? $log['refused'] : array(),
 			'errors'  => isset( $log['errors'] ) && is_array( $log['errors'] ) ? $log['errors'] : array(),
+			// When a send was last accepted. The screen needs this to tell a
+			// real confirmation from a stale one: "queued" used to be drawn
+			// from a URL parameter, so any page load carrying it — a restored
+			// tab, a back button, a pasted address — claimed a broadcast had
+			// been queued when none had.
+			'started' => (int) ( $log['started'] ?? 0 ),
 		);
 	}
 
@@ -211,12 +222,29 @@ class Bot_Broadcast {
 	}
 
 	/**
-	 * Forget the recorded refusal, once a broadcast has actually started.
+	 * Write down that a send was accepted, and forget the last refusal.
+	 *
+	 * This is the fact the confirmation on screen is checked against. Without
+	 * it the only evidence a broadcast had been queued was a word in the
+	 * address bar, which survives long after the thing it described.
 	 */
-	private static function clear_refusal(): void {
+	private static function remember_start(): void {
 		$log            = self::log();
 		$log['refused'] = array();
+		$log['started'] = time();
 		update_option( self::OPTION_LOG, $log, false );
+	}
+
+	/**
+	 * Whether a send was accepted just now.
+	 *
+	 * "Just now" because a confirmation is about what the person in front of
+	 * the screen has this moment done; an acceptance from yesterday explains
+	 * nothing about the page they are looking at.
+	 */
+	public static function just_started(): bool {
+		$started = self::log()['started'];
+		return $started > 0 && ( time() - $started ) <= self::FRESH_SECONDS;
 	}
 
 	/**
@@ -285,7 +313,7 @@ class Bot_Broadcast {
 			self::remember_end( $previous, 'stalled' );
 		}
 
-		self::clear_refusal();
+		self::remember_start();
 
 		update_option(
 			self::OPTION,
