@@ -1,0 +1,180 @@
+/**
+ * The Reveal's editorial workflow — wp-admin only.
+ *
+ * Enqueued by Case_Admin::enqueue() on exactly three screens: the case editor,
+ * the case preview, and the settings page that carries the queue. It is never
+ * enqueued on the front end and never on another admin page, because the
+ * front-end budget (tests/test-asset-budget.php) is measured to the tenth of a
+ * kilobyte and this file is not part of it.
+ *
+ * The palette is wp-admin's own rather than the site's: this is a WordPress
+ * screen and it should look like one. The three states — done, blocking, and
+ * "write this before it reads properly" — are a mark AND a colour, never a
+ * colour alone, because a red dot and a green dot are the same dot to a
+ * meaningful number of editors (WCAG 1.4.1). Every text colour below clears
+ * 4.5:1 on the ground it is painted on.
+ *
+ * @package HTI_Games
+ */
+
+/* ---------------------------------------------------------------------------
+ * The panels on the case editor: brief, checklist, verification.
+ * ------------------------------------------------------------------------- */
+
+.hti-cw {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-left: 4px solid #2271b1;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin: 0 0 16px;
+}
+
+.hti-cw--brief { border-left-color: #8c8f94; }
+.hti-cw--verify { border-left-color: #dba617; }
+.hti-cw--verify.is-verified { border-left-color: #007017; }
+
+.hti-cw__h {
+	margin: 0 0 8px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	/* 5.28:1 on white. */
+	color: #50575e;
+}
+
+.hti-cw__brief p { margin: 0 0 8px; }
+.hti-cw__brief p:last-child { margin-bottom: 0; }
+
+.hti-cw__state {
+	margin: 0 0 4px;
+	font-weight: 600;
+}
+
+/* 7.6:1 and 6.4:1 on white. */
+.hti-cw__state.is-blocked { color: #8a2424; }
+.hti-cw__state.is-ready { color: #12592b; }
+
+.hti-cw__group {
+	margin: 14px 0 4px;
+	font-weight: 600;
+}
+
+.hti-cw__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.hti-cw__item {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	padding: 7px 0;
+	border-top: 1px solid #f0f0f1;
+}
+
+.hti-cw__item:first-child { border-top: 0; }
+
+.hti-cw__mark {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	line-height: 20px;
+	text-align: center;
+	border-radius: 50%;
+	font-weight: 700;
+	background: #e3f1e6;
+	color: #12592b;
+}
+
+.hti-cw__item.is-todo.is-blocking .hti-cw__mark {
+	background: #fcebeb;
+	color: #8a2424;
+}
+
+.hti-cw__item.is-todo.is-optional .hti-cw__mark {
+	background: #fcf3dc;
+	color: #674e00;
+}
+
+.hti-cw__count { color: #50575e; }
+
+.hti-cw__done {
+	display: block;
+	margin-top: 2px;
+	color: #50575e;
+	font-size: 12px;
+	line-height: 1.5;
+	max-width: 68ch;
+}
+
+.hti-cw__foot {
+	margin: 12px 0 0;
+	color: #50575e;
+	font-size: 12px;
+	max-width: 78ch;
+}
+
+.hti-cw__tick { margin: 0 0 6px; }
+.hti-cw__who { margin: 0 0 10px; font-weight: 600; }
+.hti-cw__means { margin: 0 0 6px; max-width: 78ch; }
+
+.hti-cw__three {
+	margin: 0 0 8px;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 18px;
+}
+
+.hti-cw__three li {
+	margin: 0;
+	padding: 4px 10px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+}
+
+/* ---------------------------------------------------------------------------
+ * The queue on Settings → HTI Games.
+ * ------------------------------------------------------------------------- */
+
+.hti-cq { max-width: 1100px; }
+.hti-cq td { vertical-align: top; }
+
+/* ---------------------------------------------------------------------------
+ * The preview screen.
+ *
+ * The stage is a neutral ground for the game's own card, which paints its own
+ * cream and carries its own max-width: the point of this screen is that the
+ * dossier looks like the dossier, so nothing here restyles it.
+ * ------------------------------------------------------------------------- */
+
+.hti-cp__stage {
+	display: flex;
+	justify-content: center;
+	padding: 24px;
+	margin: 16px 0;
+	background: #f0f0f1;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.hti-cp__answer {
+	font-size: 18px;
+	font-weight: 600;
+	margin: 8px 0 12px;
+}
+
+.hti-cp__rows { max-width: 900px; }
+.hti-cp__rows th { width: 220px; }
+
+.hti-cw__brief {
+	max-height: 22em;
+	overflow: auto;
+	padding: 2px 4px;
+	max-width: 78ch;
+}

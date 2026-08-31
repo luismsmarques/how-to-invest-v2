@@ -351,42 +351,82 @@ class Prompt {
 	}
 
 	/**
-	 * Prompt for the featured-image photo (Imagen).
+	 * The rules the generated illustration must obey, whatever route produced
+	 * the brief.
 	 *
-	 * Conceptual editorial illustration only — no text, no logos, no real
-	 * people, no readable charts. Matches the dark navy + coral card it sits in.
+	 * Worth stating plainly why this list is long: Imagen's :predict endpoint
+	 * took a `personGeneration => dont_allow` parameter, and Gemini's
+	 * :generateContent does not. Moving off the retired Imagen models means the
+	 * only guard left against a recognisable face on a news article is the
+	 * prompt, so the prompt has to carry it.
 	 *
-	 * @param array<string,mixed> $data Validated article (headline/tags/category).
+	 * @return array<int,string>
 	 */
-	public static function image_prompt( array $data ): string {
-		$headline = trim( (string) ( $data['headline'] ?? '' ) );
-		$topic    = trim( (string) ( $data['suggested_category'] ?? '' ) );
-		$subject  = '' !== $topic ? $topic . ' — ' . $headline : $headline;
-
-		return 'Editorial conceptual illustration for a financial-news article about: "' . $subject . '". '
-			. 'Modern, clean, professional finance and markets theme. Cinematic soft lighting, subtle depth. '
-			. 'Colour palette: deep navy blue (#1C2150) with warm coral (#FF6B5E) accents. '
-			. 'Absolutely NO text, NO words, NO letters, NO numbers, NO logos, NO watermarks, NO readable charts. '
-			. 'No real or recognizable people. Abstract or symbolic imagery is preferred. Wide 16:9 composition.';
+	private static function image_rules(): array {
+		return array(
+			'Absolutely NO text, NO words, NO letters, NO numbers, NO logos, NO watermarks, NO readable charts.',
+			'NO real, recognizable or identifiable people of any kind — no public figures, no likenesses, no faces that could be matched to a person. If a human figure is needed, keep it anonymous: seen from behind, in silhouette, cropped, or far enough away that no face is legible.',
+			'No brand marks, no company names, no ticker symbols, no flags identifying an institution.',
+			'Wide 16:9 composition.',
+		);
 	}
 
 	/**
-	 * Prompt for image-to-image: reimagine the feed image into the branded
-	 * editorial illustration, keeping the general subject/scene.
-	 *
-	 * @param array<string,mixed> $data Validated article (headline/category).
+	 * The house style every illustration shares.
 	 */
-	public static function image_edit_prompt( array $data ): string {
+	private static function image_style(): string {
+		return 'Modern, clean, professional editorial illustration for a financial-news site. '
+			. 'Cinematic soft lighting, subtle depth, generous negative space. '
+			. 'Colour palette: deep navy blue (#1C2150) with warm coral (#FF6B5E) accents.';
+	}
+
+	/**
+	 * Prompt for the featured-image illustration.
+	 *
+	 * Given a brief, the illustration is drawn from that description of a scene
+	 * rather than from the article's headline — which is the whole point of the
+	 * brief, since a described scene is not a derivative of the photograph it
+	 * was described from. Without one it degrades to the headline, as before.
+	 *
+	 * @param array<string,mixed>      $data  Validated article (headline/tags/category).
+	 * @param array<string,mixed>|null $brief Image brief, when one was obtained.
+	 */
+	public static function image_prompt( array $data, ?array $brief = null ): string {
+		$scene = ( null !== $brief ) ? trim( Image_Brief::to_text( $brief ) ) : '';
+
+		if ( '' === $scene ) {
+			$headline = trim( (string) ( $data['headline'] ?? '' ) );
+			$topic    = trim( (string) ( $data['suggested_category'] ?? '' ) );
+			$subject  = '' !== $topic ? $topic . ' — ' . $headline : $headline;
+			$scene    = 'Subject: ' . $subject . '.';
+		}
+
+		return 'Draw this scene as an original illustration: ' . $scene . ' '
+			. self::image_style() . ' '
+			. implode( ' ', self::image_rules() ) . ' '
+			. 'Do not copy any existing photograph; interpret the description freely.';
+	}
+
+	/**
+	 * Prompt for image-to-image: restyle the feed photo into the branded
+	 * illustration. The rescue route, used only when drawing from the brief
+	 * failed.
+	 *
+	 * @param array<string,mixed>      $data  Validated article (headline/category).
+	 * @param array<string,mixed>|null $brief Image brief, when one was obtained.
+	 */
+	public static function image_edit_prompt( array $data, ?array $brief = null ): string {
 		$headline = trim( (string) ( $data['headline'] ?? '' ) );
 		$topic    = trim( (string) ( $data['suggested_category'] ?? '' ) );
 		$subject  = '' !== $topic ? $topic . ' — ' . $headline : $headline;
+		$scene    = ( null !== $brief ) ? trim( Image_Brief::to_text( $brief ) ) : '';
 
-		return 'Using the attached photo as the base/reference, create a clean, modern editorial illustration '
+		return 'Using the attached photo only as a loose reference for the scene, create a new, clean editorial illustration '
 			. 'for a financial-news article about: "' . $subject . '". '
-			. 'Keep the general subject and scene of the photo, but restyle it: cinematic, professional, soft lighting. '
-			. 'Colour palette: deep navy blue (#1C2150) with warm coral (#FF6B5E) accents. '
-			. 'Absolutely NO text, NO words, NO letters, NO numbers, NO logos, NO watermarks, NO readable charts. '
-			. 'No recognizable real people. Wide 16:9 composition.';
+			. ( '' !== $scene ? $scene . ' ' : '' )
+			. 'Keep the general subject, but redraw it — do not reproduce the photograph. '
+			. self::image_style() . ' '
+			. implode( ' ', self::image_rules() );
 	}
 
 	/**

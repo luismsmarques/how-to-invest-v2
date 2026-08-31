@@ -178,6 +178,81 @@ class Gemini_Client {
 	}
 
 	/**
+	 * Vision: hand the model an image and get JSON text back.
+	 *
+	 * Used to turn a feed photograph into an image brief. Text out, image in —
+	 * the photo never leaves this call, and nothing derived from its pixels is
+	 * ever published.
+	 *
+	 * @param string $system System instruction (the brief schema).
+	 * @param string $user   What to do with the image.
+	 * @param string $bytes  Image bytes.
+	 * @param string $mime   Image MIME type.
+	 * @return array{text:string}|\WP_Error
+	 */
+	public static function describe_image( string $system, string $user, string $bytes, string $mime ) {
+		$key = self::api_key();
+		if ( '' === $key ) {
+			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
+		}
+		$model = (string) Settings::get( 'gemini_model', 'gemini-2.5-flash' );
+		$url   = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode( $model ) . ':generateContent?key=' . rawurlencode( $key );
+
+		$mime = strtok( trim( $mime ), ';' );
+		if ( ! is_string( $mime ) || 0 !== strpos( $mime, 'image/' ) ) {
+			$mime = 'image/jpeg';
+		}
+
+		$body = array(
+			'systemInstruction' => array( 'parts' => array( array( 'text' => $system ) ) ),
+			'contents'          => array(
+				array(
+					'role'  => 'user',
+					'parts' => array(
+						array(
+							'inlineData' => array(
+								'mimeType' => $mime,
+								'data'     => base64_encode( $bytes ),
+							),
+						),
+						array( 'text' => $user ),
+					),
+				),
+			),
+			'generationConfig'  => array(
+				'temperature'      => 0.2,
+				'responseMimeType' => 'application/json',
+			),
+		);
+
+		$response = wp_remote_post(
+			$url,
+			array(
+				'timeout' => 60,
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => wp_json_encode( $body ),
+			)
+		);
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$json = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		if ( $code < 200 || $code >= 300 ) {
+			$message = is_array( $json ) && isset( $json['error']['message'] ) ? $json['error']['message'] : 'HTTP ' . $code;
+			return new \WP_Error( 'rssai_api', $message );
+		}
+		$text = '';
+		foreach ( (array) ( $json['candidates'][0]['content']['parts'] ?? array() ) as $part ) {
+			$text .= (string) ( $part['text'] ?? '' );
+		}
+		if ( '' === $text ) {
+			return new \WP_Error( 'rssai_empty', __( 'Empty response from Gemini.', 'hti-rss-ai' ) );
+		}
+		return array( 'text' => $text );
+	}
+
+	/**
 	 * Batch text embeddings. Server-side only (the key never reaches the
 	 * browser). Returns one numeric vector per input text, in the same order.
 	 *
@@ -193,7 +268,7 @@ class Gemini_Client {
 		if ( '' === $key ) {
 			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
 		}
-		$model = (string) Settings::get( 'embedding_model', 'text-embedding-004' );
+		$model = (string) Settings::get( 'embedding_model', 'gemini-embedding-001' );
 		$path  = 'models/' . $model;
 		$url   = 'https://generativelanguage.googleapis.com/v1beta/' . $path . ':batchEmbedContents?key=' . rawurlencode( $key );
 

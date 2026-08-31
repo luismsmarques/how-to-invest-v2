@@ -3,7 +3,7 @@
  * Plugin Name:       HTI RSS AI Feed
  * Plugin URI:        https://howtoinvest.pro/
  * Description:       Turns RSS feeds and YouTube channels into AI-drafted articles for review (Gemini). Works with any post type, taxonomy and theme — configure the target in Settings.
- * Version:           1.12.0
+ * Version:           1.13.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version (also used to cache-bust admin assets).
  */
-const VERSION = '1.12.0';
+const VERSION = '1.13.0';
 
 define( 'RSSAI_FILE', __FILE__ );
 define( 'RSSAI_PATH', plugin_dir_path( __FILE__ ) );
@@ -57,6 +57,8 @@ const FETCH_MORE_HOOK = 'rssai_fetch_more';
 
 require_once RSSAI_PATH . 'includes/class-activator.php';
 require_once RSSAI_PATH . 'includes/class-logger.php';
+require_once RSSAI_PATH . 'includes/class-health.php';
+require_once RSSAI_PATH . 'includes/class-model-catalog.php';
 require_once RSSAI_PATH . 'includes/class-settings.php';
 require_once RSSAI_PATH . 'includes/class-cleanup.php';
 require_once RSSAI_PATH . 'includes/class-feeds.php';
@@ -69,11 +71,14 @@ require_once RSSAI_PATH . 'includes/class-embeddings.php';
 require_once RSSAI_PATH . 'includes/class-youtube.php';
 require_once RSSAI_PATH . 'includes/class-supadata.php';
 require_once RSSAI_PATH . 'includes/class-image-client.php';
+require_once RSSAI_PATH . 'includes/class-image-brief.php';
+require_once RSSAI_PATH . 'includes/class-fallback-card.php';
 require_once RSSAI_PATH . 'includes/class-prompt.php';
 require_once RSSAI_PATH . 'includes/class-validator.php';
 require_once RSSAI_PATH . 'includes/class-featured-image.php';
 require_once RSSAI_PATH . 'includes/class-generator.php';
 require_once RSSAI_PATH . 'includes/class-youtube-generator.php';
+require_once RSSAI_PATH . 'includes/class-model-tools.php';
 require_once RSSAI_PATH . 'includes/class-admin.php';
 require_once RSSAI_PATH . 'includes/class-dashboard-page.php';
 require_once RSSAI_PATH . 'includes/class-drafts.php';
@@ -101,6 +106,7 @@ add_action( 'plugins_loaded', array( Activator::class, 'maybe_upgrade' ) );
  * Admin settings + feeds + drafts; the WP-Cron feed fetcher.
  */
 Settings::init();
+Model_Tools::init();
 Admin::init();
 Dashboard_Page::init();
 Drafts::init();

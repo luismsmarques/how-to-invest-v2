@@ -10,7 +10,8 @@ description: Use when engineering the hti-rss-ai plugin — feed fetching and re
 ## The pipeline (order matters)
 1. **Fetch** — `class-fetcher.php`: per-feed pull with dedupe (per-feed GUID + cross-feed title **fingerprint** near-dup suppression), exponential backoff capped at 1 day, auto-pause after repeated errors, health/error reset on a clean fetch. Auto-runs grouping after fetch.
 2. **Group** — `class-grouping.php`: clusters same-story items per language. **Cross-cycle:** new items first try recent open groups, so a running story grows one group. Matching is **hybrid** — lexical similarity + Gemini embeddings per language (`class-embeddings.php`), degrading gracefully with no key/quota. A **recency guard** (max date-span setting) keeps old news out of fresh stories. `class-cleanup.php::reconcile_groups` handles zombie/empty/orphan groups; retention prunes stale items/groups/logs but **never published posts**.
-3. **Generate** — `class-generator.php`: per-**group** (Gemini grounded search) or per-**item** (`generate_from_item`, formats News/Quote/Tutorial/Summary; video items delegate to `class-youtube-generator.php`, transcript via `class-supadata.php`). The original item/video is **always attributed in sources**. Daily generation limit (`over_daily_limit`/`bump_daily`); featured image best-effort (`class-featured-image.php`, never blocks).
+3. **Generate** — `class-generator.php`: per-**group** (Gemini grounded search) or per-**item** (`generate_from_item`, formats News/Quote/Tutorial/Summary; video items delegate to `class-youtube-generator.php`, transcript via `class-supadata.php`). The original item/video is **always attributed in sources**. Daily generation limit (`over_daily_limit`/`bump_daily`); featured image best-effort (`class-featured-image.php`, never blocks) — **pass the source row** (group *or* item), never `null`, or the article never sees its own feed photo.
+3b. **Illustrate** — `class-featured-image.php`: the scene is read into a small JSON **image brief** (`class-image-brief.php`) — by a vision call on the feed photo, or drafted from the headline when there is none — and the illustration is drawn **from the brief**. Order: brief→image, then image-to-image on the feed photo as a rescue, then a locally drawn brand card (`class-fallback-card.php`). **The feed photograph is read, never published.** Moving off Imagen lost `personGeneration => dont_allow`, so the no-real-people guard now lives entirely in `Prompt::image_rules()` — do not weaken it.
 4. **Validate** — `class-validator.php`: required fields, non-empty sources, advice/ticker blocklist, wrong-language rejection, near-verbatim-copy rejection, meta-description clamp (≤155). Conservative by design — generation has no fallback, so false positives are worse than misses. **The validator is a safety net, not the editorial gate.**
 5. **Publish** — posts are created `pending` (`Settings::post_status()`); NewsArticle schema + the news sitemap come from **hti-engine** (`class-seo.php`, `class-news-sitemap.php`), not this plugin.
 
@@ -19,15 +20,17 @@ description: Use when engineering the hti-rss-ai plugin — feed fetching and re
 - `$wpdb->prepare` for all custom-table SQL; schema changes bump `DB_VERSION` with an idempotent migration.
 - Admin actions (`class-drafts.php`, list tables, group editing) need nonce + `manage_options`.
 - Watch cron weight: grouping runs inside the fetch cron — keep embedding backfills bounded (`embed_max_per_run`).
-- Log meaningful steps via `class-logger.php` (fetch/group/generate/cleanup) — it's the observability surface.
+- Log meaningful steps via `class-logger.php` (fetch/group/generate/cleanup) — it's the observability surface. Best-effort subsystems (image, brief, embeddings) additionally **count** their failures in `class-health.php`, shown in Settings: the log is a 100-entry ring buffer, and silent degradation ran for weeks once already.
+- **Never hard-code a model name as the only source of truth.** Google retires them (`imagen-*` in Aug 2026, `text-embedding-004` in Jan 2026) and the plugin then fails on every call. Names come from `class-model-catalog.php` (ListModels); a retired name gets a warning next to its field plus a one-off migration in `Activator::maybe_upgrade()` — needed because `Settings::sanitize()` writes every key on any save, so changing a code default changes nothing on a configured install.
 
 ## Tests
-- `tests/run.php` harness (pure PHP, shims — see `testing-qa`). Covered: grouping (incl. recency), validator, fetcher backoff, extract-json, image-client. Add a `test-*.php` when touching grouping/validator/fetcher logic; cleanup/retention SQL is the under-tested risky area.
+- `tests/run.php` harness (pure PHP, shims — see `testing-qa`). Covered: grouping (incl. recency), validator, fetcher backoff, extract-json, image-client, image-brief schema, model-catalog parsing/bucketing, featured-image source resolution (incl. the item-row regression), fallback-card determinism, health windowing. Add a `test-*.php` when touching grouping/validator/fetcher logic; cleanup/retention SQL is the under-tested risky area.
 
 ## Checklist
 - [ ] Output stays `pending` — never auto-publish
 - [ ] Source item attributed; validator passes (language, no advice/tickers/copy)
 - [ ] External calls: timeout + URL validation; key server-side
+- [ ] Featured image: source row passed (not `null`); the feed photo is never the published image
 - [ ] SQL prepared; migrations bump DB_VERSION idempotently
 - [ ] Admin actions nonce + capability gated
 - [ ] Suite green (`php tests/run.php`); new logic gets a test
