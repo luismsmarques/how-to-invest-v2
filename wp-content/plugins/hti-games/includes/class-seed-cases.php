@@ -1996,6 +1996,64 @@ class Seed_Cases {
 	 * ================================================================== */
 
 	/**
+	 * Install the shipped library. The one implementation behind both doors.
+	 *
+	 * There are two ways in — `wp hti-games seed-cases` for anyone with a
+	 * shell, and the button on the settings screen for everyone else — and
+	 * they must not be able to disagree about what "install the cases" means.
+	 * The CLI passes a logger and gets its per-case narration; the button
+	 * passes nothing and gets the tally. Neither owns the behaviour.
+	 *
+	 * Not sliced, unlike Installer. Thirty-four cases at twenty-four meta rows
+	 * each is about two thousand queries — two thirds of one of that class's
+	 * slices, which its own reasoning calls a fair ask of a single request. And
+	 * the property that makes slicing unnecessary here is the same one that
+	 * makes it safe: this is idempotent by company and year, so a run that dies
+	 * on a slow host is resumed by pressing the button again, which skips
+	 * whatever the first attempt managed to store.
+	 *
+	 * @param callable|null $log Optional per-case reporter, called with a line.
+	 * @return array{created:int,skipped:int,failed:int,total:int}
+	 */
+	public static function install( ?callable $log = null ): array {
+		$report = array(
+			'created' => 0,
+			'skipped' => 0,
+			'failed'  => 0,
+			'total'   => 0,
+		);
+
+		foreach ( self::cases() as $case ) {
+			++$report['total'];
+			$company = (string) $case['company'];
+			$year    = (int) $case['year'];
+
+			if ( self::exists( $company, $year ) ) {
+				++$report['skipped'];
+				if ( $log ) {
+					$log( sprintf( '%s %d — already present, left alone.', $company, $year ) );
+				}
+				continue;
+			}
+
+			if ( self::create( $case ) ) {
+				++$report['created'];
+				if ( $log ) {
+					$log( sprintf( '%s %d — published, illustrative (%s).', $company, $year, $case['pattern'] ) );
+				}
+				continue;
+			}
+
+			++$report['failed'];
+			if ( $log ) {
+				$log( sprintf( '%s %d — could not be created.', $company, $year ) );
+			}
+		}
+
+		return $report;
+	}
+
+	/**
 	 * `wp hti-games seed-cases`
 	 *
 	 * Inserts the library as published, illustrative cases — complete dossiers
@@ -2017,23 +2075,13 @@ class Seed_Cases {
 	public static function cli_seed( array $args, array $assoc ): void {
 		unset( $args, $assoc );
 
-		$created = 0;
-		$skipped = 0;
-
-		foreach ( self::cases() as $case ) {
-			if ( self::exists( (string) $case['company'], (int) $case['year'] ) ) {
-				++$skipped;
-				\WP_CLI::log( sprintf( '  %s %d — already present, left alone.', $case['company'], $case['year'] ) );
-				continue;
+		$report = self::install(
+			static function ( string $line ): void {
+				\WP_CLI::log( '  ' . $line );
 			}
+		);
 
-			if ( self::create( $case ) ) {
-				++$created;
-				\WP_CLI::log( sprintf( '  %s %d — published, illustrative (%s).', $case['company'], $case['year'], $case['pattern'] ) );
-			}
-		}
-
-		\WP_CLI::success( sprintf( '%d cases created, %d already present.', $created, $skipped ) );
+		\WP_CLI::success( sprintf( '%d cases created, %d already present.', $report['created'], $report['skipped'] ) );
 		\WP_CLI::log(
 			'They are playable, and every one of them tells the player what its figures are: the company, the period and the direction of what happened are real, and the numbers and headlines were reconstructed to show the pattern. To turn one into a sourced case, open it, follow the research brief in the dossier box, replace every figure with what the document says, paste the source URL, switch it to verified and tick the box. From that moment the gate holds it to the verified standard.'
 		);

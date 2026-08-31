@@ -1333,8 +1333,19 @@ class Case_Admin {
 			)
 		);
 
+		// An empty table and a finished queue produce the same $waiting, and
+		// they could not mean more different things: one is "the editorial
+		// work is done", the other is "the game has no content and cannot
+		// run". Saying the first when the second is true is how The Reveal
+		// reached production reporting that nothing was wrong.
+		if ( array() === $rows ) {
+			Case_Installer::render_form();
+			return;
+		}
+
 		if ( array() === $waiting ) {
 			echo '<p>' . esc_html__( 'Nothing is waiting on anybody.', 'hti-games' ) . '</p>';
+			Case_Installer::render_form();
 			return;
 		}
 

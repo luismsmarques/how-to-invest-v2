@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 31 ago 2026 (as notícias voltam a ter imagem — **RSS AI 1.13.0**: ilustração desenhada a partir de um *brief* JSON, nomes de modelo descobertos pela API em vez de escritos de cor, falhas contadas e visíveis, e um cartão de marca desenhado por nós como último recurso em vez da fotografia da agência. **Versões reais: HTI Engine 0.15.5 · HTI Forex 0.14.2 · RSS AI 1.13.0 · tema 0.8.60 · HTI Social 0.10.0 · HTI Games 0.1.0.**). Anterior: 30 ago 2026, fim do dia (secção **`/games/`** — plugin novo `hti-games` com dois jogos educativos, integração fechada e passagem de QA às costuras entre workstreams. ~4.250 asserções verdes nas quatro suites. A secção `/games/` está **construída mas ainda não pode ir para o ar** — ver a secção própria mais abaixo). Antes: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada). Antes: 29 ago 2026 (bot de Telegram no hti-forex). Antes disso: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 31 ago 2026, tarde (**HTI Games 0.2.0** — o botão que faltava: os 34 casos do The Reveal já se instalam do admin, sem SSH, e o painel deixa de dizer que está tudo bem quando a biblioteca está vazia. Antes disto o jogo foi para produção sem um único caso). Antes, nesse mesmo dia: as notícias voltam a ter imagem — **RSS AI 1.13.0**: ilustração desenhada a partir de um *brief* JSON, nomes de modelo descobertos pela API em vez de escritos de cor, falhas contadas e visíveis, e um cartão de marca desenhado por nós como último recurso em vez da fotografia da agência. **Versões reais: HTI Engine 0.15.5 · HTI Forex 0.14.2 · RSS AI 1.13.0 · tema 0.8.60 · HTI Social 0.10.0 · HTI Games 0.2.0.**). Anterior: 30 ago 2026, fim do dia (secção **`/games/`** — plugin novo `hti-games` com dois jogos educativos, integração fechada e passagem de QA às costuras entre workstreams. ~4.250 asserções verdes nas quatro suites. A secção `/games/` está **construída mas ainda não pode ir para o ar** — ver a secção própria mais abaixo). Antes: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada). Antes: 29 ago 2026 (bot de Telegram no hti-forex). Antes disso: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -176,7 +176,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - Suites (é o que a CI corre): `php wp-content/plugins/hti-engine/tests/run.php` (1.073) ·
   `php wp-content/plugins/hti-forex/tests/run.php` (676 PHP + 83 Node) ·
   `php wp-content/plugins/hti-rss-ai/tests/run.php` (254) ·
-  `php wp-content/plugins/hti-games/tests/run.php` (2.310 PHP + 37 Node) — **~4.450 no total**.
+  `php wp-content/plugins/hti-games/tests/run.php` (2.348 PHP + 37 Node) — **~4.490 no total**.
   A CI faz `php -l` e `node --check` a **todos** os plugins e ao tema, corre as quatro suites e
   volta a correr as três suites Node explicitamente (para que um `node` em falta seja um erro e não
   uma linha "skipping" que ninguém lê).
@@ -343,6 +343,17 @@ uma conta.
   deploy, uma **biblioteca de 365 cenários que o plugin traz como semente e
   não como ficheiro de dados** — instalada por botão no admin, por lotes e
   retomável, sem SSH (`Config::LIBRARY_SEED`/`LIBRARY_COUNT`, `Installer`).
+- **Casos do The Reveal — botão de instalação (v0.2.0):** os 34 dossiês só eram
+  alcançáveis por `wp hti-games seed-cases` sobre SSH, e o `class-seed-cases.php`
+  só era carregado dentro do ramo do WP-CLI — num cPanel normal a biblioteca nem
+  sequer existia em memória. O The Reveal foi para produção com o pool vazio.
+  Pior: o painel dizia *"0 of 0 cases"* seguido de *"Nothing is waiting on
+  anybody"*, que é verdade sobre uma tabela vazia e lê-se como *está tudo bem*.
+  Agora há botão (`Case_Installer`), o painel distingue biblioteca vazia de fila
+  terminada, e o CLI e o botão correm **a mesma** implementação
+  (`Seed_Cases::install()`). Não é fatiado como o `Installer`: 34 casos × 24
+  metas ≈ 2.000 queries, dois terços de uma fatia daquele, e é idempotente por
+  empresa e ano — uma corrida cortada retoma-se carregando outra vez.
 - **SEO:** 5 páginas seedadas EN+PT a partir de **uma só tabela de slugs**
   (`Config::pages()`) — hub, os dois jogos, classificação e perfil (este
   `noindex`); JSON-LD `Game` + `WebApplication` + `FAQPage` + breadcrumbs, com
@@ -350,7 +361,7 @@ uma conta.
   Survive the Charts **deriva do conteúdo**, não de uma opção: enquanto o pool
   tiver cenários gerados, a página diz que os gráficos são gerados.
 - **Testes:** suite própria (`php wp-content/plugins/hti-games/tests/run.php`)
-  — 1.888 asserções PHP + 37 Node, incluindo acessibilidade, segurança/RGPD,
+  — 2.348 asserções PHP + 37 Node, incluindo acessibilidade, segurança/RGPD,
   anti-batota, orçamento de assets em gzip, e o `test-no-brokers.php`, que
   agora **renderiza** as 30 páginas e shells da secção nas duas línguas e falha
   se aparecer um `/go/`, um `rel="sponsored"`, um slug de corretora (com

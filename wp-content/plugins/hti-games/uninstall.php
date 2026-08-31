@@ -42,11 +42,12 @@ foreach ( array( 'hti_stc_scenario', 'hti_reveal_case' ) as $post_type ) {
 }
 
 // Options. Every one the plugin ever writes: the schema version (Store), the
-// settings row (Settings), the seeder's signature and last report, and the
-// scenario library's install position (Installer).
+// settings row (Settings), the seeder's signature and last report, the
+// scenario library's install position (Installer) and the case library's last
+// install (Case_Installer).
 // tests/test-security.php reads the source for update_option() calls and fails
 // if one names an option this list does not.
-foreach ( array( 'hti_games_schema', 'hti_games_settings', 'hti_games_sync_sig', 'hti_games_last_sync', 'hti_games_library' ) as $option ) {
+foreach ( array( 'hti_games_schema', 'hti_games_settings', 'hti_games_sync_sig', 'hti_games_last_sync', 'hti_games_library', 'hti_games_last_cases' ) as $option ) {
 	delete_option( $option );
 }
 
