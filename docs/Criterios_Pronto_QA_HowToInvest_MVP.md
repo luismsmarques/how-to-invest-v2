@@ -8,6 +8,13 @@
 > acrescenta o que faltava (acessibilidade, performance, segurança). É o contrato
 > de "pode ir para produção".
 
+> ⚠️ **Âmbito:** este ficheiro é da era da especificação (jun 2026) e cobre o
+> produto do questionário. **Não cobre secções construídas depois** — `/forex/`,
+> a secção editorial de corretoras, nem os jogos `/games/`. Para os jogos, o
+> contrato de lançamento é a **secção 8-bis** do `QA_Gate_Lancamento.md` mais a
+> **secção 8** do `QA_RGPD_Checklist.md`. Assinar este documento não diz nada
+> sobre aquelas.
+
 ---
 
 ## 0. Definition of Done — três níveis
