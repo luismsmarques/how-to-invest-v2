@@ -167,7 +167,9 @@ do parceiro. A cadeia fecha: anúncio → `/start b2` → resposta do bot →
 - **Puxar o gasto por criativo da Propeller** — sem isso, `tg_b2 452 /
   tg_a1 248 / tg_c1 242` não significa nada.
 
-**Conteúdo** — calendário do canal, 1 a 4 Set.
+**Conteúdo** — ver **`Calendario_Conteudo_Set2026.md`**, que substitui todas as
+linhas "Conteúdo" desta cronologia. O canal arrancou a 29 de agosto, não a 1 de
+setembro: o mês está dois dias adiantado e o calendário parte do que já saiu.
 
 ### Semana 2 (8–12 Set) · Provar a conversão
 
