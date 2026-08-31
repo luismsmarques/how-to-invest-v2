@@ -33,7 +33,7 @@ class Bot_Store {
 	/**
 	 * Bump to trigger a dbDelta upgrade of the table.
 	 */
-	private const SCHEMA = 2;
+	private const SCHEMA = 3;
 
 	private const OPTION_SCHEMA  = 'hti_forex_bot_schema';
 	private const OPTION_BUCKETS = 'hti_forex_bot_buckets';
@@ -82,10 +82,13 @@ class Bot_Store {
 				pair varchar(8) NOT NULL DEFAULT 'EURUSD',
 				leverage smallint(5) unsigned NOT NULL DEFAULT 500,
 				source varchar(32) NOT NULL DEFAULT '',
+				nudge_due datetime DEFAULT NULL,
+				nudged tinyint(1) NOT NULL DEFAULT 0,
 				created_at datetime NOT NULL,
 				last_seen datetime NOT NULL,
 				PRIMARY KEY (id),
-				UNIQUE KEY chat_id (chat_id)
+				UNIQUE KEY chat_id (chat_id),
+				KEY nudge_due (nudge_due)
 			) {$collate};"
 		);
 
@@ -180,6 +183,150 @@ class Bot_Store {
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
 		$wpdb->delete( self::table(), array( 'chat_id' => $chat_id ), array( '%d' ) );
+	}
+
+	/* -------------------------------------------------------------------------
+	 * The follow-up nudge.
+	 *
+	 * Two columns carry it: `nudge_due` (when it becomes due, NULL when nothing
+	 * is pending) and `nudged` (1 once it has been spent, and never unset). The
+	 * pair is what makes "at most one, ever" a property of the table rather
+	 * than a rule the caller has to remember.
+	 *
+	 * Existing rows upgrade with `nudge_due` NULL, so deploying this arms
+	 * nobody. That is deliberate: a feature that mass-messages an existing list
+	 * the moment it ships is the kind of accident there is no undo for.
+	 * ---------------------------------------------------------------------- */
+
+	/**
+	 * Arm the nudge for a chat, due `$delay` seconds from now.
+	 *
+	 * Only ever arms a row that has never been nudged and has nothing pending,
+	 * so calling it twice cannot move a due date or resurrect a spent nudge.
+	 *
+	 * @param int $chat_id Telegram chat id.
+	 * @param int $delay   Seconds from now.
+	 */
+	public static function arm_nudge( int $chat_id, int $delay ): void {
+		global $wpdb;
+
+		$due = gmdate( 'Y-m-d H:i:s', time() + max( 0, $delay ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$wpdb->query(
+			$wpdb->prepare(
+				'UPDATE `' . self::table() . '` SET nudge_due = %s
+				 WHERE chat_id = %d AND nudged = 0 AND nudge_due IS NULL',
+				$due,
+				$chat_id
+			)
+		);
+	}
+
+	/**
+	 * Spend the nudge without sending it — what answering a balance does.
+	 *
+	 * Somebody who used the bot does not need to be told how to use the bot,
+	 * and this is the only thing standing between a working feature and
+	 * messaging the very people it worked on.
+	 *
+	 * @param int $chat_id Telegram chat id.
+	 */
+	public static function disarm_nudge( int $chat_id ): void {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$wpdb->query(
+			$wpdb->prepare(
+				'UPDATE `' . self::table() . '` SET nudge_due = NULL, nudged = 1
+				 WHERE chat_id = %d AND nudged = 0',
+				$chat_id
+			)
+		);
+	}
+
+	/**
+	 * Nudges that are due now, oldest first.
+	 *
+	 * `$max_age` drops rows that came due long ago and were never sent — the
+	 * kill-switch having been off for a week, or cron not having run. Waking up
+	 * and messaging a month-old backlog all at once is worse than sending
+	 * nothing.
+	 *
+	 * @param int $limit   How many.
+	 * @param int $max_age Ignore rows whose due time is older than this many seconds.
+	 * @return array<int,array{id:int,chat_id:int}>
+	 */
+	public static function due_nudges( int $limit, int $max_age ): array {
+		global $wpdb;
+
+		$now    = time();
+		$oldest = gmdate( 'Y-m-d H:i:s', $now - max( 0, $max_age ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT id, chat_id FROM `' . self::table() . '`
+				 WHERE nudged = 0 AND nudge_due IS NOT NULL AND nudge_due <= %s AND nudge_due >= %s
+				 ORDER BY nudge_due ASC LIMIT %d',
+				gmdate( 'Y-m-d H:i:s', $now ),
+				$oldest,
+				max( 1, $limit )
+			),
+			ARRAY_A
+		);
+
+		return array_map(
+			static fn( array $row ): array => array(
+				'id'      => (int) $row['id'],
+				'chat_id' => (int) $row['chat_id'],
+			),
+			is_array( $rows ) ? $rows : array()
+		);
+	}
+
+	/**
+	 * Take ownership of one pending nudge. True when this caller got it.
+	 *
+	 * The claim happens BEFORE the message is sent, not after. If the process
+	 * dies between the two, one person misses a nudge; if it were the other way
+	 * round, one person gets it twice. On a bot where a second unwanted message
+	 * is what makes someone block for good, those two outcomes are not close.
+	 *
+	 * Being a conditional UPDATE, it is also what makes two overlapping cron
+	 * runs safe: the second one's claim matches no row and it skips.
+	 *
+	 * @param int $id Row id.
+	 */
+	public static function claim_nudge( int $id ): bool {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$wpdb->query(
+			$wpdb->prepare(
+				'UPDATE `' . self::table() . '` SET nudged = 1, nudge_due = NULL WHERE id = %d AND nudged = 0',
+				$id
+			)
+		);
+
+		return 1 === (int) $wpdb->rows_affected;
+	}
+
+	/**
+	 * When the next pending nudge comes due, as a timestamp, or 0 when none is.
+	 *
+	 * Lets the runner schedule its next tick for the moment there is something
+	 * to do instead of waking every minute to find an empty table.
+	 */
+	public static function next_nudge_due(): int {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+		$due = $wpdb->get_var(
+			'SELECT MIN(nudge_due) FROM `' . self::table() . '` WHERE nudged = 0 AND nudge_due IS NOT NULL'
+		);
+
+		return null === $due ? 0 : (int) strtotime( (string) $due . ' UTC' );
 	}
 
 	/**

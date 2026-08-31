@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 30 ago 2026, fim do dia (secção **`/games/`** — plugin novo `hti-games` com dois jogos educativos, integração fechada e passagem de QA às costuras entre workstreams. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9 · HTI Games 0.1.0.** ~4.250 asserções verdes nas quatro suites. A secção `/games/` está **construída mas ainda não pode ir para o ar** — ver a secção própria mais abaixo). Anterior: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9.** ~1.770 asserções verdes nas quatro suites de então). Antes: 29 ago 2026 (bot de Telegram no hti-forex). Antes disso: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 31 ago 2026 (as notícias voltam a ter imagem — **RSS AI 1.13.0**: ilustração desenhada a partir de um *brief* JSON, nomes de modelo descobertos pela API em vez de escritos de cor, falhas contadas e visíveis, e um cartão de marca desenhado por nós como último recurso em vez da fotografia da agência. **Versões reais: HTI Engine 0.15.5 · HTI Forex 0.14.2 · RSS AI 1.13.0 · tema 0.8.60 · HTI Social 0.10.0 · HTI Games 0.1.0.**). Anterior: 30 ago 2026, fim do dia (secção **`/games/`** — plugin novo `hti-games` com dois jogos educativos, integração fechada e passagem de QA às costuras entre workstreams. ~4.250 asserções verdes nas quatro suites. A secção `/games/` está **construída mas ainda não pode ir para o ar** — ver a secção própria mais abaixo). Antes: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada). Antes: 29 ago 2026 (bot de Telegram no hti-forex). Antes disso: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -92,7 +92,7 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
   - **NPS (`class-nps`, template 14):** email com escala 0–10 clicável (links com token por utilizador) → regista a resposta;
     **Settings → HTI NPS** envia o inquérito e mostra resultados (nº, média, score NPS).
 - Detalhe por ficheiro: `wp-content/plugins/hti-engine/README.md`.
-- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.5.0) — alimenta a área de
+- **Plugin** `wp-content/plugins/hti-rss-ai` (**HTI RSS AI Feed**, v1.13.0) — alimenta a área de
   **notícias** (`news` CPT do hti-engine). Pipeline com **humano no meio (nunca auto-publica)**:
   **Feeds** (CRUD + *Test feed*) → **Fetch** (cron `rssai_fetch_cron` ou *Fetch now*) →
   **Drafts** (itens dedup por `sha1(guid|link)`, imagem extraída) → **Groups** (clustering Jaccard
@@ -105,12 +105,25 @@ no footer (`howtoinvest/lang-switcher`, via `pll_the_languages`).
   - Modelo texto default `gemini-2.5-flash`; menu próprio *RSS AI Feed* (Settings/Feeds/Drafts/Groups/Logs).
   - **Feeds:** botão *Add suggested feeds* semeia 11 fontes curadas (EN+PT: MarketWatch, CNBC, Investing.com,
     BBC, Guardian, Fed, Economist, ECO, Observador, Jornal de Negócios) — idempotente; testar cada uma.
-  - **Imagem de destaque (M7):** **foto AI** sobre o tema da notícia (16:9), guardada como thumbnail.
-    Cliente **dual-endpoint**: modelos **Imagen** (`:predict`, default `imagen-4.0-generate-001`) e **Gemini-image**
-    (`:generateContent`) escolhidos pelo nome. **Image-to-image:** se o draft tiver imagem de feed, ela é a **base**
-    e é reinventada no estilo da marca por um modelo Gemini-image (default `gemini-2.5-flash-image`); senão
-    text-to-image; senão imagem do feed crua; senão nenhuma. Fonte registada (`ai-from-feed`/`ai`/`feed`/`none`).
-    Botão *Regenerate AI image* na meta box. **Imagen exige billing + acesso a image-gen**.
+  - **Imagem de destaque (M7 + M9, v1.13.0):** a cena é lida para um **brief JSON** curto
+    (`class-image-brief.php`) — por uma chamada de **visão** sobre a imagem do feed quando existe,
+    redigido a partir do título quando não existe — e a ilustração é desenhada **a partir do brief**.
+    Ordem: brief→imagem (`ai-from-brief`); se falhar e houver foto, *image-to-image* como resgate
+    (`ai-from-feed`); se falhar, **cartão de marca desenhado por nós** com a GD (`brand-card`).
+    **A foto do feed é lida e nunca publicada** — é o input do brief, não o resultado. Fonte
+    registada em `rssai_card_photo_source`, brief em `rssai_image_brief`. Botão *Regenerate AI
+    image* na meta box.
+  - **Nomes de modelo (v1.13.0):** a Google desliga nomes por calendário — o `imagen-4.0-generate-001`
+    caiu a 17 ago 2026 e o `text-embedding-004` a 14 jan 2026, e foi assim que as notícias ficaram
+    semanas sem imagem e o agrupamento sem embeddings, em silêncio. Os nomes passam a vir do
+    **`ListModels`** (*Definições → List available models*), há **botão de teste** por modelo (uma
+    chamada real), **aviso** ao lado de um nome desligado, e uma **migração única** no
+    `Activator::maybe_upgrade()` — precisa de existir porque o `sanitize()` grava todas as chaves e
+    o `get()` prefere o valor guardado, portanto mudar um default no código não muda nada numa
+    instalação já configurada. Defaults atuais: `gemini-2.5-flash-image` e `gemini-embedding-001`.
+  - **Saúde do pipeline (v1.13.0):** imagem, brief e embeddings são *best-effort* e falham em
+    silêncio por desenho. `class-health.php` conta as últimas 24 h por subsistema e as Definições
+    mostram-no. Degradar sem ninguém ver é uma avaria, não uma tolerância.
   - **Kit de redes sociais (M8) — REMOVIDO:** o antigo kit GD (cartões Quadrado/Story renderizados com GD +
     fontes `.ttf`) foi **removido** (hti-rss-ai v1.6.0) por ser substituído pelo plugin **`hti-social`** (Social
     Generator), que cobre os mesmos formatos e mais — com muito maior fidelidade ao design e exportação por
@@ -162,8 +175,8 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - **Bump de versão obrigatório** ao mexer em CSS/JS do tema/plugin (constante VERSION → `?ver=`), senão a cache serve assets antigos. Em template parts personalizadas no Site Editor, *Clear customizations* para o tema voltar a usar os ficheiros.
 - Suites (é o que a CI corre): `php wp-content/plugins/hti-engine/tests/run.php` (1.073) ·
   `php wp-content/plugins/hti-forex/tests/run.php` (676 PHP + 83 Node) ·
-  `php wp-content/plugins/hti-rss-ai/tests/run.php` (67) ·
-  `php wp-content/plugins/hti-games/tests/run.php` (2.310 PHP + 37 Node) — **~4.250 no total**.
+  `php wp-content/plugins/hti-rss-ai/tests/run.php` (254) ·
+  `php wp-content/plugins/hti-games/tests/run.php` (2.310 PHP + 37 Node) — **~4.450 no total**.
   A CI faz `php -l` e `node --check` a **todos** os plugins e ao tema, corre as quatro suites e
   volta a correr as três suites Node explicitamente (para que um `node` em falta seja um erro e não
   uma linha "skipping" que ninguém lê).
@@ -188,7 +201,11 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
       não confirma e a newsletter/digest/NPS não enviam. Testar: subscrever (double opt-in), Settings → HTI Newsletter
       (preview/send), Settings → HTI NPS (send + resultados).
 - [ ] **Polylang**: atribuir idioma a todo o conteúdo + correr o seeder → confirmar ligações EN↔PT (e `hreflang` no sitemap)
-- [ ] **RSS AI Feed**: ativar o plugin em produção → *Settings* (confirmar `HTI_GEMINI_API_KEY` + acesso Imagen, modelo, intervalo) → adicionar feeds → *Fetch now* → *Group now* → gerar 1 grupo e **rever** (+ kit social) antes de publicar
+- [ ] **RSS AI Feed**: ativar o plugin em produção → *Settings* → **List available models** e
+      confirmar que a chave tem `gemini-2.5-flash-image` e `gemini-embedding-001` → correr os
+      **quatro botões de teste** (texto-para-imagem, imagem-para-imagem, visão, embeddings) →
+      adicionar feeds → *Fetch now* → *Group now* → gerar 1 grupo e **rever** (+ kit social) antes
+      de publicar. O painel *Pipeline health* diz se alguma das quatro coisas está a falhar.
 - [ ] **Jogos `/games/`**: ativar o `hti-games`, semear as páginas e instalar as duas bibliotecas
       (cenários e casos) pelo painel de definições. Checklist completa na secção
       *Jogos educativos (`hti-games`)* mais abaixo.
@@ -247,6 +264,24 @@ alterado.
   via Chromium). Comportamento do ebook intacto; suites verdes.
 - **Nota de i18n:** o `/forex/` é EN-only por desenho, mas **não é a única exceção** ao invariante bilingue —
 o **comparador de depósitos é PT-first** (`class-deposits.php:169-173`).
+
+**Seguimento do bot (hti-forex 0.14.0):** dos 1.699 que chegaram por link de campanha, **94
+  alguma vez enviaram um saldo — 5,5%**. O `/start` já pede o número a negrito na primeira
+  linha, portanto não é problema de texto. O `class-bot-nudge.php` manda **uma** mensagem 30
+  min depois a quem abriu e nunca perguntou nada. **Off por omissão** (`bot_nudge_enabled`);
+  armado só no `/start` de alguém novo e só com o interruptor ligado, portanto ligá-lo **não
+  mexe na lista existente** e não pode dar rajada; responder a um saldo gasta-o; a reivindicação
+  é escrita antes do envio, logo um crash custa um nudge em vez de enviar dois. Sem linha de
+  parceiro e sem link. Evento `forex_bot_nudge` no ecrã do funil. 26 asserções próprias.
+
+**Plano de expansão (Out–Dez 2026):** `docs/Forex_GEO_Ferramentas_Bot_Out2026.md` — o `/forex/`
+  passa de Índia/INR a **nove GEOs/moedas** (IN, NG, ZA, MY, AE, VN, TH, BR, ID), com matriz de
+  corretoras por país (**XM na Índia, Exness nas restantes**, decisão do dono de 30 ago), câmbios
+  a custo zero (peg do AED, override manual de NGN/VND), e no bot: moeda, CTA por país, drip de
+  7 dias (**sem Mini App**, cortado a 30 ago). **Sem páginas por GEO** — uma página por ferramenta com
+  **seletor de moeda** (11 no estado final, 8 já existem); a escolha resolve moeda, regulador e
+  CTA num só caminho de código. VN, ID e TH nascem com o **CTA desligado** — têm restrições ao
+  forex de retalho por confirmar na fonte primária do regulador.
 
 **Antes de ligar o CTA em produção**: rever a exposição regulatória (Alert
   List RBI / FEMA — promover corretoras offshore a residentes indianos é o
@@ -382,8 +417,11 @@ os ecrãs de classificação e perfil para páginas que nunca os correm).
 O retrato completo, com evidência por `ficheiro:linha`, e a cronologia de setembro estão em
 **`docs/Estado_e_Cronologia_Set2026.md`**. Os achados que mais custam:
 
-- **11 dos 34 eventos de métrica são gravados e nunca mostrados** — entre eles `forex_bot_start/calc/stop` e
-  `forex_tool_use`, exatamente os que medem o bot. Um terço da instrumentação escreve para o vazio.
+- ~~**11 dos 34 eventos de métrica são gravados e nunca mostrados**~~ — **resolvido**: os quatro eventos do
+  forex têm ecrã próprio ("Forex bot & tools", `class-metrics.php:996-1011`), o `location` do `forex_tool_use`
+  tem desdobramento próprio no mapa `tool`, separado do `cta` (`:234-245`), e ambos os mapas têm teto
+  (`MAX_PATHS_PER_DAY = 300`, `:37`). **O que falta agora é outro:** nenhum dos mapas carrega a **GEO**, o que
+  é precondição da expansão multi-GEO — ver `docs/Forex_GEO_Ferramentas_Bot_Out2026.md §7`.
 - ~~**O `/forex/` pode emitir um URL de afiliado em cru**~~ — **resolvido** (hti-forex 0.13.8): o botão das
   ferramentas aponta para `/forex/go/{ferramenta}/`, o redirector próprio, e o `cta_url` deixou de estar ao
   alcance de quem desenha a página — o `cta_for()` devolve a *placement*, não o URL. Um teste falha se algum

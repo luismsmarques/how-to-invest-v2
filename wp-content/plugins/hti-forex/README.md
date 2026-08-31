@@ -31,6 +31,7 @@ the section is "deactivate one plugin".
 | `includes/class-bot-store.php` | Subscriber table (`dbDelta` from `init` — the deploy runs no activation hook) plus the aggregate balance counters, which are never linked to a chat id. |
 | `includes/class-bot.php` | Webhook route `htinvest/v1/forex/telegram`, secret-header check, command router, and the reply text. |
 | `includes/class-bot-images.php` | The bot's three images and the file_id cache. Telegram fetches a photo from our URL once and hands back an id; sending the id afterwards means the file is never pulled off the host again. Fingerprinted by mtime+size, so replacing an image invalidates its id by itself. |
+| `includes/class-bot-nudge.php` | The one follow-up: someone who opens the bot and never sends a balance gets a single reminder 30 minutes later. Off by default, armed only at `/start` for someone new, spent the moment they answer a balance, claimed before it is sent. |
 | `includes/class-bot-broadcast.php` | The admin broadcast: cursor-walked batches on single cron events, dropping anyone who blocked the bot. |
 | `includes/class-bot-admin.php` | The bot's panel in Settings → HTI Forex: webhook button, balance distribution, message composer. |
 | `assets/js/forex-core.js` | Pure math (UMD, DOM-free, Node-testable): pip value, position size, session windows. |
@@ -63,6 +64,42 @@ JSON-LD is built from, so visible content and schema agree at seed time. If an
 editor rewrites the page copy in wp-admin, the schema keeps emitting the config
 version; keep the two in sync by editing `Config::faqs()` and re-seeding a
 fresh page (the seeder never updates existing pages).
+
+## The follow-up nudge, and the promise it narrows
+
+`class-bot-broadcast.php` opens by saying the bot never speaks first on its own,
+and that the only unprompted message anyone gets is one an admin writes and
+confirms. The nudge is automatic, so it narrows that: **at most one follow-up,
+inside a conversation the person opened themselves, only to someone who never
+got an answer, and never again.**
+
+It exists because of a measured cliff. Of 1,699 people who arrived on a
+campaign link, 94 ever sent a balance — 5.5%. The greeting already leads with
+the ask in bold on its first line, so this is not a wording problem: people tap
+an ad, get interrupted, and never return to a chat they have no reason to
+remember.
+
+Four things keep it inside the narrowed promise, each asserted in
+`tests/test-bot-nudge.php`:
+
+- **Off by default** (`bot_nudge_enabled`). Deploying it messages nobody.
+- **Armed only at `/start`, only for someone new, and only while the switch is
+  on.** So turning it on starts the clock from that moment — the existing list
+  is never armed and cannot burst. Reaching people already here is what the
+  broadcast composer is for.
+- **Answering a balance spends it**, permanently. The people it worked on are
+  exactly the people it must not message.
+- **The claim is written before the send.** A crash costs one nudge rather than
+  sending a second one, and two overlapping cron runs cannot both win the row.
+
+`/stop` needs no handling: it deletes the row, and a deleted row is due for
+nothing. A 403 drops the row, as a broadcast does. Nudges that came due more
+than two days ago age out rather than going out — a switch left off for a
+fortnight is not a mailing list.
+
+The message carries no partner line and no link. Its only job is to get a
+number typed; adding an offer to a message someone did not ask for is what
+turns one reminder into a reason to block.
 
 ## Settings walkthrough (go-live)
 

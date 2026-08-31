@@ -23,6 +23,7 @@ require_once __DIR__ . '/../includes/class-rates.php';
 require_once __DIR__ . '/../includes/class-settings.php';
 require_once __DIR__ . '/../includes/class-bot-images.php';
 require_once __DIR__ . '/fixtures/bot-store-stub.php';
+require_once __DIR__ . '/../includes/class-bot-nudge.php';
 require_once __DIR__ . '/../includes/class-bot.php';
 
 use HTI\Forex\Bot;
@@ -275,6 +276,26 @@ say( 90002, '/start' );
 check( '' === HTI\Forex\Bot_Store::source( 90002 ), 'quem entra sem campanha não ganha etiqueta nenhuma' );
 $plain = say( 90002, '50000' );
 check( ! str_contains( (string) ( $plain['text'] ?? '' ), 'cid=' ), 'e o seu link sai sem etiqueta' );
+
+echo "\n=== O seguimento é armado pelo próprio /start, e gasto pela resposta ===\n";
+
+// Estas duas asserções são a única prova de que o bot chama o seguimento.
+// test-bot-nudge.php exercita a máquina de estados chamando Bot_Nudge
+// diretamente; se as chamadas saíssem do class-bot.php, essa suite continuaria
+// verde e ninguém receberia nada. Isto atravessa o webhook a sério.
+$GLOBALS['__hti_nudges'] = array();
+update_option(
+	HTI\Forex\Settings::OPTION,
+	array_merge( HTI\Forex\Settings::defaults(), array( 'bot_nudge_enabled' => true ) )
+);
+
+say( 90003, '/start' );
+check( null !== ( $GLOBALS['__hti_nudges'][90003]['due'] ?? null ), 'um /start novo arma o seguimento pelo webhook' );
+
+say( 90003, '25000' );
+check( true === ( $GLOBALS['__hti_nudges'][90003]['nudged'] ?? false ), 'e responder a um saldo gasta-o' );
+
+update_option( HTI\Forex\Settings::OPTION, HTI\Forex\Settings::defaults() );
 
 echo "\n=== Mexer no webhook limpa o que estava em cache ===\n";
 

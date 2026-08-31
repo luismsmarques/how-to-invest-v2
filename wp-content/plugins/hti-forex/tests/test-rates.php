@@ -100,5 +100,53 @@ check( false === $e['stale'], 'override is never stale' );
 
 update_option( Settings::OPTION, array() );
 
+echo "\n=== A corrida cai sempre depois do BCE publicar ===\n";
+
+// O defeito que isto tranca era sazonal: com `twicedaily` ancorado na hora de
+// ativação (02:39 e 14:39 UTC em produção), a corrida da tarde limpava a
+// publicação por 39 minutos no verão e falhava-a por 21 no inverno. A partir
+// da mudança de hora de outubro o site ficaria um dia atrás, todos os dias, e
+// nada o diria. A série ancorada em 16:00 UTC não depende da estação.
+$slots = array();
+$t     = strtotime( '2026-11-02 00:00:00 UTC' );
+for ( $i = 0; $i < 8; $i++ ) {
+	$t = Rates::next_slot( $t );
+	$slots[] = gmdate( 'H:i', $t );
+}
+check( array( '04:00', '10:00', '16:00', '22:00' ) === array_values( array_unique( $slots ) ), 'a série é 04/10/16/22 UTC' );
+
+// A publicação do BCE ronda as 16:00 de Frankfurt: ~14:00 UTC no verão
+// (CEST) e ~15:00 UTC no inverno (CET). Estas duas asserções são a razão de
+// a âncora ser 16:00 e não 14:00.
+$after_publication = static function ( int $from, int $publish_hour ): bool {
+	$slot = Rates::next_slot( $from );
+	// Alguma corrida do dia tem de cair depois da publicação e antes da meia-noite.
+	for ( $i = 0; $i < 4; $i++ ) {
+		if ( (int) gmdate( 'H', $slot ) >= $publish_hour && (int) gmdate( 'H', $slot ) < 24 ) {
+			return true;
+		}
+		$slot = Rates::next_slot( $slot );
+	}
+	return false;
+};
+check( $after_publication( strtotime( '2026-07-15 00:00:00 UTC' ), 14 ), 'verão: há corrida depois das 14:00 UTC' );
+check( $after_publication( strtotime( '2026-12-15 00:00:00 UTC' ), 15 ), 'inverno: há corrida depois das 15:00 UTC' );
+
+check( Rates::next_slot( strtotime( '2026-08-31 16:00:00 UTC' ) ) === strtotime( '2026-08-31 22:00:00 UTC' ), 'em cima da hora avança para a seguinte, não repete' );
+check( Rates::next_slot( strtotime( '2026-08-31 15:59:00 UTC' ) ) === strtotime( '2026-08-31 16:00:00 UTC' ), 'um minuto antes, a próxima é a das 16:00' );
+check( ( Rates::next_slot( strtotime( '2026-08-31 09:00:00 UTC' ) ) - strtotime( '2026-08-31 09:00:00 UTC' ) ) <= 6 * HOUR_IN_SECONDS, 'a primeira corrida após um deploy nunca está a mais de seis horas' );
+
+echo "\n=== Uma cotação de sexta lida à segunda não está atrasada ===\n";
+
+// Sem isto, o painel gritaria todos os fins de semana e ninguém voltaria a
+// olhar para o aviso quando ele significasse alguma coisa.
+check( 0 === Rates::weekdays_behind( '2026-08-28', strtotime( '2026-08-31 06:00:00 UTC' ) ), 'segunda a ler sexta: em dia' );
+check( 0 === Rates::weekdays_behind( '2026-08-28', strtotime( '2026-08-29 06:00:00 UTC' ) ), 'sábado a ler sexta: em dia' );
+check( 0 === Rates::weekdays_behind( '2026-08-28', strtotime( '2026-08-30 06:00:00 UTC' ) ), 'domingo a ler sexta: em dia' );
+check( 1 === Rates::weekdays_behind( '2026-08-28', strtotime( '2026-09-01 06:00:00 UTC' ) ), 'terça a ler sexta: um dia útil atrás' );
+check( 2 === Rates::weekdays_behind( '2026-08-28', strtotime( '2026-09-02 06:00:00 UTC' ) ), 'quarta a ler sexta: dois — é aqui que o painel avisa' );
+check( 0 === Rates::weekdays_behind( '', strtotime( '2026-09-02 06:00:00 UTC' ) ), 'sem data guardada não inventa atraso' );
+check( 0 === Rates::weekdays_behind( 'nonsense', strtotime( '2026-09-02 06:00:00 UTC' ) ), 'lixo no campo da data também não' );
+
 echo "\n{$passes} passed, {$failures} failed\n";
 exit( $failures > 0 ? 1 : 0 );
