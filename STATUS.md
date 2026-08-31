@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9.** ~1.770 asserções verdes nas quatro suites). Anterior: 29 ago 2026 (bot de Telegram no hti-forex). Antes: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.14.0 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9.** ~1.770 asserções verdes nas quatro suites). Anterior: 29 ago 2026 (bot de Telegram no hti-forex). Antes: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -239,6 +239,15 @@ alterado.
   via Chromium). Comportamento do ebook intacto; suites verdes.
 - **Nota de i18n:** o `/forex/` é EN-only por desenho, mas **não é a única exceção** ao invariante bilingue —
 o **comparador de depósitos é PT-first** (`class-deposits.php:169-173`).
+
+**Seguimento do bot (hti-forex 0.14.0):** dos 1.699 que chegaram por link de campanha, **94
+  alguma vez enviaram um saldo — 5,5%**. O `/start` já pede o número a negrito na primeira
+  linha, portanto não é problema de texto. O `class-bot-nudge.php` manda **uma** mensagem 30
+  min depois a quem abriu e nunca perguntou nada. **Off por omissão** (`bot_nudge_enabled`);
+  armado só no `/start` de alguém novo e só com o interruptor ligado, portanto ligá-lo **não
+  mexe na lista existente** e não pode dar rajada; responder a um saldo gasta-o; a reivindicação
+  é escrita antes do envio, logo um crash custa um nudge em vez de enviar dois. Sem linha de
+  parceiro e sem link. Evento `forex_bot_nudge` no ecrã do funil. 26 asserções próprias.
 
 **Plano de expansão (Out–Dez 2026):** `docs/Forex_GEO_Ferramentas_Bot_Out2026.md` — o `/forex/`
   passa de Índia/INR a **nove GEOs/moedas** (IN, NG, ZA, MY, AE, VN, TH, BR, ID), com matriz de

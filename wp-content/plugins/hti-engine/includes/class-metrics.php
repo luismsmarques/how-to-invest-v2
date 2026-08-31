@@ -83,6 +83,7 @@ class Metrics {
 			'forex_bot_start',
 			'forex_bot_calc',
 			'forex_bot_stop',
+			'forex_bot_nudge',
 			'account_delete_request',
 			'cta_click',
 			'forex_tool_use',
@@ -1001,6 +1002,7 @@ class Metrics {
 			$bot = array(
 				__( 'Bot opened (/start)', 'hti-engine' ) => 'forex_bot_start',
 				__( 'Calculation answered', 'hti-engine' ) => 'forex_bot_calc',
+				__( 'Follow-up nudge sent', 'hti-engine' ) => 'forex_bot_nudge',
 				__( 'Left the bot (/stop)', 'hti-engine' ) => 'forex_bot_stop',
 				__( 'Calculator used on the site', 'hti-engine' ) => 'forex_tool_use',
 			);

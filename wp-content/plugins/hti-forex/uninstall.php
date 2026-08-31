@@ -43,7 +43,7 @@ delete_transient( 'hti_forex_bot_health' );
 
 // Anything the plugin scheduled. Left behind, these fire forever against a
 // hook nothing answers.
-foreach ( array( 'hti_forex_fetch_rates', 'hti_forex_content_sync', 'hti_forex_bot_broadcast' ) as $hook ) {
+foreach ( array( 'hti_forex_fetch_rates', 'hti_forex_content_sync', 'hti_forex_bot_broadcast', 'hti_forex_bot_nudge' ) as $hook ) {
 	wp_clear_scheduled_hook( $hook );
 }
 
