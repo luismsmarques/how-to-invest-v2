@@ -130,7 +130,7 @@
 
 /* Layout: stepper + rail */
 .hti-lh-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 330px); gap: 36px; align-items: start; margin-top: clamp(32px, 5vw, 56px); }
-.hti-lh-rail { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 18px; }
+.hti-lh-rail { position: sticky; top: var( --hti-sticky-top, 90px ); display: flex; flex-direction: column; gap: 18px; }
 
 /* Stepper */
 .hti-lh-track { position: relative; display: flex; flex-direction: column; gap: 16px; }

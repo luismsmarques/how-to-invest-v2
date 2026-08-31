@@ -33,9 +33,11 @@
 	color: var( --bk-text );
 	margin-bottom: 1.25rem;
 }
+/* No nowrap. This is the affiliate disclosure: a link that refuses to break
+   is a link that pushes the disclosure past the edge of a narrow screen, which
+   is the one place it must not go. */
 .hti-bk__disclosure a {
 	font-weight: 600;
-	white-space: nowrap;
 }
 /* Single-review page: same canonical content, one discreet line by the CTA. */
 .hti-bk__disclosure--compact {
@@ -45,14 +47,18 @@
 	padding: 0;
 	margin: 0.5rem 0 0;
 	flex-basis: 100%;
-	font-size: 0.78rem;
+	font-size: 0.875rem;
 	color: var( --bk-muted, #6e6680 );
 }
+/* The advertising label. Invariant 4 of CLAUDE.md rests on this string being
+   on the page — and at 0.68rem (10.9px) it was the smallest text there, on
+   pages whose whole compliance argument is that the reader can see it. The
+   colour was already fine (5.87:1); the size was the problem. */
 .hti-bk__label {
 	display: inline-block;
 	background: var( --bk-accent );
 	color: #fff;
-	font-size: 0.68rem;
+	font-size: 0.8125rem;
 	font-weight: 700;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
@@ -133,6 +139,18 @@
 	color: var( --bk-muted );
 }
 
+/* `margin-left: auto` is right on one line and wrong on two. Measured in a
+   browser: the toolbar fits one row from about 720px up, and below that the
+   count lands alone on the last row, shoved to the right of an otherwise empty
+   line — at 360px it sits 255px into a 330px container, reading as a mistake
+   rather than as alignment. Below the wrap it aligns left with everything
+   else. 768px rather than the measured 720 because the wrap point moves with
+   the label's own length, and Portuguese is longer than English. */
+@media ( max-width: 768px ) {
+
+	.hti-bk__count { margin-left: 0; }
+}
+
 /* Cards ------------------------------------------------------------------- */
 .hti-bk__list {
 	display: grid;
@@ -172,7 +190,7 @@
 }
 .hti-bk__reg {
 	margin: 0.1rem 0 0;
-	font-size: 0.78rem;
+	font-size: 0.8125rem;
 	color: var( --bk-muted );
 }
 .hti-bk__card-head .hti-bk__label {
@@ -203,7 +221,7 @@
 	margin-top: 0.7rem;
 }
 .hti-bk__chip {
-	font-size: 0.72rem;
+	font-size: 0.8125rem;
 	border: 1px solid var( --bk-border );
 	border-radius: 999px;
 	padding: 0.18rem 0.55rem;
@@ -218,7 +236,7 @@
 }
 .hti-bk__cfd-warning {
 	margin: 0.7rem 0 0;
-	font-size: 0.78rem;
+	font-size: 0.875rem;
 	line-height: 1.5;
 	color: var( --bk-amber );
 	background: var( --bk-amber-soft );
@@ -248,7 +266,7 @@
 }
 .hti-bk__verified {
 	margin: 0.7rem 0 0;
-	font-size: 0.72rem;
+	font-size: 0.8125rem;
 	color: var( --bk-muted );
 }
 

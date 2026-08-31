@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.8.62
+Version: 0.8.63
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -43,8 +43,25 @@ Tags: blog, education, block-theme, full-site-editing, custom-colors, custom-men
  * keep working. With border-box in place nothing overflows, so this clips
  * nothing in normal use; it only guards against regressions.
  */
+/* How far down the page a sticky element has to start to clear the header.
+ *
+ * Four sticky elements were each carrying their own guess at this — 78px for
+ * the glossary letter, 84px for the news aside, 90px for the /learn/ rail, 96px
+ * for the ebook cover — in three different files. They cannot all be right,
+ * none of them followed the header when it changed, and none accounted for the
+ * WordPress admin bar, which pushes everything down 32px for anyone logged in.
+ *
+ * One value, one place. The admin bar is handled where it is known about
+ * rather than by adding 32 to four numbers by hand.
+ */
 html {
+	--hti-header-h: 84px;
+	--hti-sticky-top: calc( var( --hti-header-h ) + 6px );
 	overflow-x: clip;
+}
+
+body.admin-bar {
+	--hti-sticky-top: calc( var( --hti-header-h ) + 38px );
 }
 body {
 	max-width: 100%;
@@ -643,7 +660,7 @@ html.hti-quiz-active body { padding-bottom: 0; }
 .hti-gloss__group[hidden] { display: none; }
 .hti-gloss__gletter {
 	position: sticky;
-	top: 78px;
+	top: var( --hti-sticky-top );
 	font-family: var( --wp--preset--font-family--heading );
 	font-weight: 800;
 	font-size: 30px;
@@ -1825,7 +1842,11 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 .hti-newshub__hero:hover { border-color: #E7DCFB; box-shadow: 0 8px 26px rgba( 22, 38, 58, 0.09 ); transform: translateY( -2px ); }
-.hti-newshub__hero-media { position: relative; height: 188px; overflow: hidden; }
+/* aspect-ratio, not a fixed height. With height + object-fit: cover, a
+   narrowing column crops harder instead of getting shorter — the image loses
+   its framing rather than its size, which is the opposite of what a hero
+   image should do. */
+.hti-newshub__hero-media { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
 .hti-newshub__img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .hti-newshub__hero-badge { position: absolute; top: 16px; left: 16px; z-index: 1; background: rgba( 42, 36, 56, 0.82 ); color: #fff; font: 600 11px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 11px; border-radius: 999px; }
 .hti-newshub__hero-body { padding: 20px 24px 24px; }
@@ -1837,7 +1858,7 @@ html.hti-quiz-active body { padding-bottom: 0; }
 .hti-newshub__feature-side { display: flex; flex-direction: column; gap: 18px; }
 .hti-newshub__side { flex: 1; display: flex; flex-direction: column; background: var( --nh-white ); border: 1px solid var( --nh-border ); border-radius: 16px; overflow: hidden; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
 .hti-newshub__side:hover { border-color: #E7DCFB; box-shadow: 0 6px 18px rgba( 22, 38, 58, 0.07 ); }
-.hti-newshub__side-media { height: 74px; overflow: hidden; }
+.hti-newshub__side-media { aspect-ratio: 4 / 3; overflow: hidden; }
 .hti-newshub__side-body { padding: 14px 16px 16px; }
 .hti-newshub__side-title { display: block; font-family: var( --nh-head ); font-weight: 700; font-size: 16px; margin: 6px 0 0; line-height: 1.2; color: var( --nh-text ); }
 
@@ -1855,7 +1876,7 @@ html.hti-quiz-active body { padding-bottom: 0; }
 .hti-newshub__empty { text-align: center; padding: 32px; color: var( --nh-muted ); }
 
 /* sidebar */
-.hti-newshub__aside { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 84px; }
+.hti-newshub__aside { display: flex; flex-direction: column; gap: 18px; position: sticky; top: var( --hti-sticky-top ); }
 .hti-newshub__card { background: var( --nh-white ); border: 1px solid var( --nh-border ); border-radius: 18px; padding: 20px 20px 8px; }
 .hti-newshub__card-title { font-family: var( --nh-head ); font-weight: 700; font-size: 15px; margin: 0 0 4px; color: var( --nh-text ); display: flex; align-items: center; gap: 8px; }
 .hti-newshub__rank { display: flex; gap: 13px; align-items: flex-start; border-top: 1px solid var( --nh-line ); padding: 13px 0; text-decoration: none; }
@@ -1907,7 +1928,7 @@ html.hti-quiz-active body { padding-bottom: 0; }
 /* ---------- Ebook landing (/ebook) ---------- */
 .hti-ebp { max-width: 1080px; margin: 0 auto; }
 .hti-ebp__grid { display: grid; grid-template-columns: minmax( 0, 340px ) minmax( 0, 1fr ); gap: clamp( 32px, 5vw, 60px ); align-items: start; }
-.hti-ebp__cover-wrap { position: sticky; top: 96px; }
+.hti-ebp__cover-wrap { position: sticky; top: var( --hti-sticky-top ); }
 .hti-ebp__cover { width: 100%; height: auto; display: block; border-radius: 8px; box-shadow: 0 24px 60px rgba( 42, 36, 56, 0.22 ); border: 1px solid var( --wp--preset--color--border ); }
 .hti-ebp__eyebrow { display: inline-flex; align-items: center; gap: 8px; background: var( --wp--preset--color--primary-soft ); color: var( --wp--preset--color--primary-strong ); font: 600 12px var( --wp--preset--font-family--body ); letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; }
 .hti-ebp__dot { width: 7px; height: 7px; border-radius: 50%; background: var( --wp--preset--color--accent ); }
