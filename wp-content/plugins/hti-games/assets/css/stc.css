@@ -199,3 +199,65 @@ html.hti-game-active .hti-stc {
 @media ( prefers-reduced-motion: reduce ) {
 	.hti-stc .hti-g__phase--dead { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+ * Tablet and desktop.
+ *
+ * The design handoff drew this game at 430px and nothing else — no tablet
+ * artboard, no desktop one, no media query. So above a phone the section was
+ * a 470px column adrift in the viewport, and the candlestick chart, the one
+ * element that earns every pixel it gets, was the narrowest thing on a 1440px
+ * screen. Eighty candles in 434px is 2.9px of body each; the same eighty in
+ * 760px is legible.
+ *
+ * The shape is a two-column grid at ≥900px: the chart on the left, the
+ * decision on the right, and everything that frames them (HUD, health, status,
+ * rules, disclaimer) spanning both. That is not decoration — it puts the chart
+ * and the buttons that act on it side by side instead of a scroll apart, which
+ * is the whole ergonomic argument for a wide screen.
+ *
+ * Mobile-first (min-width) on purpose. stc.css had one max-width query and
+ * games.css one min-width query, pointing in opposite directions; new work
+ * picks one, and min-width is the one that leaves the phone layout untouched.
+ * ------------------------------------------------------------------------- */
+
+/* Tablet: still one column — a portrait tablet is a big phone, and splitting
+   at 768px gives two columns too narrow to be worth the split. What it buys
+   is a chart that grows and room to breathe. */
+@media ( min-width: 768px ) {
+
+	.hti-stc { max-width: 720px; }
+
+	.hti-stc__canvas { height: 340px; }
+}
+
+@media ( min-width: 900px ) {
+
+	.hti-stc {
+		display: grid;
+		max-width: 980px;
+		grid-template-columns: minmax( 0, 1.45fr ) minmax( 300px, 1fr );
+		align-items: start;
+	}
+
+	/* The frame spans; only the chart and the decision share the row. */
+	.hti-stc > .hti-g__hud,
+	.hti-stc > .hti-g__health,
+	.hti-stc > .hti-g__status,
+	.hti-stc > .hti-g__rules,
+	.hti-stc > .hti-g__disclaimer,
+	.hti-stc > .hti-ob { grid-column: 1 / -1; }
+
+	/* Onboarding hides the phases, so it takes the whole width rather than
+	   leaving a column of nothing beside it. */
+	.hti-stc > .hti-g__phases { border-top: 0; }
+
+	.hti-stc__canvas { height: 420px; }
+}
+
+@media ( min-width: 1200px ) {
+
+	.hti-stc { max-width: 1180px; }
+
+	.hti-stc__canvas { height: 480px; }
+}

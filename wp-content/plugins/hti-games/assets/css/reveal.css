@@ -387,3 +387,47 @@
 	background: var( --g-down-soft );
 	border-color: #E4B3A9;
 }
+
+/* ---------------------------------------------------------------------------
+ * Tablet and desktop.
+ *
+ * Same absence as Survive the Charts: the handoff drew this at 430px and
+ * stopped, so above a phone the dossier was a 470px column. A dossier is a
+ * document — sector, revenue, a table of fundamentals, a column of headlines —
+ * and a document read through a phone-width slot on a 1440px screen is the
+ * one shape it should never have.
+ *
+ * The dossier gets the width; the decision stays under it rather than beside
+ * it, because unlike the chart the dossier is *read* before it is acted on,
+ * and putting the buttons alongside invites a click before the reading.
+ *
+ * The three-line result screen (your call / if you had passed / the index) is
+ * the one thing here that must survive every width intact, along with the
+ * provenance note under it — that pair is what keeps the case educational
+ * rather than a claim (CLAUDE.md invariant 2). It is a flex column of rows and
+ * gains room here, never loses it.
+ * ------------------------------------------------------------------------- */
+
+@media ( min-width: 768px ) {
+
+	.hti-rv { max-width: 680px; }
+
+	/* Two headlines abreast once there is room for them to still be quotes. */
+	.hti-rv__heads {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+	}
+}
+
+@media ( min-width: 1024px ) {
+
+	.hti-rv { max-width: 860px; }
+
+	/* Sector and revenue stop being two cramped cells and become four. */
+	.hti-rv__meta { grid-template-columns: repeat( 4, 1fr ); }
+
+	/* The reveal itself is a moment — it gets the height back that a wide
+	   screen would otherwise flatten. */
+	.hti-rv__stage { min-height: 320px; }
+}
