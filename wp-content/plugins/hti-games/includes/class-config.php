@@ -185,6 +185,35 @@ class Config {
 	}
 
 	/**
+	 * How many dossiers the shipped Reveal case library holds.
+	 *
+	 * A count and not a call to Seed_Cases::cases(), for one reason: that file
+	 * is two thousand lines of dossier data, and the settings panel needs to
+	 * say "34 to install" without parsing all of it on an admin page load. The
+	 * data file stays lazily loaded, which is what it was already doing for the
+	 * CLI. tests/test-case-installer.php asserts this number is the truth.
+	 */
+	public const CASE_LIBRARY_COUNT = 34;
+
+	/**
+	 * Bump when the shipped cases change, so an owner can tell a stale install
+	 * from a complete one.
+	 */
+	public const CASE_LIBRARY_VERSION = 1;
+
+	/**
+	 * The shipped Reveal case library's address: how many, which version.
+	 *
+	 * @return array{count:int,version:int}
+	 */
+	public static function case_library(): array {
+		return array(
+			'count'   => self::CASE_LIBRARY_COUNT,
+			'version' => self::CASE_LIBRARY_VERSION,
+		);
+	}
+
+	/**
 	 * The pages the seeder owns: key => [ en slug, pt slug, indexable ].
 	 *
 	 * `/games/` and not `/educational-games/`: "games" is what people type,
