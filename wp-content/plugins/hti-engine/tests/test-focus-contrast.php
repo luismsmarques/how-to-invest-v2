@@ -99,6 +99,12 @@ $surfaces = array(
 	'contrast'    => $palette['contrast'] ?? '#2A2438',
 	'navy'        => $palette['navy'] ?? '#1E2147',
 	'forex-dark'  => '#0E1116',
+	// The two game shells (hti-games). Neither colour is in theme.json — the
+	// games carry their own tokens so no dark palette leaks into the editor —
+	// so without these two rows the ring is never measured against the
+	// surfaces half the interactive product is painted on.
+	'game-dark'   => '#0A0D12',
+	'game-cream'  => '#F7F4EC',
 );
 
 foreach ( $surfaces as $name => $hex ) {
