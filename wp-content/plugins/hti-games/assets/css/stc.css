@@ -108,7 +108,7 @@ html.hti-game-active .hti-stc {
 	margin-bottom: 8px;
 }
 
-.hti-stc__panelhead .hti-g__h2 { font-size: 14px; }
+.hti-stc__panelhead .hti-g__h2 { font-size: var( --g-fs-lg ); }
 
 .hti-g__pill {
 	padding: 4px 10px;
@@ -116,7 +116,7 @@ html.hti-game-active .hti-stc {
 	border: 1px solid var( --g-border-2 );
 	border-radius: 999px;
 	font-weight: 600;
-	font-size: 10.5px;
+	font-size: var( --g-fs-xs );
 	color: var( --g-muted );
 	white-space: nowrap;
 }
@@ -146,7 +146,7 @@ html.hti-game-active .hti-stc {
 	top: 10px;
 	left: 12px;
 	font-weight: 700;
-	font-size: 10.5px;
+	font-size: var( --g-fs-xs );
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: var( --g-brand );
@@ -170,7 +170,7 @@ html.hti-game-active .hti-stc {
 	background: var( --g-surface-2 );
 	border-color: var( --g-border-3 );
 	color: var( --g-text );
-	font-size: 15px;
+	font-size: var( --g-fs-lg );
 }
 
 .hti-stc .hti-g__choice--pass:hover { border-color: var( --g-brand ); }
@@ -200,26 +200,12 @@ html.hti-game-active .hti-stc {
 	.hti-stc .hti-g__phase--dead { animation: none; }
 }
 
-/* ---------------------------------------------------------------------------
- * Tablet and desktop.
- *
- * The design handoff drew this game at 430px and nothing else — no tablet
- * artboard, no desktop one, no media query. So above a phone the section was
- * a 470px column adrift in the viewport, and the candlestick chart, the one
- * element that earns every pixel it gets, was the narrowest thing on a 1440px
- * screen. Eighty candles in 434px is 2.9px of body each; the same eighty in
- * 760px is legible.
- *
- * The shape is a two-column grid at ≥900px: the chart on the left, the
- * decision on the right, and everything that frames them (HUD, health, status,
- * rules, disclaimer) spanning both. That is not decoration — it puts the chart
- * and the buttons that act on it side by side instead of a scroll apart, which
- * is the whole ergonomic argument for a wide screen.
- *
- * Mobile-first (min-width) on purpose. stc.css had one max-width query and
- * games.css one min-width query, pointing in opposite directions; new work
- * picks one, and min-width is the one that leaves the phone layout untouched.
- * ------------------------------------------------------------------------- */
+/* Tablet and desktop. The handoff drew this game at 430px and nothing else, so
+   above a phone it was a 470px column and the candlestick chart — the element
+   that earns every pixel — was the narrowest thing on a 1440px screen. Eighty
+   candles in 434px is 2.9px of body each. Two columns at 900px puts the chart
+   and the buttons that act on it side by side instead of a scroll apart.
+   min-width on purpose: it leaves the phone layout untouched. */
 
 /* Tablet: still one column — a portrait tablet is a big phone, and splitting
    at 768px gives two columns too narrow to be worth the split. What it buys

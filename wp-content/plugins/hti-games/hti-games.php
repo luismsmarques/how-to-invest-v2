@@ -3,7 +3,7 @@
  * Plugin Name:       HTI Games
  * Plugin URI:        https://howtoinvest.pro/games/
  * Description:       Two educational games under /games/ — "Survive the Charts" (a daily chart, buy/sell/pass, and what position size does to an account) and "The Reveal" (an anonymised dossier of a real company at a real year). Virtual money only. No brokers, no affiliate links, no prizes: the section is sealed from the monetised part of the site by design.
- * Version:           0.3.0
+ * Version:           0.4.0
  * Requires at least: 6.7
  * Requires PHP:      8.3
  * Author:            HowToInvest
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin version, used for cache-busting enqueued assets.
  */
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 
 define( 'HTI_GAMES_FILE', __FILE__ );
 define( 'HTI_GAMES_PATH', plugin_dir_path( __FILE__ ) );
