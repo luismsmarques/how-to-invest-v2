@@ -161,4 +161,33 @@ hti_games_check(
 	'the button goes through it too'
 );
 
+echo "\nThe panel does not call a reconstruction a verified case\n";
+
+// This is not a copy nit. CLAUDE.md invariant 2 lets the games name real
+// companies ONLY because each case declares where its numbers came from, and
+// the gate deliberately passes both declarations. A panel that folds them into
+// one sentence reported thirty-four illustrative cases as "verified" — the
+// opposite of the one property the arrangement rests on.
+hti_games_check(
+	! str_contains( $admin, 'cases are published, verified and in the rotation' ),
+	'the headline no longer claims every served case is verified'
+);
+hti_games_check(
+	str_contains( $admin, 'cases are published and in the rotation' ),
+	'the headline counts what is served without claiming a provenance'
+);
+hti_games_check(
+	str_contains( $admin, "'provenance'    => self::provenance( \$meta )" ),
+	'the queue row carries the provenance the panel needs to tell them apart'
+);
+hti_games_check(
+	str_contains( $admin, "if ( 'verified' === ( \$row['provenance'] ?? '' ) )" ),
+	'verified cases are counted separately from illustrative ones'
+);
+hti_games_check(
+	str_contains( $admin, 'are verified against a published document' )
+		&& str_contains( $admin, 'figures reconstructed to show the pattern' ),
+	'the split is reported in words an owner can act on'
+);
+
 hti_games_done( 'case-installer' );
