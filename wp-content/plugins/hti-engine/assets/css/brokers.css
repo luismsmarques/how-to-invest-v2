@@ -56,6 +56,12 @@
    colour was already fine (5.87:1); the size was the problem. */
 .hti-bk__label {
 	display: inline-block;
+	/* The label and the disclosure sentence are inline siblings separated by a
+	   single space, and the label is a padded pill — so they butted together
+	   and read as one run-on line ("PARTNER · AD Partner disclosure: some
+	   links…"). More noticeable now that the label is a size somebody can
+	   actually read. */
+	margin-right: 0.4rem;
 	background: var( --bk-accent );
 	color: #fff;
 	font-size: 0.8125rem;
