@@ -68,6 +68,7 @@
 .hti-psrc--banner .hti-psrc__btn {
 	padding: .6rem 1.05rem;
 	white-space: nowrap;
+	min-height: 44px;
 }
 
 /* Footer variant — subtle, sitewide. */
@@ -78,6 +79,7 @@
 .hti-psrc--footer .hti-psrc__btn {
 	padding: .5rem .9rem;
 	font-size: .85rem;
+	min-height: 44px;
 }
 
 @media (max-width: 600px) {

@@ -188,5 +188,62 @@ check(
 	'no stylesheet grows its hand-written palette (' . ( $raw_hex ? implode( '; ', $raw_hex ) : 'none' ) . ')'
 );
 
+/* ---------------------------------------------------------------------------
+ * 5. Four colours on the news hub and the glossary that carried meaning while
+ *    being effectively invisible.
+ *
+ * Found by rendering both surfaces with fixture data and measuring, then
+ * computed here rather than judged by eye. The ranking numeral and the group
+ * letter are the whole point of the widget they sit in: a "most read" list
+ * whose 1-to-5 is at 1.37:1 is not ranked, and an A-Z index whose letter is at
+ * 1.69:1 does not say where you are.
+ *
+ * Each row states the threshold that actually applies, not the strictest one:
+ * 4.5:1 for body text, 3:1 for text at or above 24px (WCAG 1.4.3 large text)
+ * and for a glyph that carries meaning (1.4.11).
+ * ------------------------------------------------------------------------ */
+
+$page = $palette['background'] ?? '#FFF6F1';
+$card = $palette['white'] ?? '#ffffff';
+
+echo "\nThe news hub and glossary colours that carry meaning\n";
+
+// [selector, sheet-relative path, ground, minimum, why]
+$carriers = array(
+	array( '.hti-newshub__rank-n', $theme . '/style.css', $card, 4.5, 'the 1-5 in "most read", at 18px bold (under the 18.66px large-text line)' ),
+	array( '.hti-gloss__gletter', $theme . '/style.css', $page, 3.0, 'the A-Z group letter, 30px bold — large text' ),
+	array( '.hti-gloss__flabel', $theme . '/style.css', $page, 4.5, 'the TOPIC / LETTER filter labels, 12px' ),
+	array( '.hti-gloss__sicon', $theme . '/style.css', $card, 3.0, 'the search glyph — a meaningful graphic' ),
+);
+
+foreach ( $carriers as $row ) {
+	list( $sel, $file, $ground, $min, $why ) = $row;
+	$css = (string) preg_replace( '#/\*.*?\*/#s', '', (string) file_get_contents( $file ) );
+	$hex = '';
+	if ( preg_match_all( '/' . preg_quote( $sel, '/' ) . '\s*\{([^}]*)\}/', $css, $m, PREG_SET_ORDER ) ) {
+		foreach ( $m as $rule ) {
+			if ( preg_match( '/(?<![a-z-])color:\s*(#[0-9A-Fa-f]{6})/', $rule[1], $c ) ) {
+				$hex = $c[1];
+			}
+		}
+	}
+	if ( '' === $hex ) {
+		// A token instead of a hex is the better answer, not a failure: resolve
+		// it through the palette so the ratio is still checked.
+		if ( preg_match_all( '/' . preg_quote( $sel, '/' ) . '\s*\{([^}]*)\}/', $css, $m, PREG_SET_ORDER ) ) {
+			foreach ( $m as $rule ) {
+				if ( preg_match( '/(?<![a-z-])color:\s*var\(\s*--wp--preset--color--([a-z-]+)/', $rule[1], $c ) ) {
+					$hex = $palette[ $c[1] ] ?? '';
+				}
+			}
+		}
+	}
+	$ratio = '' === $hex ? 0.0 : contrast( $hex, $ground );
+	check(
+		$ratio >= $min,
+		sprintf( '%-24s %-8s on %s → %.2f:1 (needs %.1f) — %s', $sel, $hex ?: 'not found', $ground, $ratio, $min, $why )
+	);
+}
+
 echo "\n=== {$passes} passed, {$failures} failed ===\n";
 exit( $failures > 0 ? 1 : 0 );

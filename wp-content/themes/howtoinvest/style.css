@@ -554,19 +554,26 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	margin-bottom: 9px;
 }
 .hti-gloss__sbox { position: relative; max-width: 600px; }
-.hti-gloss__sicon { position: absolute; left: 17px; top: 50%; transform: translateY( -50% ); color: #A89FB5; display: flex; }
+.hti-gloss__sicon { position: absolute; left: 17px; top: 50%; transform: translateY( -50% ); color: #7E7591; display: flex; }
 .hti-gloss__input {
 	width: 100%;
 	box-sizing: border-box;
 	background: var( --wp--preset--color--white );
 	border: 1.5px solid var( --wp--preset--color--border );
 	border-radius: 14px;
-	padding: 15px 110px 15px 47px;
+	padding: 15px 16px 15px 47px;
 	font-family: var( --wp--preset--font-family--body );
 	font-weight: 500;
 	font-size: 16px;
 	color: var( --wp--preset--color--contrast );
 }
+/* The 110px of right padding was unconditional, so the placeholder was cut
+   mid-word ("E.g. diversification, ETF, r") on every phone — to leave room for
+   a Clear button that is hidden until you type. Reserve it only once the
+   button is actually there. Without :has() the button overlaps the tail of
+   what you typed, which is a smaller harm than truncating the prompt that
+   tells you what to type. */
+.hti-gloss__sbox:has( .hti-gloss__clear:not( [hidden] ) ) .hti-gloss__input { padding-right: 110px; }
 .hti-gloss__input:focus { border-color: var( --wp--preset--color--primary ); box-shadow: 0 0 0 3px #FFD9D2; }
 .hti-gloss__input:focus-visible { outline: 2.5px solid var( --wp--custom--focus-ring, #D9432F ); outline-offset: 2px; }
 .hti-gloss__clear {
@@ -583,7 +590,7 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	font-family: var( --wp--preset--font-family--body );
 	font-weight: 600;
 	font-size: 13px;
-	min-height: 38px;
+	min-height: 44px;
 }
 .hti-gloss__clear:hover { background: #FFD9D2; }
 .hti-gloss__count {
@@ -601,7 +608,7 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	font-family: var( --wp--preset--font-family--body );
 	font-weight: 600;
 	font-size: 12px;
-	color: #A89FB5;
+	color: var( --wp--preset--color--muted );
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
 	margin-bottom: 10px;
@@ -617,7 +624,7 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	cursor: pointer;
 	border-radius: 999px;
 	padding: 0 17px;
-	min-height: 42px;
+	min-height: 44px;
 	font-family: var( --wp--preset--font-family--body );
 	font-weight: 600;
 	font-size: 14px;
@@ -628,8 +635,8 @@ html.hti-quiz-active body { padding-bottom: 0; }
 
 .hti-gloss__alpha { display: flex; gap: 6px; flex-wrap: wrap; }
 .hti-gloss__letter {
-	width: 42px;
-	height: 42px;
+	width: 44px;
+	height: 44px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -664,7 +671,11 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	font-family: var( --wp--preset--font-family--heading );
 	font-weight: 800;
 	font-size: 30px;
-	color: #E2B7AF;
+	/* 1.69:1 against the page. It is aria-hidden, but it is also the only thing
+	   telling a sighted reader which block they are in — 3.76:1 keeps it a soft
+	   marker while clearing the large-text threshold at both 30px and the 22px
+	   it drops to on phones. */
+	color: #B26D5D;
 	letter-spacing: -0.02em;
 	padding-top: 6px;
 }
@@ -797,6 +808,26 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	.hti-gloss__group { grid-template-columns: 1fr; gap: 8px; }
 	.hti-gloss__gletter { position: static; top: auto; padding-top: 0; font-size: 22px; }
 	.hti-gloss__course-btn { width: 100%; text-align: center; }
+}
+
+/* Two columns once there is room for them. A one-column index on a 1280px
+   canvas is 4 900px of scroll with a definition line running the full width —
+   too long to read comfortably and too long to scan. Columns is the right tool
+   rather than grid: it balances the groups itself and reads A-to-M then N-to-Z,
+   the way a printed index does. Sticky letters cannot work inside a multicol
+   fragment, and no longer need to: the groups are short here. */
+@media ( min-width: 1100px ) {
+	.hti-gloss__groups {
+		display: block;
+		columns: 2;
+		column-gap: 44px;
+	}
+	.hti-gloss__group {
+		break-inside: avoid;
+		margin-bottom: 30px;
+		grid-template-columns: 52px 1fr;
+	}
+	.hti-gloss__gletter { position: static; top: auto; }
 }
 
 /* ---------- Glossary term page ---------- */
@@ -1810,10 +1841,18 @@ html.hti-quiz-active body { padding-bottom: 0; }
 .hti-newshub__tab {
 	background: var( --nh-white ); color: #5A5270; border: 1px solid var( --nh-border );
 	cursor: pointer; border-radius: 999px; padding: 9px 17px; font: 600 14px var( --nh-body );
+	min-height: 44px;
 }
 .hti-newshub__tab:hover { border-color: #E7DCFB; color: var( --nh-text ); }
 .hti-newshub__tab.is-active { background: var( --nh-primary ); color: #fff; border-color: var( --nh-primary ); box-shadow: 0 1px 2px rgba( 255, 107, 94, 0.3 ); }
-/* On phones the tab row swipes horizontally instead of wrapping. */
+/* On phones the tab row swipes horizontally instead of wrapping.
+   Two things it got wrong. The bleed was a hard -20px while the page padding
+   is a clamp that reaches 28px by 700px, so the row stopped short of the
+   screen edge on the wider half of its own range; it now uses the same token
+   the page does. And scroll-snap measures from the scrollport edge, not from
+   the padding, so on load the browser snapped the first tab flush to x=0 —
+   the active pill arrived already clipped against the screen. scroll-padding
+   is what tells snapping about the inset. */
 @media ( max-width: 700px ) {
 	.hti-newshub__tabs {
 		flex-wrap: nowrap;
@@ -1821,8 +1860,9 @@ html.hti-quiz-active body { padding-bottom: 0; }
 		scroll-snap-type: x proximity;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
-		margin-inline: -20px;
-		padding-inline: 20px;
+		margin-inline: calc( -1 * var( --wp--style--root--padding-left, 20px ) );
+		padding-inline: var( --wp--style--root--padding-left, 20px );
+		scroll-padding-inline: var( --wp--style--root--padding-left, 20px );
 	}
 	.hti-newshub__tabs::-webkit-scrollbar { display: none; }
 	.hti-newshub__tab { scroll-snap-align: start; }
@@ -1846,9 +1886,13 @@ html.hti-quiz-active body { padding-bottom: 0; }
    narrowing column crops harder instead of getting shorter — the image loses
    its framing rather than its size, which is the opposite of what a hero
    image should do. */
-.hti-newshub__hero-media { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
+/* flex: 1 because the hero shares a stretch-aligned grid row with two stacked
+   side cards, which are taller. Without it the surplus — measured at 195px on
+   a 1024 screen and 268px on a 1440 — landed as blank card under the summary.
+   The aspect-ratio stays as the basis, so the image only ever grows. */
+.hti-newshub__hero-media { position: relative; aspect-ratio: 16 / 9; overflow: hidden; flex: 1 1 auto; }
 .hti-newshub__img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.hti-newshub__hero-badge { position: absolute; top: 16px; left: 16px; z-index: 1; background: rgba( 42, 36, 56, 0.82 ); color: #fff; font: 600 11px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 11px; border-radius: 999px; }
+.hti-newshub__hero-badge { position: absolute; top: 16px; left: 16px; z-index: 1; background: rgba( 42, 36, 56, 0.82 ); color: #fff; font: 600 12px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 11px; border-radius: 999px; }
 .hti-newshub__hero-body { padding: 20px 24px 24px; }
 .hti-newshub__meta { display: flex; gap: 10px; align-items: center; margin-bottom: 9px; flex-wrap: wrap; }
 .hti-newshub__cat { font: 700 12px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -1881,25 +1925,25 @@ html.hti-quiz-active body { padding-bottom: 0; }
 .hti-newshub__card-title { font-family: var( --nh-head ); font-weight: 700; font-size: 15px; margin: 0 0 4px; color: var( --nh-text ); display: flex; align-items: center; gap: 8px; }
 .hti-newshub__rank { display: flex; gap: 13px; align-items: flex-start; border-top: 1px solid var( --nh-line ); padding: 13px 0; text-decoration: none; }
 .hti-newshub__rank:hover { opacity: 0.72; }
-.hti-newshub__rank-n { flex: none; font-family: var( --nh-head ); font-weight: 700; font-size: 18px; color: #EAD9D1; line-height: 1; width: 18px; }
+.hti-newshub__rank-n { flex: none; font-family: var( --nh-head ); font-weight: 700; font-size: 18px; color: #96654F; line-height: 1; width: 18px; }
 .hti-newshub__rank-t { display: block; font: 600 14px var( --nh-body ); color: var( --nh-text ); line-height: 1.3; }
 .hti-newshub__rank-m { display: block; margin-top: 4px; font-size: 12px; color: var( --nh-faint ); }
 
 .hti-newshub__termday { background: var( --nh-accent-soft ); border-radius: 18px; padding: 20px; }
-.hti-newshub__termday-eyebrow { font: 700 11px var( --nh-body ); color: var( --nh-accent ); text-transform: uppercase; letter-spacing: 0.07em; }
+.hti-newshub__termday-eyebrow { font: 700 12px var( --nh-body ); color: var( --nh-accent ); text-transform: uppercase; letter-spacing: 0.07em; }
 .hti-newshub__termday-t { font-family: var( --nh-head ); font-weight: 700; font-size: 19px; margin: 8px 0 6px; color: var( --nh-text ); }
 .hti-newshub__termday-d { margin: 0 0 14px; color: #5A5270; font-size: 14px; line-height: 1.5; }
-.hti-newshub__termday-cta { display: inline-block; background: #fff; color: var( --nh-accent ); border-radius: 10px; padding: 9px 15px; font: 600 13px var( --nh-body ); text-decoration: none; }
+.hti-newshub__termday-cta { display: inline-flex; align-items: center; min-height: 44px; background: #fff; color: var( --nh-accent ); border-radius: 10px; padding: 9px 16px; font: 600 13px var( --nh-body ); text-decoration: none; }
 .hti-newshub__termday-cta:hover { box-shadow: 0 2px 8px rgba( 124, 92, 252, 0.18 ); }
 
 .hti-newshub__event { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var( --nh-line ); }
 .hti-newshub__event:first-of-type { border-top: 0; }
 .hti-newshub__event-when { flex: none; width: 44px; text-align: center; }
-.hti-newshub__event-day { font: 700 11px var( --nh-body ); color: var( --nh-faint ); text-transform: uppercase; }
+.hti-newshub__event-day { font: 700 12px var( --nh-body ); color: var( --nh-faint ); text-transform: uppercase; }
 .hti-newshub__event-date { font: 600 13px var( --nh-body ); color: var( --nh-text ); }
 .hti-newshub__event-body { flex: 1; min-width: 0; }
 .hti-newshub__event-label { font: 600 13.5px var( --nh-body ); color: var( --nh-text ); line-height: 1.3; }
-.hti-newshub__event-tag { font: 600 11px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.05em; }
+.hti-newshub__event-tag { font: 600 12px var( --nh-body ); text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* newsletter wrapper: let the subscribe shortcode fill the column */
 .hti-newshub__nl > * { margin: 0 !important; }
@@ -1907,6 +1951,22 @@ html.hti-quiz-active body { padding-bottom: 0; }
 @media ( max-width: 900px ) {
 	.hti-newshub__layout { grid-template-columns: 1fr; }
 	.hti-newshub__aside { position: static; flex-direction: column; }
+}
+/* Between the sidebar collapsing (900px) and the phone layout (640px) the three
+   sidebar cards became full-width bands — 770px of row for a five-item list.
+   Two columns give them a density close to the one they have in the rail. */
+@media ( min-width: 641px ) and ( max-width: 900px ) {
+	/* columns rather than a two-track grid: the three cards have very different
+	   heights, and a grid fills row by row, so the short one left a hole beside
+	   the tall one. Multicol balances them and column-span keeps the newsletter
+	   across the full width. */
+	.hti-newshub__aside {
+		display: block;
+		columns: 2;
+		column-gap: 18px;
+	}
+	.hti-newshub__aside > * { break-inside: avoid; margin-bottom: 18px; }
+	.hti-newshub__nl { column-span: all; margin-bottom: 0; }
 }
 @media ( max-width: 600px ) {
 	.hti-newshub__feature { grid-template-columns: 1fr; }
