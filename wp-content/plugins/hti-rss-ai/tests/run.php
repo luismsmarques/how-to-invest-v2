@@ -3,7 +3,8 @@
  * Repeatable test-suite runner for HTI RSS AI Feed.
  *
  * Runs every tests/test-*.php (grouping, fetcher, validator, extract-json,
- * image-client) as its own process and aggregates the result. Each test file
+ * image-client, image-brief, model-catalog, featured-image, fallback-card,
+ * health) as its own process and aggregates the result. Each test file
  * exits non-zero on failure (via rssai_done), so the suite exits non-zero if
  * any file fails — it can gate CI.
  *

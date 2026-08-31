@@ -147,7 +147,9 @@ class Generator {
 		}
 
 		// Featured image: best-effort (AI illustration), never blocks the article.
-		Featured_Image::maybe_generate( $post_id, $data, null, $lang );
+		// The item goes in, not null: it carries image_url, and passing null was
+		// why an article written from a single item never saw its own feed photo.
+		Featured_Image::maybe_generate( $post_id, $data, $item, $lang );
 
 		Items::update( $item_id, array( 'status' => 'used' ) );
 		self::bump_daily();
@@ -188,6 +190,7 @@ class Generator {
 		$post_id = (int) $post_id;
 
 		update_post_meta( $post_id, 'rssai_source_kind', 'rss' );
+		update_post_meta( $post_id, 'rssai_item_id', (int) $item->id );
 		update_post_meta( $post_id, 'rssai_content_type', $type );
 		update_post_meta( $post_id, 'rssai_source_url', (string) $item->link );
 		update_post_meta( $post_id, 'rssai_lang', $lang );

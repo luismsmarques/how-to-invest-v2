@@ -79,13 +79,63 @@ class Activator {
 	}
 
 	/**
-	 * Run table creation if the stored DB version is behind.
+	 * Option marking the one-off model-name migration as done.
+	 */
+	private const MODEL_MIGRATION_OPTION = 'rssai_model_migration';
+
+	/**
+	 * Run table creation if the stored DB version is behind, and retire any
+	 * model name Google has switched off.
 	 */
 	public static function maybe_upgrade(): void {
 		if ( get_option( self::DB_VERSION_OPTION ) !== self::DB_VERSION ) {
 			self::create_tables();
 			update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
 		}
+		self::migrate_model_names();
+	}
+
+	/**
+	 * Replace stored model names that Google has retired.
+	 *
+	 * This has to exist because changing the defaults is not enough: the
+	 * settings screen writes every key on any save, and Settings::get() prefers
+	 * the stored value over the default. An installation that has ever opened
+	 * that screen keeps the dead name forever, which is exactly the state this
+	 * site was found in — an image model retired in August and an embedding
+	 * model retired in January, both still sitting in the options table,
+	 * failing on every call.
+	 *
+	 * Runs once (it is a rescue, not a policy): after it, whatever is in the
+	 * field is the operator's choice and stays there.
+	 */
+	private static function migrate_model_names(): void {
+		if ( '1' === (string) get_option( self::MODEL_MIGRATION_OPTION, '' ) ) {
+			return;
+		}
+
+		$settings = get_option( 'rssai_settings', null );
+		if ( ! is_array( $settings ) ) {
+			// Never configured — the defaults already point at live models.
+			update_option( self::MODEL_MIGRATION_OPTION, '1', false );
+			return;
+		}
+
+		$changed      = array();
+		$replacements = Model_Catalog::replacements();
+		foreach ( $replacements as $key => $replacement ) {
+			$current = isset( $settings[ $key ] ) ? (string) $settings[ $key ] : '';
+			if ( Model_Catalog::is_retired( $key, $current ) ) {
+				$settings[ $key ] = $replacement;
+				$changed[]        = $current . ' → ' . $replacement;
+			}
+		}
+
+		if ( $changed ) {
+			update_option( 'rssai_settings', $settings );
+			Logger::log( 'settings', 'Retired model names replaced: ' . implode( ', ', $changed ) );
+		}
+		update_option( self::MODEL_MIGRATION_OPTION, '1', false );
 	}
 
 	/**

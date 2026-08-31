@@ -63,9 +63,14 @@ class Embeddings {
 			}
 			$vectors = Gemini_Client::embed( $texts );
 			if ( is_wp_error( $vectors ) ) {
+				// Counted, not just logged: grouping degrades to lexical-only
+				// when this fails, which is invisible from the outside and can
+				// run for weeks — as it did when the embedding model was retired.
+				Health::record( 'embed', false, $vectors->get_error_message() );
 				Logger::log( 'embed', 'error: ' . $vectors->get_error_message() );
 				break;
 			}
+			Health::record( 'embed', true );
 			foreach ( $vectors as $i => $vector ) {
 				if ( isset( $ids[ $i ] ) && is_array( $vector ) && $vector ) {
 					Items::set_embedding( $ids[ $i ], (string) wp_json_encode( $vector ) );
