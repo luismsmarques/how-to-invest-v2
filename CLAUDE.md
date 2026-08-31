@@ -23,11 +23,25 @@ Lê `/docs` para a especificação completa. Lê `README.md` para o mapa.
 2. Output do motor/LLM **sempre por classes de ativos** (global_equity, bonds, cash, reits_alt, crypto). **Nunca** instrumentos, tickers, fundos, corretoras ou empresas nomeadas (o validator bloqueia e força fallback).
    *Exceção única e delimitada — o jogo "The Reveal" (`hti-games`):* pode nomear empresas reais
    **apenas** dentro do CPT `hti_reveal_case`, **apenas** para períodos históricos com pelo menos
-   5 anos, **apenas** com fonte verificada registada no caso, e **nunca** como afirmação
-   prospetiva ou sugestão de compra. Um caso sem fonte ou por verificar não é servido — a barreira
-   está no código, não numa convenção. O ecrã das "três linhas" (a tua decisão / se tivesses
-   passado / o índice) é o que mantém o caso educativo e não é dispensável. O output do motor e do
-   LLM continua sem nomear empresas, sem exceção nenhuma.
+   5 anos, e **nunca** como afirmação prospetiva ou sugestão de compra. O ecrã das "três linhas"
+   (a tua decisão / se tivesses passado / o índice) é o que mantém o caso educativo e não é
+   dispensável. O output do motor e do LLM continua sem nomear empresas, sem exceção nenhuma.
+
+   Cada caso declara a **proveniência** dos seus números, e o portão de publicação exige coisas
+   diferentes conforme a declaração (decisão do dono, 30 ago 2026):
+   - `illustrative` — os números são **reconstruções do padrão**, não extratos de um relatório.
+     Publica com o dossiê completo e os cinco anos de idade, sem fonte e sem verificação, **e o
+     ecrã de resultado diz ao jogador exatamente isso**: a empresa, o período e a direção do que
+     aconteceu a seguir são reais; os números e as manchetes estão reconstruídos para mostrar o
+     padrão. A declaração não é dispensável — é o que torna a reconstrução honesta em vez de uma
+     afirmação factual por verificar.
+   - `verified` — os números saíram de um documento publicado. Exige `hti_rev_source_url` e
+     verificação registada, e mostra a fonte em vez daquela linha. É o estado para onde um editor
+     promove um caso, e é o valor por omissão de tudo o que não se declare ilustrativo.
+
+   As duas barreiras estão no código e não numa convenção: o portão devolve a rascunho o que não
+   cumpre a sua declaração, e a consulta que escolhe o caso do dia recusa-o outra vez. Mexer em
+   qualquer um dos números limpa a verificação.
    *Survive the Charts não precisa de exceção:* o par de moedas nunca sai do servidor.
 3. Linguagem **condicional e ilustrativa**, nunca imperativa ("um perfil como este costuma…", nunca "deves comprar").
 4. **Disclaimer contextual** em todos os resultados. O resultado do motor, o PDF e os emails são 100% educativos — **nunca** contêm CTA de execução nem corretoras. Conteúdo sobre corretoras vive **apenas na secção editorial de corretoras** (comparador, reviews, guias de abertura de conta e o módulo "Passar à prática" a seguir ao resultado), sempre rotulado **"Parceria · Publicidade"**, com divulgação de afiliação **na própria página**, linguagem factual/condicional (nunca captação/imperativos), links de saída só via `/go/{slug}` com `rel="sponsored nofollow"` quando há afiliação ativa, e aviso de risco CFD quando a corretora oferece CFDs. Regras completas: `.claude/skills/broker-affiliate/SKILL.md`.
@@ -92,4 +106,6 @@ Ver `docs/Stack_Concreta_HowToInvest_MVP.md §4`. Resumo:
 - Não pôr corretoras, afiliados ou prémios em nenhuma superfície dos jogos educacionais.
 - Não ordenar o ranking diário por P&L bruto: isso ensina "aumenta a posição para subir", que é o
   contrário da lição do jogo. Ordena por resultado normalizado ao risco.
-- Não servir um caso do The Reveal sem `hti_rev_source_url` e sem verificação registada.
+- Não servir um caso do The Reveal que não cumpra a sua própria declaração de proveniência: um
+  caso `verified` sem fonte e sem verificação registada, ou um caso `illustrative` com o dossiê
+  incompleto ou sem a linha que diz ao jogador que os números são reconstruções.

@@ -113,6 +113,53 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 - [ ] 🔧 WP/PHP/plugins atualizados; PHP **8.3** ✅; sem plugins EOL
 - [x] ✅ Inputs do questionário validados e sanitizados server-side
 
+## 8-bis. Jogos `/games/` (`hti-games`)
+
+> A suite do plugin (2.310 asserções) cobre o **contrato**: a aritmética dos dois
+> motores nos dois portos, os payloads que a API não pode emitir antes da decisão,
+> o portão dos casos, a paridade EN/PT, a voz, o contraste e o orçamento de assets.
+> Não cobre nada que precise de WordPress: a harness é PHP puro, sem base de dados,
+> sem Polylang, sem cookies e sem correio. **Tudo o que está aqui só se prova em
+> staging**, e o detalhe RGPD está na secção 8 do `QA_RGPD_Checklist.md`.
+
+**Instalação (por esta ordem, tudo pelo admin — sem SSH):**
+- [ ] 🔧 Plugin ativado, e o `hti-engine` também (o `hti-games` depende dele para as
+      permissões REST, o rate limiter, o mailer e as métricas; sem ele há aviso no admin)
+- [ ] 🔧 Uma página de admin carregada → as duas tabelas nascem no `init`. Confirmar no
+      painel de prontidão (Definições → HTI Games)
+- [ ] 🔧 *Seed / sync* → confirmar **dez** páginas, não cinco: `/games/` e `/pt/jogos/`
+      e as quatro filhas de cada. Sem isto são dez 404 com shortcodes a funcionar por trás
+- [ ] 🔧 Polylang: tradução ativa nos dois CPTs novos e ligações EN↔PT confirmadas nas dez páginas
+- [ ] 🔧 Biblioteca de cenários instalada (lotes de ~100, repetir até dizer feito)
+- [ ] 🔧 Biblioteca de casos do The Reveal instalada
+- [ ] 🔧 Brevo configurado — sem isso o magic link não envia e a §8.3 do RGPD não corre de todo
+
+**Jogar a sério:**
+- [ ] 🔧 Um dia completo de cada jogo, telemóvel e desktop, EN e PT: decidir, arriscar,
+      replay, resultado, morrer, recomeçar, partilhar
+- [ ] 🔧 Segunda jogada no mesmo dia → 409 com o resultado que já existe (é o `UNIQUE` da
+      base de dados a decidir, e nunca foi exercido contra MySQL a sério)
+- [ ] 🔧 Viragem do dia às 00:00 IST com uma sessão aberta
+- [ ] 🔧 Cada interruptor de desligar fecha **a API** e não só a página (503)
+
+**O que a suite não vê:**
+- [ ] ⚠️ Código-fonte e aba de rede durante `/today`: nenhuma vela de desfecho, nenhum nome
+      de empresa, nenhum retorno — antes da decisão
+- [ ] ⚠️ `grep` ao HTML **renderizado** das dez páginas por `/go/` e pelos slugs de corretora
+      (o teste varre o código-fonte; isto varre o que o visitante recebe)
+- [ ] ⚠️ Leitor de ecrã e teclado, EN e PT — os oito itens no fim de `tests/test-a11y.php`
+- [ ] ⚠️ JSON-LD das páginas de jogo no Rich Results Test
+- [ ] ⚠️ `docs/QA_RGPD_Checklist.md` §8 completa, com assinatura e data
+
+**Conteúdo (⚠️ revisão humana, não é código):**
+- [ ] ⚠️ **Os 34 dossiês do The Reveal nomeiam empresas reais com números que são
+      reconstruções ilustrativas declaradas.** Nunca tiveram revisão editorial. É a
+      superfície que a skill `financial-analyst` existe para cobrir, e a decisão de
+      proveniência está no invariante 2 do `CLAUDE.md`
+- [ ] ⚠️ Revisão editorial da copy EN+PT dos dois jogos
+- [ ] ⚠️ Enquadramento legal da secção e da hipótese de lhe comprar tráfego —
+      `docs/Dossie_Juridico_Jogos.md`, dentro do âmbito da L-D
+
 ## 9. Gate de lançamento (bloqueadores absolutos)
 - [x] ✅ Secção 1 (motor) + Secção 2 (LLM/fallback) verdes
 - [x] ✅ Secção 5 — **export e delete funcionam**
@@ -121,6 +168,7 @@ servidor/admin · `⚠️ Legal/conteúdo` revisão/decisão · `⬜ Lacuna` ain
 - [ ] 🔧 Backups testados (Secção 8)
 - [ ] 🔧 HTTPS forçado (Secção 8)
 - [ ] ⚠️ Decisões em aberto: Gemini ✅ · **validação dos intervalos/pesos (Q2)** — revisão de negócio · **enquadramento legal (Q3)** — decisão do cliente/jurista
+- [ ] 🔧 Secção 8-bis (`/games/`) verde, se a secção for para o ar neste lançamento
 
 ---
 

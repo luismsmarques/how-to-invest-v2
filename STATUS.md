@@ -1,6 +1,6 @@
 # STATUS — HowToInvest (handoff)
 
-_Última atualização: 30 ago 2026, fim do dia (secção **`/games/`** — plugin novo `hti-games` com dois jogos educativos, integração fechada e passagem de QA às costuras entre workstreams. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9 · HTI Games 0.1.0.** ~3.820 asserções verdes nas quatro suites. A secção `/games/` está **construída mas ainda não pode ir para o ar** — ver a secção própria mais abaixo). Anterior: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9.** ~1.770 asserções verdes nas quatro suites de então). Antes: 29 ago 2026 (bot de Telegram no hti-forex). Antes disso: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
+_Última atualização: 30 ago 2026, fim do dia (secção **`/games/`** — plugin novo `hti-games` com dois jogos educativos, integração fechada e passagem de QA às costuras entre workstreams. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9 · HTI Games 0.1.0.** ~4.250 asserções verdes nas quatro suites. A secção `/games/` está **construída mas ainda não pode ir para o ar** — ver a secção própria mais abaixo). Anterior: 30 ago 2026 (auditoria completa ao projeto + cronologia de setembro em `docs/Estado_e_Cronologia_Set2026.md` — lê esse a seguir a este. Corrigida a difusão do bot, que nunca chegou a enviar nada. **Versões reais: HTI Engine 0.15.0 · HTI Forex 0.12.4 · RSS AI 1.11.1 · tema 0.8.58 · HTI Social 0.9.9.** ~1.770 asserções verdes nas quatro suites de então). Antes: 29 ago 2026 (bot de Telegram no hti-forex). Antes disso: 19 jun 2026 (sistema de emails completo: transacionais + newsletter Brevo segmentada EN/PT + lifecycle de conta 09–14; formulário de contacto; categorias de notícias; fix PT do /learn/. HTI Engine v0.7.0, RSS AI v1.5.0, tema v0.6.9). Lê isto primeiro ao retomar/numa sessão nova._
 
 ## Onde está o projeto
 **LIVE em produção** (`howtoinvest.pro`) e funcional de ponta a ponta:
@@ -163,7 +163,7 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
 - Suites (é o que a CI corre): `php wp-content/plugins/hti-engine/tests/run.php` (1.073) ·
   `php wp-content/plugins/hti-forex/tests/run.php` (676 PHP + 83 Node) ·
   `php wp-content/plugins/hti-rss-ai/tests/run.php` (67) ·
-  `php wp-content/plugins/hti-games/tests/run.php` (1.888 PHP + 37 Node) — **~3.820 no total**.
+  `php wp-content/plugins/hti-games/tests/run.php` (2.310 PHP + 37 Node) — **~4.250 no total**.
   A CI faz `php -l` e `node --check` a **todos** os plugins e ao tema, corre as quatro suites e
   volta a correr as três suites Node explicitamente (para que um `node` em falta seja um erro e não
   uma linha "skipping" que ninguém lê).
@@ -189,8 +189,8 @@ define( 'HTI_GOOGLE_CLIENT_SECRET', '...' );
       (preview/send), Settings → HTI NPS (send + resultados).
 - [ ] **Polylang**: atribuir idioma a todo o conteúdo + correr o seeder → confirmar ligações EN↔PT (e `hreflang` no sitemap)
 - [ ] **RSS AI Feed**: ativar o plugin em produção → *Settings* (confirmar `HTI_GEMINI_API_KEY` + acesso Imagen, modelo, intervalo) → adicionar feeds → *Fetch now* → *Group now* → gerar 1 grupo e **rever** (+ kit social) antes de publicar
-- [ ] **Jogos `/games/`**: ativar o `hti-games`, semear as páginas, gerar/importar os cenários e **deixar
-      The Reveal desligado** até um editor verificar os cinco casos. Checklist completa na secção
+- [ ] **Jogos `/games/`**: ativar o `hti-games`, semear as páginas e instalar as duas bibliotecas
+      (cenários e casos) pelo painel de definições. Checklist completa na secção
       *Jogos educativos (`hti-games`)* mais abaixo.
 - [ ] Acessibilidade: contraste AA + teste com leitor de ecrã
 
@@ -347,17 +347,21 @@ uma conta.
       biblioteca. **Sem SSH e sem CLI.** Continua a haver
       `wp hti-games generate` para quem tem shell e quer outra semente, e o
       importador para séries reais.
-- [ ] **The Reveal não pode abrir ainda.** Os cinco casos protótipo são
-      seedados **de propósito por acabar**: `draft`, `hti_rev_verified = 0`,
-      `hti_rev_source_url` **vazio** e **todos os números vazios** — os dois
-      retornos a 5 anos e o valor e média setorial de cada fundamental. Este
-      ambiente não tem rede e a memória do modelo **não é fonte publicável**
-      (skill `financial-analyst`); pré-preencher o URL da fonte seria forjar o
-      rasto de auditoria. Um editor tem de abrir o *filing* de cada empresa,
-      escrever os números, colar o URL e marcar *verified* — o gate de
-      publicação recusa os cinco até lá, e a query do pool recusa-os outra vez
-      mesmo que algum chegue a `publish`. **Até isso acontecer, deixar
-      `reveal_enabled` desligado nas definições.**
+- [ ] **Conteúdo do The Reveal**: instalar a biblioteca de 34 casos. São
+      **reconstruções ilustrativas** e não extratos de relatórios — decisão do
+      dono, 30 ago 2026, tomada com a restrição à frente: este ambiente não tem
+      rede e a memória do modelo não é fonte publicável (skill
+      `financial-analyst`), portanto ou os casos iam por preencher ou iam
+      declarados como aquilo que são. Vão declarados: `hti_rev_provenance =
+      illustrative`, a marca *— illustrative reconstruction* no título do post,
+      e o ecrã de resultado diz ao jogador que a empresa, o período e a direção
+      do que aconteceu são reais e que os números e as manchetes estão
+      reconstruídos para mostrar o padrão. A direção real de cada desfecho está
+      presa por nome num teste, portanto um rácio reconstruído é uma
+      reconstrução mas um desfecho invertido rebenta a suite.
+      **Falta revisão editorial humana aos 34 dossiês** — nomeiam empresas
+      reais e nunca tiveram olhos em cima. Promover um caso a `verified` (com
+      fonte e verificação) continua disponível caso a caso.
 - [ ] **Rever a cópia dos jogos** (EN+PT) com olhos editoriais antes de
       divulgar, e ler o painel de prontidão em Definições → HTI Games, que diz
       qual das duas frases de aterragem está viva e porquê.

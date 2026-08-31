@@ -1,8 +1,12 @@
 # Deploy via cPanel Git™ Version Control
 
-Como o servidor de produção recebe automaticamente o **tema** (`howtoinvest`) e o
-**plugin** (`hti-engine`) a partir deste repositório. O core do WordPress,
-`wp-config.php` e `uploads/` **não** estão no repo e nunca são tocados.
+Como o servidor de produção recebe automaticamente o **tema** (`howtoinvest`) e os
+**cinco plugins** (`hti-engine`, `hti-rss-ai`, `hti-social`, `hti-forex`,
+`hti-games`) a partir deste repositório. O core do WordPress, `wp-config.php` e
+`uploads/` **não** estão no repo e nunca são tocados.
+
+> A lista viva está na `.cpanel.yml` — um plugin que não tenha lá o par
+> `rm -rf` + `cp -R` **não é enviado, e o deploy fica verde na mesma**.
 
 > ⚠️ **Pré-requisito:** PHP **8.3+** ativo na conta (ver o ticket ao fornecedor).
 > Em PHP 7.0 o plugin não arranca.
