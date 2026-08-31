@@ -61,12 +61,23 @@
 	a.link { color: var(--coral); font-weight: 700; }
 	.tagline a, footer .url a { color: inherit; }
 
+	/* Section 6 is a list of destinations, not figures to read across. Tighter
+	   rows, so adding the two Telegram lines does not cost a calculator. */
+	table.links th, table.links td { padding: 0.9mm 2.5mm; font-size: 8.5pt; }
+
 	/* Partner block: clearly labelled advertising, after the educational
 	   content, with the CFD risk warning the tool pages carry. */
 	.partner { border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 3mm; padding: 3mm 4mm; margin-top: 3.5mm; background: #fbfaff; }
 	.partner .label { font: 700 7pt Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
 	.partner .cta { display: block; margin-top: 1mm; font: 700 10pt Arial, sans-serif; color: var(--accent); }
 	.partner .risk { display: block; margin-top: 1.5mm; font-size: 7.5pt; line-height: 1.4; color: var(--muted); }
+
+	/* Partner logo, injected by build.sh next to the label when
+	   src/xm-logo.png exists. Without the file the block stays as it was —
+	   an unnamed partner link, which is the honest fallback if the deal
+	   changes and nobody rebuilds the sheet. */
+	.partner__head { display: flex; align-items: center; gap: 3mm; }
+	.partner__logo { display: block; height: 7mm; width: auto; }
 
 	/* Banner slot (page 1). build.sh injects the creative at the
 	   <!--XM_BANNER--> marker when the image file is present, and injects
@@ -135,7 +146,7 @@
 	<p class="lead">India has no daylight saving — IST is fixed at UTC+5:30, so it is the foreign sessions that shift twice a year.</p>
 	<div class="cols">
 		<div>
-			<table>
+			<table class="links">
 				<thead><tr><th colspan="3">Winter (Nov–Mar)</th></tr><tr><th>Session</th><th class="num">Opens IST</th><th class="num">Closes IST</th></tr></thead>
 				<tbody>
 					<tr><td>Sydney</td><td class="num">01:30</td><td class="num">10:30</td></tr>
@@ -147,7 +158,7 @@
 			</table>
 		</div>
 		<div>
-			<table>
+			<table class="links">
 				<thead><tr><th colspan="3">Summer (Apr–Oct)</th></tr><tr><th>Session</th><th class="num">Opens IST</th><th class="num">Closes IST</th></tr></thead>
 				<tbody>
 					<tr><td>Sydney</td><td class="num">02:30</td><td class="num">11:30</td></tr>
@@ -163,7 +174,7 @@
 
 	<h2><span class="no">5</span>Five numbers worth memorising</h2>
 	<div class="box">
-		<table style="font-size:9.5pt">
+		<table class="links" style="font-size:9.5pt">
 			<tbody>
 				<tr><td>1 pip, EUR/USD, micro lot</td><td class="num"><strong>&asymp; &#8377;9.55</strong></td></tr>
 				<tr><td>Balance where 1% risk covers one micro lot (20-pip stop, EUR/USD)</td><td class="num"><strong>&asymp; &#8377;19,100</strong></td></tr>
@@ -174,20 +185,22 @@
 		</table>
 	</div>
 
-	<h2><span class="no">6</span>The free calculators</h2>
-	<p class="lead" style="margin-bottom:1mm">Every number on this sheet, recomputed live with today&rsquo;s rates — INR-native, no sign-up:</p>
-	<table>
+	<h2><span class="no">6</span>Where these numbers live</h2>
+	<p class="lead" style="margin-bottom:1mm">All at <strong>howtoinvest.pro</strong>, recomputed with today&rsquo;s rates &mdash; no sign-up. Nobody from our Telegram will ever DM you.</p>
+	<table class="links">
 		<tbody>
-			<tr><td>Position size in &#8377;</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/position-size-calculator/">howtoinvest.pro/forex/position-size-calculator/</a></td></tr>
-			<tr><td>Pip value in &#8377;</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/pip-value-calculator/">howtoinvest.pro/forex/pip-value-calculator/</a></td></tr>
-			<tr><td>Profit/loss in &#8377;</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/profit-calculator/">howtoinvest.pro/forex/profit-calculator/</a></td></tr>
-			<tr><td>Gold (XAUUSD) lot size</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/xauusd-lot-size-calculator/">howtoinvest.pro/forex/xauusd-lot-size-calculator/</a></td></tr>
-			<tr><td>Market hours in IST (live)</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/market-hours-ist/">howtoinvest.pro/forex/market-hours-ist/</a></td></tr>
+			<tr><td>Position size in &#8377;</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/position-size-calculator/">/forex/position-size-calculator/</a></td></tr>
+			<tr><td>Pip value in &#8377;</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/pip-value-calculator/">/forex/pip-value-calculator/</a></td></tr>
+			<tr><td>Profit/loss in &#8377;</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/profit-calculator/">/forex/profit-calculator/</a></td></tr>
+			<tr><td>Gold (XAUUSD) lot size</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/xauusd-lot-size-calculator/">/forex/xauusd-lot-size-calculator/</a></td></tr>
+			<tr><td>Market hours in IST (live)</td><td class="num"><a class="link" href="https://howtoinvest.pro/forex/market-hours-ist/">/forex/market-hours-ist/</a></td></tr>
+			<tr class="hl"><td>The calculator bot (Telegram)</td><td class="num"><a class="link" href="https://t.me/HowToInvestForexBot?start=pdf">t.me/HowToInvestForexBot</a></td></tr>
+			<tr><td>The channel (Telegram)</td><td class="num"><a class="link" href="https://t.me/howtoinvestpro">t.me/howtoinvestpro</a></td></tr>
 		</tbody>
 	</table>
 
 	<div class="partner">
-		<span class="label">Partner &middot; Ad</span>
+		<span class="partner__head"><span class="label">Partner &middot; Ad</span><!--XM_LOGO--></span>
 		<a class="cta" href="https://howtoinvest.pro/forex/go/cheatsheet/">See how these numbers behave on a demo account &rarr;</a>
 		<span class="risk">Advertising link &mdash; we may be paid if you open an account, at no cost to you. Forex and CFDs are high-risk leveraged products; most retail accounts lose money. Check any platform against the RBI Alert List first.</span>
 	</div>
