@@ -32,6 +32,16 @@ class Settings {
 	public const TOOLS = array( 'position_size', 'pip_value', 'sessions', 'profit_loss' );
 
 	/**
+	 * Where a partner CTA may appear.
+	 *
+	 * TOOLS is the shortcode's whitelist — the things `[hti_forex_tool name=…]`
+	 * will render — and the hub is not one of them. Placements are a different
+	 * list for a different question, so widening one must not widen the other:
+	 * adding 'hub' to TOOLS would have made `name="hub"` a valid calculator.
+	 */
+	public const PLACEMENTS = array( 'position_size', 'pip_value', 'sessions', 'profit_loss', 'hub' );
+
+	/**
 	 * Longest label that still reads as a button. Above this it is treated as
 	 * an offer sentence and moved to the headline (see cta_for()).
 	 */
@@ -62,6 +72,7 @@ class Settings {
 			'cta_pip_value'        => true,
 			'cta_sessions'         => true,
 			'cta_profit_loss'      => true,
+			'cta_hub'              => true,
 			'email_enabled'        => true,
 			'telegram_url'         => '',
 			'conversion_block'     => 'telegram',
@@ -109,7 +120,7 @@ class Settings {
 		$errors = array();
 		$out    = $defaults;
 
-		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'email_enabled', 'ads_enabled', 'bot_ad_enabled', 'bot_nudge_enabled' ) as $flag ) {
+		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'cta_hub', 'email_enabled', 'ads_enabled', 'bot_ad_enabled', 'bot_nudge_enabled' ) as $flag ) {
 			$out[ $flag ] = ! empty( $input[ $flag ] );
 		}
 
@@ -412,7 +423,7 @@ class Settings {
 		if ( empty( $s['cta_enabled'] ) || empty( $s['cta_url'] ) ) {
 			return null;
 		}
-		if ( ! in_array( $tool, self::TOOLS, true ) || empty( $s[ 'cta_' . $tool ] ) ) {
+		if ( ! in_array( $tool, self::PLACEMENTS, true ) || empty( $s[ 'cta_' . $tool ] ) ) {
 			return null;
 		}
 
@@ -558,6 +569,7 @@ class Settings {
 								'pip_value'     => __( 'Pip value calculator', 'hti-forex' ),
 								'sessions'      => __( 'Market hours (IST)', 'hti-forex' ),
 								'profit_loss'   => __( 'Profit/loss calculator', 'hti-forex' ),
+								'hub'           => __( 'Forex hub (/forex/)', 'hti-forex' ),
 							);
 							foreach ( $tool_labels as $tool => $label ) :
 								?>

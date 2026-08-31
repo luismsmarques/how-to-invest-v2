@@ -679,6 +679,10 @@ class Tools {
 			$out .= '</div>';
 		}
 
+		// Same order as the tool pages: partner first, capture after. The hub
+		// carried no partner CTA at all until now, so its foot went straight
+		// from the FAQ to the channel box.
+		$out .= self::cta_block( 'hub' );
 		$out .= self::conversion_block( 'hub', 'card' );
 		$out .= '</section>';
 
