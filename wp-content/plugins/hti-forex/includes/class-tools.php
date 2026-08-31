@@ -169,12 +169,19 @@ class Tools {
 			$body = self::render_calculator( $name, $atts );
 		}
 
-		// Conversion hierarchy from the design handoff: tool → email → partner
-		// CTA (never above the result). The banner slot closes the partner
-		// zone right after the CTA. The top banner sits above the tool, right
-		// after the page's intro paragraph — a banner, not a CTA, so the
-		// "CTA never above the result" rule is untouched.
-		return self::ad_block_top() . $body . self::conversion_block( $name, 'row' ) . self::cta_block( $name ) . self::ad_block();
+		// Conversion order: tool → partner CTA → channel/email capture, with
+		// the banner closing the zone. The partner CTA and the capture block
+		// swapped places on 31 Aug 2026 at the owner's call — monetization now
+		// takes the slot directly under the result, and list-building follows
+		// it. The design handoff had them the other way round, so the trade
+		// being made is a warmer moment for the partner against a colder one
+		// for the channel; whichever way they sit, `cta_click` on
+		// `forex_telegram_{tool}` and the partner placement are counted
+		// separately, so the swap is measurable rather than a matter of taste.
+		//
+		// What does not move: no CTA is ever above the result. The top banner
+		// sits above the tool but is a banner, not a CTA, so that rule holds.
+		return self::ad_block_top() . $body . self::cta_block( $name ) . self::conversion_block( $name, 'row' ) . self::ad_block();
 	}
 
 	/* ---------------------------------------------------------------------

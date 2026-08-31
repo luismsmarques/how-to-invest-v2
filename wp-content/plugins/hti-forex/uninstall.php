@@ -26,6 +26,7 @@ $options = array(
 	'hti_forex_rewrites',
 	'hti_forex_sync_sig',
 	'hti_forex_bot_secret',
+	'hti_forex_rates_schedule',
 	'hti_forex_bot_schema',
 	'hti_forex_bot_buckets',
 	'hti_forex_bot_sources',
