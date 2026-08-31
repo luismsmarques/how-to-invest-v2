@@ -5,7 +5,7 @@ Description: Child block theme (FSE) for HowToInvest — an educational investin
 Author: HowToInvest
 Author URI: https://howtoinvest.pro/
 Template: twentytwentyfive
-Version: 0.8.61
+Version: 0.8.62
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.3
@@ -1892,7 +1892,16 @@ html.hti-quiz-active body { padding-bottom: 0; }
 	.hti-newshub__row { padding: 14px; gap: 14px; }
 	.hti-newshub__row-media { width: 66px; height: 66px; }
 	.hti-newshub__row-title { font-size: 16px; }
-	.hti-newshub__row-sum { display: none; }
+	/* Clamped, not hidden. This line is how a reader decides whether an
+	   article is worth opening, and dropping it on the screen where scanning
+	   matters most left a list of bare headlines. Two lines costs about 34px
+	   and keeps the decision possible. */
+	.hti-newshub__row-sum {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
 }
 
 /* ---------- Ebook landing (/ebook) ---------- */

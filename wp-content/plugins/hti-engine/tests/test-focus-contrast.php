@@ -142,5 +142,51 @@ foreach ( $sheets as $sheet ) {
 check( count( $sheets ) > 5, sprintf( 'found %d stylesheets to audit', count( $sheets ) ) );
 check( array() === $offenders, 'no :focus-visible rule sets outline: none (' . ( $offenders ? implode( '; ', $offenders ) : 'none' ) . ')' );
 
+/* ---------------------------------------------------------------------------
+ * 4. Every stylesheet declares its palette through theme.json.
+ *
+ * Not a style preference. learn.css spent its whole life redeclaring the brand
+ * hexes by hand — the last sheet in the project that did — and the cost was not
+ * only that a palette change in theme.json left /learn/ behind. Copied values
+ * drift, and these had: seven text colours ended up between 2.48:1 and 4.39:1,
+ * including a navigation link, a button label and the quiz's own
+ * correct-answer tag. A sheet on the token system inherits the contrast work
+ * done once; a sheet off it re-does that work badly, quietly.
+ *
+ * The rule is per-file rather than global because the token blocks themselves
+ * legitimately carry hexes — that is what a fallback is. What is counted here
+ * is raw hexes in the BODY of a sheet, past its own token declarations.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Two sheets carry this debt today. The numbers are a ratchet, not approval:
+ * they may fall and may never rise, so the rule binds every new line written
+ * while the existing ones get paid off. learn.css is deliberately absent —
+ * it was the worst of the three and is now on the token system, which is what
+ * the default of 40 holds it to.
+ */
+$budget = array(
+	'style.css' => 103,
+	'app.css'   => 201,
+);
+
+$raw_hex = array();
+foreach ( $sheets as $sheet ) {
+	$css = (string) preg_replace( '#/\*.*?\*/#s', '', (string) file_get_contents( $sheet ) );
+	// Everything inside a var( --x, #hex ) fallback is the token system working
+	// as intended, so those come out before counting.
+	$css   = (string) preg_replace( '/var\(\s*--[^)]*\)/', '', $css );
+	$count = preg_match_all( '/#[0-9A-Fa-f]{3,8}\b/', $css );
+	$name  = basename( $sheet );
+	$allow = $budget[ $name ] ?? 40;
+	if ( $count > $allow ) {
+		$raw_hex[] = sprintf( '%s has %d, allowed %d', $name, $count, $allow );
+	}
+}
+check(
+	array() === $raw_hex,
+	'no stylesheet grows its hand-written palette (' . ( $raw_hex ? implode( '; ', $raw_hex ) : 'none' ) . ')'
+);
+
 echo "\n=== {$passes} passed, {$failures} failed ===\n";
 exit( $failures > 0 ? 1 : 0 );
