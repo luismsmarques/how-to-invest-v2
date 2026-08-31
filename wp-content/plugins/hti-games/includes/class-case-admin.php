@@ -703,6 +703,10 @@ class Case_Admin {
 			'title'         => $title,
 			'status'        => $status,
 			'pattern'       => $pattern,
+			// Travels with the row because the panel's headline count has to
+			// distinguish a sourced case from a reconstructed one, and the
+			// gate deliberately passes both.
+			'provenance'    => self::provenance( $meta ),
 			'missing'       => $missing,
 			'open'          => $open,
 			'open_blocking' => $blocking,
@@ -1306,14 +1310,18 @@ class Case_Admin {
 			return;
 		}
 
-		$rows    = self::queue();
-		$labels  = self::checklist_labels();
-		$live    = 0;
-		$waiting = array();
+		$rows     = self::queue();
+		$labels   = self::checklist_labels();
+		$live     = 0;
+		$verified = 0;
+		$waiting  = array();
 
 		foreach ( $rows as $row ) {
 			if ( ! empty( $row['live'] ) ) {
 				++$live;
+				if ( 'verified' === ( $row['provenance'] ?? '' ) ) {
+					++$verified;
+				}
 				continue;
 			}
 			$waiting[] = $row;
@@ -1321,17 +1329,38 @@ class Case_Admin {
 
 		echo '<h2>' . esc_html__( 'The Reveal — case queue', 'hti-games' ) . '</h2>';
 
+		// Two sentences and not one, because "published, verified and in the
+		// rotation" was a single claim covering two states the gate treats
+		// differently — and it reported thirty-four illustrative cases as
+		// verified. The provenance declaration is what lets any of this name a
+		// real company (CLAUDE.md invariant 2); a screen that says every case
+		// is sourced when none is tells the owner the opposite of the one
+		// thing the arrangement rests on.
 		printf(
 			'<p>%s</p>',
 			esc_html(
 				sprintf(
 					/* translators: 1: cases being served, 2: cases in total. */
-					__( '%1$d of %2$d cases are published, verified and in the rotation. The rest are below, closest to launchable first.', 'hti-games' ),
+					__( '%1$d of %2$d cases are published and in the rotation. The rest are below, closest to launchable first.', 'hti-games' ),
 					$live,
 					count( $rows )
 				)
 			)
 		);
+
+		if ( $live > 0 ) {
+			printf(
+				'<p class="description">%s</p>',
+				esc_html(
+					sprintf(
+						/* translators: 1: cases backed by a source, 2: cases whose figures are reconstructions. */
+						__( 'Of those, %1$d are verified against a published document and %2$d are illustrative — real company, real period, real outcome, with figures reconstructed to show the pattern. Every illustrative case says so on the screen the player reads.', 'hti-games' ),
+						$verified,
+						$live - $verified
+					)
+				)
+			);
+		}
 
 		// An empty table and a finished queue produce the same $waiting, and
 		// they could not mean more different things: one is "the editorial
