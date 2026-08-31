@@ -148,4 +148,52 @@ hti_games_check( '' === Strings::get( 'no_such_key', 'en' ), 'an unknown key ret
 hti_games_check( Strings::get( 'section_name', 'de' ) === Strings::get( 'section_name', 'en' ), 'an unsupported language falls back to English' );
 hti_games_check( count( Strings::table( 'pt' ) ) === count( $all ), 'the flattened table has every key' );
 
+echo "\nNothing promises an audited number before the decision\n";
+// The library ships illustrative cases: the company, the period and the
+// direction are real, the figures are reconstructions. The reveal screen says
+// so — but it says so AFTER the player has committed, and a disclosure that
+// arrives after the decision is not a disclosure. So the strings shown BEFORE
+// it must not promise a number that most cases do not have.
+//
+// This exists because the onboarding rules card did exactly that: "the outcome
+// is what the company actually returned", read by every player before their
+// first decision, contradicted three screens later by rev_illustrative.
+$pre_decision = array(
+	'rev_ob1_body',
+	'rev_ob2_r3',
+	'rev_ob2_r4',
+	'rev_ob3_body',
+	'rev_tagline',
+	'rev_fundamentals',
+	'rev_sector_avg',
+	'rev_headlines',
+);
+$audited = array(
+	'en' => array( 'actually returned', 'the real return', 'real figures', 'taken from a filing', 'audited' ),
+	'pt' => array( 'realmente rendeu', 'o retorno real', 'números reais', 'retirados de um relatório', 'auditad' ),
+);
+$promises = array();
+foreach ( $pre_decision as $key ) {
+	foreach ( $audited as $lang => $phrases ) {
+		$text = Strings::get( $key, $lang );
+		if ( '' === $text ) {
+			continue;
+		}
+		foreach ( $phrases as $phrase ) {
+			if ( false !== stripos( $text, $phrase ) ) {
+				$promises[] = "{$key}.{$lang}: \"{$phrase}\"";
+			}
+		}
+	}
+}
+hti_games_check( array() === $promises, 'no pre-decision string claims the figures are an audited return (' . ( $promises ? implode( '; ', $promises ) : 'clean' ) . ')' );
+
+// And the line that does the disclosing still exists and still says the two
+// halves that matter: what is real, and what is not.
+foreach ( array( 'en' => array( 'real', 'reconstructed' ), 'pt' => array( 'reais', 'reconstruídos' ) ) as $lang => $halves ) {
+	$line = Strings::get( 'rev_illustrative', $lang );
+	$has  = array_filter( $halves, fn( $h ) => false !== stripos( $line, $h ) );
+	hti_games_check( count( $has ) === count( $halves ), "the illustrative line says both what is real and what is reconstructed ({$lang})" );
+}
+
 hti_games_done();

@@ -306,9 +306,15 @@ class Strings {
 				'en' => 'You commit 5%, 10%, 25% or 50% of it — or you pass.',
 				'pt' => 'Comprometes 5%, 10%, 25% ou 50% dele — ou passas.',
 			),
+			// Said BEFORE the decision, so it has to be true of every case the
+			// player can meet — and most of them carry reconstructed figures.
+			// The old wording promised "what the company actually returned",
+			// which the reveal screen then had to walk back. A disclosure that
+			// arrives after the decision is not a disclosure; this says the
+			// same thing while the player can still act on it.
 			'rev_ob2_r3'          => array(
-				'en' => 'The outcome is what the company actually returned over the five years that followed.',
-				'pt' => 'O resultado é o que a empresa realmente rendeu nos cinco anos seguintes.',
+				'en' => 'The outcome follows what really happened to the company over the five years that followed.',
+				'pt' => 'O resultado segue o que realmente aconteceu à empresa nos cinco anos seguintes.',
 			),
 			'rev_ob2_r4'          => array(
 				'en' => 'Reaching $1,000 blows the account. Passing never breaks the streak.',

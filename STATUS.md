@@ -270,8 +270,10 @@ uma conta.
   nunca pode favorecer a posição.
 - **The Reveal** — dossiê anonimizado de uma empresa real num ano real: setor,
   seis fundamentais contra a média do setor, três manchetes do período.
-  Investir uma fatia da conta ou passar; só depois o nome, o ano e o retorno
-  real a 5 anos, ao lado do que o índice fez no mesmo período.
+  Investir uma fatia da conta ou passar; só depois o nome, o ano e o retorno a
+  5 anos, ao lado do que o índice fez no mesmo período. A empresa, o período e
+  a **direção** do desfecho são reais; nos casos ilustrativos os números são
+  reconstruções do padrão, e o ecrã de resultado diz isso ao jogador.
 - **Classificação e perfil:** duas tabelas (jogadores + corridas), board diário
   ordenado por **pontuação normalizada pelo risco** (`Scoring::board_score()`,
   o P&L a 1% de risco) e não pelo P&L cru — ordenar pelo lucro faria do topo
