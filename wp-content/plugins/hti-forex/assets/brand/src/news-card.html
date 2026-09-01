@@ -1,0 +1,106 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>HowToInvest — news card</title>
+<style>
+/* Fonts come out of the theme, so a card rendered here and a page served by
+   the site are the same typeface — Poppins carries U+20B9, which is why the
+   rupee never has to be drawn by hand. */
+@font-face { font-family:'Poppins'; font-weight:800; font-display:block;
+  src:url('../../../../../themes/howtoinvest/assets/fonts/poppins-800.woff2') format('woff2'); }
+@font-face { font-family:'Jakarta'; font-weight:500; font-display:block;
+  src:url('../../../../../themes/howtoinvest/assets/fonts/plus-jakarta-sans-500.woff2') format('woff2'); }
+@font-face { font-family:'Jakarta'; font-weight:700; font-display:block;
+  src:url('../../../../../themes/howtoinvest/assets/fonts/plus-jakarta-sans-700.woff2') format('woff2'); }
+
+:root { --navy:#1E2147; --coral:#FF6B5E; --green:#22C3A6; --muted:#9A9AB0; }
+html,body { margin:0; padding:0; }
+
+.card { width:2560px; height:1440px; background:var(--navy); color:#fff;
+  padding:150px 170px; box-sizing:border-box; position:relative;
+  font-family:'Jakarta',system-ui,sans-serif; }
+
+.eyebrow { font-weight:700; font-size:52px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--coral); margin:0 0 44px; }
+.head { font-family:'Poppins'; font-weight:800; font-size:150px; line-height:1.02;
+  letter-spacing:-.02em; margin:0; max-width:1950px; }
+.head--small { font-size:118px; }
+
+.figure { display:flex; align-items:flex-end; gap:70px; margin-top:140px; }
+.big { font-family:'Poppins'; font-weight:800; font-size:400px; line-height:.86; letter-spacing:-.03em; }
+.beside { padding-bottom:36px; font-weight:500; font-size:74px; line-height:1.28; color:var(--muted); }
+.beside b { color:#fff; font-weight:700; }
+.sub { display:block; font-size:60px; margin-top:14px; }
+
+/* The comparison, coloured by direction. Never "good" or "bad" — a number
+   below consensus is not a bad number, it is a number below consensus, and
+   this channel does not tell anyone what to do about it. */
+.delta { display:inline-block; margin-top:22px; padding:14px 34px; border-radius:999px;
+  font-weight:700; font-size:54px; }
+.delta--down { background:rgba(255,107,94,.16); color:var(--coral); }
+.delta--up   { background:rgba(34,195,166,.16); color:var(--green); }
+.delta--flat { background:rgba(154,154,176,.16); color:var(--muted); }
+
+.foot { position:absolute; left:170px; right:170px; bottom:120px;
+  display:flex; align-items:center; justify-content:space-between; gap:60px; }
+.brand { display:flex; align-items:center; gap:34px; font-family:'Poppins'; font-weight:800; font-size:78px; }
+.note { font-weight:500; font-size:62px; color:var(--muted); text-align:right; }
+</style>
+<div class="card">
+  <p class="eyebrow" id="eyebrow">—</p>
+  <h1 class="head" id="head">—</h1>
+
+  <div class="figure">
+    <div class="big" id="value">—</div>
+    <div class="beside">
+      <b id="label">—</b>
+      <span class="sub" id="sub">—</span>
+      <span class="delta" id="delta">—</span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="brand">
+      <svg width="74" height="88" viewBox="0 0 74 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M37 2 6 14v30c0 24 18 37 31 42 13-5 31-18 31-42V14L37 2Z" fill="#FF6B5E"/>
+        <rect x="24" y="46" width="8" height="18" rx="2" fill="#fff"/>
+        <rect x="34" y="36" width="8" height="28" rx="2" fill="#fff"/>
+        <rect x="44" y="27" width="8" height="37" rx="2" fill="#fff"/>
+      </svg>
+      <span>HowToInvest</span>
+    </div>
+    <div class="note" id="note">educational only</div>
+  </div>
+</div>
+<script>
+// Everything the card says arrives in the URL, so the same file renders any
+// release and nothing is ever typed into the design by hand.
+( function () {
+	var q = new URLSearchParams( location.search );
+	var set = function ( id, v ) { if ( v !== null ) { document.getElementById( id ).textContent = v; } };
+
+	set( 'eyebrow', q.get( 'eyebrow' ) );
+	set( 'value', q.get( 'value' ) );
+	set( 'label', q.get( 'label' ) );
+	set( 'sub', q.get( 'sub' ) );
+	set( 'note', q.get( 'note' ) );
+
+	var head = document.getElementById( 'head' );
+	head.innerHTML = ( q.get( 'head' ) || '' ).split( '|' ).join( '<br>' );
+	if ( head.textContent.length > 34 ) { head.classList.add( 'head--small' ); }
+
+	// The chip is derived, not written: the direction comes from the numbers
+	// so a card can never claim a beat while showing a miss.
+	var d = document.getElementById( 'delta' );
+	var actual = parseFloat( q.get( 'value' ) );
+	var vs = parseFloat( q.get( 'vs' ) );
+	var vsLabel = q.get( 'vslabel' ) || 'consensus';
+	if ( isNaN( actual ) || isNaN( vs ) ) {
+		d.remove();
+	} else {
+		var diff = Math.round( ( actual - vs ) * 100 ) / 100;
+		var dir = diff > 0 ? 'up' : ( diff < 0 ? 'down' : 'flat' );
+		d.className = 'delta delta--' + dir;
+		d.textContent = ( diff > 0 ? '+' : '' ) + diff + ' vs ' + vsLabel + ' ' + vs;
+	}
+} )();
+</script>
