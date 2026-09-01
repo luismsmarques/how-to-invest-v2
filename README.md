@@ -40,6 +40,7 @@ Além destes, `/docs` tem os **documentos operacionais** — estado, campanhas e
 | `Estado_e_Cronologia_Set2026.md` | Auditoria de 30 ago 2026 e o mês de setembro (medir e provar a primeira conversão) |
 | `Forex_GEO_Ferramentas_Bot_Out2026.md` | Out–Dez: `/forex/` a 9 moedas por seletor (sem páginas por GEO), matriz de corretoras com criativos, e drip de 7 dias no bot |
 | `Propeller_Campanhas_Bot_Telegram.md` | Criativos, códigos de campanha e pré-condições das campanhas pagas do bot |
+| `Jogos_Questoes_Juridicas.md` | Preparação da revisão L-D para a secção de jogos: factos verificados contra o código e as dez questões em aberto |
 
 ---
 
