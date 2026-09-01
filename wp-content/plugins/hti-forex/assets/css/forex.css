@@ -1080,7 +1080,11 @@
 }
 
 /* Responsive --------------------------------------------------------------- */
-@media (max-width: 900px) {
+/* The tool card stacks at the same width hti-engine's does (tools.css:641),
+   not 120px later. Between 900 and 1020 the two sections used to disagree
+   about whether a calculator is one column or two, which is exactly the seam
+   a visitor moving between /forex/ and /tools/ would feel. */
+@media (max-width: 1020px) {
 	.hti-fx-card--tool {
 		grid-template-columns: 1fr;
 	}
@@ -1088,6 +1092,9 @@
 		border-left: 0;
 		border-top: 1px solid var(--fx-border);
 	}
+}
+
+@media (max-width: 900px) {
 	.hti-fx-hub__core {
 		grid-template-columns: 1fr;
 	}
@@ -1135,4 +1142,15 @@
 	.hti-fx-ad__slot--mobile {
 		display: none;
 	}
+}
+
+/* The tool shell. Mirrors hti-engine's .hti-tool-shell.alignwide deliberately:
+   the two sections are documented as reading like one product, and until now
+   only one of them asked the layout for the width its own grid needs. Same
+   1000px cap, same two-class specificity trick — WordPress sets the wide width
+   through :where(.is-layout-constrained) > .alignwide, which weighs one class,
+   so a one-class rule here would win or lose on load order alone. */
+.hti-fx-shell.alignwide {
+	max-width: 1000px;
+	margin-inline: auto;
 }

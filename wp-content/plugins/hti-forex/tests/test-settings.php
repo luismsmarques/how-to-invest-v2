@@ -105,13 +105,25 @@ check( 'position-size' === Settings::cta_for( 'position_size', $on )['slot'], 't
 // The point of the slot: a renderer cannot print the affiliate URL because it
 // is never handed one. Regressing this would put a raw affiliate link back in
 // the page source (CLAUDE.md invariant 4 — outbound links only via /go/).
-foreach ( Settings::TOOLS as $tool ) {
+foreach ( Settings::PLACEMENTS as $tool ) {
 	$cta = Settings::cta_for( $tool, $on );
 	check(
 		is_array( $cta ) && ! str_contains( implode( '|', $cta ), 'partner.example.com' ),
 		"cta_for( '{$tool}' ) never hands out the affiliate URL"
 	);
 }
+
+// --- O hub é uma colocação, não uma calculadora ---------------------------
+// Duas listas para duas perguntas. Fundi-las era o atalho óbvio e teria feito
+// de `[hti_forex_tool name="hub"]` uma calculadora válida, que renderizaria o
+// position size com o nome errado.
+check( in_array( 'hub', Settings::PLACEMENTS, true ), 'o hub pode levar CTA' );
+check( ! in_array( 'hub', Settings::TOOLS, true ), 'mas não é um nome de shortcode válido' );
+check( 'hub' === Settings::cta_for( 'hub', $on )['slot'], 'e tem slot próprio no /forex/go/' );
+
+$no_hub = array_merge( $on, array( 'cta_hub' => false ) );
+check( null === Settings::cta_for( 'hub', $no_hub ), 'o interruptor por colocação desliga só o hub' );
+check( is_array( Settings::cta_for( 'position_size', $no_hub ) ), 'e não arrasta as ferramentas com ele' );
 
 // --- A cta_url on our own host loses the sub-id at the second hop ----------
 check( Settings::cta_url_is_local( 'https://howtoinvest.pro/go/open-xm/', 'howtoinvest.pro' ), 'an own-host affiliate URL is spotted' );

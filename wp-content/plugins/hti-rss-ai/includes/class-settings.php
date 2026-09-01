@@ -43,7 +43,7 @@ class Settings {
 			'similarity_threshold' => 0.4,
 			'group_max_span_days'  => 3,
 			'enable_embeddings'    => 0,
-			'embedding_model'      => 'text-embedding-004',
+			'embedding_model'      => 'gemini-embedding-001',
 			'embedding_threshold'  => 0.82,
 			'embed_max_per_run'    => 200,
 			'feed_max_errors'      => 5,
@@ -51,7 +51,7 @@ class Settings {
 			'max_generations_day'  => 10,
 			'default_lang'         => 'en',
 			'image_generate'       => 1,
-			'image_model'          => 'imagen-4.0-generate-001',
+			'image_model'          => 'gemini-2.5-flash-image',
 			'image_base_model'     => 'gemini-2.5-flash-image',
 			'youtube_api_key'      => '',
 			'supadata_api_key'     => '',
@@ -249,7 +249,7 @@ class Settings {
 			'similarity_threshold' => $threshold,
 			'group_max_span_days'  => max( 1, min( 30, absint( $input['group_max_span_days'] ?? 3 ) ) ),
 			'enable_embeddings'    => empty( $input['enable_embeddings'] ) ? 0 : 1,
-			'embedding_model'      => isset( $input['embedding_model'] ) ? sanitize_text_field( $input['embedding_model'] ) : 'text-embedding-004',
+			'embedding_model'      => isset( $input['embedding_model'] ) ? sanitize_text_field( $input['embedding_model'] ) : 'gemini-embedding-001',
 			'embedding_threshold'  => $emb_threshold,
 			'embed_max_per_run'    => max( 1, min( 2000, absint( $input['embed_max_per_run'] ?? 200 ) ) ),
 			'feed_max_errors'      => max( 1, min( 100, absint( $input['feed_max_errors'] ?? 5 ) ) ),
@@ -257,7 +257,7 @@ class Settings {
 			'max_generations_day'  => max( 1, absint( $input['max_generations_day'] ?? 10 ) ),
 			'default_lang'         => isset( $input['default_lang'] ) ? preg_replace( '/[^a-z]/', '', strtolower( (string) $input['default_lang'] ) ) : 'en',
 			'image_generate'       => empty( $input['image_generate'] ) ? 0 : 1,
-			'image_model'          => isset( $input['image_model'] ) ? sanitize_text_field( $input['image_model'] ) : 'imagen-4.0-generate-001',
+			'image_model'          => isset( $input['image_model'] ) ? sanitize_text_field( $input['image_model'] ) : 'gemini-2.5-flash-image',
 			'image_base_model'     => isset( $input['image_base_model'] ) ? sanitize_text_field( $input['image_base_model'] ) : 'gemini-2.5-flash-image',
 			'target_post_type'     => isset( $input['target_post_type'] ) ? sanitize_key( $input['target_post_type'] ) : '',
 			'target_taxonomy'      => isset( $input['target_taxonomy'] ) ? sanitize_key( $input['target_taxonomy'] ) : '',
@@ -267,6 +267,32 @@ class Settings {
 			'disclaimer'           => isset( $input['disclaimer'] ) ? sanitize_textarea_field( $input['disclaimer'] ) : '',
 			'guard_advice'         => empty( $input['guard_advice'] ) ? 0 : 1,
 			'guard_tickers'        => empty( $input['guard_tickers'] ) ? 0 : 1,
+		);
+	}
+
+	/**
+	 * Warn, next to the field, when the saved model name is one Google has
+	 * switched off. The migration rewrites these once; this catches anyone who
+	 * types an old name back in from memory or an old runbook.
+	 *
+	 * @param string $setting Setting key.
+	 * @param string $value   Saved value.
+	 */
+	private static function retired_warning( string $setting, string $value ): void {
+		if ( ! Model_Catalog::is_retired( $setting, $value ) ) {
+			return;
+		}
+		printf(
+			'<p style="color:#b32d2e;"><strong>%s</strong> %s</p>',
+			esc_html__( 'Retired model.', 'hti-rss-ai' ),
+			esc_html(
+				sprintf(
+					/* translators: 1: configured model, 2: suggested replacement. */
+					__( '%1$s is no longer served by the Generative Language API and every call will fail. Try %2$s, or pick one from the list below.', 'hti-rss-ai' ),
+					$value,
+					(string) ( Model_Catalog::replacements()[ $setting ] ?? '' )
+				)
+			)
 		);
 	}
 
@@ -437,7 +463,8 @@ class Settings {
 					<tr>
 						<th scope="row"><label for="rssai_embedding_model"><?php echo esc_html__( 'Embedding model', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[embedding_model]" id="rssai_embedding_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['embedding_model'] ); ?>" />
-							<p class="description"><?php echo esc_html__( 'Gemini embeddings model, e.g. text-embedding-004.', 'hti-rss-ai' ); ?></p>
+							<p class="description"><?php echo esc_html__( 'Gemini embeddings model, e.g. gemini-embedding-001. Use “List available models” below rather than a name from memory — the text-embedding-* family was retired.', 'hti-rss-ai' ); ?></p>
+							<?php self::retired_warning( 'embedding_model', (string) $s['embedding_model'] ); ?>
 						</td>
 					</tr>
 					<tr>
@@ -483,19 +510,21 @@ class Settings {
 								<input name="<?php echo esc_attr( self::OPTION ); ?>[image_generate]" type="checkbox" value="1" <?php checked( ! empty( $s['image_generate'] ) ); ?> />
 								<?php echo esc_html__( 'Generate an AI featured image about the article topic', 'hti-rss-ai' ); ?>
 							</label>
-							<p class="description"><?php echo esc_html__( 'Saved as the post’s featured image. The same image is reused inside the downloadable social cards (Social media kit) — no extra AI calls. If unavailable, it falls back to the feed image.', 'hti-rss-ai' ); ?></p>
+							<p class="description"><?php echo esc_html__( 'The feed photo is read into a short JSON brief and the illustration is drawn from that brief — never from the photo file itself, and the photo is never published. If every AI route fails, the article gets a brand card drawn locally instead. The image is reused inside the downloadable social cards (Social media kit) with no extra AI calls.', 'hti-rss-ai' ); ?></p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="rssai_image_model"><?php echo esc_html__( 'Image model', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[image_model]" id="rssai_image_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['image_model'] ); ?>" />
-							<p class="description"><?php echo esc_html__( 'Text-to-image model, used when there is no feed image. Imagen models (e.g. imagen-4.0-generate-001) use :predict; Gemini image models (e.g. gemini-2.5-flash-image) use :generateContent — both handled automatically. Run ListModels to see what your key supports.', 'hti-rss-ai' ); ?></p>
+							<p class="description"><?php echo esc_html__( 'The model that draws the illustration from the image brief. Gemini image models (e.g. gemini-2.5-flash-image) use :generateContent; Imagen models use :predict — both handled automatically, but Imagen is no longer served on this API. Use “List available models” below to see what your key really has.', 'hti-rss-ai' ); ?></p>
+							<?php self::retired_warning( 'image_model', (string) $s['image_model'] ); ?>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="rssai_image_base_model"><?php echo esc_html__( 'Image-to-image model', 'hti-rss-ai' ); ?></label></th>
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[image_base_model]" id="rssai_image_base_model" type="text" class="regular-text" value="<?php echo esc_attr( (string) $s['image_base_model'] ); ?>" />
-							<p class="description"><?php echo esc_html__( 'When a draft has a feed image, it is used as the base and reimagined into the branded illustration with this model. Must be a Gemini image model (accepts an input image), e.g. gemini-2.5-flash-image. Leave blank to always use plain text-to-image.', 'hti-rss-ai' ); ?></p>
+							<p class="description"><?php echo esc_html__( 'The rescue route: when drawing from the brief fails and the item has a feed photo, the photo is restyled with this model instead. Must be a Gemini image model (accepts an input image), e.g. gemini-2.5-flash-image. Leave blank to skip the rescue.', 'hti-rss-ai' ); ?></p>
+							<?php self::retired_warning( 'image_base_model', (string) $s['image_base_model'] ); ?>
 						</td>
 					</tr>
 					<tr>
@@ -533,6 +562,7 @@ class Settings {
 				</table>
 				<?php submit_button(); ?>
 			</form>
+			<?php Model_Tools::render_panel(); ?>
 			<hr />
 			<h2><?php echo esc_html__( 'Maintenance', 'hti-rss-ai' ); ?></h2>
 			<p class="description"><?php echo esc_html__( 'Drafts and logs are cleaned automatically once a day. You can also run it now.', 'hti-rss-ai' ); ?></p>

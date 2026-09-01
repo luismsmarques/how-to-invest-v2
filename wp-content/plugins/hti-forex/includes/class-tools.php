@@ -169,12 +169,19 @@ class Tools {
 			$body = self::render_calculator( $name, $atts );
 		}
 
-		// Conversion hierarchy from the design handoff: tool → email → partner
-		// CTA (never above the result). The banner slot closes the partner
-		// zone right after the CTA. The top banner sits above the tool, right
-		// after the page's intro paragraph — a banner, not a CTA, so the
-		// "CTA never above the result" rule is untouched.
-		return self::ad_block_top() . $body . self::conversion_block( $name, 'row' ) . self::cta_block( $name ) . self::ad_block();
+		// Conversion order: tool → partner CTA → channel/email capture, with
+		// the banner closing the zone. The partner CTA and the capture block
+		// swapped places on 31 Aug 2026 at the owner's call — monetization now
+		// takes the slot directly under the result, and list-building follows
+		// it. The design handoff had them the other way round, so the trade
+		// being made is a warmer moment for the partner against a colder one
+		// for the channel; whichever way they sit, `cta_click` on
+		// `forex_telegram_{tool}` and the partner placement are counted
+		// separately, so the swap is measurable rather than a matter of taste.
+		//
+		// What does not move: no CTA is ever above the result. The top banner
+		// sits above the tool but is a banner, not a CTA, so that rule holds.
+		return self::ad_block_top() . $body . self::cta_block( $name ) . self::conversion_block( $name, 'row' ) . self::ad_block();
 	}
 
 	/* ---------------------------------------------------------------------
@@ -199,7 +206,16 @@ class Tools {
 			$tool = self::add_margin_extension( $tool );
 		}
 
-		$out  = '<form class="hti-fx-tool" data-tool="' . esc_attr( $name ) . '"' . ( $with_margin ? ' data-variant="leverage"' : '' ) . ' novalidate>';
+		// alignwide, for the reason hti-engine's own tools already carry it
+		// (class-tools.php::shell): these pages are seeded with no page
+		// template, so they render through page.html and inherit
+		// contentSize: 680px — while the card inside is a 1fr/380px grid. The
+		// inputs column was landing at ~300px on a desktop, and .hti-fx-fields
+		// then put two fields in ~135px each. The two sections are meant to
+		// read as one product; this is the half that was not asking for the
+		// width it needs.
+		$out  = '<div class="hti-fx-shell alignwide">';
+		$out .= '<form class="hti-fx-tool" data-tool="' . esc_attr( $name ) . '"' . ( $with_margin ? ' data-variant="leverage"' : '' ) . ' novalidate>';
 		$out .= '<div class="hti-fx-card hti-fx-card--tool">';
 
 		// --- Inputs column -------------------------------------------------
@@ -282,6 +298,7 @@ class Tools {
 
 		$out .= '<noscript><p class="hti-fx-note">' . esc_html( 'Enable JavaScript to use this calculator.' ) . '</p></noscript>';
 		$out .= '</form>';
+		$out .= '</div>';
 
 		return $out;
 	}
@@ -672,6 +689,10 @@ class Tools {
 			$out .= '</div>';
 		}
 
+		// Same order as the tool pages: partner first, capture after. The hub
+		// carried no partner CTA at all until now, so its foot went straight
+		// from the FAQ to the channel box.
+		$out .= self::cta_block( 'hub' );
 		$out .= self::conversion_block( 'hub', 'card' );
 		$out .= '</section>';
 

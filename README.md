@@ -32,6 +32,15 @@ Ler por esta ordem na primeira vez:
 | 6 | `Stack_Concreta_HowToInvest_MVP.md` | Servidor, tema, plugins, estrutura do `hti-engine`, ambientes |
 | 7 | `Criterios_Pronto_QA_HowToInvest_MVP.md` | Definition of Done, checklists, gate de lançamento |
 
+Além destes, `/docs` tem os **documentos operacionais** — estado, campanhas e planos por
+área, escritos contra o código. Os que orientam trabalho a decorrer:
+
+| Documento | O que define |
+|-----------|--------------|
+| `Estado_e_Cronologia_Set2026.md` | Auditoria de 30 ago 2026 e o mês de setembro (medir e provar a primeira conversão) |
+| `Forex_GEO_Ferramentas_Bot_Out2026.md` | Out–Dez: `/forex/` a 9 moedas por seletor (sem páginas por GEO), matriz de corretoras com criativos, e drip de 7 dias no bot |
+| `Propeller_Campanhas_Bot_Telegram.md` | Criativos, códigos de campanha e pré-condições das campanhas pagas do bot |
+
 ---
 
 ## 🗂️ Estrutura do repositório
@@ -40,15 +49,28 @@ Ler por esta ordem na primeira vez:
 howtoinvest/
 ├── README.md                    # este ficheiro
 ├── CLAUDE.md                    # contexto que o Claude Code lê sempre
+├── STATUS.md                    # o estado real do que está construído
 ├── docs/                        # os 7 documentos de especificação
 ├── .claude/
 │   └── skills/                  # skills de desenvolvimento (ver abaixo)
 └── wp-content/
     ├── themes/howtoinvest/      # child block theme (FSE)
-    └── plugins/hti-engine/      # o plugin custom = o produto
+    └── plugins/
+        ├── hti-engine/          # o plugin custom = o produto
+        ├── hti-rss-ai/          # pipeline de notícias (humano no meio)
+        ├── hti-social/          # gerador de cartões para redes sociais
+        ├── hti-forex/           # secção /forex/ (EN-only, mercado indiano)
+        └── hti-games/           # secção /games/ — dois jogos educativos
 ```
 
-> **Nota:** versiona em Git apenas `wp-content/themes/howtoinvest`, `wp-content/plugins/hti-engine`, `docs/`, `.claude/`, `CLAUDE.md` e `README.md`. O core do WordPress e plugins de terceiros **não** vão para o repo.
+**`hti-games`** — `/games/` (`/pt/jogos/`), bilingue EN+PT: *Survive the Charts*
+(um gráfico por dia, comprar/vender/passar, e o que o **tamanho da posição** faz
+a uma conta virtual) e *The Reveal* (dossiê anonimizado de uma empresa real num
+ano real). Dinheiro virtual, sessão anónima, e **sem corretoras em lado nenhum**
+— ver o invariante 8 abaixo. Estado, conteúdo em falta e checklist de
+lançamento: `STATUS.md`.
+
+> **Nota:** versiona em Git apenas `wp-content/themes/howtoinvest`, os cinco plugins `hti-*`, `docs/`, `.claude/`, `CLAUDE.md`, `STATUS.md` e `README.md`. O core do WordPress e plugins de terceiros **não** vão para o repo.
 
 ---
 
@@ -102,3 +124,4 @@ Depois: Fase 2 (motor), Fase 3 (conta+RGPD+PDF), Fase 4 (lançamento). Ver PRD �
 5. Export e delete de conta (RGPD) são **P0**, não opcionais.
 6. Chave Gemini **nunca** chega ao cliente.
 7. Toda a string voltada ao utilizador existe em **EN e PT**.
+8. Os jogos de `/games/` **não levam corretoras** — nenhum link de afiliado, banner, módulo de parceria ou menção a corretora em qualquer superfície de jogo. A exceção do `/forex/` não se estende por analogia (ver `CLAUDE.md` §9).

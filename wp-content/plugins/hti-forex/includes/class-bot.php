@@ -152,6 +152,13 @@ class Bot {
 			// "454 people came from b2" into "b2 paid for this account".
 			// First touch wins — set_source() never overwrites.
 			Bot_Store::set_source( $chat_id, $source );
+
+			// Arm the one follow-up, for someone new only. A person coming back
+			// to /start has already had whatever this would remind them of.
+			if ( $is_new ) {
+				Bot_Nudge::arm( $chat_id );
+			}
+
 			self::track( 'forex_bot_start' );
 			return self::send_illustrated( $chat_id, 'start', self::start_text() );
 		}
@@ -168,6 +175,11 @@ class Bot {
 		}
 
 		Bot_Store::count_balance( $parsed['inr'] );
+
+		// They asked the bot the thing the bot is for, so the reminder to do
+		// exactly that is spent — permanently, whether or not it had been armed.
+		Bot_Store::disarm_nudge( $chat_id );
+
 		self::track( 'forex_bot_calc' );
 
 		return self::answer( $chat_id, $parsed['inr'] );

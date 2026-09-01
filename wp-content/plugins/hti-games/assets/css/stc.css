@@ -1,0 +1,249 @@
+/**
+ * Survive the Charts — the dark world.
+ *
+ * Almost everything here is a token re-point: games.css owns the structure and
+ * this sheet owns the palette, so the shell, the tiles, the warning box and
+ * the result card are the same components in a different room.
+ *
+ * Tokens are from the handoff (handoff_survive_the_charts/README.md). Two of
+ * them are load-bearing rather than decorative:
+ *
+ *   --g-brand  #FFB020  amber. UI, the streak, the primary button. NEVER a
+ *                       profit colour — a player must be able to read "green"
+ *                       as "the trade went your way" and nothing else.
+ *   --g-up / --g-down    candles and trade outcome, and nothing else.
+ *
+ * The five candle colours are also read by stc.js through getComputedStyle():
+ * a canvas cannot use a custom property, so the palette is declared once here
+ * and the chart asks the stylesheet for it rather than carrying a second copy.
+ *
+ * @package HTI_Games
+ */
+
+.hti-stc {
+	--g-bg: #0A0D12;
+	--g-surface: #0E1116;
+	--g-surface-2: #151B25;
+	--g-surface-3: #1E2530;
+	--g-border: #1B222E;
+	--g-border-2: #242C3A;
+	--g-border-3: #2A3342;
+	/* See games.css. 3.02:1 on the fill it sits on. */
+	--g-field: #5C6779;
+	--g-text: #E8EDF5;
+	--g-text-2: #C2CAD8;
+	--g-muted: #8A94A6;
+	--g-brand: #FFB020;
+	--g-brand-ink: #0A0D12;
+	--g-brand-soft: #2A2110;
+	--g-up: #22C77E;
+	--g-up-soft: #0E2A1D;
+	--g-down: #FF4D5E;
+	--g-down-soft: #2A0F14;
+	--g-warn: #FF8A3D;
+	--g-warn-soft: #2A1A10;
+	--g-grid: #161C26;
+	--g-past-up: #2E7D5B;
+	/* Muted on purpose, but #8C3B44 sat at 2.58:1 on the chart ground — under
+	   the 3:1 WCAG 1.4.11 asks of a graphic somebody has to read. 3.41:1 puts
+	   it beside --g-past-up (3.84:1) and still far behind the live --g-down
+	   (5.92:1), so past still reads as past. */
+	--g-past-down: #A64A54;
+	--g-radius: 18px;
+
+	max-width: 470px;
+	border-radius: var( --g-radius );
+	overflow: hidden;
+	background: var( --g-bg );
+	color: var( --g-text );
+}
+
+/* The dark panel needs its own borders back: the shared rules paint them in
+   the light palette's colours, which the token swap already handles, but the
+   rounded outer edge is this sheet's. */
+.hti-stc .hti-g__hud,
+.hti-stc .hti-g__phases,
+.hti-stc .hti-ob { border-radius: 0; }
+
+.hti-stc .hti-g__hud { border-top: 0; border-left: 0; border-right: 0; }
+.hti-stc .hti-g__phases { border-left: 0; border-right: 0; border-bottom: 0; }
+.hti-stc .hti-g__health { border-left: 0; border-right: 0; }
+
+/* While a run is on screen the site chrome is gone (games.css), so the game
+   should be what fills the viewport — the editorial half of the page sits
+   below the fold rather than competing with the chart. */
+html.hti-game-active .hti-stc {
+	min-height: calc( 100vh - 48px );
+	margin-top: 0;
+}
+
+/* Borders that read on a dark ground: the light palette's hairlines vanish. */
+.hti-stc .hti-g__disclaimer { border-top-color: var( --g-border-2 ); }
+
+.hti-stc .hti-g__rules {
+	background: var( --g-surface-2 );
+	border-color: var( --g-border-2 );
+}
+
+.hti-stc .hti-g__noscript {
+	background: var( --g-warn-soft );
+	border-color: var( --g-warn );
+	color: var( --g-text-2 );
+}
+
+/* ---------------------------------------------------------------------------
+ * The chart panel
+ * ------------------------------------------------------------------------- */
+
+.hti-stc__panel {
+	padding: 12px 18px 0;
+	background: var( --g-surface );
+}
+
+.hti-stc__panelhead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 8px;
+}
+
+.hti-stc__panelhead .hti-g__h2 { font-size: var( --g-fs-lg ); }
+
+.hti-g__pill {
+	padding: 4px 10px;
+	background: var( --g-surface-3 );
+	border: 1px solid var( --g-border-2 );
+	border-radius: 999px;
+	font-weight: 600;
+	font-size: var( --g-fs-xs );
+	color: var( --g-muted );
+	white-space: nowrap;
+}
+
+.hti-stc__canvaswrap {
+	position: relative;
+	background: #0B0F15;
+	border: 1px solid var( --g-border );
+	border-radius: 14px;
+	overflow: hidden;
+}
+
+/* CSS pixels here; stc.js sizes the backing store at the device ratio, capped
+   at 2. Never a click target — every control is a real button outside it. */
+.hti-stc__canvas {
+	display: block;
+	width: 100%;
+	height: 286px;
+}
+
+@media ( max-width: 420px ) {
+	.hti-stc__canvas { height: 240px; }
+}
+
+.hti-stc__live {
+	position: absolute;
+	top: 10px;
+	left: 12px;
+	font-weight: 700;
+	font-size: var( --g-fs-xs );
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var( --g-brand );
+	animation: hti-stc-pulse 1.1s infinite;
+}
+
+@keyframes hti-stc-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.45; }
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.hti-stc__live { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Decide
+ * ------------------------------------------------------------------------- */
+
+.hti-stc .hti-g__choice--pass {
+	background: var( --g-surface-2 );
+	border-color: var( --g-border-3 );
+	color: var( --g-text );
+	font-size: var( --g-fs-lg );
+}
+
+.hti-stc .hti-g__choice--pass:hover { border-color: var( --g-brand ); }
+
+/* ---------------------------------------------------------------------------
+ * Death
+ * ------------------------------------------------------------------------- */
+
+.hti-stc .hti-g__card--dead {
+	background: #1B0E12;
+	border-color: #7A2731;
+}
+
+.hti-stc .hti-g__deadrows { background: rgba( 0, 0, 0, 0.35 ); }
+
+.hti-stc .hti-g__phase--dead { animation: hti-stc-shake 0.5s ease; }
+
+@keyframes hti-stc-shake {
+	0%, 100% { transform: translateX( 0 ); }
+	20% { transform: translateX( -6px ); }
+	40% { transform: translateX( 5px ); }
+	60% { transform: translateX( -3px ); }
+	80% { transform: translateX( 2px ); }
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.hti-stc .hti-g__phase--dead { animation: none; }
+}
+
+/* Tablet and desktop. The handoff drew this game at 430px and nothing else, so
+   above a phone it was a 470px column and the candlestick chart — the element
+   that earns every pixel — was the narrowest thing on a 1440px screen. Eighty
+   candles in 434px is 2.9px of body each. Two columns at 900px puts the chart
+   and the buttons that act on it side by side instead of a scroll apart.
+   min-width on purpose: it leaves the phone layout untouched. */
+
+/* Tablet: still one column — a portrait tablet is a big phone, and splitting
+   at 768px gives two columns too narrow to be worth the split. What it buys
+   is a chart that grows and room to breathe. */
+@media ( min-width: 768px ) {
+
+	.hti-stc { max-width: 720px; }
+
+	.hti-stc__canvas { height: 340px; }
+}
+
+@media ( min-width: 900px ) {
+
+	.hti-stc {
+		display: grid;
+		max-width: 980px;
+		grid-template-columns: minmax( 0, 1.45fr ) minmax( 300px, 1fr );
+		align-items: start;
+	}
+
+	/* The frame spans; only the chart and the decision share the row. */
+	.hti-stc > .hti-g__hud,
+	.hti-stc > .hti-g__health,
+	.hti-stc > .hti-g__status,
+	.hti-stc > .hti-g__rules,
+	.hti-stc > .hti-g__disclaimer,
+	.hti-stc > .hti-ob { grid-column: 1 / -1; }
+
+	/* Onboarding hides the phases, so it takes the whole width rather than
+	   leaving a column of nothing beside it. */
+	.hti-stc > .hti-g__phases { border-top: 0; }
+
+	.hti-stc__canvas { height: 420px; }
+}
+
+@media ( min-width: 1200px ) {
+
+	.hti-stc { max-width: 1180px; }
+
+	.hti-stc__canvas { height: 480px; }
+}

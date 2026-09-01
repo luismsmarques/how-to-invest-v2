@@ -32,6 +32,16 @@ class Settings {
 	public const TOOLS = array( 'position_size', 'pip_value', 'sessions', 'profit_loss' );
 
 	/**
+	 * Where a partner CTA may appear.
+	 *
+	 * TOOLS is the shortcode's whitelist — the things `[hti_forex_tool name=…]`
+	 * will render — and the hub is not one of them. Placements are a different
+	 * list for a different question, so widening one must not widen the other:
+	 * adding 'hub' to TOOLS would have made `name="hub"` a valid calculator.
+	 */
+	public const PLACEMENTS = array( 'position_size', 'pip_value', 'sessions', 'profit_loss', 'hub' );
+
+	/**
 	 * Longest label that still reads as a button. Above this it is treated as
 	 * an offer sentence and moved to the headline (see cta_for()).
 	 */
@@ -62,6 +72,7 @@ class Settings {
 			'cta_pip_value'        => true,
 			'cta_sessions'         => true,
 			'cta_profit_loss'      => true,
+			'cta_hub'              => true,
 			'email_enabled'        => true,
 			'telegram_url'         => '',
 			'conversion_block'     => 'telegram',
@@ -69,6 +80,7 @@ class Settings {
 			'bot_ad_enabled'       => false,
 			'bot_ad_demo_url'      => 'https://howtoinvest.pro/go/xm-demo/',
 			'bot_ad_real_url'      => 'https://howtoinvest.pro/go/open-account-xm/',
+			'bot_nudge_enabled'    => false,
 			'bot_ad_demo_text'     => '🧪 A demo account places this exact trade with no money at risk',
 			'bot_ad_real_text'     => '📊 See how these numbers behave on a live account',
 			'ad_code_desktop'      => '',
@@ -108,7 +120,7 @@ class Settings {
 		$errors = array();
 		$out    = $defaults;
 
-		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'email_enabled', 'ads_enabled', 'bot_ad_enabled' ) as $flag ) {
+		foreach ( array( 'cta_enabled', 'cta_position_size', 'cta_pip_value', 'cta_sessions', 'cta_profit_loss', 'cta_hub', 'email_enabled', 'ads_enabled', 'bot_ad_enabled', 'bot_nudge_enabled' ) as $flag ) {
 			$out[ $flag ] = ! empty( $input[ $flag ] );
 		}
 
@@ -411,7 +423,7 @@ class Settings {
 		if ( empty( $s['cta_enabled'] ) || empty( $s['cta_url'] ) ) {
 			return null;
 		}
-		if ( ! in_array( $tool, self::TOOLS, true ) || empty( $s[ 'cta_' . $tool ] ) ) {
+		if ( ! in_array( $tool, self::PLACEMENTS, true ) || empty( $s[ 'cta_' . $tool ] ) ) {
 			return null;
 		}
 
@@ -557,6 +569,7 @@ class Settings {
 								'pip_value'     => __( 'Pip value calculator', 'hti-forex' ),
 								'sessions'      => __( 'Market hours (IST)', 'hti-forex' ),
 								'profit_loss'   => __( 'Profit/loss calculator', 'hti-forex' ),
+								'hub'           => __( 'Forex hub (/forex/)', 'hti-forex' ),
 							);
 							foreach ( $tool_labels as $tool => $label ) :
 								?>
@@ -665,6 +678,17 @@ class Settings {
 								<input type="url" id="hti-bot-real-url" class="large-text code" name="<?php echo esc_attr( self::OPTION ); ?>[bot_ad_real_url]" value="<?php echo esc_attr( (string) ( $s['bot_ad_real_url'] ?? '' ) ); ?>" />
 							</p>
 							<p class="description"><?php esc_html_e( 'Both destinations must be https links on this site — the /go/ redirector, never the affiliate URL itself. Everything the bot sends lands in a private chat, where a raw affiliate link would carry no disclosure and could not be changed once sent. Anything else is refused and the field cleared.', 'hti-forex' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Telegram bot: follow-up nudge', 'hti-forex' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( self::OPTION ); ?>[bot_nudge_enabled]" value="1" <?php checked( ! empty( $s['bot_nudge_enabled'] ) ); ?> />
+								<?php esc_html_e( 'Send one reminder to someone who opens the bot and never sends a balance', 'hti-forex' ); ?>
+							</label>
+							<p class="description"><?php esc_html_e( 'Most people who open the bot never ask it anything, and the conversation ends at the moment of most attention. This sends one message 30 minutes later, repeating the ask and offering nothing else — no partner line. At most one per person for as long as they exist: answering a balance spends it, /stop deletes the row, and it is never sent twice.', 'hti-forex' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Switching this on starts the clock for people who arrive afterwards — it never messages the existing list, so turning it on cannot produce a burst. Reaching people who are already here is what the broadcast composer below is for.', 'hti-forex' ); ?></p>
 						</td>
 					</tr>
 					<tr>

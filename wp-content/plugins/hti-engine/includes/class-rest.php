@@ -992,6 +992,19 @@ class REST {
 			'learn_progress'  => Learn::get( $user->ID ),
 		);
 
+		/**
+		 * Let sibling plugins add their own sections to the export.
+		 *
+		 * An export that misses a section is a failed data-subject request,
+		 * and this method enumerates its sources by hand — so anything stored
+		 * outside hti-engine has to be able to join in. Subscribers add a
+		 * top-level key; they must not rewrite the ones above.
+		 *
+		 * @param array<string,mixed> $data    Assembled export.
+		 * @param int                 $user_id User being exported.
+		 */
+		$data = (array) apply_filters( 'hti_export_data', $data, $user->ID );
+
 		$response = new WP_REST_Response( $data, 200 );
 		$response->header( 'Content-Disposition', 'attachment; filename="howtoinvest-data-export.json"' );
 		return $response;

@@ -172,5 +172,42 @@ check( str_contains( $compact_pt, 'links de afiliado' ), 'compact PT carries the
 check( str_contains( $compact_en, 'How we make money' ), 'compact EN links the methodology page' );
 check( str_contains( $compact_pt, 'Como ganhamos dinheiro' ), 'compact PT links the methodology page' );
 
+/* ---------------------------------------------------------------------------
+ * The text that makes this section legal has to be readable.
+ *
+ * CLAUDE.md invariant 4 lets the broker section exist on the condition that it
+ * is labelled "Parceria · Publicidade" with the affiliate disclosure on the
+ * page, and ESMA requires the CFD risk warning. All five of those strings were
+ * set between 0.68rem and 0.78rem — 10.9px to 12.5px — which made the label
+ * the smallest text on a page whose entire compliance argument is that a
+ * reader can see it.
+ *
+ * A floor, checked in the source rather than in a browser: this file needs no
+ * rendering, so it cannot rot when the render path changes.
+ * ------------------------------------------------------------------------ */
+
+$bk_css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/brokers.css' );
+$bk_css = (string) preg_replace( '#/\*.*?\*/#s', '', $bk_css );
+
+$too_small = array();
+if ( preg_match_all( '/(\.[A-Za-z0-9_-]+)[^{}]*\{([^}]*)\}/', $bk_css, $rules, PREG_SET_ORDER ) ) {
+	foreach ( $rules as $rule ) {
+		if ( preg_match( '/font-size:\s*([0-9.]+)rem/', $rule[2], $fs ) && (float) $fs[1] < 0.8 ) {
+			$too_small[] = $rule[1] . ' at ' . $fs[1] . 'rem (' . round( (float) $fs[1] * 16, 1 ) . 'px)';
+		}
+	}
+}
+check(
+	array() === $too_small,
+	'no broker rule sets text below 0.8rem/12.8px (' . ( $too_small ? implode( '; ', $too_small ) : 'none' ) . ')'
+);
+
+// The disclosure link must be able to wrap. A nowrap link inside the box that
+// carries the affiliate disclosure is a link that pushes it off a narrow screen.
+check(
+	! preg_match( '/\.hti-bk__disclosure a\s*\{[^}]*white-space:\s*nowrap/', $bk_css ),
+	'the disclosure link is allowed to wrap'
+);
+
 echo "\n=== {$passes} passed, {$failures} failed ===\n";
 exit( $failures > 0 ? 1 : 0 );

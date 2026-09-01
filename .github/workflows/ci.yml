@@ -52,7 +52,10 @@ jobs:
       - name: Run the hti-forex test suite
         run: php wp-content/plugins/hti-forex/tests/run.php
 
-      # The two .mjs suites already run inside the PHP runners above (they
+      - name: Run the hti-games test suite
+        run: php wp-content/plugins/hti-games/tests/run.php
+
+      # The .mjs suites already run inside the PHP runners above (they
       # shell out to node when it exists, which is why Node is set up). This
       # step exists so a missing node is a failure here rather than a silent
       # "skipping" line nobody reads.
@@ -60,6 +63,7 @@ jobs:
         run: |
           node wp-content/plugins/hti-engine/tests/test-tools-core.mjs
           node wp-content/plugins/hti-forex/tests/test-forex-core.mjs
+          node wp-content/plugins/hti-games/tests/test-games-core.mjs
 
       # A lockfile is what makes the deployed dependency knowable. Without it
       # `composer audit` has nothing to audit and the deploy installs whatever

@@ -148,5 +148,136 @@ class Bot_Store {
 		$GLOBALS['__hti_subs'] = array_values(
 			array_filter( $subs, static fn( $id ): bool => (int) $id !== $chat_id )
 		);
+		unset( $GLOBALS['__hti_nudges'][ $chat_id ] );
+	}
+
+	/* -------------------------------------------------------------------------
+	 * Nudge state, with the same conditional semantics as the real columns.
+	 *
+	 * $GLOBALS['__hti_nudges'] is chat_id => ['due' => int|null, 'nudged' => bool].
+	 * The conditions matter more than the storage: "arm only what was never
+	 * armed and never spent" and "claim only what is unspent" are the two rules
+	 * that make at-most-one-ever a property of the table, so the stub enforces
+	 * them rather than just recording values.
+	 * ---------------------------------------------------------------------- */
+
+	/**
+	 * Row id for a chat — position in the subscriber list, as the real one is.
+	 *
+	 * @param int $chat_id Chat id.
+	 */
+	private static function id_of( int $chat_id ): int {
+		$i = array_search( $chat_id, array_values( $GLOBALS['__hti_subs'] ?? array() ), true );
+		return false === $i ? 0 : $i + 1;
+	}
+
+	/**
+	 * Chat id for a row id.
+	 *
+	 * @param int $id Row id.
+	 */
+	private static function chat_of( int $id ): int {
+		return (int) ( array_values( $GLOBALS['__hti_subs'] ?? array() )[ $id - 1 ] ?? 0 );
+	}
+
+	/**
+	 * Arm a pending nudge, if nothing is pending and none was ever spent.
+	 *
+	 * @param int $chat_id Chat id.
+	 * @param int $delay   Seconds from now.
+	 */
+	public static function arm_nudge( int $chat_id, int $delay ): void {
+		$row = $GLOBALS['__hti_nudges'][ $chat_id ] ?? array(
+			'due'    => null,
+			'nudged' => false,
+		);
+		if ( $row['nudged'] || null !== $row['due'] ) {
+			return;
+		}
+		$GLOBALS['__hti_nudges'][ $chat_id ] = array(
+			'due'    => time() + $delay,
+			'nudged' => false,
+		);
+	}
+
+	/**
+	 * Spend the nudge without sending it.
+	 *
+	 * @param int $chat_id Chat id.
+	 */
+	public static function disarm_nudge( int $chat_id ): void {
+		$GLOBALS['__hti_nudges'][ $chat_id ] = array(
+			'due'    => null,
+			'nudged' => true,
+		);
+	}
+
+	/**
+	 * Pending nudges that are due and not too stale, oldest first.
+	 *
+	 * @param int $limit   How many.
+	 * @param int $max_age Ignore anything due longer ago than this.
+	 * @return array<int,array{id:int,chat_id:int}>
+	 */
+	public static function due_nudges( int $limit, int $max_age ): array {
+		$now  = time();
+		$rows = array();
+
+		foreach ( $GLOBALS['__hti_nudges'] ?? array() as $chat_id => $row ) {
+			if ( $row['nudged'] || null === $row['due'] ) {
+				continue;
+			}
+			if ( $row['due'] > $now || $row['due'] < $now - $max_age ) {
+				continue;
+			}
+			$rows[] = array(
+				'id'      => self::id_of( (int) $chat_id ),
+				'chat_id' => (int) $chat_id,
+				'due'     => $row['due'],
+			);
+		}
+
+		usort( $rows, static fn( array $a, array $b ): int => $a['due'] <=> $b['due'] );
+
+		return array_map(
+			static fn( array $r ): array => array(
+				'id'      => $r['id'],
+				'chat_id' => $r['chat_id'],
+			),
+			array_slice( $rows, 0, $limit )
+		);
+	}
+
+	/**
+	 * Claim one pending nudge; true only for the caller that got it.
+	 *
+	 * @param int $id Row id.
+	 */
+	public static function claim_nudge( int $id ): bool {
+		$chat_id = self::chat_of( $id );
+		$row     = $GLOBALS['__hti_nudges'][ $chat_id ] ?? null;
+
+		if ( null === $row || $row['nudged'] ) {
+			return false;
+		}
+
+		$GLOBALS['__hti_nudges'][ $chat_id ] = array(
+			'due'    => null,
+			'nudged' => true,
+		);
+		return true;
+	}
+
+	/**
+	 * Timestamp of the earliest pending nudge, or 0.
+	 */
+	public static function next_nudge_due(): int {
+		$due = array();
+		foreach ( $GLOBALS['__hti_nudges'] ?? array() as $row ) {
+			if ( ! $row['nudged'] && null !== $row['due'] ) {
+				$due[] = (int) $row['due'];
+			}
+		}
+		return array() === $due ? 0 : min( $due );
 	}
 }

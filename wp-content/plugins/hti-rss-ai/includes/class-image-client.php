@@ -1,7 +1,14 @@
 <?php
 /**
- * Minimal client for Google's image generation (Imagen) via the Generative
- * Language API. Returns raw image bytes for the featured-image card.
+ * Minimal client for Google's image generation via the Generative Language
+ * API. Returns raw image bytes for the featured-image card.
+ *
+ * Two endpoint shapes, picked from the model name: Imagen models use :predict,
+ * Gemini image models use :generateContent with an IMAGE modality. The Imagen
+ * branch is kept for keys that still have it, but note what it costs to leave
+ * it: :predict accepts personGeneration => dont_allow and :generateContent does
+ * not, so on the Gemini branch the only guard against a recognisable face is
+ * the prompt (see Prompt::image_rules).
  *
  * Reuses the same API key resolution as the text client (Gemini_Client); the
  * key is never stored by this plugin. Image generation is a paid feature and
@@ -16,7 +23,7 @@ namespace HTI\RssAI;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Talks to the Imagen predict endpoint.
+ * Talks to the image endpoints.
  */
 class Image_Client {
 
@@ -40,7 +47,7 @@ class Image_Client {
 			return new \WP_Error( 'rssai_no_key', __( 'No Gemini API key configured.', 'hti-rss-ai' ) );
 		}
 
-		$model = (string) Settings::get( 'image_model', 'imagen-4.0-generate-001' );
+		$model = (string) Settings::get( 'image_model', 'gemini-2.5-flash-image' );
 		$base  = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode( $model );
 
 		// Imagen models use the :predict endpoint; Gemini image models (e.g.
