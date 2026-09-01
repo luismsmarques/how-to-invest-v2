@@ -108,7 +108,7 @@ html.hti-game-active .hti-stc {
 	margin-bottom: 8px;
 }
 
-.hti-stc__panelhead .hti-g__h2 { font-size: 14px; }
+.hti-stc__panelhead .hti-g__h2 { font-size: var( --g-fs-lg ); }
 
 .hti-g__pill {
 	padding: 4px 10px;
@@ -116,7 +116,7 @@ html.hti-game-active .hti-stc {
 	border: 1px solid var( --g-border-2 );
 	border-radius: 999px;
 	font-weight: 600;
-	font-size: 10.5px;
+	font-size: var( --g-fs-xs );
 	color: var( --g-muted );
 	white-space: nowrap;
 }
@@ -146,7 +146,7 @@ html.hti-game-active .hti-stc {
 	top: 10px;
 	left: 12px;
 	font-weight: 700;
-	font-size: 10.5px;
+	font-size: var( --g-fs-xs );
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: var( --g-brand );
@@ -170,7 +170,7 @@ html.hti-game-active .hti-stc {
 	background: var( --g-surface-2 );
 	border-color: var( --g-border-3 );
 	color: var( --g-text );
-	font-size: 15px;
+	font-size: var( --g-fs-lg );
 }
 
 .hti-stc .hti-g__choice--pass:hover { border-color: var( --g-brand ); }
@@ -198,4 +198,52 @@ html.hti-game-active .hti-stc {
 
 @media ( prefers-reduced-motion: reduce ) {
 	.hti-stc .hti-g__phase--dead { animation: none; }
+}
+
+/* Tablet and desktop. The handoff drew this game at 430px and nothing else, so
+   above a phone it was a 470px column and the candlestick chart — the element
+   that earns every pixel — was the narrowest thing on a 1440px screen. Eighty
+   candles in 434px is 2.9px of body each. Two columns at 900px puts the chart
+   and the buttons that act on it side by side instead of a scroll apart.
+   min-width on purpose: it leaves the phone layout untouched. */
+
+/* Tablet: still one column — a portrait tablet is a big phone, and splitting
+   at 768px gives two columns too narrow to be worth the split. What it buys
+   is a chart that grows and room to breathe. */
+@media ( min-width: 768px ) {
+
+	.hti-stc { max-width: 720px; }
+
+	.hti-stc__canvas { height: 340px; }
+}
+
+@media ( min-width: 900px ) {
+
+	.hti-stc {
+		display: grid;
+		max-width: 980px;
+		grid-template-columns: minmax( 0, 1.45fr ) minmax( 300px, 1fr );
+		align-items: start;
+	}
+
+	/* The frame spans; only the chart and the decision share the row. */
+	.hti-stc > .hti-g__hud,
+	.hti-stc > .hti-g__health,
+	.hti-stc > .hti-g__status,
+	.hti-stc > .hti-g__rules,
+	.hti-stc > .hti-g__disclaimer,
+	.hti-stc > .hti-ob { grid-column: 1 / -1; }
+
+	/* Onboarding hides the phases, so it takes the whole width rather than
+	   leaving a column of nothing beside it. */
+	.hti-stc > .hti-g__phases { border-top: 0; }
+
+	.hti-stc__canvas { height: 420px; }
+}
+
+@media ( min-width: 1200px ) {
+
+	.hti-stc { max-width: 1180px; }
+
+	.hti-stc__canvas { height: 480px; }
 }

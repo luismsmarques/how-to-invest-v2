@@ -254,6 +254,15 @@ class Frontend {
 
 		wp_localize_script( 'hti-games-shared', 'HTI_GAMES', self::data( $lang ) );
 
+		// The hub, the leaderboard and the profile keep their styles in their
+		// own sheet, loaded only where they render. A game page was paying to
+		// download three screens it never draws, and the asset budget counts
+		// what one page costs — that dead weight was the headroom the desktop
+		// and tablet layouts needed.
+		if ( array_intersect( array( 'hub', 'leaderboard', 'profile' ), $kinds ) ) {
+			wp_enqueue_style( 'hti-games-board', HTI_GAMES_URL . 'assets/css/board.css', array( 'hti-games' ), VERSION );
+		}
+
 		if ( in_array( Config::GAME_STC, $kinds, true ) ) {
 			wp_enqueue_style( 'hti-games-stc', HTI_GAMES_URL . 'assets/css/stc.css', array( 'hti-games' ), VERSION );
 			wp_enqueue_script(
@@ -693,7 +702,7 @@ class Frontend {
 
 		// Phase: decide.
 		$out .= '<div class="hti-g__phase" data-hti-phase="decide">'
-			. '<h3 class="hti-g__phasehead" tabindex="-1">' . esc_html( Strings::get( 'stc_chart_decide', $lang ) ) . '</h3>'
+			. '<h3 class="hti-g__phasehead" tabindex="-1">' . esc_html( Strings::get( 'stc_decide_head', $lang ) ) . '</h3>'
 			. '<div class="hti-g__sides">'
 			. '<button type="button" class="hti-g__choice hti-g__choice--up" data-hti-decide="buy">' . esc_html( Strings::get( 'stc_buy', $lang ) ) . '</button>'
 			. '<button type="button" class="hti-g__choice hti-g__choice--down" data-hti-decide="sell">' . esc_html( Strings::get( 'stc_sell', $lang ) ) . '</button>'

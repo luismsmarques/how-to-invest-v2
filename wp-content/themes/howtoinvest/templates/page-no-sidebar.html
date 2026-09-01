@@ -1,7 +1,15 @@
+<!-- The title block is not optional decoration. Without it this template
+     rendered no <h1> at all, and it is used by two whole sections: the five
+     /games/ pages and every broker account-opening guide. Their seeded content
+     starts at H2 with a section heading ("What does Survive the Charts
+     teach?"), not a title, so there was nothing to promote — the page title
+     was simply never printed. On an SEO-led site that is not a detail. -->
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
 <!-- wp:group {"tagName":"main","layout":{"type":"constrained"}} -->
-<main class="wp-block-group"><!-- wp:post-content {"align":"full","layout":{"type":"constrained"}} /--></main>
+<main class="wp-block-group"><!-- wp:post-title {"level":1} /-->
+
+<!-- wp:post-content {"align":"full","layout":{"type":"constrained"}} /--></main>
 <!-- /wp:group -->
 
 <!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

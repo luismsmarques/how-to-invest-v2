@@ -33,6 +33,7 @@ $js     = $root . '/assets/js/';
 $inc    = $root . '/includes/';
 $sheets = array(
 	'games.css'  => (string) file_get_contents( $css . 'games.css' ),
+	'board.css'  => (string) file_get_contents( $css . 'board.css' ),
 	'stc.css'    => (string) file_get_contents( $css . 'stc.css' ),
 	'reveal.css' => (string) file_get_contents( $css . 'reveal.css' ),
 );
@@ -720,15 +721,15 @@ hti_games_check(
 	'the calendar signs each cell instead of only tinting it'
 );
 hti_games_check(
-	str_contains( $sheets['games.css'], '.hti-profile__mark' ) && str_contains( $sheets['reveal.css'], '.hti-rv__mark' ),
+	str_contains( $sheets['board.css'], '.hti-profile__mark' ) && str_contains( $sheets['reveal.css'], '.hti-rv__mark' ),
 	'and both marks are styled rather than invisible'
 );
 hti_games_check(
-	! str_contains( $sheets['games.css'], 'opacity: 0.5;' ) || ! preg_match( '/\.hti-profile__badge\s*\{[^}]*opacity/', hti_a11y_strip( $sheets['games.css'] ) ),
+	! str_contains( $sheets['board.css'], 'opacity: 0.5;' ) || ! preg_match( '/\.hti-profile__badge\s*\{[^}]*opacity/', hti_a11y_strip( $sheets['board.css'] ) ),
 	'a locked badge is not drawn at an opacity that puts its own name under AA'
 );
 hti_games_check(
-	str_contains( $sheets['games.css'], 'border-style: solid' ),
+	str_contains( $sheets['board.css'], 'border-style: solid' ),
 	'earned and locked badges differ by border style, not only by border colour'
 );
 
@@ -765,8 +766,8 @@ $targets = array(
 	array( 'games.css', '.hti-g__tile', 44, 'a risk or size tile' ),
 	array( 'games.css', '.hti-g__switch', 44, 'the multiplier' ),
 	array( 'games.css', '.hti-g__input', 44, 'a text field' ),
-	array( 'games.css', '.hti-board__tab', 44, 'a board tab' ),
-	array( 'games.css', '.hti-board__gtab', 44, 'a game tab' ),
+	array( 'board.css', '.hti-board__tab', 44, 'a board tab' ),
+	array( 'board.css', '.hti-board__gtab', 44, 'a game tab' ),
 	array( 'games.css', '.hti-g__rules > summary', 44, 'the rules disclosure' ),
 );
 foreach ( $targets as $row ) {

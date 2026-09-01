@@ -33,7 +33,12 @@
 	--hti-font-body: var( --wp--preset--font-family--body, 'Plus Jakarta Sans', sans-serif );
 
 	max-width: 780px;
-	min-height: 600px;
+	/* A floor, not a fixed height, and one that fits the shortest phone still
+	   in use: 600px is taller than an iPhone SE's 568px viewport, so the app
+	   reserved more room than the screen had before a single question was
+	   drawn. svh rather than vh because on mobile Safari vh is the tall
+	   viewport — the one that assumes the address bar is hidden. */
+	min-height: min( 600px, 88svh );
 	margin: 0 auto;
 	color: var( --hti-text );
 	font-family: var( --hti-font-body );
@@ -415,16 +420,26 @@ html.hti-quiz-active .hti-qz .hti-fieldset { border: 0; }
 	gap: clamp( 1.25rem, 4vw, 2.5rem );
 	align-items: center;
 }
+/* The allocation chart is the product's answer, and it was 168px on a 360px
+   phone and 168px on a 1440px monitor. It grows now, within reason: a donut
+   that fills a wide screen stops reading as a summary. flex-basis keeps it a
+   fixed track in the wrapping flex row; the list beside it still claims
+   220px before either wraps. The floor is the 168px the design drew: this
+   chart is the product's answer, and making it smaller on the smallest screen
+   would be the wrong direction. */
 .hti-donut {
 	position: relative;
-	width: 168px;
-	height: 168px;
+	width: clamp( 168px, 10vw + 130px, 232px );
+	height: clamp( 168px, 10vw + 130px, 232px );
 	flex: none;
 	border-radius: 50%;
 }
 .hti-donut__hole {
 	position: absolute;
-	inset: 30px;
+	/* Proportional, not 30px: the donut scales now, and a fixed inset would
+	   make the ring look thinner the bigger the chart got. 18% is the 30px the
+	   design drew at 168px, expressed as a ratio. */
+	inset: 18%;
 	background: var( --hti-white );
 	border-radius: 50%;
 	display: flex;

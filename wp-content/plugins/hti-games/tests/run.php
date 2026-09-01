@@ -29,20 +29,26 @@ foreach ( $files as $file ) {
 	}
 }
 
-// The parity test: the JS engines against the same fixture the PHP ones use.
-// Skipped cleanly when node is absent, exactly as hti-forex does — CI proves
-// it actually ran with a separate explicit step.
-$mjs = $dir . '/test-games-core.mjs';
-if ( is_file( $mjs ) ) {
+// The Node suites. The parity test puts the JS engines against the same fixture
+// the PHP ones use; the responsive test puts the rendered pages in a real
+// browser, which is the only way to ask whether anything overflows or whether a
+// control is 44px once the box model has spoken. Both skip cleanly when their
+// tool is absent, exactly as hti-forex does — CI proves the parity one actually
+// ran with a separate explicit step.
+foreach ( array( 'test-games-core.mjs', 'test-responsive.mjs' ) as $name ) {
+	$mjs = $dir . '/' . $name;
+	if ( ! is_file( $mjs ) ) {
+		continue;
+	}
 	$node = trim( (string) shell_exec( 'command -v node 2>/dev/null' ) );
-	if ( '' !== $node ) {
-		$code = 0;
-		passthru( 'node ' . escapeshellarg( $mjs ), $code );
-		if ( 0 !== $code ) {
-			$failed[] = basename( $mjs );
-		}
-	} else {
-		echo "\n(skipping " . basename( $mjs ) . " — node not found)\n";
+	if ( '' === $node ) {
+		echo "\n(skipping " . $name . " — node not found)\n";
+		continue;
+	}
+	$code = 0;
+	passthru( 'node ' . escapeshellarg( $mjs ), $code );
+	if ( 0 !== $code ) {
+		$failed[] = $name;
 	}
 }
 
