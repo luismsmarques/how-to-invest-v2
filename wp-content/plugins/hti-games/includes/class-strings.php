@@ -371,6 +371,16 @@ class Strings {
 				'en' => "Today's challenge",
 				'pt' => 'O desafio de hoje',
 			),
+			// The decide phase used to reuse stc_chart_decide, so the chart's
+			// heading and the decision's heading were the same words. Stacked
+			// on a phone that read as a repeat; side by side on the desktop
+			// layout it reads as a bug. It also made the screen-reader
+			// announcement on every phase change say nothing new. Naming the
+			// decision instead of the chart fixes all three at once.
+			'stc_decide_head'     => array(
+				'en' => 'Your call',
+				'pt' => 'A tua decisão',
+			),
 			'stc_chart_tag'       => array(
 				'en' => 'market hidden · 80 candles',
 				'pt' => 'mercado escondido · 80 velas',

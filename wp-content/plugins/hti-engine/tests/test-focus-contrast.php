@@ -142,5 +142,108 @@ foreach ( $sheets as $sheet ) {
 check( count( $sheets ) > 5, sprintf( 'found %d stylesheets to audit', count( $sheets ) ) );
 check( array() === $offenders, 'no :focus-visible rule sets outline: none (' . ( $offenders ? implode( '; ', $offenders ) : 'none' ) . ')' );
 
+/* ---------------------------------------------------------------------------
+ * 4. Every stylesheet declares its palette through theme.json.
+ *
+ * Not a style preference. learn.css spent its whole life redeclaring the brand
+ * hexes by hand — the last sheet in the project that did — and the cost was not
+ * only that a palette change in theme.json left /learn/ behind. Copied values
+ * drift, and these had: seven text colours ended up between 2.48:1 and 4.39:1,
+ * including a navigation link, a button label and the quiz's own
+ * correct-answer tag. A sheet on the token system inherits the contrast work
+ * done once; a sheet off it re-does that work badly, quietly.
+ *
+ * The rule is per-file rather than global because the token blocks themselves
+ * legitimately carry hexes — that is what a fallback is. What is counted here
+ * is raw hexes in the BODY of a sheet, past its own token declarations.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Two sheets carry this debt today. The numbers are a ratchet, not approval:
+ * they may fall and may never rise, so the rule binds every new line written
+ * while the existing ones get paid off. learn.css is deliberately absent —
+ * it was the worst of the three and is now on the token system, which is what
+ * the default of 40 holds it to.
+ */
+$budget = array(
+	'style.css' => 103,
+	'app.css'   => 201,
+);
+
+$raw_hex = array();
+foreach ( $sheets as $sheet ) {
+	$css = (string) preg_replace( '#/\*.*?\*/#s', '', (string) file_get_contents( $sheet ) );
+	// Everything inside a var( --x, #hex ) fallback is the token system working
+	// as intended, so those come out before counting.
+	$css   = (string) preg_replace( '/var\(\s*--[^)]*\)/', '', $css );
+	$count = preg_match_all( '/#[0-9A-Fa-f]{3,8}\b/', $css );
+	$name  = basename( $sheet );
+	$allow = $budget[ $name ] ?? 40;
+	if ( $count > $allow ) {
+		$raw_hex[] = sprintf( '%s has %d, allowed %d', $name, $count, $allow );
+	}
+}
+check(
+	array() === $raw_hex,
+	'no stylesheet grows its hand-written palette (' . ( $raw_hex ? implode( '; ', $raw_hex ) : 'none' ) . ')'
+);
+
+/* ---------------------------------------------------------------------------
+ * 5. Four colours on the news hub and the glossary that carried meaning while
+ *    being effectively invisible.
+ *
+ * Found by rendering both surfaces with fixture data and measuring, then
+ * computed here rather than judged by eye. The ranking numeral and the group
+ * letter are the whole point of the widget they sit in: a "most read" list
+ * whose 1-to-5 is at 1.37:1 is not ranked, and an A-Z index whose letter is at
+ * 1.69:1 does not say where you are.
+ *
+ * Each row states the threshold that actually applies, not the strictest one:
+ * 4.5:1 for body text, 3:1 for text at or above 24px (WCAG 1.4.3 large text)
+ * and for a glyph that carries meaning (1.4.11).
+ * ------------------------------------------------------------------------ */
+
+$page = $palette['background'] ?? '#FFF6F1';
+$card = $palette['white'] ?? '#ffffff';
+
+echo "\nThe news hub and glossary colours that carry meaning\n";
+
+// [selector, sheet-relative path, ground, minimum, why]
+$carriers = array(
+	array( '.hti-newshub__rank-n', $theme . '/style.css', $card, 4.5, 'the 1-5 in "most read", at 18px bold (under the 18.66px large-text line)' ),
+	array( '.hti-gloss__gletter', $theme . '/style.css', $page, 3.0, 'the A-Z group letter, 30px bold — large text' ),
+	array( '.hti-gloss__flabel', $theme . '/style.css', $page, 4.5, 'the TOPIC / LETTER filter labels, 12px' ),
+	array( '.hti-gloss__sicon', $theme . '/style.css', $card, 3.0, 'the search glyph — a meaningful graphic' ),
+);
+
+foreach ( $carriers as $row ) {
+	list( $sel, $file, $ground, $min, $why ) = $row;
+	$css = (string) preg_replace( '#/\*.*?\*/#s', '', (string) file_get_contents( $file ) );
+	$hex = '';
+	if ( preg_match_all( '/' . preg_quote( $sel, '/' ) . '\s*\{([^}]*)\}/', $css, $m, PREG_SET_ORDER ) ) {
+		foreach ( $m as $rule ) {
+			if ( preg_match( '/(?<![a-z-])color:\s*(#[0-9A-Fa-f]{6})/', $rule[1], $c ) ) {
+				$hex = $c[1];
+			}
+		}
+	}
+	if ( '' === $hex ) {
+		// A token instead of a hex is the better answer, not a failure: resolve
+		// it through the palette so the ratio is still checked.
+		if ( preg_match_all( '/' . preg_quote( $sel, '/' ) . '\s*\{([^}]*)\}/', $css, $m, PREG_SET_ORDER ) ) {
+			foreach ( $m as $rule ) {
+				if ( preg_match( '/(?<![a-z-])color:\s*var\(\s*--wp--preset--color--([a-z-]+)/', $rule[1], $c ) ) {
+					$hex = $palette[ $c[1] ] ?? '';
+				}
+			}
+		}
+	}
+	$ratio = '' === $hex ? 0.0 : contrast( $hex, $ground );
+	check(
+		$ratio >= $min,
+		sprintf( '%-24s %-8s on %s → %.2f:1 (needs %.1f) — %s', $sel, $hex ?: 'not found', $ground, $ratio, $min, $why )
+	);
+}
+
 echo "\n=== {$passes} passed, {$failures} failed ===\n";
 exit( $failures > 0 ? 1 : 0 );

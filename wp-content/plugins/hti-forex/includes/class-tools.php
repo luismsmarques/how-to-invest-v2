@@ -206,7 +206,16 @@ class Tools {
 			$tool = self::add_margin_extension( $tool );
 		}
 
-		$out  = '<form class="hti-fx-tool" data-tool="' . esc_attr( $name ) . '"' . ( $with_margin ? ' data-variant="leverage"' : '' ) . ' novalidate>';
+		// alignwide, for the reason hti-engine's own tools already carry it
+		// (class-tools.php::shell): these pages are seeded with no page
+		// template, so they render through page.html and inherit
+		// contentSize: 680px — while the card inside is a 1fr/380px grid. The
+		// inputs column was landing at ~300px on a desktop, and .hti-fx-fields
+		// then put two fields in ~135px each. The two sections are meant to
+		// read as one product; this is the half that was not asking for the
+		// width it needs.
+		$out  = '<div class="hti-fx-shell alignwide">';
+		$out .= '<form class="hti-fx-tool" data-tool="' . esc_attr( $name ) . '"' . ( $with_margin ? ' data-variant="leverage"' : '' ) . ' novalidate>';
 		$out .= '<div class="hti-fx-card hti-fx-card--tool">';
 
 		// --- Inputs column -------------------------------------------------
@@ -289,6 +298,7 @@ class Tools {
 
 		$out .= '<noscript><p class="hti-fx-note">' . esc_html( 'Enable JavaScript to use this calculator.' ) . '</p></noscript>';
 		$out .= '</form>';
+		$out .= '</div>';
 
 		return $out;
 	}

@@ -96,8 +96,26 @@ const HTI_GAMES_FILE_MAX = 13312;
 /** Everything one game page downloads: shared + that game. */
 const HTI_GAMES_GAME_MAX = 36864;
 
-/** Every front-end asset the plugin ships, together. */
-const HTI_GAMES_TOTAL_MAX = 49152;
+/**
+ * Every front-end asset the plugin ships, together.
+ *
+ * Raised from 48 KB to 50 KB when the hub/leaderboard/profile styles were
+ * split out of games.css, and the reasoning belongs here rather than in a
+ * commit message nobody will find.
+ *
+ * This number measures the shipped bundle. It does not measure what anybody
+ * downloads, and the two move in opposite directions when a file is split:
+ * gzip does better on one large file than on two smaller ones, so splitting
+ * always costs the sum a little. What it buys is the thing a visitor
+ * experiences — a game page stopped paying for 389 lines of leaderboard it
+ * never renders, and stc went from 35.6 KB to 35.2 KB *while gaining* a full
+ * tablet and desktop layout.
+ *
+ * So the per-game ceiling above is the one that models a visitor and it did
+ * not move. This one is a guard against the bundle growing unwatched, and 50
+ * is still a guard.
+ */
+const HTI_GAMES_TOTAL_MAX = 51200;
 
 /** The handoff's non-functional requirement for a first load. */
 const HTI_GAMES_FIRST_LOAD_MAX = 204800;

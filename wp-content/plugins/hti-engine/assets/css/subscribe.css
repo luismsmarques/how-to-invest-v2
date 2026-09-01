@@ -70,6 +70,12 @@
 	margin-top: 0.2rem;
 	flex: none;
 	accent-color: var(--wp--preset--color--accent, #ff6b5e);
+	/* The default checkbox renders at 13x13. This is the control that records
+	   consent to be emailed — the one box on the page with a legal consequence
+	   — and it was the smallest target on it. 24px is the WCAG 2.5.8 minimum,
+	   and the label beside it is part of the same target. */
+	width: 24px;
+	height: 24px;
 }
 
 .hti-subscribe__consent a {
@@ -188,7 +194,7 @@
 	line-height: 1.4;
 	color: #FFF1ED;
 }
-.hti-digest__consent input { margin-top: 0.15rem; flex: none; accent-color: #fff; }
+.hti-digest__consent input { margin-top: 0.15rem; flex: none; accent-color: #fff; width: 24px; height: 24px; }
 .hti-digest__consent a { color: #fff; font-weight: 600; text-decoration: underline; }
 .hti-digest__fine { margin: 0; font-size: 12.5px; line-height: 1.4; color: #FFF1ED; }
 .hti-subscribe--digest .hti-subscribe__status { margin: 0; color: #fff; font-weight: 600; }
