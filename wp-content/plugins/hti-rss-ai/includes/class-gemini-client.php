@@ -256,10 +256,12 @@ class Gemini_Client {
 	 * Batch text embeddings. Server-side only (the key never reaches the
 	 * browser). Returns one numeric vector per input text, in the same order.
 	 *
-	 * @param array<int,string> $texts Texts to embed.
+	 * @param array<int,string> $texts   Texts to embed.
+	 * @param int               $timeout HTTP timeout in seconds (callers under a
+	 *                                   wall-clock budget pass what it can afford).
 	 * @return array<int,array<int,float>>|\WP_Error
 	 */
-	public static function embed( array $texts ) {
+	public static function embed( array $texts, int $timeout = 60 ) {
 		$texts = array_values( $texts );
 		if ( ! $texts ) {
 			return array();
@@ -283,7 +285,7 @@ class Gemini_Client {
 		$response = wp_remote_post(
 			$url,
 			array(
-				'timeout' => 60,
+				'timeout' => max( 5, $timeout ),
 				'headers' => array( 'Content-Type' => 'application/json' ),
 				'body'    => wp_json_encode( array( 'requests' => $requests ) ),
 			)

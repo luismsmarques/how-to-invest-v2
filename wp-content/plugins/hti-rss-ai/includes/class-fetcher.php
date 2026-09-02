@@ -50,13 +50,27 @@ class Fetcher {
 	 * Its own tick: fetching is network-bound and grouping is CPU-bound, and
 	 * running both in one request is what made a single scheduled job pin the
 	 * processor while it also held the process open on the network.
+	 *
+	 * The tick runs under the same budget as a fetch — one that outlived
+	 * WP-Cron's sixty-second lock would let a second tick start on top of it.
+	 * A partial run is safe (grouped items keep their groups), so the
+	 * remainder is queued onto the next tick instead of stretching this one.
 	 */
 	public static function group(): void {
-		$grouped = Grouping::run();
+		$grouped = Grouping::run( microtime( true ) + self::BUDGET_SECONDS );
 		Logger::log(
 			'fetch',
-			sprintf( 'group: groups=%d joined=%d items=%d', $grouped['groups'], $grouped['joined'], $grouped['items'] )
+			sprintf(
+				'group: groups=%d joined=%d items=%d%s',
+				$grouped['groups'],
+				$grouped['joined'],
+				$grouped['items'],
+				! empty( $grouped['partial'] ) ? ' partial=1' : ''
+			)
 		);
+		if ( ! empty( $grouped['partial'] ) && ! wp_next_scheduled( GROUP_HOOK ) ) {
+			wp_schedule_single_event( time() + 120, GROUP_HOOK );
+		}
 	}
 
 	/**

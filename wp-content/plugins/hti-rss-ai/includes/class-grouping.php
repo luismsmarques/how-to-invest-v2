@@ -27,6 +27,48 @@ class Grouping {
 	private const MAX_ITEMS = 500;
 
 	/**
+	 * Wall-clock budget (seconds) for one interactive "Group now" click.
+	 * A run over a big backlog — embeddings backfill included — can outlive a
+	 * shared host's execution limit, and PHP then dies with the generic
+	 * "critical error" page. The budget makes the click stop cleanly instead.
+	 */
+	private const CLICK_BUDGET = 20;
+
+	/**
+	 * Headroom (seconds) kept between our budget and the host's own execution
+	 * limit, so we always stop before PHP is killed.
+	 */
+	private const CLICK_MARGIN = 8;
+
+	/**
+	 * Whether a wall-clock deadline has passed. Null means no deadline.
+	 * Pure; testable.
+	 *
+	 * @param float|null $deadline microtime(true) to stop at, or null.
+	 * @param float|null $now      Clock override for tests.
+	 */
+	public static function out_of_time( ?float $deadline, ?float $now = null ): bool {
+		if ( null === $deadline ) {
+			return false;
+		}
+		return ( $now ?? microtime( true ) ) >= $deadline;
+	}
+
+	/**
+	 * Seconds one interactive "Group now" click may spend, kept under the
+	 * host's max_execution_time so the click can never end on the fatal-error
+	 * page. Pure; testable.
+	 *
+	 * @param int $max_execution The host's max_execution_time (0 = unlimited).
+	 */
+	public static function interactive_budget( int $max_execution ): int {
+		if ( $max_execution <= 0 ) {
+			return self::CLICK_BUDGET;
+		}
+		return (int) min( self::CLICK_BUDGET, max( 5, $max_execution - self::CLICK_MARGIN ) );
+	}
+
+	/**
 	 * Cluster ungrouped items.
 	 *
 	 * Two-stage, per language: (1) each "new" item first tries to join a
@@ -35,24 +77,39 @@ class Grouping {
 	 * duplicates); (2) items that match no existing group are single-link
 	 * clustered among themselves, and clusters of 2+ become new groups.
 	 *
-	 * @return array{groups:int,items:int,joined:int}
+	 * A run may be given a wall-clock deadline. When it hits it, it stops
+	 * cleanly and reports partial=true: work persisted so far stays persisted,
+	 * unprocessed items remain "new", and the next run (a click or the cron
+	 * tick) simply carries on where this one stopped.
+	 *
+	 * @param float|null $deadline microtime(true) to stop at, or null for no limit.
+	 * @return array{groups:int,items:int,joined:int,partial:bool}
 	 */
-	public static function run(): array {
+	public static function run( ?float $deadline = null ): array {
 		$threshold = (float) Settings::get( 'similarity_threshold', 0.4 );
 		$open_days = max( 1, (int) Settings::get( 'open_max_days', 14 ) );
 		$use_emb   = ! empty( Settings::get( 'enable_embeddings', 0 ) );
 		$emb_thr   = (float) Settings::get( 'embedding_threshold', 0.82 );
 		$span_secs = (float) ( max( 1, (int) Settings::get( 'group_max_span_days', 3 ) ) * DAY_IN_SECONDS );
 		$report    = array(
-			'groups' => 0,
-			'items'  => 0,
-			'joined' => 0,
+			'groups'  => 0,
+			'items'   => 0,
+			'joined'  => 0,
+			'partial' => false,
 		);
 
 		foreach ( Settings::languages() as $lang ) {
-			// Make sure new items in this language have embeddings before we group.
+			if ( self::out_of_time( $deadline ) ) {
+				$report['partial'] = true;
+				break;
+			}
+
+			// Make sure new items in this language have embeddings before we
+			// group. The backfill shares this run's deadline: each batch is a
+			// blocking HTTP call, and one started with no budget left would
+			// blow through the limit however fast everything else is.
 			if ( $use_emb && class_exists( __NAMESPACE__ . '\\Embeddings' ) ) {
-				Embeddings::backfill( $lang, (int) Settings::get( 'embed_max_per_run', 200 ) );
+				Embeddings::backfill( $lang, (int) Settings::get( 'embed_max_per_run', 200 ), $deadline );
 			}
 
 			$items = Items::query(
@@ -96,6 +153,12 @@ class Grouping {
 			$joins     = array();
 			$unmatched = array();
 			foreach ( $items as $item ) {
+				if ( self::out_of_time( $deadline ) ) {
+					// Stop cleanly: joins made so far are persisted below, the
+					// rest of the batch stays "new" for the next run.
+					$report['partial'] = true;
+					break;
+				}
 				$id  = (int) $item->id;
 				$set = $tokens[ $id ];
 				if ( ! $set ) {
@@ -132,11 +195,18 @@ class Grouping {
 			}
 
 			// Stage 2 — single-link clustering over the still-unmatched items.
-			if ( count( $unmatched ) < 2 ) {
+			if ( $report['partial'] || count( $unmatched ) < 2 ) {
 				continue;
 			}
 			$clusters = array();
 			foreach ( $unmatched as $item ) {
+				if ( self::out_of_time( $deadline ) ) {
+					// Clusters built so far still become groups below; items
+					// not yet clustered stay "new" and the next run picks them
+					// up (joining these very groups via stage 1 if they match).
+					$report['partial'] = true;
+					break;
+				}
 				$id  = (int) $item->id;
 				$set = $tokens[ $id ];
 				if ( ! $set ) {
@@ -193,7 +263,16 @@ class Grouping {
 			}
 		}
 
-		Logger::log( 'group', sprintf( 'groups=%d joined=%d items=%d', $report['groups'], $report['joined'], $report['items'] ) );
+		Logger::log(
+			'group',
+			sprintf(
+				'groups=%d joined=%d items=%d%s',
+				$report['groups'],
+				$report['joined'],
+				$report['items'],
+				$report['partial'] ? ' partial=1 (out of time, next run continues)' : ''
+			)
+		);
 		return $report;
 	}
 
