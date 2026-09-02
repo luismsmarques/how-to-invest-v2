@@ -15,10 +15,33 @@ defined( 'ABSPATH' ) || exit;
 class Items {
 
 	/**
+	 * Columns of the items table selectable via query()'s 'fields' arg.
+	 */
+	private const COLUMNS = array( 'id', 'feed_id', 'guid_hash', 'title', 'description', 'transcript', 'video_id', 'image_url', 'source', 'link', 'published_at', 'lang', 'fingerprint', 'embedding', 'group_id', 'status', 'fetched_at' );
+
+	/**
 	 * Items table name.
 	 */
 	public static function table(): string {
 		return Activator::items_table();
+	}
+
+	/**
+	 * Build a SELECT column list from a requested set: unknown names are
+	 * dropped, an empty request selects everything. Pure; testable.
+	 *
+	 * Exists so bulk readers (the grouper) can skip the heavy columns — a
+	 * `SELECT *` over 500 items hauls transcripts and raw embedding JSON into
+	 * one PHP request, which is how a batch runs out of memory.
+	 *
+	 * @param array<int,string> $fields Requested column names.
+	 */
+	public static function select_list( array $fields ): string {
+		$cols = array_values( array_intersect( $fields, self::COLUMNS ) );
+		if ( ! $cols ) {
+			return '*';
+		}
+		return '`' . implode( '`, `', $cols ) . '`';
 	}
 
 	/**
@@ -197,16 +220,18 @@ class Items {
 	/**
 	 * Query items with filters + paging.
 	 *
-	 * @param array<string,mixed> $args feed_id, status, lang, per_page, offset.
+	 * @param array<string,mixed> $args feed_id, status, lang, per_page, offset,
+	 *                                  fields (column whitelist; default all).
 	 * @return array<int,object>
 	 */
 	public static function query( array $args ): array {
 		global $wpdb;
 		$table              = self::table();
+		$select             = self::select_list( (array) ( $args['fields'] ?? array() ) );
 		list( $w, $params ) = self::where( $args );
 		$params[]           = (int) ( $args['per_page'] ?? 20 );
 		$params[]           = (int) ( $args['offset'] ?? 0 );
-		$sql                = "SELECT * FROM `$table` WHERE $w ORDER BY published_at DESC, id DESC LIMIT %d OFFSET %d";
+		$sql                = "SELECT $select FROM `$table` WHERE $w ORDER BY published_at DESC, id DESC LIMIT %d OFFSET %d";
 		return (array) $wpdb->get_results( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 

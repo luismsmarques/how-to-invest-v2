@@ -57,7 +57,14 @@ class Fetcher {
 	 * remainder is queued onto the next tick instead of stretching this one.
 	 */
 	public static function group(): void {
+		// Same protections as the admin click: record an uncatchable death,
+		// and give the clustering the memory headroom admin screens get.
+		Logger::watch_fatals( 'group cron' );
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			wp_raise_memory_limit( 'admin' );
+		}
 		$grouped = Grouping::run( microtime( true ) + self::BUDGET_SECONDS );
+		Logger::unwatch_fatals();
 		Logger::log(
 			'fetch',
 			sprintf(

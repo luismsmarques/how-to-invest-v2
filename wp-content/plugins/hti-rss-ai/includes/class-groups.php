@@ -90,15 +90,17 @@ class Groups {
 	/**
 	 * Items belonging to a group.
 	 *
-	 * @param int $group_id Group id.
+	 * @param int               $group_id Group id.
+	 * @param array<int,string> $fields   Column whitelist (default all).
 	 * @return array<int,object>
 	 */
-	public static function items( int $group_id ): array {
+	public static function items( int $group_id, array $fields = array() ): array {
 		return Items::query(
 			array(
 				'group_id' => $group_id,
 				'per_page' => 100,
 				'offset'   => 0,
+				'fields'   => $fields,
 			)
 		);
 	}

@@ -196,4 +196,25 @@ rssai_ok( str_contains( $psrc, 'catch ( \Throwable' ), 'a grouping failure becom
 $fsrc = (string) file_get_contents( dirname( __DIR__ ) . '/includes/class-fetcher.php' );
 rssai_ok( str_contains( $fsrc, 'Grouping::run( microtime( true ) + self::BUDGET_SECONDS )' ), 'the cron grouping tick runs under the fetch budget' );
 
+// --- The memory ceiling ------------------------------------------------------
+//
+// Time was only half the killer: admin-post.php never raises the memory limit
+// the way admin screens do, and a SELECT * over 500 items hauled transcripts
+// and raw 3072-float embedding JSON into one request — an out-of-memory death
+// is uncatchable and leaves an empty plugin log. So the run reads lean rows,
+// frees the raw JSON once decoded, both entry points raise the limit, and a
+// fatal watch records any uncatchable death where the admin can see it.
+
+rssai_ok( str_contains( $gsrc, "'fields'" ), 'the new-items batch requests lean columns' );
+rssai_ok( str_contains( $gsrc, 'Groups::items( (int) $group->id, $fields )' ), 'group members are read with lean columns too' );
+rssai_ok( str_contains( $gsrc, "array( 'id', 'title', 'description', 'published_at', 'embedding' )" ), 'the lean read is exactly the columns the clustering uses' );
+rssai_ok( substr_count( $gsrc, 'unset( $item->embedding )' ) + substr_count( $gsrc, 'unset( $member->embedding )' ) >= 2, 'raw embedding JSON is freed once decoded' );
+
+rssai_ok( str_contains( $psrc, 'wp_raise_memory_limit' ), '"Group now" raises the memory limit like an admin screen' );
+rssai_ok( str_contains( $psrc, "Logger::watch_fatals( 'Group now' )" ), '"Group now" arms the fatal watch' );
+rssai_ok( str_contains( $psrc, 'Logger::last_fatal()' ), 'the Groups screen surfaces a recorded death' );
+
+rssai_ok( str_contains( $fsrc, 'wp_raise_memory_limit' ), 'the cron tick raises the memory limit too' );
+rssai_ok( str_contains( $fsrc, "Logger::watch_fatals( 'group cron' )" ), 'the cron tick arms the fatal watch too' );
+
 rssai_done( 'grouping' );
