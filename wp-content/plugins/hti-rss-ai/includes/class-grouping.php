@@ -86,6 +86,7 @@ class Grouping {
 	 * @return array{groups:int,items:int,joined:int,partial:bool}
 	 */
 	public static function run( ?float $deadline = null ): array {
+		$started   = microtime( true );
 		$threshold = (float) Settings::get( 'similarity_threshold', 0.4 );
 		$open_days = max( 1, (int) Settings::get( 'open_max_days', 14 ) );
 		$use_emb   = ! empty( Settings::get( 'enable_embeddings', 0 ) );
@@ -118,6 +119,12 @@ class Grouping {
 					'lang'     => $lang,
 					'per_page' => self::MAX_ITEMS,
 					'offset'   => 0,
+					// Only what the clustering reads: a SELECT * here hauled
+					// transcripts and other unused columns for 500 items into
+					// one request, which is how a big batch runs out of memory.
+					'fields'   => $use_emb
+						? array( 'id', 'title', 'description', 'published_at', 'embedding' )
+						: array( 'id', 'title', 'description', 'published_at' ),
 				)
 			);
 			if ( count( $items ) < 1 ) {
@@ -132,6 +139,9 @@ class Grouping {
 				$tokens[ $id ] = self::tokenize( $item->title . ' ' . $item->description );
 				$vecs[ $id ]   = $use_emb ? self::decode_vector( $item->embedding ?? '' ) : null;
 				$times[ $id ]  = self::ts( (string) ( $item->published_at ?? '' ) );
+				// The decoded vector is what the run uses — drop the raw JSON
+				// (tens of KB per item) instead of holding both in memory.
+				unset( $item->embedding );
 			}
 
 			// Existing recent open groups for this language and their member token
@@ -266,11 +276,13 @@ class Grouping {
 		Logger::log(
 			'group',
 			sprintf(
-				'groups=%d joined=%d items=%d%s',
+				'groups=%d joined=%d items=%d%s took=%.1fs mem_peak=%.0fMB',
 				$report['groups'],
 				$report['joined'],
 				$report['items'],
-				$report['partial'] ? ' partial=1 (out of time, next run continues)' : ''
+				$report['partial'] ? ' partial=1 (out of time, next run continues)' : '',
+				microtime( true ) - $started,
+				memory_get_peak_usage( true ) / 1048576
 			)
 		);
 		return $report;
@@ -321,16 +333,20 @@ class Grouping {
 	 */
 	private static function load_open_groups( string $lang, int $open_days, bool $with_vecs = false ): array {
 		$groups = Groups::open_recent( $lang, $open_days );
+		$fields = $with_vecs
+			? array( 'id', 'title', 'description', 'published_at', 'embedding' )
+			: array( 'id', 'title', 'description', 'published_at' );
 		$out    = array();
 		foreach ( $groups as $group ) {
 			$members  = array();
 			$vecs     = array();
 			$newest   = null;
-			foreach ( Groups::items( (int) $group->id ) as $member ) {
+			foreach ( Groups::items( (int) $group->id, $fields ) as $member ) {
 				$set = self::tokenize( $member->title . ' ' . $member->description );
 				if ( $set ) {
 					$members[] = $set;
 					$vecs[]    = $with_vecs ? self::decode_vector( $member->embedding ?? '' ) : null;
+					unset( $member->embedding );
 					$mts       = self::ts( (string) ( $member->published_at ?? '' ) );
 					if ( null !== $mts && ( null === $newest || $mts > $newest ) ) {
 						$newest = $mts;

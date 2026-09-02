@@ -572,6 +572,18 @@ class Groups_Page {
 		}
 		check_admin_referer( 'rssai_group_now' );
 
+		// An uncatchable death (out of memory, execution limit) shows only the
+		// anonymous critical-error page; the watch records it into the plugin
+		// log so the next visit to this screen says what actually happened.
+		Logger::watch_fatals( 'Group now' );
+
+		if ( function_exists( 'wp_raise_memory_limit' ) ) {
+			// admin-post.php never raises the memory limit the way admin
+			// screens do, and clustering a batch with embeddings needs the
+			// same headroom they get.
+			wp_raise_memory_limit( 'admin' );
+		}
+
 		$budget = Grouping::interactive_budget( (int) ini_get( 'max_execution_time' ) );
 		if ( function_exists( 'set_time_limit' ) ) {
 			// Extra headroom where the host allows it; the budget below still
@@ -582,6 +594,7 @@ class Groups_Page {
 		try {
 			$report = Grouping::run( microtime( true ) + $budget );
 		} catch ( \Throwable $e ) {
+			Logger::unwatch_fatals();
 			Logger::log( 'group-error', sprintf( '%s in %s:%d', $e->getMessage(), basename( (string) $e->getFile() ), (int) $e->getLine() ) );
 			set_transient(
 				'rssai_group_msg_' . get_current_user_id(),
@@ -598,6 +611,9 @@ class Groups_Page {
 			wp_safe_redirect( add_query_arg( array( 'page' => self::PAGE ), admin_url( 'admin.php' ) ) );
 			exit;
 		}
+		Logger::unwatch_fatals();
+		// The run completed — an earlier recorded death is history now.
+		Logger::clear_last_fatal();
 
 		$args = array(
 			'page'          => self::PAGE,
@@ -702,6 +718,14 @@ class Groups_Page {
 	 * Notices after grouping/dismiss.
 	 */
 	private static function maybe_notice(): void {
+		$fatal = Logger::last_fatal();
+		if ( $fatal ) {
+			printf(
+				'<div class="notice notice-error"><p><strong>%s</strong><br />%s</p></div>',
+				esc_html( sprintf( /* translators: %s: date/time. */ __( 'The last grouping run was killed by the server (%s):', 'hti-rss-ai' ), (string) $fatal['t'] ) ),
+				esc_html( (string) $fatal['msg'] )
+			);
+		}
 		$key  = 'rssai_group_msg_' . get_current_user_id();
 		$data = get_transient( $key );
 		if ( is_array( $data ) ) {
