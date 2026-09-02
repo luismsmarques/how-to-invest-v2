@@ -559,6 +559,12 @@ class Groups_Page {
 
 	/**
 	 * Run clustering on demand.
+	 *
+	 * The click must never take the site down: the run gets a wall-clock
+	 * budget under the host's execution limit and stops cleanly when it hits
+	 * it (grouped items keep their groups, the rest stay "new" for the next
+	 * click), and any failure inside it becomes an admin notice instead of
+	 * WordPress's anonymous "critical error" page.
 	 */
 	public static function handle_group_now(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -566,18 +572,43 @@ class Groups_Page {
 		}
 		check_admin_referer( 'rssai_group_now' );
 
-		$report = Grouping::run();
-		wp_safe_redirect(
-			add_query_arg(
+		$budget = Grouping::interactive_budget( (int) ini_get( 'max_execution_time' ) );
+		if ( function_exists( 'set_time_limit' ) ) {
+			// Extra headroom where the host allows it; the budget below still
+			// ends the run long before this.
+			set_time_limit( $budget + 30 );
+		}
+
+		try {
+			$report = Grouping::run( microtime( true ) + $budget );
+		} catch ( \Throwable $e ) {
+			Logger::log( 'group-error', sprintf( '%s in %s:%d', $e->getMessage(), basename( (string) $e->getFile() ), (int) $e->getLine() ) );
+			set_transient(
+				'rssai_group_msg_' . get_current_user_id(),
 				array(
-					'page'        => self::PAGE,
-					'rssai_grouped' => 1,
-					'g'           => (int) $report['groups'],
-					'i'           => (int) $report['items'],
+					'type' => 'error',
+					'msg'  => sprintf(
+						/* translators: %s: error message. */
+						__( 'Grouping failed: %s — nothing was lost; the details are in the activity log.', 'hti-rss-ai' ),
+						$e->getMessage()
+					),
 				),
-				admin_url( 'admin.php' )
-			)
+				60
+			);
+			wp_safe_redirect( add_query_arg( array( 'page' => self::PAGE ), admin_url( 'admin.php' ) ) );
+			exit;
+		}
+
+		$args = array(
+			'page'          => self::PAGE,
+			'rssai_grouped' => 1,
+			'g'             => (int) $report['groups'],
+			'i'             => (int) $report['items'],
 		);
+		if ( ! empty( $report['partial'] ) ) {
+			$args['partial'] = 1;
+		}
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
 		exit;
 	}
 
@@ -671,13 +702,29 @@ class Groups_Page {
 	 * Notices after grouping/dismiss.
 	 */
 	private static function maybe_notice(): void {
+		$key  = 'rssai_group_msg_' . get_current_user_id();
+		$data = get_transient( $key );
+		if ( is_array( $data ) ) {
+			delete_transient( $key );
+			printf(
+				'<div class="notice notice-error is-dismissible"><p>%s</p></div>',
+				esc_html( (string) ( $data['msg'] ?? '' ) )
+			);
+		}
 		if ( ! empty( $_GET['rssai_grouped'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$groups = isset( $_GET['g'] ) ? absint( wp_unslash( $_GET['g'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$items  = isset( $_GET['i'] ) ? absint( wp_unslash( $_GET['i'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			printf(
-				'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
-				esc_html( sprintf( /* translators: 1: groups, 2: items. */ __( 'Grouping complete: %1$d groups from %2$d items.', 'hti-rss-ai' ), $groups, $items ) )
-			);
+			if ( ! empty( $_GET['partial'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				printf(
+					'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+					esc_html( sprintf( /* translators: 1: groups, 2: items. */ __( 'Grouping stopped early to stay inside the server\'s time limit: %1$d groups from %2$d items so far. Click "Group now" again to continue where it left off.', 'hti-rss-ai' ), $groups, $items ) )
+				);
+			} else {
+				printf(
+					'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+					esc_html( sprintf( /* translators: 1: groups, 2: items. */ __( 'Grouping complete: %1$d groups from %2$d items.', 'hti-rss-ai' ), $groups, $items ) )
+				);
+			}
 		}
 		if ( ! empty( $_GET['rssai_dismissed'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html__( 'Group dismissed.', 'hti-rss-ai' ) );

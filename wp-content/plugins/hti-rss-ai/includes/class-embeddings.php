@@ -29,6 +29,40 @@ class Embeddings {
 	private const BATCH = 50;
 
 	/**
+	 * HTTP timeout (seconds) for one embedding batch when no deadline applies.
+	 */
+	private const HTTP_TIMEOUT = 60;
+
+	/**
+	 * Minimum runway (seconds) a batch needs before its deadline to be worth
+	 * starting at all.
+	 */
+	private const MIN_CHUNK_SECONDS = 10;
+
+	/**
+	 * HTTP timeout for the next embedding batch under a deadline, or null when
+	 * there is not enough budget left to start one. Pure; testable.
+	 *
+	 * One batch is one blocking HTTP call: started with three seconds of
+	 * budget left it would blow through the caller's limit however fast the
+	 * code around it is, so a batch needs a minimum runway and its timeout
+	 * must never promise more time than the budget still has.
+	 *
+	 * @param float|null $deadline microtime(true) to stop at, or null.
+	 * @param float      $now      Current microtime(true).
+	 */
+	public static function chunk_timeout( ?float $deadline, float $now ): ?int {
+		if ( null === $deadline ) {
+			return self::HTTP_TIMEOUT;
+		}
+		$remaining = $deadline - $now;
+		if ( $remaining < self::MIN_CHUNK_SECONDS ) {
+			return null;
+		}
+		return (int) min( self::HTTP_TIMEOUT, max( 5, floor( $remaining - 2 ) ) );
+	}
+
+	/**
 	 * Whether embeddings are enabled and a key is available.
 	 */
 	public static function enabled(): bool {
@@ -38,13 +72,16 @@ class Embeddings {
 	/**
 	 * Compute + store embeddings for up to $cap ungrouped items of a language
 	 * that still lack one. Best-effort; stops on the first API error (grouping
-	 * will just use the lexical signal for the rest).
+	 * will just use the lexical signal for the rest), and stops early when the
+	 * caller's wall-clock deadline leaves no room for another batch — the
+	 * items not reached are picked up by the next run.
 	 *
-	 * @param string $lang Language code.
-	 * @param int    $cap  Max items to embed this run.
+	 * @param string     $lang     Language code.
+	 * @param int        $cap      Max items to embed this run.
+	 * @param float|null $deadline microtime(true) to stop at, or null for no limit.
 	 * @return int Items embedded.
 	 */
-	public static function backfill( string $lang, int $cap ): int {
+	public static function backfill( string $lang, int $cap, ?float $deadline = null ): int {
 		if ( ! self::enabled() ) {
 			return 0;
 		}
@@ -55,13 +92,17 @@ class Embeddings {
 
 		$done = 0;
 		foreach ( array_chunk( $items, self::BATCH ) as $chunk ) {
+			$timeout = self::chunk_timeout( $deadline, microtime( true ) );
+			if ( null === $timeout ) {
+				break;
+			}
 			$ids   = array();
 			$texts = array();
 			foreach ( $chunk as $item ) {
 				$ids[]   = (int) $item->id;
 				$texts[] = self::text_for( $item );
 			}
-			$vectors = Gemini_Client::embed( $texts );
+			$vectors = Gemini_Client::embed( $texts, $timeout );
 			if ( is_wp_error( $vectors ) ) {
 				// Counted, not just logged: grouping degrades to lexical-only
 				// when this fails, which is invisible from the outside and can

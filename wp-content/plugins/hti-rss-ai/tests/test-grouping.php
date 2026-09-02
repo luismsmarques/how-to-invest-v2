@@ -157,4 +157,43 @@ rssai_ok( ! $r3['qualifies'], 'recency gate: an item far in time from every grou
 $r4 = Grouping::best_group_hybrid( $cand, null, $dated, $idf_d, 0.4, 0.82, null, 0 );
 rssai_ok( $r4['qualifies'], 'gate disabled (span 0 / no timestamp) → dates ignored, still matches' );
 
+// --- The wall-clock budget --------------------------------------------------
+//
+// "Group now" used to run the whole clustering — embeddings backfill and its
+// blocking HTTP calls included — inside one admin request with no time limit.
+// On shared hosting a big backlog blew max_execution_time and the click ended
+// on WordPress's anonymous "critical error" page. The budget makes every run
+// stop cleanly before the host kills it; a partial run is safe because grouped
+// items keep their groups and the rest stay "new" for the next run.
+
+rssai_ok( false === Grouping::out_of_time( null, 100.0 ), 'no deadline → never out of time' );
+rssai_ok( false === Grouping::out_of_time( 101.0, 100.0 ), 'before the deadline → still in time' );
+rssai_ok( true === Grouping::out_of_time( 100.0, 100.0 ), 'at the deadline → out of time' );
+rssai_ok( true === Grouping::out_of_time( 99.0, 100.0 ), 'past the deadline → out of time' );
+
+rssai_ok( 20 === Grouping::interactive_budget( 0 ), 'unlimited execution time → default 20s click budget' );
+rssai_ok( 20 === Grouping::interactive_budget( 30 ), 'typical 30s limit → 20s budget, under it' );
+rssai_ok( 20 === Grouping::interactive_budget( 300 ), 'generous limit → still 20s (a click stays a click)' );
+rssai_ok( 17 === Grouping::interactive_budget( 25 ), 'tight limit → the budget shrinks with it' );
+foreach ( array( 10, 15, 20, 30, 60, 120 ) as $limit ) {
+	rssai_ok( Grouping::interactive_budget( $limit ) < $limit, "budget stays under a {$limit}s execution limit" );
+}
+
+// Asserted on the source, since exercising a full run needs a database: the
+// deadline must be threaded through run() and checked inside the loops (a
+// single check at the top would not stop a long batch).
+$gsrc = (string) file_get_contents( dirname( __DIR__ ) . '/includes/class-grouping.php' );
+rssai_ok( str_contains( $gsrc, 'function run( ?float $deadline' ), 'run() accepts a wall-clock deadline' );
+rssai_ok( substr_count( $gsrc, 'out_of_time( $deadline )' ) >= 3, 'the deadline is checked inside the item loops, not just once' );
+rssai_ok( str_contains( $gsrc, 'Embeddings::backfill( $lang, (int) Settings::get( \'embed_max_per_run\', 200 ), $deadline )' ), 'the embeddings backfill shares the run\'s deadline' );
+
+// The admin click and the cron tick must both run under a budget, and a
+// failure inside the click must surface as a notice, never as the fatal page.
+$psrc = (string) file_get_contents( dirname( __DIR__ ) . '/includes/class-groups-page.php' );
+rssai_ok( str_contains( $psrc, 'Grouping::interactive_budget(' ), '"Group now" computes a budget from the host limit' );
+rssai_ok( str_contains( $psrc, 'catch ( \Throwable' ), 'a grouping failure becomes an admin notice, not a critical-error page' );
+
+$fsrc = (string) file_get_contents( dirname( __DIR__ ) . '/includes/class-fetcher.php' );
+rssai_ok( str_contains( $fsrc, 'Grouping::run( microtime( true ) + self::BUDGET_SECONDS )' ), 'the cron grouping tick runs under the fetch budget' );
+
 rssai_done( 'grouping' );
