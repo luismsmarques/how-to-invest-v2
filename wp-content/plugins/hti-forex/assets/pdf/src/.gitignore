@@ -1,2 +1,4 @@
 # Composed render source, rebuilt by build.sh on every run.
 .build-cheat-sheet.html
+# Instrumented copy the build measures the footer clearance on.
+.build-check.html

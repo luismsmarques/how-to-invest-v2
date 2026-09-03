@@ -231,10 +231,19 @@ class Go {
 			$destination = home_url( '/forex/' );
 		}
 
-		if ( ! $fallback && class_exists( '\\HTI\\Engine\\Metrics' ) ) {
+		// Count the click either way, and say which way it went.
+		//
+		// This used to count only when a partner resolved, which made a zero
+		// ambiguous: nobody clicked, or the CTA was switched off and every
+		// click quietly went to the hub. Those are opposite problems and the
+		// funnel could not tell them apart. The fallback gets its own
+		// location, so an unconfigured CTA now shows up as traffic arriving
+		// at a door that was closed.
+		if ( class_exists( '\\HTI\\Engine\\Metrics' ) ) {
 			$limited = class_exists( '\\HTI\\Engine\\RateLimit' ) && \HTI\Engine\RateLimit::exceeded( 'event' );
 			if ( ! $limited ) {
-				\HTI\Engine\Metrics::bump( 'cta_click', array( 'location' => 'forex_go_' . $slot ) );
+				$where = $fallback ? 'forex_go_unset_' . $slot : 'forex_go_' . $slot;
+				\HTI\Engine\Metrics::bump( 'cta_click', array( 'location' => $where ) );
 			}
 		}
 
